@@ -1,0 +1,2586 @@
+{
+  "substitutionGroups": [
+    {
+      "id": "chest_horizontal_push",
+      "name": "Chest Horizontal Press",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "movementPattern": "horizontalPush",
+      "description": "Flat and decline chest-pressing movements that train the pecs with shoulders and triceps assisting.",
+      "exerciseIds": [
+        "bench_press",
+        "dumbbell_press",
+        "machine_chest_press",
+        "push_up",
+        "decline_bench_press"
+      ]
+    },
+    {
+      "id": "chest_incline_push",
+      "name": "Chest Incline Press",
+      "primaryMuscles": [
+        "chest",
+        "shoulders"
+      ],
+      "movementPattern": "horizontalPush",
+      "description": "Incline and angled pressing variations that bias the upper chest and front delts.",
+      "exerciseIds": [
+        "incline_dumbbell_press",
+        "barbell_incline_press",
+        "landmine_press"
+      ]
+    },
+    {
+      "id": "chest_fly_isolation",
+      "name": "Chest Fly Isolation",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "movementPattern": "isolation",
+      "description": "Chest isolation movements built around a hugging or arcing motion rather than a press.",
+      "exerciseIds": [
+        "cable_fly",
+        "dumbbell_fly",
+        "cable_crossover",
+        "pec_deck"
+      ]
+    },
+    {
+      "id": "back_vertical_pull",
+      "name": "Back Vertical Pull",
+      "primaryMuscles": [
+        "back"
+      ],
+      "movementPattern": "verticalPull",
+      "description": "Lat-dominant vertical pulling movements, including bodyweight and cable options.",
+      "exerciseIds": [
+        "pull_up",
+        "lat_pulldown",
+        "chin_up"
+      ]
+    },
+    {
+      "id": "back_horizontal_pull",
+      "name": "Back Horizontal Row",
+      "primaryMuscles": [
+        "back"
+      ],
+      "movementPattern": "horizontalPull",
+      "description": "Rowing variations for the lats, mid-back, rear delts, and upper-back thickness.",
+      "exerciseIds": [
+        "barbell_row",
+        "seated_cable_row",
+        "dumbbell_row",
+        "t_bar_row",
+        "chest_supported_row",
+        "pendlay_row",
+        "cable_row",
+        "inverted_row"
+      ]
+    },
+    {
+      "id": "lat_isolation",
+      "name": "Lat Isolation",
+      "primaryMuscles": [
+        "back"
+      ],
+      "movementPattern": "isolation",
+      "description": "Straight-arm lat work that trains shoulder extension without heavy elbow flexion.",
+      "exerciseIds": [
+        "straight_arm_pulldown"
+      ]
+    },
+    {
+      "id": "rear_delt_upper_back",
+      "name": "Rear Delt & Upper Back",
+      "primaryMuscles": [
+        "shoulders",
+        "back",
+        "traps"
+      ],
+      "movementPattern": "horizontalPull",
+      "description": "Rear-delt, external-rotation, and upper-back movements for shoulder balance and posture.",
+      "exerciseIds": [
+        "face_pull",
+        "rear_delt_fly",
+        "reverse_pec_deck"
+      ]
+    },
+    {
+      "id": "quad_squat_pattern",
+      "name": "Quad Squat Pattern",
+      "primaryMuscles": [
+        "quads",
+        "glutes"
+      ],
+      "movementPattern": "squat",
+      "description": "Squat-pattern lower-body compounds where knee bend and quad drive are the main features.",
+      "exerciseIds": [
+        "squat",
+        "front_squat",
+        "leg_press",
+        "goblet_squat",
+        "box_squat"
+      ]
+    },
+    {
+      "id": "single_leg_quad_glute",
+      "name": "Single-Leg Quad & Glute",
+      "primaryMuscles": [
+        "quads",
+        "glutes"
+      ],
+      "movementPattern": "lunge",
+      "description": "Lunge, split-squat, and step-up variations for unilateral leg strength and balance.",
+      "exerciseIds": [
+        "walking_lunge",
+        "bulgarian_split_squat",
+        "step_up"
+      ]
+    },
+    {
+      "id": "hip_hinge_pattern",
+      "name": "Hip Hinge Pattern",
+      "primaryMuscles": [
+        "hamstrings",
+        "glutes",
+        "lowerBack"
+      ],
+      "movementPattern": "hinge",
+      "description": "Hinge movements that load the posterior chain through hip extension.",
+      "exerciseIds": [
+        "romanian_deadlift",
+        "deadlift",
+        "trap_bar_deadlift",
+        "sumo_deadlift",
+        "good_morning",
+        "kettlebell_swing",
+        "single_leg_rdl"
+      ]
+    },
+    {
+      "id": "glute_bridge_thrust",
+      "name": "Glute Bridge & Thrust",
+      "primaryMuscles": [
+        "glutes"
+      ],
+      "movementPattern": "hinge",
+      "description": "Hip-extension movements emphasizing glute contraction with a shorter, stable range of motion.",
+      "exerciseIds": [
+        "hip_thrust",
+        "glute_bridge"
+      ]
+    },
+    {
+      "id": "quad_isolation",
+      "name": "Quad Isolation",
+      "primaryMuscles": [
+        "quads"
+      ],
+      "movementPattern": "isolation",
+      "description": "Knee-extension work that isolates the quadriceps without heavy hip involvement.",
+      "exerciseIds": [
+        "leg_extension"
+      ]
+    },
+    {
+      "id": "hamstring_isolation",
+      "name": "Hamstring Isolation",
+      "primaryMuscles": [
+        "hamstrings"
+      ],
+      "movementPattern": "isolation",
+      "description": "Knee-flexion work that isolates the hamstrings.",
+      "exerciseIds": [
+        "leg_curl"
+      ]
+    },
+    {
+      "id": "calf_raise_pattern",
+      "name": "Calf Raise",
+      "primaryMuscles": [
+        "calves"
+      ],
+      "movementPattern": "isolation",
+      "description": "Ankle-extension work for the calves.",
+      "exerciseIds": [
+        "calf_raise"
+      ]
+    },
+    {
+      "id": "shoulder_vertical_push",
+      "name": "Shoulder Vertical Press",
+      "primaryMuscles": [
+        "shoulders"
+      ],
+      "movementPattern": "verticalPush",
+      "description": "Overhead and high-angle pressing variations for the shoulders and triceps.",
+      "exerciseIds": [
+        "dumbbell_shoulder_press",
+        "overhead_press",
+        "arnold_press",
+        "seated_dumbbell_press",
+        "push_press"
+      ]
+    },
+    {
+      "id": "shoulder_raise_isolation",
+      "name": "Shoulder Raise Isolation",
+      "primaryMuscles": [
+        "shoulders"
+      ],
+      "movementPattern": "isolation",
+      "description": "Front- and side-delt isolation exercises using controlled arm raises.",
+      "exerciseIds": [
+        "lateral_raise",
+        "front_raise"
+      ]
+    },
+    {
+      "id": "biceps_curl",
+      "name": "Biceps Curl",
+      "primaryMuscles": [
+        "biceps"
+      ],
+      "movementPattern": "isolation",
+      "description": "Curl variations that train elbow flexion, with some options adding forearm involvement.",
+      "exerciseIds": [
+        "barbell_curl",
+        "dumbbell_curl",
+        "hammer_curl",
+        "preacher_curl",
+        "ez_bar_curl"
+      ]
+    },
+    {
+      "id": "triceps_extension",
+      "name": "Triceps Extension",
+      "primaryMuscles": [
+        "triceps"
+      ],
+      "movementPattern": "isolation",
+      "description": "Triceps isolation movements that train elbow extension from cable, dumbbell, or barbell positions.",
+      "exerciseIds": [
+        "triceps_pushdown",
+        "rope_pushdown",
+        "skull_crusher",
+        "overhead_triceps_extension"
+      ]
+    },
+    {
+      "id": "triceps_compound_push",
+      "name": "Triceps Compound Push",
+      "primaryMuscles": [
+        "triceps",
+        "chest"
+      ],
+      "movementPattern": "horizontalPush",
+      "description": "Compound pushing movements that bias the triceps while still involving chest and shoulders.",
+      "exerciseIds": [
+        "close_grip_bench",
+        "dips"
+      ]
+    },
+    {
+      "id": "core_anti_movement",
+      "name": "Core Anti-Movement",
+      "primaryMuscles": [
+        "abs",
+        "obliques"
+      ],
+      "movementPattern": "antiRotation",
+      "description": "Core stability drills that resist extension, rotation, or side-bending rather than chasing motion.",
+      "exerciseIds": [
+        "plank",
+        "pallof_press",
+        "ab_wheel_rollout",
+        "dead_bug",
+        "bird_dog",
+        "side_plank"
+      ]
+    },
+    {
+      "id": "core_flexion_rotation",
+      "name": "Core Flexion & Rotation",
+      "primaryMuscles": [
+        "abs",
+        "obliques"
+      ],
+      "movementPattern": "rotation",
+      "description": "Core movements that use controlled trunk flexion, hip flexion, or rotation.",
+      "exerciseIds": [
+        "hanging_leg_raise",
+        "cable_crunch",
+        "russian_twist",
+        "medicine_ball_slam"
+      ]
+    },
+    {
+      "id": "loaded_carry_drive",
+      "name": "Loaded Carry & Drive",
+      "primaryMuscles": [
+        "forearms",
+        "traps",
+        "quads",
+        "glutes"
+      ],
+      "movementPattern": "carry",
+      "description": "Loaded movement patterns that build bracing, grip, conditioning, and total-body output.",
+      "exerciseIds": [
+        "farmers_carry",
+        "sled_push"
+      ]
+    },
+    {
+      "id": "hip_abduction_isolation",
+      "name": "Hip Abduction Isolation",
+      "primaryMuscles": [
+        "abductors",
+        "glutes"
+      ],
+      "movementPattern": "isolation",
+      "description": "Outer-hip isolation work that trains moving the legs away from the midline.",
+      "exerciseIds": [
+        "hip_abduction"
+      ]
+    },
+    {
+      "id": "hip_adduction_isolation",
+      "name": "Hip Adduction Isolation",
+      "primaryMuscles": [
+        "adductors"
+      ],
+      "movementPattern": "isolation",
+      "description": "Inner-thigh isolation work that trains bringing the legs toward the midline.",
+      "exerciseIds": [
+        "hip_adduction"
+      ]
+    },
+    {
+      "id": "forearm_wrist_isolation",
+      "name": "Forearm Wrist Isolation",
+      "primaryMuscles": [
+        "forearms"
+      ],
+      "movementPattern": "isolation",
+      "description": "Wrist-flexion and wrist-extension movements for direct forearm work.",
+      "exerciseIds": [
+        "wrist_curl",
+        "reverse_wrist_curl"
+      ]
+    },
+    {
+      "id": "trap_shrug",
+      "name": "Trap Shrug",
+      "primaryMuscles": [
+        "traps"
+      ],
+      "movementPattern": "isolation",
+      "description": "Shrug variations that train scapular elevation and upper-trap strength.",
+      "exerciseIds": [
+        "shrugs",
+        "dumbbell_shrugs"
+      ]
+    },
+    {
+      "id": "conditioning_cardio",
+      "name": "Conditioning & Cardio",
+      "primaryMuscles": [
+        "abs",
+        "shoulders",
+        "quads",
+        "back"
+      ],
+      "movementPattern": "cardio",
+      "description": "Conditioning movements and machines used for intervals, circuits, and metabolic finishers.",
+      "exerciseIds": [
+        "mountain_climber",
+        "battle_ropes",
+        "rower",
+        "assault_bike"
+      ]
+    }
+  ],
+  "exercises": {
+    "bench_press": {
+      "description": "A foundational barbell chest press for building pressing strength through the chest, shoulders, and triceps.",
+      "aliases": [
+        "BB Bench Press",
+        "Barbell Bench Press",
+        "Flat Bench Press",
+        "Chest Press"
+      ],
+      "substitutionGroupId": "chest_horizontal_push",
+      "instructions": [
+        "Lie on a flat bench with your eyes under the bar and your feet planted firmly on the floor.",
+        "Squeeze your shoulder blades together, keep your upper back tight, and grip the bar slightly wider than shoulder width.",
+        "Unrack the bar over your mid-chest, brace, and lower it under control toward the lower-to-mid chest.",
+        "Press the bar up and slightly back until your elbows are locked without bouncing or losing your shoulder position."
+      ],
+      "formCues": [
+        "Keep shoulder blades set against the bench or floor.",
+        "Press with wrists stacked over elbows.",
+        "Control the lowering phase before driving up."
+      ],
+      "commonMistakes": [
+        "Flaring elbows too wide.",
+        "Bouncing out of the bottom.",
+        "Losing shoulder position or letting hips lift."
+      ]
+    },
+    "incline_dumbbell_press": {
+      "description": "An upper-chest dumbbell press that allows each arm to move independently through a deep, controlled range.",
+      "aliases": [
+        "Incline DB Press",
+        "Incline Dumbbell Bench Press",
+        "Upper Chest Dumbbell Press"
+      ],
+      "substitutionGroupId": "chest_incline_push",
+      "instructions": [
+        "Set an adjustable bench to a low-to-moderate incline and sit with a dumbbell in each hand.",
+        "Lie back, plant your feet, and start with the dumbbells beside your upper chest.",
+        "Press the dumbbells upward while keeping your wrists stacked over your elbows.",
+        "Lower with control until you feel a chest stretch, then repeat without letting the shoulders shrug forward."
+      ],
+      "formCues": [
+        "Use a low-to-moderate incline rather than turning it into a shoulder press.",
+        "Keep ribs down and shoulder blades stable.",
+        "Press up and slightly back in a natural arc."
+      ],
+      "commonMistakes": [
+        "Setting the bench too steep.",
+        "Overarching the lower back.",
+        "Letting the weights drift too far forward."
+      ]
+    },
+    "push_up": {
+      "description": "A bodyweight horizontal press that trains the chest, shoulders, triceps, and core as one unit.",
+      "aliases": [
+        "Press-up",
+        "Bodyweight Push-up",
+        "Pushup"
+      ],
+      "substitutionGroupId": "chest_horizontal_push",
+      "instructions": [
+        "Start in a high plank with hands just outside shoulder width and feet set behind you.",
+        "Brace your abs and glutes so your body forms one straight line from head to heels.",
+        "Lower your chest toward the floor with elbows angled slightly back rather than flared straight out.",
+        "Press the floor away until your elbows are straight, keeping your hips and ribs from sagging."
+      ],
+      "formCues": [
+        "Keep shoulder blades set against the bench or floor.",
+        "Press with wrists stacked over elbows.",
+        "Control the lowering phase before driving up."
+      ],
+      "commonMistakes": [
+        "Flaring elbows too wide.",
+        "Bouncing out of the bottom.",
+        "Losing shoulder position or letting hips lift."
+      ]
+    },
+    "dumbbell_press": {
+      "description": "A flat dumbbell chest press that builds pressing strength while allowing a natural arm path.",
+      "aliases": [
+        "DB Bench Press",
+        "Dumbbell Bench Press",
+        "Flat Dumbbell Press"
+      ],
+      "substitutionGroupId": "chest_horizontal_push",
+      "instructions": [
+        "Sit on a flat bench with a dumbbell on each thigh, then lie back and bring the weights to chest level.",
+        "Plant your feet and pull your shoulder blades gently back and down.",
+        "Press the dumbbells upward until your arms are straight without clanking the weights together.",
+        "Lower until the dumbbells reach chest height or a comfortable stretch, then repeat under control."
+      ],
+      "formCues": [
+        "Keep shoulder blades set against the bench or floor.",
+        "Press with wrists stacked over elbows.",
+        "Control the lowering phase before driving up."
+      ],
+      "commonMistakes": [
+        "Flaring elbows too wide.",
+        "Bouncing out of the bottom.",
+        "Losing shoulder position or letting hips lift."
+      ]
+    },
+    "cable_fly": {
+      "description": "A cable chest isolation movement that keeps tension on the pecs through the entire fly arc.",
+      "aliases": [
+        "Cable Chest Fly",
+        "Standing Cable Fly",
+        "Cable Pec Fly"
+      ],
+      "substitutionGroupId": "chest_fly_isolation",
+      "instructions": [
+        "Set the cable pulleys around chest height and take one handle in each hand.",
+        "Step forward into a stable stance with a slight bend in the elbows and chest lifted.",
+        "Bring your hands together in a wide hugging motion, squeezing the chest at the finish.",
+        "Let the handles open back out under control without letting the shoulders roll forward."
+      ],
+      "formCues": [
+        "Keep a soft, fixed bend in the elbows.",
+        "Move in a wide hugging arc.",
+        "Stop the stretch before the shoulders roll forward."
+      ],
+      "commonMistakes": [
+        "Going too heavy and turning it into a press.",
+        "Dropping too deep into shoulder discomfort.",
+        "Changing elbow bend during the rep."
+      ]
+    },
+    "dumbbell_fly": {
+      "description": "A dumbbell chest fly that emphasizes a deep pec stretch and controlled adduction rather than heavy pressing.",
+      "aliases": [
+        "DB Fly",
+        "Flat Dumbbell Fly",
+        "Dumbbell Chest Fly"
+      ],
+      "substitutionGroupId": "chest_fly_isolation",
+      "instructions": [
+        "Lie on a flat bench with dumbbells held above your chest and palms facing each other.",
+        "Keep a soft bend in the elbows and set your shoulder blades against the bench.",
+        "Open your arms in a wide arc until you feel a comfortable chest stretch.",
+        "Squeeze the chest to bring the dumbbells back over the chest without turning it into a press."
+      ],
+      "formCues": [
+        "Keep a soft, fixed bend in the elbows.",
+        "Move in a wide hugging arc.",
+        "Stop the stretch before the shoulders roll forward."
+      ],
+      "commonMistakes": [
+        "Going too heavy and turning it into a press.",
+        "Dropping too deep into shoulder discomfort.",
+        "Changing elbow bend during the rep."
+      ]
+    },
+    "machine_chest_press": {
+      "description": "A guided chest press that gives a stable pressing path and is easy to load progressively.",
+      "aliases": [
+        "Chest Press Machine",
+        "Seated Chest Press",
+        "Machine Press"
+      ],
+      "substitutionGroupId": "chest_horizontal_push",
+      "instructions": [
+        "Adjust the seat so the handles line up with your mid-chest.",
+        "Sit tall with your back against the pad and feet planted.",
+        "Press the handles forward until your arms are nearly straight without shrugging.",
+        "Return slowly until your elbows come slightly behind the body or the machine reaches its safe stop."
+      ],
+      "formCues": [
+        "Keep shoulder blades set against the bench or floor.",
+        "Press with wrists stacked over elbows.",
+        "Control the lowering phase before driving up."
+      ],
+      "commonMistakes": [
+        "Flaring elbows too wide.",
+        "Bouncing out of the bottom.",
+        "Losing shoulder position or letting hips lift."
+      ]
+    },
+    "decline_bench_press": {
+      "description": "A decline barbell press that shifts emphasis toward the lower chest while still training heavy pressing strength.",
+      "aliases": [
+        "Decline Barbell Press",
+        "Decline Chest Press",
+        "Decline Bench"
+      ],
+      "substitutionGroupId": "chest_horizontal_push",
+      "instructions": [
+        "Secure your legs on the decline bench and lie back with your eyes under the bar.",
+        "Grip slightly wider than shoulder width and pull the shoulder blades back into the bench.",
+        "Unrack the bar and lower it with control toward the lower chest.",
+        "Press back to the start without bouncing or letting the shoulders slide forward."
+      ],
+      "formCues": [
+        "Keep shoulder blades set against the bench or floor.",
+        "Press with wrists stacked over elbows.",
+        "Control the lowering phase before driving up."
+      ],
+      "commonMistakes": [
+        "Flaring elbows too wide.",
+        "Bouncing out of the bottom.",
+        "Losing shoulder position or letting hips lift."
+      ]
+    },
+    "pull_up": {
+      "description": "A bodyweight vertical pull for the lats and upper back using an overhand grip.",
+      "aliases": [
+        "Pullup",
+        "Overhand Pull-up",
+        "Bodyweight Pull-up"
+      ],
+      "substitutionGroupId": "back_vertical_pull",
+      "instructions": [
+        "Hang from a pull-up bar with an overhand grip slightly wider than shoulder width.",
+        "Brace your abs and start the pull by driving your elbows down toward your ribs.",
+        "Pull until your chin clears the bar or your upper chest approaches it.",
+        "Lower with control to a full hang, keeping the rep smooth instead of swinging."
+      ],
+      "formCues": [
+        "Initiate by driving elbows down, not by shrugging.",
+        "Keep the chest proud and ribs controlled.",
+        "Lower to a full controlled stretch."
+      ],
+      "commonMistakes": [
+        "Pulling with the biceps only.",
+        "Swinging or using body English.",
+        "Stopping short of a controlled stretch."
+      ]
+    },
+    "lat_pulldown": {
+      "description": "A cable vertical pull that trains the lats with adjustable resistance and a stable seated setup.",
+      "aliases": [
+        "Pulldown",
+        "Cable Lat Pulldown",
+        "Wide-Grip Pulldown"
+      ],
+      "substitutionGroupId": "back_vertical_pull",
+      "instructions": [
+        "Adjust the thigh pad so your legs are secure and grip the bar slightly wider than shoulder width.",
+        "Sit tall, lean back slightly, and keep your ribs down.",
+        "Pull the bar toward your upper chest by driving elbows down and back.",
+        "Return the bar upward with control until the arms are long and the lats stretch."
+      ],
+      "formCues": [
+        "Initiate by driving elbows down, not by shrugging.",
+        "Keep the chest proud and ribs controlled.",
+        "Lower to a full controlled stretch."
+      ],
+      "commonMistakes": [
+        "Pulling with the biceps only.",
+        "Swinging or using body English.",
+        "Stopping short of a controlled stretch."
+      ]
+    },
+    "barbell_row": {
+      "description": "A loaded horizontal pull for building back thickness, hip-hinge strength, and upper-back control.",
+      "aliases": [
+        "Bent-Over Row",
+        "Barbell Bent-Over Row",
+        "BB Row"
+      ],
+      "substitutionGroupId": "back_horizontal_pull",
+      "instructions": [
+        "Stand with the barbell in your hands and hinge at the hips until your torso is angled forward.",
+        "Brace your core, keep the spine neutral, and let the bar hang below your shoulders.",
+        "Row the bar toward your lower ribs by pulling elbows back.",
+        "Lower under control without standing up or bouncing the bar."
+      ],
+      "formCues": [
+        "Row elbows toward the hips or lower ribs.",
+        "Keep the torso stable throughout the rep.",
+        "Squeeze the back without yanking with the arms."
+      ],
+      "commonMistakes": [
+        "Jerking the weight with momentum.",
+        "Rounding the back or craning the neck.",
+        "Shrugging instead of rowing."
+      ]
+    },
+    "seated_cable_row": {
+      "description": "A stable cable row that trains the lats and mid-back through a smooth horizontal pull.",
+      "aliases": [
+        "Seated Row",
+        "Cable Seated Row",
+        "Machine Cable Row"
+      ],
+      "substitutionGroupId": "back_horizontal_pull",
+      "instructions": [
+        "Sit at the cable row with feet supported and knees slightly bent.",
+        "Hold the handle with arms extended and torso tall, then brace your trunk.",
+        "Pull the handle toward your lower ribs while squeezing the shoulder blades back.",
+        "Return slowly until the arms are long without collapsing your posture."
+      ],
+      "formCues": [
+        "Row elbows toward the hips or lower ribs.",
+        "Keep the torso stable throughout the rep.",
+        "Squeeze the back without yanking with the arms."
+      ],
+      "commonMistakes": [
+        "Jerking the weight with momentum.",
+        "Rounding the back or craning the neck.",
+        "Shrugging instead of rowing."
+      ]
+    },
+    "dumbbell_row": {
+      "description": "A single-arm dumbbell row that targets the lats and mid-back with support from a bench.",
+      "aliases": [
+        "One-Arm Row",
+        "Single-Arm Dumbbell Row",
+        "DB Row"
+      ],
+      "substitutionGroupId": "back_horizontal_pull",
+      "instructions": [
+        "Place one hand and knee on a bench, with the opposite foot planted and a dumbbell hanging below the shoulder.",
+        "Keep your torso stable and your spine long.",
+        "Row the dumbbell toward your hip by driving the elbow back.",
+        "Lower until the arm is long and the lat stretches, then repeat without twisting your torso."
+      ],
+      "formCues": [
+        "Row elbows toward the hips or lower ribs.",
+        "Keep the torso stable throughout the rep.",
+        "Squeeze the back without yanking with the arms."
+      ],
+      "commonMistakes": [
+        "Jerking the weight with momentum.",
+        "Rounding the back or craning the neck.",
+        "Shrugging instead of rowing."
+      ]
+    },
+    "t_bar_row": {
+      "description": "A heavy row variation using a T-bar or landmine setup to train the lats, mid-back, and traps.",
+      "aliases": [
+        "T Bar Row",
+        "Landmine Row",
+        "T-Bar Machine Row"
+      ],
+      "substitutionGroupId": "back_horizontal_pull",
+      "instructions": [
+        "Set up on the T-bar row platform or straddle a landmine bar with a suitable handle.",
+        "Hinge at the hips, brace, and keep your chest proud.",
+        "Row the handle toward your lower chest or upper abdomen.",
+        "Lower with control until the arms are extended without rounding the back."
+      ],
+      "formCues": [
+        "Row elbows toward the hips or lower ribs.",
+        "Keep the torso stable throughout the rep.",
+        "Squeeze the back without yanking with the arms."
+      ],
+      "commonMistakes": [
+        "Jerking the weight with momentum.",
+        "Rounding the back or craning the neck.",
+        "Shrugging instead of rowing."
+      ]
+    },
+    "face_pull": {
+      "description": "A cable upper-back and rear-delt movement that reinforces shoulder external rotation and posture.",
+      "aliases": [
+        "Rope Face Pull",
+        "Cable Face Pull",
+        "Rear Delt Face Pull"
+      ],
+      "substitutionGroupId": "rear_delt_upper_back",
+      "instructions": [
+        "Attach a rope to a cable at upper-chest or face height and hold one end in each hand.",
+        "Step back, set your ribs down, and start with arms extended.",
+        "Pull the rope toward your face while separating the hands and rotating the thumbs back.",
+        "Pause briefly, then return under control without letting the shoulders shrug."
+      ],
+      "formCues": [
+        "Lead with elbows and rear delts.",
+        "Keep shoulders down away from the ears.",
+        "Use light enough weight to pause at the contracted position."
+      ],
+      "commonMistakes": [
+        "Using traps instead of rear delts.",
+        "Going too heavy and losing the path.",
+        "Arching the back to finish reps."
+      ]
+    },
+    "chest_supported_row": {
+      "description": "A supported row that removes most lower-back demand so the upper back can be trained hard and cleanly.",
+      "aliases": [
+        "Incline Bench Row",
+        "Chest-Supported Dumbbell Row",
+        "Supported Row"
+      ],
+      "substitutionGroupId": "back_horizontal_pull",
+      "instructions": [
+        "Set an incline bench or machine so your chest is supported throughout the row.",
+        "Let the weights hang under your shoulders with your neck neutral.",
+        "Row by pulling elbows back and squeezing the shoulder blades together.",
+        "Lower slowly until the arms are long without lifting your chest off the pad."
+      ],
+      "formCues": [
+        "Row elbows toward the hips or lower ribs.",
+        "Keep the torso stable throughout the rep.",
+        "Squeeze the back without yanking with the arms."
+      ],
+      "commonMistakes": [
+        "Jerking the weight with momentum.",
+        "Rounding the back or craning the neck.",
+        "Shrugging instead of rowing."
+      ]
+    },
+    "squat": {
+      "description": "A barbell back squat for building lower-body strength through the quads, glutes, and trunk.",
+      "aliases": [
+        "Back Squat",
+        "Barbell Back Squat",
+        "BB Squat"
+      ],
+      "substitutionGroupId": "quad_squat_pattern",
+      "instructions": [
+        "Set the bar securely on your upper back and step out with feet about shoulder width apart.",
+        "Brace your core, keep the chest proud, and unlock hips and knees together.",
+        "Squat down with knees tracking over toes until you reach your controlled depth.",
+        "Drive through the mid-foot to stand tall without letting the knees cave in."
+      ],
+      "formCues": [
+        "Brace before each rep.",
+        "Track knees in line with toes.",
+        "Keep pressure through the mid-foot."
+      ],
+      "commonMistakes": [
+        "Knees collapsing inward.",
+        "Heels lifting off the floor or platform.",
+        "Losing brace at the bottom."
+      ]
+    },
+    "front_squat": {
+      "description": "A front-loaded squat that emphasizes the quads, upright torso strength, and core bracing.",
+      "aliases": [
+        "Barbell Front Squat",
+        "Front Rack Squat",
+        "Clean-Grip Front Squat"
+      ],
+      "substitutionGroupId": "quad_squat_pattern",
+      "instructions": [
+        "Set the bar in the front rack across the shoulders with elbows high.",
+        "Stand with feet around shoulder width and brace hard through the trunk.",
+        "Descend by bending knees and hips while keeping the torso upright.",
+        "Drive up through the mid-foot, keeping elbows lifted so the bar does not roll forward."
+      ],
+      "formCues": [
+        "Brace before each rep.",
+        "Track knees in line with toes.",
+        "Keep pressure through the mid-foot."
+      ],
+      "commonMistakes": [
+        "Knees collapsing inward.",
+        "Heels lifting off the floor or platform.",
+        "Losing brace at the bottom."
+      ]
+    },
+    "leg_press": {
+      "description": "A machine squat-pattern movement that loads the quads and glutes with a supported torso.",
+      "aliases": [
+        "45-Degree Leg Press",
+        "Machine Leg Press",
+        "Leg Press Machine"
+      ],
+      "substitutionGroupId": "quad_squat_pattern",
+      "instructions": [
+        "Sit in the leg press with your back and hips firmly against the pad.",
+        "Place your feet on the platform around shoulder width and unlock the safety handles.",
+        "Lower the platform until your knees bend deeply while your hips stay on the pad.",
+        "Press through the mid-foot to extend the legs without locking the knees aggressively."
+      ],
+      "formCues": [
+        "Brace before each rep.",
+        "Track knees in line with toes.",
+        "Keep pressure through the mid-foot."
+      ],
+      "commonMistakes": [
+        "Knees collapsing inward.",
+        "Heels lifting off the floor or platform.",
+        "Losing brace at the bottom."
+      ]
+    },
+    "romanian_deadlift": {
+      "description": "A hip-hinge movement that emphasizes hamstring loading, glute tension, and controlled eccentric strength.",
+      "aliases": [
+        "RDL",
+        "Barbell RDL",
+        "Romanian DL"
+      ],
+      "substitutionGroupId": "hip_hinge_pattern",
+      "instructions": [
+        "Stand tall holding the barbell in front of your thighs with a slight bend in the knees.",
+        "Brace and push your hips back while keeping the bar close to your legs.",
+        "Lower until you feel a strong hamstring stretch without rounding your back.",
+        "Drive the hips forward to stand tall, squeezing the glutes at the top."
+      ],
+      "formCues": [
+        "Push hips back before bending more at the knees.",
+        "Keep the load close to your body.",
+        "Stand by driving hips through, not by leaning back."
+      ],
+      "commonMistakes": [
+        "Rounding the lower back.",
+        "Letting the load drift away from the body.",
+        "Squatting the movement instead of hinging."
+      ]
+    },
+    "deadlift": {
+      "description": "A heavy floor pull that trains the posterior chain, trunk, grip, and total-body strength.",
+      "aliases": [
+        "Conventional Deadlift",
+        "Barbell Deadlift",
+        "Deadlift"
+      ],
+      "substitutionGroupId": "hip_hinge_pattern",
+      "instructions": [
+        "Stand with the bar over your mid-foot and your feet about hip width apart.",
+        "Hinge down, grip the bar, and pull your chest up until the back is tight and the arms are straight.",
+        "Push the floor away and stand up with the bar staying close to your legs.",
+        "Return the bar to the floor with control by hinging the hips back and bending the knees as needed."
+      ],
+      "formCues": [
+        "Take the slack out of the bar before it leaves the floor.",
+        "Push the floor away rather than yanking with the back.",
+        "Keep the bar close from floor to lockout."
+      ],
+      "commonMistakes": [
+        "Yanking the bar before getting tight.",
+        "Letting hips shoot up before the chest.",
+        "Finishing by leaning back excessively."
+      ]
+    },
+    "hip_thrust": {
+      "description": "A loaded glute movement that trains powerful hip extension with the upper back supported on a bench.",
+      "aliases": [
+        "Barbell Hip Thrust",
+        "Weighted Hip Thrust",
+        "Glute Hip Thrust"
+      ],
+      "substitutionGroupId": "glute_bridge_thrust",
+      "instructions": [
+        "Sit with your upper back against a bench and the barbell padded across your hips.",
+        "Set your feet around hip width so your shins are near vertical at the top.",
+        "Brace and drive through your heels to lift the hips until your torso is roughly parallel to the floor.",
+        "Squeeze the glutes at the top, then lower under control without overextending the lower back."
+      ],
+      "formCues": [
+        "Finish with glutes, not lower back.",
+        "Keep ribs down at the top.",
+        "Use a strong heel or mid-foot drive."
+      ],
+      "commonMistakes": [
+        "Overarching the lower back at the top.",
+        "Feet placed too far away to use the glutes well.",
+        "Bouncing reps without a glute squeeze."
+      ]
+    },
+    "walking_lunge": {
+      "description": "A dynamic single-leg movement that trains quads, glutes, balance, and coordination.",
+      "aliases": [
+        "Forward Walking Lunge",
+        "DB Walking Lunge",
+        "Bodyweight Walking Lunge"
+      ],
+      "substitutionGroupId": "single_leg_quad_glute",
+      "instructions": [
+        "Stand tall with bodyweight or dumbbells at your sides.",
+        "Step forward and lower until both knees bend, keeping the front knee tracking over the toes.",
+        "Drive through the front foot to stand and bring the back leg forward into the next rep.",
+        "Continue alternating legs while keeping your torso controlled and upright."
+      ],
+      "formCues": [
+        "Let the front leg do the work.",
+        "Keep hips square and torso controlled.",
+        "Drive through the whole foot, not just the toes."
+      ],
+      "commonMistakes": [
+        "Pushing mainly off the back leg.",
+        "Letting the front knee cave inward.",
+        "Rushing the descent and losing balance."
+      ]
+    },
+    "bulgarian_split_squat": {
+      "description": "A rear-foot-elevated split squat that heavily loads the front-leg quads and glutes.",
+      "aliases": [
+        "Rear-Foot-Elevated Split Squat",
+        "RFESS",
+        "Bulgarian Squat"
+      ],
+      "substitutionGroupId": "single_leg_quad_glute",
+      "instructions": [
+        "Stand a stride in front of a bench and place the top of your rear foot on it.",
+        "Square your hips and keep most of your weight on the front foot.",
+        "Lower under control until the front thigh approaches parallel or your comfortable depth.",
+        "Drive through the front foot to return to standing without pushing off the rear leg."
+      ],
+      "formCues": [
+        "Let the front leg do the work.",
+        "Keep hips square and torso controlled.",
+        "Drive through the whole foot, not just the toes."
+      ],
+      "commonMistakes": [
+        "Pushing mainly off the back leg.",
+        "Letting the front knee cave inward.",
+        "Rushing the descent and losing balance."
+      ]
+    },
+    "leg_extension": {
+      "description": "A machine knee-extension movement that directly targets the quadriceps.",
+      "aliases": [
+        "Quad Extension",
+        "Machine Leg Extension",
+        "Knee Extension"
+      ],
+      "substitutionGroupId": "quad_isolation",
+      "instructions": [
+        "Adjust the machine so your knees line up with the pivot and the pad rests above your ankles.",
+        "Sit back firmly and hold the handles for stability.",
+        "Extend your knees until the legs are straight and the quads are squeezed.",
+        "Lower slowly back to the starting position without letting the stack slam."
+      ],
+      "formCues": [
+        "Line your knees up with the machine pivot.",
+        "Squeeze the quads at the top.",
+        "Control the weight on the way down."
+      ],
+      "commonMistakes": [
+        "Lifting hips off the seat.",
+        "Swinging the weight up.",
+        "Letting the stack slam between reps."
+      ]
+    },
+    "leg_curl": {
+      "description": "A machine hamstring isolation exercise that trains knee flexion through a controlled range.",
+      "aliases": [
+        "Hamstring Curl",
+        "Machine Leg Curl",
+        "Lying Leg Curl",
+        "Seated Leg Curl"
+      ],
+      "substitutionGroupId": "hamstring_isolation",
+      "instructions": [
+        "Adjust the machine so the knee joint lines up with the pivot point.",
+        "Set the pad just above your heels or ankles and keep your hips anchored.",
+        "Curl the pad toward your body by bending the knees and squeezing the hamstrings.",
+        "Return slowly until the legs are extended without losing tension."
+      ],
+      "formCues": [
+        "Keep hips anchored to the pad.",
+        "Curl smoothly without jerking.",
+        "Control the return to full length."
+      ],
+      "commonMistakes": [
+        "Hips lifting off the pad.",
+        "Using momentum to curl.",
+        "Cutting the eccentric short."
+      ]
+    },
+    "calf_raise": {
+      "description": "A standing calf movement that trains ankle extension and lower-leg strength.",
+      "aliases": [
+        "Standing Calf Raise",
+        "Calf Raises",
+        "Machine Calf Raise"
+      ],
+      "substitutionGroupId": "calf_raise_pattern",
+      "instructions": [
+        "Stand with the balls of your feet on the platform and heels free to move.",
+        "Keep your knees mostly straight and hold the support handles if available.",
+        "Rise onto the balls of your feet and squeeze the calves at the top.",
+        "Lower the heels under control until you feel a calf stretch, then repeat."
+      ],
+      "formCues": [
+        "Pause briefly at the top.",
+        "Lower into a full controlled stretch.",
+        "Keep pressure through the big toe and second toe."
+      ],
+      "commonMistakes": [
+        "Bouncing through the Achilles tendon.",
+        "Skipping the bottom stretch.",
+        "Letting ankles roll outward."
+      ]
+    },
+    "dumbbell_shoulder_press": {
+      "description": "A dumbbell overhead press for shoulder strength with each arm moving independently.",
+      "aliases": [
+        "DB Shoulder Press",
+        "Dumbbell Overhead Press",
+        "Standing Dumbbell Press"
+      ],
+      "substitutionGroupId": "shoulder_vertical_push",
+      "instructions": [
+        "Hold a dumbbell at each shoulder with palms facing forward or slightly inward.",
+        "Brace your abs and keep ribs stacked over hips.",
+        "Press the dumbbells overhead until your arms are straight and biceps are near your ears.",
+        "Lower back to shoulder height under control without arching your lower back."
+      ],
+      "formCues": [
+        "Brace ribs down before pressing.",
+        "Finish with biceps near ears.",
+        "Press without shrugging into your neck."
+      ],
+      "commonMistakes": [
+        "Leaning back excessively.",
+        "Pressing with wrists bent back.",
+        "Shrugging before the arms finish."
+      ]
+    },
+    "overhead_press": {
+      "description": "A strict barbell overhead press that builds shoulders, triceps, and standing trunk strength.",
+      "aliases": [
+        "OHP",
+        "Standing Press",
+        "Barbell Overhead Press",
+        "Military Press"
+      ],
+      "substitutionGroupId": "shoulder_vertical_push",
+      "instructions": [
+        "Set the bar at upper-chest height and grip just outside shoulder width.",
+        "Unrack with the bar on the front of the shoulders, brace, and squeeze the glutes.",
+        "Press the bar upward, moving your head slightly back so the bar can travel straight.",
+        "Lock out overhead, then lower the bar to the shoulders under control."
+      ],
+      "formCues": [
+        "Brace ribs down before pressing.",
+        "Finish with biceps near ears.",
+        "Press without shrugging into your neck."
+      ],
+      "commonMistakes": [
+        "Leaning back excessively.",
+        "Pressing with wrists bent back.",
+        "Shrugging before the arms finish."
+      ]
+    },
+    "lateral_raise": {
+      "description": "A side-delt isolation movement that builds shoulder width with light, controlled raises.",
+      "aliases": [
+        "Side Raise",
+        "Dumbbell Lateral Raise",
+        "DB Lateral Raise"
+      ],
+      "substitutionGroupId": "shoulder_raise_isolation",
+      "instructions": [
+        "Stand holding dumbbells at your sides with a slight bend in the elbows.",
+        "Brace and raise the arms out to the sides until they reach about shoulder height.",
+        "Lead with the elbows and keep the shoulders down away from the ears.",
+        "Lower slowly without swinging the weights into the next rep."
+      ],
+      "formCues": [
+        "Lead with the elbows.",
+        "Use a controlled tempo.",
+        "Stop around shoulder height unless mobility allows more."
+      ],
+      "commonMistakes": [
+        "Swinging the weights.",
+        "Shrugging up into the neck.",
+        "Using weights too heavy for control."
+      ]
+    },
+    "front_raise": {
+      "description": "A front-delt isolation movement using controlled shoulder flexion.",
+      "aliases": [
+        "Dumbbell Front Raise",
+        "DB Front Raise",
+        "Anterior Delt Raise"
+      ],
+      "substitutionGroupId": "shoulder_raise_isolation",
+      "instructions": [
+        "Stand tall with dumbbells in front of your thighs.",
+        "Brace your core and keep a soft bend in the elbows.",
+        "Raise the weights in front of you to about shoulder height.",
+        "Lower slowly without leaning back or swinging."
+      ],
+      "formCues": [
+        "Lead with the elbows.",
+        "Use a controlled tempo.",
+        "Stop around shoulder height unless mobility allows more."
+      ],
+      "commonMistakes": [
+        "Swinging the weights.",
+        "Shrugging up into the neck.",
+        "Using weights too heavy for control."
+      ]
+    },
+    "rear_delt_fly": {
+      "description": "A rear-delt isolation movement that trains shoulder extension and upper-back control.",
+      "aliases": [
+        "Rear Delt Raise",
+        "Bent-Over Reverse Fly",
+        "Reverse Fly"
+      ],
+      "substitutionGroupId": "rear_delt_upper_back",
+      "instructions": [
+        "Hinge forward with dumbbells hanging below your shoulders or set up on cables.",
+        "Keep a soft bend in the elbows and your neck neutral.",
+        "Raise the arms out to the sides until the rear delts and upper back contract.",
+        "Lower slowly without turning the movement into a row."
+      ],
+      "formCues": [
+        "Lead with elbows and rear delts.",
+        "Keep shoulders down away from the ears.",
+        "Use light enough weight to pause at the contracted position."
+      ],
+      "commonMistakes": [
+        "Using traps instead of rear delts.",
+        "Going too heavy and losing the path.",
+        "Arching the back to finish reps."
+      ]
+    },
+    "arnold_press": {
+      "description": "A rotating dumbbell shoulder press that combines front-delt loading with overhead pressing.",
+      "aliases": [
+        "Arnold Dumbbell Press",
+        "Rotating Shoulder Press",
+        "Arnold DB Press"
+      ],
+      "substitutionGroupId": "shoulder_vertical_push",
+      "instructions": [
+        "Start seated or standing with dumbbells in front of your shoulders, palms facing you.",
+        "Brace your trunk and begin pressing while rotating the palms forward.",
+        "Finish overhead with arms straight and shoulders controlled.",
+        "Reverse the motion slowly back to the front-rack start position."
+      ],
+      "formCues": [
+        "Brace ribs down before pressing.",
+        "Finish with biceps near ears.",
+        "Press without shrugging into your neck."
+      ],
+      "commonMistakes": [
+        "Leaning back excessively.",
+        "Pressing with wrists bent back.",
+        "Shrugging before the arms finish."
+      ]
+    },
+    "barbell_curl": {
+      "description": "A classic two-arm curl for loading the biceps with a stable bar path.",
+      "aliases": [
+        "BB Curl",
+        "Straight Bar Curl",
+        "Barbell Biceps Curl"
+      ],
+      "substitutionGroupId": "biceps_curl",
+      "instructions": [
+        "Stand tall holding a barbell with an underhand grip around shoulder width.",
+        "Keep elbows close to your sides and brace your torso.",
+        "Curl the bar upward by bending the elbows until the biceps are fully contracted.",
+        "Lower slowly to straight arms without swinging your hips."
+      ],
+      "formCues": [
+        "Keep elbows close to the torso.",
+        "Use a full squeeze at the top.",
+        "Lower slowly to straight arms."
+      ],
+      "commonMistakes": [
+        "Swinging the torso.",
+        "Letting elbows drift far forward.",
+        "Only performing the top half of the rep."
+      ]
+    },
+    "dumbbell_curl": {
+      "description": "A dumbbell biceps curl that allows each arm to work independently with a natural wrist position.",
+      "aliases": [
+        "DB Curl",
+        "Dumbbell Biceps Curl",
+        "Alternating Dumbbell Curl"
+      ],
+      "substitutionGroupId": "biceps_curl",
+      "instructions": [
+        "Stand or sit with a dumbbell in each hand and arms hanging at your sides.",
+        "Keep elbows close to the ribs and shoulders relaxed.",
+        "Curl the dumbbells up while turning the palms upward if using a supinated curl.",
+        "Lower with control until the arms are straight."
+      ],
+      "formCues": [
+        "Keep elbows close to the torso.",
+        "Use a full squeeze at the top.",
+        "Lower slowly to straight arms."
+      ],
+      "commonMistakes": [
+        "Swinging the torso.",
+        "Letting elbows drift far forward.",
+        "Only performing the top half of the rep."
+      ]
+    },
+    "hammer_curl": {
+      "description": "A neutral-grip curl that trains the biceps, brachialis, and forearms.",
+      "aliases": [
+        "DB Hammer Curl",
+        "Neutral-Grip Curl",
+        "Hammer Curls"
+      ],
+      "substitutionGroupId": "biceps_curl",
+      "instructions": [
+        "Hold dumbbells at your sides with palms facing each other.",
+        "Keep the upper arms still and elbows close to your torso.",
+        "Curl the dumbbells upward while maintaining the neutral grip.",
+        "Lower slowly without letting the shoulders roll forward."
+      ],
+      "formCues": [
+        "Keep elbows close to the torso.",
+        "Use a full squeeze at the top.",
+        "Lower slowly to straight arms."
+      ],
+      "commonMistakes": [
+        "Swinging the torso.",
+        "Letting elbows drift far forward.",
+        "Only performing the top half of the rep."
+      ]
+    },
+    "preacher_curl": {
+      "description": "A supported curl that locks the upper arms in place and makes the biceps work through a strict range.",
+      "aliases": [
+        "Preacher Bench Curl",
+        "Dumbbell Preacher Curl",
+        "Supported Curl"
+      ],
+      "substitutionGroupId": "biceps_curl",
+      "instructions": [
+        "Set your upper arms on the preacher pad with the elbows supported.",
+        "Start with the arm nearly straight while keeping the shoulder settled.",
+        "Curl the weight upward until the biceps contract hard.",
+        "Lower slowly without relaxing at the bottom or lifting the upper arm off the pad."
+      ],
+      "formCues": [
+        "Keep elbows close to the torso.",
+        "Use a full squeeze at the top.",
+        "Lower slowly to straight arms."
+      ],
+      "commonMistakes": [
+        "Swinging the torso.",
+        "Letting elbows drift far forward.",
+        "Only performing the top half of the rep."
+      ]
+    },
+    "triceps_pushdown": {
+      "description": "A cable triceps isolation movement that trains elbow extension with steady tension.",
+      "aliases": [
+        "Cable Pushdown",
+        "Tricep Pushdown",
+        "Straight-Bar Pushdown"
+      ],
+      "substitutionGroupId": "triceps_extension",
+      "instructions": [
+        "Attach a bar or handle to a high cable and stand close to the stack.",
+        "Pin your elbows by your sides and set your shoulders down.",
+        "Push the handle down until the elbows are fully extended and the triceps squeeze.",
+        "Return under control until the forearms rise without the elbows drifting forward."
+      ],
+      "formCues": [
+        "Keep upper arms as still as possible.",
+        "Reach full elbow extension at the finish.",
+        "Control the stretch without letting shoulders take over."
+      ],
+      "commonMistakes": [
+        "Letting elbows flare or drift.",
+        "Turning the movement into a press.",
+        "Rushing the stretched position."
+      ]
+    },
+    "skull_crusher": {
+      "description": "A lying triceps extension that loads elbow extension with the upper arms held mostly still.",
+      "aliases": [
+        "Lying Triceps Extension",
+        "EZ-Bar Skull Crusher",
+        "Skullcrushers"
+      ],
+      "substitutionGroupId": "triceps_extension",
+      "instructions": [
+        "Lie on a bench holding a bar above your chest with arms straight.",
+        "Angle your upper arms slightly back and keep them fixed.",
+        "Bend the elbows to lower the bar toward the forehead or just behind the head.",
+        "Extend the elbows to return to the start without flaring the upper arms."
+      ],
+      "formCues": [
+        "Keep upper arms as still as possible.",
+        "Reach full elbow extension at the finish.",
+        "Control the stretch without letting shoulders take over."
+      ],
+      "commonMistakes": [
+        "Letting elbows flare or drift.",
+        "Turning the movement into a press.",
+        "Rushing the stretched position."
+      ]
+    },
+    "overhead_triceps_extension": {
+      "description": "An overhead triceps movement that emphasizes the long head of the triceps in a stretched position.",
+      "aliases": [
+        "Overhead DB Extension",
+        "Dumbbell Triceps Extension",
+        "Seated Overhead Extension"
+      ],
+      "substitutionGroupId": "triceps_extension",
+      "instructions": [
+        "Hold a dumbbell overhead with both hands or one hand depending on the variation.",
+        "Keep your ribs down and elbows pointing mostly forward.",
+        "Lower the weight behind your head by bending the elbows.",
+        "Extend the elbows to raise the weight back overhead without arching your back."
+      ],
+      "formCues": [
+        "Keep upper arms as still as possible.",
+        "Reach full elbow extension at the finish.",
+        "Control the stretch without letting shoulders take over."
+      ],
+      "commonMistakes": [
+        "Letting elbows flare or drift.",
+        "Turning the movement into a press.",
+        "Rushing the stretched position."
+      ]
+    },
+    "dips": {
+      "description": "A bodyweight compound press that can bias the triceps or chest depending on torso angle.",
+      "aliases": [
+        "Bodyweight Dips",
+        "Parallel Bar Dips",
+        "Bench Dips"
+      ],
+      "substitutionGroupId": "triceps_compound_push",
+      "instructions": [
+        "Support yourself on parallel bars or a bench with arms straight and shoulders controlled.",
+        "Brace and lower by bending the elbows, keeping the shoulders from shrugging up.",
+        "Descend only as far as your shoulders tolerate comfortably.",
+        "Press back up to straight arms without bouncing at the bottom."
+      ],
+      "formCues": [
+        "Keep elbows tracking close to the body.",
+        "Use a controlled bottom position.",
+        "Press to lockout without losing shoulder position."
+      ],
+      "commonMistakes": [
+        "Flaring elbows too wide.",
+        "Dropping into shoulder discomfort.",
+        "Using partial reps without control."
+      ]
+    },
+    "plank": {
+      "description": "A core stability hold that trains the abs to resist spinal extension.",
+      "aliases": [
+        "Forearm Plank",
+        "Front Plank",
+        "Elbow Plank"
+      ],
+      "substitutionGroupId": "core_anti_movement",
+      "instructions": [
+        "Set your forearms on the floor with elbows under shoulders and legs extended behind you.",
+        "Brace your abs, squeeze your glutes, and create a straight line from head to heels.",
+        "Hold the position while breathing slowly and keeping the ribs pulled down.",
+        "Stop the set when your hips sag, your lower back arches, or you lose tension."
+      ],
+      "formCues": [
+        "Brace as if resisting movement.",
+        "Keep ribs stacked over pelvis.",
+        "Breathe without losing tension."
+      ],
+      "commonMistakes": [
+        "Holding breath the entire time.",
+        "Letting ribs flare or hips sag.",
+        "Choosing a version too advanced to control."
+      ]
+    },
+    "hanging_leg_raise": {
+      "description": "A hanging core exercise that trains the abs and hip flexors while challenging grip and body control.",
+      "aliases": [
+        "Hanging Knee Raise",
+        "Hanging Leg Raises",
+        "Toes-to-Bar Progression"
+      ],
+      "substitutionGroupId": "core_flexion_rotation",
+      "instructions": [
+        "Hang from a pull-up bar with shoulders active and legs together.",
+        "Brace your abs and slightly tuck the pelvis before lifting the legs.",
+        "Raise knees or straight legs toward the chest without swinging.",
+        "Lower under control to a still hang before starting the next rep."
+      ],
+      "formCues": [
+        "Move through the trunk, not just the arms.",
+        "Keep the motion controlled.",
+        "Stop before the lower back takes over."
+      ],
+      "commonMistakes": [
+        "Using momentum instead of abdominal control.",
+        "Pulling on the neck or shoulders.",
+        "Arching the lower back between reps."
+      ]
+    },
+    "cable_crunch": {
+      "description": "A weighted kneeling crunch that loads spinal flexion through the abs.",
+      "aliases": [
+        "Kneeling Cable Crunch",
+        "Weighted Cable Crunch",
+        "Rope Crunch"
+      ],
+      "substitutionGroupId": "core_flexion_rotation",
+      "instructions": [
+        "Attach a rope to a high cable and kneel facing the stack.",
+        "Hold the rope near your head and set your hips back slightly.",
+        "Crunch by bringing ribs toward pelvis while keeping the hips mostly fixed.",
+        "Return slowly until the abs stretch without letting the weight pull you upright."
+      ],
+      "formCues": [
+        "Move through the trunk, not just the arms.",
+        "Keep the motion controlled.",
+        "Stop before the lower back takes over."
+      ],
+      "commonMistakes": [
+        "Using momentum instead of abdominal control.",
+        "Pulling on the neck or shoulders.",
+        "Arching the lower back between reps."
+      ]
+    },
+    "russian_twist": {
+      "description": "A rotational core movement for the obliques using bodyweight or a light load.",
+      "aliases": [
+        "Seated Russian Twist",
+        "Russian Twists",
+        "Medicine Ball Twist"
+      ],
+      "substitutionGroupId": "core_flexion_rotation",
+      "instructions": [
+        "Sit on the floor with knees bent and torso leaned back slightly.",
+        "Brace your abs and hold your hands or a light weight in front of your chest.",
+        "Rotate your ribcage side to side with control rather than just swinging your arms.",
+        "Keep the movement smooth and stop before your lower back takes over."
+      ],
+      "formCues": [
+        "Move through the trunk, not just the arms.",
+        "Keep the motion controlled.",
+        "Stop before the lower back takes over."
+      ],
+      "commonMistakes": [
+        "Using momentum instead of abdominal control.",
+        "Pulling on the neck or shoulders.",
+        "Arching the lower back between reps."
+      ]
+    },
+    "pallof_press": {
+      "description": "An anti-rotation core exercise that teaches the trunk to resist a sideways cable or band pull.",
+      "aliases": [
+        "Pallof Hold",
+        "Cable Pallof Press",
+        "Band Pallof Press"
+      ],
+      "substitutionGroupId": "core_anti_movement",
+      "instructions": [
+        "Set a cable or band at chest height and stand sideways to the anchor.",
+        "Hold the handle at your chest and step away until you feel sideways tension.",
+        "Brace and press the handle straight out in front of you without rotating.",
+        "Pause, then bring it back to your chest under control before repeating."
+      ],
+      "formCues": [
+        "Brace as if resisting movement.",
+        "Keep ribs stacked over pelvis.",
+        "Breathe without losing tension."
+      ],
+      "commonMistakes": [
+        "Holding breath the entire time.",
+        "Letting ribs flare or hips sag.",
+        "Choosing a version too advanced to control."
+      ]
+    },
+    "farmers_carry": {
+      "description": "A loaded carry that builds grip, traps, posture, bracing, and work capacity.",
+      "aliases": [
+        "Farmer Carry",
+        "Farmer's Walk",
+        "Loaded Carry"
+      ],
+      "substitutionGroupId": "loaded_carry_drive",
+      "instructions": [
+        "Pick up a heavy dumbbell or kettlebell in each hand using a strong hinge position.",
+        "Stand tall with shoulders down and ribs stacked over hips.",
+        "Walk for the target distance or time using short, controlled steps.",
+        "Set the weights down with a hinge rather than rounding your back."
+      ],
+      "formCues": [
+        "Stay tall and braced.",
+        "Use short, powerful steps.",
+        "Keep shoulders controlled and stable."
+      ],
+      "commonMistakes": [
+        "Leaning back or twisting under load.",
+        "Taking sloppy, oversized steps.",
+        "Dropping posture as fatigue builds."
+      ]
+    },
+    "kettlebell_swing": {
+      "description": "A ballistic hip-hinge movement that trains glute and hamstring power with conditioning carryover.",
+      "aliases": [
+        "KB Swing",
+        "Russian Kettlebell Swing",
+        "Two-Hand Kettlebell Swing"
+      ],
+      "substitutionGroupId": "hip_hinge_pattern",
+      "instructions": [
+        "Place the kettlebell slightly in front of you and hinge to grip the handle with both hands.",
+        "Hike the bell back between your legs while keeping your spine neutral.",
+        "Snap the hips forward to swing the bell to chest height without lifting with the arms.",
+        "Let the bell float down and guide it back into the next hinge."
+      ],
+      "formCues": [
+        "Snap the hips; do not lift with the shoulders.",
+        "Let the bell float at the top.",
+        "Keep the hinge crisp and athletic."
+      ],
+      "commonMistakes": [
+        "Squatting the swing instead of hinging.",
+        "Lifting the bell with the arms.",
+        "Letting the lower back overextend at the top."
+      ]
+    },
+    "goblet_squat": {
+      "description": "A beginner-friendly front-loaded squat that reinforces depth, posture, and bracing.",
+      "aliases": [
+        "KB Goblet Squat",
+        "Dumbbell Goblet Squat",
+        "Goblet Squats"
+      ],
+      "substitutionGroupId": "quad_squat_pattern",
+      "instructions": [
+        "Hold a kettlebell or dumbbell close to your chest with elbows pointed down.",
+        "Stand with feet around shoulder width and toes slightly out.",
+        "Squat down by bending knees and hips while keeping the weight close to your body.",
+        "Drive through the mid-foot to stand tall without letting the knees collapse inward."
+      ],
+      "formCues": [
+        "Brace before each rep.",
+        "Track knees in line with toes.",
+        "Keep pressure through the mid-foot."
+      ],
+      "commonMistakes": [
+        "Knees collapsing inward.",
+        "Heels lifting off the floor or platform.",
+        "Losing brace at the bottom."
+      ]
+    },
+    "trap_bar_deadlift": {
+      "description": "A deadlift variation using a trap bar that blends hinge and squat mechanics with a more centered load.",
+      "aliases": [
+        "Hex Bar Deadlift",
+        "Trap Bar DL",
+        "Hex Deadlift"
+      ],
+      "substitutionGroupId": "hip_hinge_pattern",
+      "instructions": [
+        "Step inside the trap bar with feet around hip width and handles centered at your sides.",
+        "Hinge and bend the knees to grip the handles, then brace and set your back.",
+        "Drive through the floor to stand tall with the handles staying close to your sides.",
+        "Lower under control by sending hips back and bending the knees."
+      ],
+      "formCues": [
+        "Push hips back before bending more at the knees.",
+        "Keep the load close to your body.",
+        "Stand by driving hips through, not by leaning back."
+      ],
+      "commonMistakes": [
+        "Rounding the lower back.",
+        "Letting the load drift away from the body.",
+        "Squatting the movement instead of hinging."
+      ]
+    },
+    "sumo_deadlift": {
+      "description": "A wide-stance deadlift that emphasizes glutes, adductors, and a more upright pulling position.",
+      "aliases": [
+        "Sumo DL",
+        "Wide-Stance Deadlift",
+        "Barbell Sumo Deadlift"
+      ],
+      "substitutionGroupId": "hip_hinge_pattern",
+      "instructions": [
+        "Stand with a wide stance and toes turned out, with the bar over your mid-foot.",
+        "Grip the bar inside your knees and pull your chest up to set your back.",
+        "Push the floor apart and stand by extending hips and knees together.",
+        "Return the bar to the floor under control while keeping it close."
+      ],
+      "formCues": [
+        "Push hips back before bending more at the knees.",
+        "Keep the load close to your body.",
+        "Stand by driving hips through, not by leaning back."
+      ],
+      "commonMistakes": [
+        "Rounding the lower back.",
+        "Letting the load drift away from the body.",
+        "Squatting the movement instead of hinging."
+      ]
+    },
+    "good_morning": {
+      "description": "A barbell hinge that loads the hamstrings and lower back with the bar on the upper back.",
+      "aliases": [
+        "Barbell Good Morning",
+        "Good Mornings",
+        "GM"
+      ],
+      "substitutionGroupId": "hip_hinge_pattern",
+      "instructions": [
+        "Set a barbell on your upper back as you would for a back squat.",
+        "Stand with knees slightly bent and brace your trunk hard.",
+        "Hinge at the hips, sending them back while keeping your spine neutral.",
+        "Stand back up by driving the hips forward and squeezing the glutes."
+      ],
+      "formCues": [
+        "Push hips back before bending more at the knees.",
+        "Keep the load close to your body.",
+        "Stand by driving hips through, not by leaning back."
+      ],
+      "commonMistakes": [
+        "Rounding the lower back.",
+        "Letting the load drift away from the body.",
+        "Squatting the movement instead of hinging."
+      ]
+    },
+    "hip_abduction": {
+      "description": "A machine isolation movement for the outer hips, glute medius, and abductors.",
+      "aliases": [
+        "Abductor Machine",
+        "Seated Hip Abduction",
+        "Outer Thigh Machine"
+      ],
+      "substitutionGroupId": "hip_abduction_isolation",
+      "instructions": [
+        "Sit in the machine with your knees or thighs against the pads.",
+        "Set your pelvis and back firmly against the seat.",
+        "Drive the legs outward against the pads and squeeze the outer hips.",
+        "Return slowly toward the start without letting the weight stack slam."
+      ],
+      "formCues": [
+        "Keep pelvis planted against the seat.",
+        "Squeeze the outer hips at the end range.",
+        "Return slowly without bouncing."
+      ],
+      "commonMistakes": [
+        "Rocking the torso to move the weight.",
+        "Using a range that causes hip pinching.",
+        "Letting the stack slam."
+      ]
+    },
+    "hip_adduction": {
+      "description": "A machine isolation movement for the inner thighs and adductors.",
+      "aliases": [
+        "Adductor Machine",
+        "Seated Hip Adduction",
+        "Inner Thigh Machine"
+      ],
+      "substitutionGroupId": "hip_adduction_isolation",
+      "instructions": [
+        "Sit in the machine with the pads against the inside of your knees or thighs.",
+        "Keep your back against the seat and brace lightly through the trunk.",
+        "Bring your legs together by squeezing the inner thighs.",
+        "Return slowly to the open position without bouncing."
+      ],
+      "formCues": [
+        "Keep pelvis planted against the seat.",
+        "Squeeze the inner thighs at the end range.",
+        "Return slowly without bouncing."
+      ],
+      "commonMistakes": [
+        "Bouncing out of the stretched position.",
+        "Rocking the torso to move the weight.",
+        "Letting the stack slam."
+      ]
+    },
+    "glute_bridge": {
+      "description": "A bodyweight hip-extension movement that teaches glute contraction and pelvic control.",
+      "aliases": [
+        "Bodyweight Glute Bridge",
+        "Floor Glute Bridge",
+        "Hip Bridge"
+      ],
+      "substitutionGroupId": "glute_bridge_thrust",
+      "instructions": [
+        "Lie on your back with knees bent and feet flat on the floor about hip width apart.",
+        "Brace your abs lightly and tuck the pelvis so your lower back is not overarched.",
+        "Drive through your heels to lift your hips until knees, hips, and shoulders form a line.",
+        "Squeeze the glutes at the top, then lower under control."
+      ],
+      "formCues": [
+        "Finish with glutes, not lower back.",
+        "Keep ribs down at the top.",
+        "Use a strong heel or mid-foot drive."
+      ],
+      "commonMistakes": [
+        "Overarching the lower back at the top.",
+        "Feet placed too far away to use the glutes well.",
+        "Bouncing reps without a glute squeeze."
+      ]
+    },
+    "step_up": {
+      "description": "A unilateral leg exercise that trains the quads and glutes while reinforcing balance and hip control.",
+      "aliases": [
+        "DB Step-up",
+        "Box Step-up",
+        "Weighted Step-up"
+      ],
+      "substitutionGroupId": "single_leg_quad_glute",
+      "instructions": [
+        "Stand facing a stable box or bench with one foot fully planted on top.",
+        "Lean slightly forward and drive through the working foot to stand up on the box.",
+        "Bring the other foot up only after the working leg has done the lift.",
+        "Step down with control and repeat on the same side or alternate sides."
+      ],
+      "formCues": [
+        "Let the front leg do the work.",
+        "Keep hips square and torso controlled.",
+        "Drive through the whole foot, not just the toes."
+      ],
+      "commonMistakes": [
+        "Pushing mainly off the back leg.",
+        "Letting the front knee cave inward.",
+        "Rushing the descent and losing balance."
+      ]
+    },
+    "box_squat": {
+      "description": "A squat variation that uses a box or bench to control depth and reinforce sitting back with tension.",
+      "aliases": [
+        "Barbell Box Squat",
+        "Squat to Box",
+        "Box Back Squat"
+      ],
+      "substitutionGroupId": "quad_squat_pattern",
+      "instructions": [
+        "Set a box or bench at your target depth and position it behind you in the squat rack.",
+        "Unrack the bar on your upper back and brace before descending.",
+        "Sit back to the box with control, touching lightly while staying tight.",
+        "Drive through the feet to stand without rocking or relaxing on the box."
+      ],
+      "formCues": [
+        "Brace before each rep.",
+        "Track knees in line with toes.",
+        "Keep pressure through the mid-foot."
+      ],
+      "commonMistakes": [
+        "Knees collapsing inward.",
+        "Heels lifting off the floor or platform.",
+        "Losing brace at the bottom."
+      ]
+    },
+    "pendlay_row": {
+      "description": "A strict barbell row from the floor that builds explosive upper-back pulling strength.",
+      "aliases": [
+        "Pendlay Barbell Row",
+        "Dead-Stop Row",
+        "Strict Barbell Row"
+      ],
+      "substitutionGroupId": "back_horizontal_pull",
+      "instructions": [
+        "Set the bar on the floor and hinge until your torso is close to parallel with the ground.",
+        "Brace your trunk and grip the bar slightly wider than shoulder width.",
+        "Row the bar explosively toward your lower chest while keeping the torso fixed.",
+        "Return the bar to a dead stop on the floor before the next rep."
+      ],
+      "formCues": [
+        "Row elbows toward the hips or lower ribs.",
+        "Keep the torso stable throughout the rep.",
+        "Squeeze the back without yanking with the arms."
+      ],
+      "commonMistakes": [
+        "Jerking the weight with momentum.",
+        "Rounding the back or craning the neck.",
+        "Shrugging instead of rowing."
+      ]
+    },
+    "chin_up": {
+      "description": "A supinated-grip vertical pull that trains the lats with extra biceps involvement.",
+      "aliases": [
+        "Chinup",
+        "Underhand Pull-up",
+        "Supinated Pull-up"
+      ],
+      "substitutionGroupId": "back_vertical_pull",
+      "instructions": [
+        "Hang from a pull-up bar with palms facing you and hands around shoulder width.",
+        "Brace your core and pull your elbows down toward your ribs.",
+        "Pull until your chin clears the bar or your chest approaches it.",
+        "Lower with control to a full hang without swinging."
+      ],
+      "formCues": [
+        "Initiate by driving elbows down, not by shrugging.",
+        "Keep the chest proud and ribs controlled.",
+        "Lower to a full controlled stretch."
+      ],
+      "commonMistakes": [
+        "Pulling with the biceps only.",
+        "Swinging or using body English.",
+        "Stopping short of a controlled stretch."
+      ]
+    },
+    "straight_arm_pulldown": {
+      "description": "A cable lat isolation exercise that trains shoulder extension with minimal biceps involvement.",
+      "aliases": [
+        "Straight-Arm Pulldown",
+        "Cable Straight Arm Pulldown",
+        "Lat Prayer"
+      ],
+      "substitutionGroupId": "lat_isolation",
+      "instructions": [
+        "Attach a straight bar or rope to a high cable and stand facing the stack.",
+        "Hinge slightly forward with arms long and elbows softly bent.",
+        "Pull the handle down toward your thighs by driving the upper arms back.",
+        "Return slowly overhead until the lats stretch without shrugging."
+      ],
+      "formCues": [
+        "Keep arms long with only a soft elbow bend.",
+        "Drive the upper arms down toward your sides.",
+        "Feel the lats stretch on the way up."
+      ],
+      "commonMistakes": [
+        "Bending the elbows into a triceps pushdown.",
+        "Shrugging at the top.",
+        "Using too much torso swing."
+      ]
+    },
+    "inverted_row": {
+      "description": "A bodyweight row that scales easily by changing body angle and foot position.",
+      "aliases": [
+        "Bodyweight Row",
+        "Australian Pull-up",
+        "Inverted Body Row"
+      ],
+      "substitutionGroupId": "back_horizontal_pull",
+      "instructions": [
+        "Set a bar at about waist height and lie underneath it with hands just outside shoulder width.",
+        "Keep your body straight from shoulders to heels and brace your glutes.",
+        "Pull your chest toward the bar by driving elbows back.",
+        "Lower until your arms are straight without letting your hips sag."
+      ],
+      "formCues": [
+        "Row elbows toward the hips or lower ribs.",
+        "Keep the torso stable throughout the rep.",
+        "Squeeze the back without yanking with the arms."
+      ],
+      "commonMistakes": [
+        "Jerking the weight with momentum.",
+        "Rounding the back or craning the neck.",
+        "Shrugging instead of rowing."
+      ]
+    },
+    "landmine_press": {
+      "description": "An angled pressing movement that trains the shoulders and upper chest with a shoulder-friendly arc.",
+      "aliases": [
+        "Landmine Shoulder Press",
+        "Single-Arm Landmine Press",
+        "Angled Barbell Press"
+      ],
+      "substitutionGroupId": "chest_incline_push",
+      "instructions": [
+        "Anchor one end of a barbell in a landmine or secure corner and hold the other end at shoulder height.",
+        "Stand tall or half-kneel with ribs down and core braced.",
+        "Press the bar up and forward along its natural arc until the arm is extended.",
+        "Lower back to the shoulder under control without twisting."
+      ],
+      "formCues": [
+        "Use a low-to-moderate incline rather than turning it into a shoulder press.",
+        "Keep ribs down and shoulder blades stable.",
+        "Press up and slightly back in a natural arc."
+      ],
+      "commonMistakes": [
+        "Setting the bench too steep.",
+        "Overarching the lower back.",
+        "Letting the weights drift too far forward."
+      ]
+    },
+    "push_press": {
+      "description": "A power-focused overhead press that uses leg drive to move heavier loads overhead.",
+      "aliases": [
+        "Barbell Push Press",
+        "Power Press",
+        "Dip and Drive Press"
+      ],
+      "substitutionGroupId": "shoulder_vertical_push",
+      "instructions": [
+        "Start with the bar on the front of your shoulders and hands just outside shoulder width.",
+        "Dip a few inches by bending knees while keeping the torso vertical.",
+        "Drive hard through the legs and transfer that force into pressing the bar overhead.",
+        "Lock out overhead, then lower the bar back to the shoulders under control."
+      ],
+      "formCues": [
+        "Brace ribs down before pressing.",
+        "Finish with biceps near ears.",
+        "Press without shrugging into your neck."
+      ],
+      "commonMistakes": [
+        "Leaning back excessively.",
+        "Pressing with wrists bent back.",
+        "Shrugging before the arms finish."
+      ]
+    },
+    "close_grip_bench": {
+      "description": "A bench press variation with a closer grip that shifts more work to the triceps.",
+      "aliases": [
+        "Close-Grip Bench Press",
+        "CGBP",
+        "Close Grip Barbell Bench"
+      ],
+      "substitutionGroupId": "triceps_compound_push",
+      "instructions": [
+        "Lie on a flat bench and grip the bar around shoulder width or slightly narrower.",
+        "Set your shoulder blades, plant your feet, and unrack the bar over your chest.",
+        "Lower the bar toward the lower chest with elbows tucked closer to your sides.",
+        "Press back up by driving through the triceps without letting the wrists bend back."
+      ],
+      "formCues": [
+        "Keep elbows tracking close to the body.",
+        "Use a controlled bottom position.",
+        "Press to lockout without losing shoulder position."
+      ],
+      "commonMistakes": [
+        "Flaring elbows too wide.",
+        "Dropping into shoulder discomfort.",
+        "Using partial reps without control."
+      ]
+    },
+    "cable_crossover": {
+      "description": "A cable chest isolation exercise where the hands cross slightly to maximize pec contraction.",
+      "aliases": [
+        "Cable Cross-over",
+        "High Cable Crossover",
+        "Cable Chest Crossover"
+      ],
+      "substitutionGroupId": "chest_fly_isolation",
+      "instructions": [
+        "Set the cable pulleys high and take a handle in each hand.",
+        "Step forward into a split stance with chest lifted and elbows softly bent.",
+        "Sweep the handles down and across the body in a controlled arc.",
+        "Return slowly to the stretched position without letting the shoulders roll forward."
+      ],
+      "formCues": [
+        "Keep a soft, fixed bend in the elbows.",
+        "Move in a wide hugging arc.",
+        "Stop the stretch before the shoulders roll forward."
+      ],
+      "commonMistakes": [
+        "Going too heavy and turning it into a press.",
+        "Dropping too deep into shoulder discomfort.",
+        "Changing elbow bend during the rep."
+      ]
+    },
+    "pec_deck": {
+      "description": "A machine chest fly that isolates the pecs with a fixed path and stable seated position.",
+      "aliases": [
+        "Pec Deck Fly",
+        "Machine Chest Fly",
+        "Pec Fly Machine"
+      ],
+      "substitutionGroupId": "chest_fly_isolation",
+      "instructions": [
+        "Adjust the seat so the handles or pads line up with your chest.",
+        "Sit back with your shoulder blades gently set and elbows slightly bent.",
+        "Bring the handles or pads together by squeezing the chest.",
+        "Return slowly until you feel a comfortable chest stretch."
+      ],
+      "formCues": [
+        "Keep a soft, fixed bend in the elbows.",
+        "Move in a wide hugging arc.",
+        "Stop the stretch before the shoulders roll forward."
+      ],
+      "commonMistakes": [
+        "Going too heavy and turning it into a press.",
+        "Dropping too deep into shoulder discomfort.",
+        "Changing elbow bend during the rep."
+      ]
+    },
+    "reverse_pec_deck": {
+      "description": "A machine rear-delt fly that trains the rear shoulders and upper back with a stable path.",
+      "aliases": [
+        "Reverse Pec Deck Fly",
+        "Rear Delt Machine Fly",
+        "Machine Reverse Fly"
+      ],
+      "substitutionGroupId": "rear_delt_upper_back",
+      "instructions": [
+        "Face the pec deck machine and adjust the seat so the handles are at shoulder height.",
+        "Grip the handles with arms extended and chest supported against the pad.",
+        "Open the arms out and back by squeezing the rear delts and upper back.",
+        "Return under control without letting the weight stack slam."
+      ],
+      "formCues": [
+        "Lead with elbows and rear delts.",
+        "Keep shoulders down away from the ears.",
+        "Use light enough weight to pause at the contracted position."
+      ],
+      "commonMistakes": [
+        "Using traps instead of rear delts.",
+        "Going too heavy and losing the path.",
+        "Arching the back to finish reps."
+      ]
+    },
+    "wrist_curl": {
+      "description": "A direct forearm exercise that trains wrist flexion.",
+      "aliases": [
+        "Dumbbell Wrist Curl",
+        "Forearm Curl",
+        "Wrist Flexion Curl"
+      ],
+      "substitutionGroupId": "forearm_wrist_isolation",
+      "instructions": [
+        "Sit with your forearms supported on your thighs or a bench, palms facing up.",
+        "Let the dumbbells roll slightly toward the fingers while keeping control.",
+        "Curl the wrists upward as far as comfortable and squeeze the forearms.",
+        "Lower slowly through the wrist without moving the elbows."
+      ],
+      "formCues": [
+        "Move only at the wrist.",
+        "Use a light load and full control.",
+        "Keep forearms supported."
+      ],
+      "commonMistakes": [
+        "Moving the whole arm instead of the wrist.",
+        "Using too much weight.",
+        "Rushing the bottom position."
+      ]
+    },
+    "reverse_wrist_curl": {
+      "description": "A direct forearm exercise that trains wrist extension and the top side of the forearms.",
+      "aliases": [
+        "Reverse Dumbbell Wrist Curl",
+        "Wrist Extension Curl",
+        "Forearm Extension Curl"
+      ],
+      "substitutionGroupId": "forearm_wrist_isolation",
+      "instructions": [
+        "Sit with forearms supported and palms facing down while holding light dumbbells.",
+        "Keep the elbows and forearms fixed in place.",
+        "Lift the backs of the hands upward by extending the wrists.",
+        "Lower slowly through the wrist without swinging."
+      ],
+      "formCues": [
+        "Move only at the wrist.",
+        "Use a light load and full control.",
+        "Keep forearms supported."
+      ],
+      "commonMistakes": [
+        "Moving the whole arm instead of the wrist.",
+        "Using too much weight.",
+        "Rushing the bottom position."
+      ]
+    },
+    "shrugs": {
+      "description": "A barbell upper-trap exercise built around controlled shoulder elevation.",
+      "aliases": [
+        "Barbell Shrug",
+        "BB Shrug",
+        "Shoulder Shrug"
+      ],
+      "substitutionGroupId": "trap_shrug",
+      "instructions": [
+        "Stand tall holding a barbell in front of your thighs with arms straight.",
+        "Brace your core and keep the neck long.",
+        "Shrug your shoulders straight up toward your ears and pause briefly.",
+        "Lower under control without rolling the shoulders forward or back."
+      ],
+      "formCues": [
+        "Shrug straight up and down.",
+        "Keep arms long.",
+        "Pause at the top without rolling the shoulders."
+      ],
+      "commonMistakes": [
+        "Rolling the shoulders.",
+        "Bending the elbows to lift the weight.",
+        "Craning the neck forward."
+      ]
+    },
+    "dumbbell_shrugs": {
+      "description": "A dumbbell shrug variation that trains the upper traps with each side loaded independently.",
+      "aliases": [
+        "DB Shrugs",
+        "Dumbbell Shoulder Shrugs",
+        "Dumbbell Trap Shrugs"
+      ],
+      "substitutionGroupId": "trap_shrug",
+      "instructions": [
+        "Stand tall with a dumbbell in each hand at your sides.",
+        "Brace your trunk and let the arms hang long.",
+        "Elevate the shoulders straight up and squeeze the traps at the top.",
+        "Lower slowly to a full stretch without rolling the shoulders."
+      ],
+      "formCues": [
+        "Shrug straight up and down.",
+        "Keep arms long.",
+        "Pause at the top without rolling the shoulders."
+      ],
+      "commonMistakes": [
+        "Rolling the shoulders.",
+        "Bending the elbows to lift the weight.",
+        "Craning the neck forward."
+      ]
+    },
+    "ab_wheel_rollout": {
+      "description": "A demanding anti-extension core exercise using an ab wheel or barbell rollout.",
+      "aliases": [
+        "Ab Wheel",
+        "Ab Rollout",
+        "Kneeling Ab Wheel Rollout"
+      ],
+      "substitutionGroupId": "core_anti_movement",
+      "instructions": [
+        "Kneel with the ab wheel under your shoulders and hands on the handles.",
+        "Tuck the pelvis slightly and brace as if preparing for a plank.",
+        "Roll forward only as far as you can control without the lower back sagging.",
+        "Pull back to the start by driving the ribs down and using the abs, not the hips."
+      ],
+      "formCues": [
+        "Brace as if resisting movement.",
+        "Keep ribs stacked over pelvis.",
+        "Breathe without losing tension."
+      ],
+      "commonMistakes": [
+        "Holding breath the entire time.",
+        "Letting ribs flare or hips sag.",
+        "Choosing a version too advanced to control."
+      ]
+    },
+    "dead_bug": {
+      "description": "A low-impact core stability drill that trains rib, pelvis, and limb control.",
+      "aliases": [
+        "Deadbug",
+        "Dead Bug Exercise",
+        "Supine Dead Bug"
+      ],
+      "substitutionGroupId": "core_anti_movement",
+      "instructions": [
+        "Lie on your back with arms pointed up and hips and knees bent to 90 degrees.",
+        "Press your lower back gently toward the floor and brace your abs.",
+        "Extend one arm and the opposite leg while keeping the torso still.",
+        "Return to the start and alternate sides without arching the lower back."
+      ],
+      "formCues": [
+        "Brace as if resisting movement.",
+        "Keep ribs stacked over pelvis.",
+        "Breathe without losing tension."
+      ],
+      "commonMistakes": [
+        "Holding breath the entire time.",
+        "Letting ribs flare or hips sag.",
+        "Choosing a version too advanced to control."
+      ]
+    },
+    "bird_dog": {
+      "description": "A core and lower-back stability drill that trains opposite-arm and opposite-leg control.",
+      "aliases": [
+        "Bird-Dog",
+        "Quadruped Bird Dog",
+        "Bird Dog Exercise"
+      ],
+      "substitutionGroupId": "core_anti_movement",
+      "instructions": [
+        "Start on hands and knees with hands under shoulders and knees under hips.",
+        "Brace lightly and keep your spine neutral.",
+        "Reach one arm forward and the opposite leg back without rotating the hips.",
+        "Pause, then return under control and alternate sides."
+      ],
+      "formCues": [
+        "Brace as if resisting movement.",
+        "Keep ribs stacked over pelvis.",
+        "Breathe without losing tension."
+      ],
+      "commonMistakes": [
+        "Holding breath the entire time.",
+        "Letting ribs flare or hips sag.",
+        "Choosing a version too advanced to control."
+      ]
+    },
+    "side_plank": {
+      "description": "A side-body core hold that trains the obliques to resist lateral bending.",
+      "aliases": [
+        "Side Bridge",
+        "Forearm Side Plank",
+        "Side Plank Hold"
+      ],
+      "substitutionGroupId": "core_anti_movement",
+      "instructions": [
+        "Lie on your side with elbow under shoulder and legs stacked or staggered.",
+        "Lift your hips so your body forms a straight line from head to feet.",
+        "Brace the abs and squeeze the glutes while breathing steadily.",
+        "Hold until you can no longer keep the hips lifted and torso aligned."
+      ],
+      "formCues": [
+        "Brace as if resisting movement.",
+        "Keep ribs stacked over pelvis.",
+        "Breathe without losing tension."
+      ],
+      "commonMistakes": [
+        "Holding breath the entire time.",
+        "Letting ribs flare or hips sag.",
+        "Choosing a version too advanced to control."
+      ]
+    },
+    "mountain_climber": {
+      "description": "A bodyweight conditioning drill that combines plank stability with fast knee drives.",
+      "aliases": [
+        "Mountain Climbers",
+        "Plank Mountain Climber",
+        "Running Plank"
+      ],
+      "substitutionGroupId": "conditioning_cardio",
+      "instructions": [
+        "Start in a high plank with hands under shoulders and body in a straight line.",
+        "Brace your abs and keep shoulders stacked over hands.",
+        "Drive one knee toward the chest, then quickly switch legs.",
+        "Move at a pace that lets you keep hips controlled and ribs down."
+      ],
+      "formCues": [
+        "Set a pace you can sustain with clean form.",
+        "Keep breathing rhythmic.",
+        "Maintain posture as fatigue builds."
+      ],
+      "commonMistakes": [
+        "Letting speed destroy technique.",
+        "Holding the breath during hard efforts.",
+        "Starting too fast and fading early."
+      ]
+    },
+    "battle_ropes": {
+      "description": "A conditioning exercise using heavy ropes to train shoulders, arms, core, and work capacity.",
+      "aliases": [
+        "Battle Rope Waves",
+        "Rope Waves",
+        "Battling Ropes"
+      ],
+      "substitutionGroupId": "conditioning_cardio",
+      "instructions": [
+        "Stand in an athletic stance holding one rope end in each hand.",
+        "Brace your trunk and keep knees softly bent.",
+        "Create powerful alternating or simultaneous waves by driving the arms from the shoulders.",
+        "Maintain posture and rhythm for the target time without letting the lower back collapse."
+      ],
+      "formCues": [
+        "Set a pace you can sustain with clean form.",
+        "Keep breathing rhythmic.",
+        "Maintain posture as fatigue builds."
+      ],
+      "commonMistakes": [
+        "Letting speed destroy technique.",
+        "Holding the breath during hard efforts.",
+        "Starting too fast and fading early."
+      ]
+    },
+    "rower": {
+      "description": "A rowing-machine cardio movement that uses the legs, hips, back, and arms in sequence.",
+      "aliases": [
+        "Row Erg",
+        "Erg Row",
+        "Concept2 Row",
+        "Rowing Ergometer"
+      ],
+      "substitutionGroupId": "conditioning_cardio",
+      "instructions": [
+        "Sit on the rower with feet strapped in and hands holding the handle.",
+        "Start at the catch with knees bent, torso slightly forward, and arms long.",
+        "Drive with the legs first, then swing the torso back and pull the handle to the lower ribs.",
+        "Recover by extending arms, hinging forward, and bending knees back to the catch."
+      ],
+      "formCues": [
+        "Think legs, body, arms on the drive.",
+        "Recover arms, body, legs on the way forward.",
+        "Keep strokes smooth rather than frantic."
+      ],
+      "commonMistakes": [
+        "Pulling with the arms before using the legs.",
+        "Rushing the slide on the recovery.",
+        "Rounding the lower back at the catch."
+      ]
+    },
+    "assault_bike": {
+      "description": "A fan-bike conditioning movement using both arms and legs for high-output intervals.",
+      "aliases": [
+        "Air Bike",
+        "Fan Bike",
+        "Assault AirBike"
+      ],
+      "substitutionGroupId": "conditioning_cardio",
+      "instructions": [
+        "Adjust the seat so your knee stays slightly bent at the bottom of the pedal stroke.",
+        "Grip the handles, sit tall, and begin pedaling smoothly.",
+        "Push and pull the handles in rhythm with your legs.",
+        "Keep your cadence and breathing controlled for the target interval."
+      ],
+      "formCues": [
+        "Push and pull the handles with the arms.",
+        "Keep your torso quiet on the seat.",
+        "Build cadence gradually before sprinting."
+      ],
+      "commonMistakes": [
+        "Death-gripping the handles and tensing the neck.",
+        "Bouncing side to side on the seat.",
+        "Starting every interval too hard."
+      ]
+    },
+    "sled_push": {
+      "description": "A loaded conditioning and leg-drive movement that trains quads, glutes, calves, and bracing.",
+      "aliases": [
+        "Prowler Push",
+        "Weighted Sled Push",
+        "Sled Drive"
+      ],
+      "substitutionGroupId": "loaded_carry_drive",
+      "instructions": [
+        "Load the sled appropriately and grip the handles with arms straight or slightly bent.",
+        "Lean your body forward into the sled while keeping a strong line from head to heel.",
+        "Drive the floor away with powerful steps and steady pressure through the hands.",
+        "Keep moving for the target distance without letting your hips rise too high."
+      ],
+      "formCues": [
+        "Keep constant pressure into the handles.",
+        "Drive knees forward with strong foot contact.",
+        "Match body angle to the load."
+      ],
+      "commonMistakes": [
+        "Letting hips rise so the legs stop driving.",
+        "Taking long, slow steps that kill momentum.",
+        "Rounding the back under fatigue."
+      ]
+    },
+    "medicine_ball_slam": {
+      "description": "An explosive conditioning movement using the abs, lats, and shoulders to slam a medicine ball.",
+      "aliases": [
+        "Med Ball Slam",
+        "Medicine Ball Slams",
+        "Overhead Ball Slam"
+      ],
+      "substitutionGroupId": "core_flexion_rotation",
+      "instructions": [
+        "Stand with feet about shoulder width and hold the medicine ball at chest height.",
+        "Raise the ball overhead while bracing your trunk.",
+        "Slam the ball forcefully into the floor by using your abs, lats, and hips.",
+        "Catch or pick up the ball safely, reset your posture, and repeat."
+      ],
+      "formCues": [
+        "Move through the trunk, not just the arms.",
+        "Keep the motion controlled.",
+        "Stop before the lower back takes over."
+      ],
+      "commonMistakes": [
+        "Using momentum instead of abdominal control.",
+        "Pulling on the neck or shoulders.",
+        "Arching the lower back between reps."
+      ]
+    },
+    "barbell_incline_press": {
+      "description": "An upper-chest barbell press that allows heavier loading than dumbbell incline variations.",
+      "aliases": [
+        "Incline Barbell Press",
+        "Incline Bench Press",
+        "Upper Chest Barbell Press"
+      ],
+      "substitutionGroupId": "chest_incline_push",
+      "instructions": [
+        "Set the bench to a low-to-moderate incline and position your eyes under the bar.",
+        "Grip slightly wider than shoulder width and set your shoulder blades into the bench.",
+        "Unrack the bar and lower it toward the upper chest with control.",
+        "Press up and slightly back until the elbows are straight without flaring excessively."
+      ],
+      "formCues": [
+        "Use a low-to-moderate incline rather than turning it into a shoulder press.",
+        "Keep ribs down and shoulder blades stable.",
+        "Press up and slightly back in a natural arc."
+      ],
+      "commonMistakes": [
+        "Setting the bench too steep.",
+        "Overarching the lower back.",
+        "Letting the weights drift too far forward."
+      ]
+    },
+    "cable_row": {
+      "description": "A cable row variation for training the lats and mid-back with constant tension.",
+      "aliases": [
+        "Cable Machine Row",
+        "Standing Cable Row",
+        "Cable Back Row"
+      ],
+      "substitutionGroupId": "back_horizontal_pull",
+      "instructions": [
+        "Set the cable at about mid-torso height and hold the chosen handle with arms extended.",
+        "Brace your trunk and keep the shoulders down.",
+        "Pull the handle toward your ribs by driving elbows back.",
+        "Return slowly until the arms are long without losing posture."
+      ],
+      "formCues": [
+        "Row elbows toward the hips or lower ribs.",
+        "Keep the torso stable throughout the rep.",
+        "Squeeze the back without yanking with the arms."
+      ],
+      "commonMistakes": [
+        "Jerking the weight with momentum.",
+        "Rounding the back or craning the neck.",
+        "Shrugging instead of rowing."
+      ]
+    },
+    "single_leg_rdl": {
+      "description": "A unilateral hinge that trains hamstrings, glutes, balance, and hip stability.",
+      "aliases": [
+        "Single-Leg Romanian Deadlift",
+        "SL RDL",
+        "One-Leg RDL"
+      ],
+      "substitutionGroupId": "hip_hinge_pattern",
+      "instructions": [
+        "Stand on one leg holding a dumbbell or kettlebell in one or both hands.",
+        "Slightly bend the working knee and hinge by sending the free leg back.",
+        "Lower until you feel a hamstring stretch while keeping hips mostly square.",
+        "Drive through the working foot to stand tall without twisting."
+      ],
+      "formCues": [
+        "Push hips back before bending more at the knees.",
+        "Keep the load close to your body.",
+        "Stand by driving hips through, not by leaning back."
+      ],
+      "commonMistakes": [
+        "Rounding the lower back.",
+        "Letting the load drift away from the body.",
+        "Squatting the movement instead of hinging."
+      ]
+    },
+    "seated_dumbbell_press": {
+      "description": "A seated dumbbell overhead press that supports the torso while training shoulder strength.",
+      "aliases": [
+        "Seated DB Press",
+        "Seated Shoulder Press",
+        "Seated Dumbbell Shoulder Press"
+      ],
+      "substitutionGroupId": "shoulder_vertical_push",
+      "instructions": [
+        "Sit on a bench with back support and bring the dumbbells to shoulder height.",
+        "Plant your feet and keep your ribs down against the bench.",
+        "Press the dumbbells overhead until arms are straight and shoulders stay controlled.",
+        "Lower to shoulder height under control before the next rep."
+      ],
+      "formCues": [
+        "Brace ribs down before pressing.",
+        "Finish with biceps near ears.",
+        "Press without shrugging into your neck."
+      ],
+      "commonMistakes": [
+        "Leaning back excessively.",
+        "Pressing with wrists bent back.",
+        "Shrugging before the arms finish."
+      ]
+    },
+    "ez_bar_curl": {
+      "description": "A biceps curl using an angled EZ bar that can be more comfortable for wrists and elbows.",
+      "aliases": [
+        "EZ Curl",
+        "EZ-Bar Biceps Curl",
+        "Cambered Bar Curl"
+      ],
+      "substitutionGroupId": "biceps_curl",
+      "instructions": [
+        "Stand tall holding the EZ bar with an underhand grip on the angled sections.",
+        "Keep elbows close to your torso and shoulders relaxed.",
+        "Curl the bar upward until the biceps are fully contracted.",
+        "Lower slowly to straight arms without swinging."
+      ],
+      "formCues": [
+        "Keep elbows close to the torso.",
+        "Use a full squeeze at the top.",
+        "Lower slowly to straight arms."
+      ],
+      "commonMistakes": [
+        "Swinging the torso.",
+        "Letting elbows drift far forward.",
+        "Only performing the top half of the rep."
+      ]
+    },
+    "rope_pushdown": {
+      "description": "A rope cable pushdown that trains the triceps and allows the hands to separate at lockout.",
+      "aliases": [
+        "Rope Triceps Pushdown",
+        "Cable Rope Pushdown",
+        "Rope Pressdown"
+      ],
+      "substitutionGroupId": "triceps_extension",
+      "instructions": [
+        "Attach a rope to a high cable and hold one end in each hand.",
+        "Pin your elbows by your sides and keep your chest tall.",
+        "Push the rope down and separate the ends slightly at the bottom.",
+        "Return slowly until the forearms rise while the elbows stay fixed."
+      ],
+      "formCues": [
+        "Keep upper arms as still as possible.",
+        "Reach full elbow extension at the finish.",
+        "Control the stretch without letting shoulders take over."
+      ],
+      "commonMistakes": [
+        "Letting elbows flare or drift.",
+        "Turning the movement into a press.",
+        "Rushing the stretched position."
+      ]
+    }
+  }
+}

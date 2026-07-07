@@ -1,0 +1,28 @@
+{
+  "substitutionGroups": [
+    {
+      "id": "chest_horizontal_push",
+      "name": "Chest Horizontal Press",
+      "primaryMuscles": ["chest"],
+      "movementPattern": "horizontalPush",
+      "description": "Exercises that fill the same chest-press slot in a workout.",
+      "exerciseIds": ["bench_press", "dumbbell_press", "machine_chest_press", "push_up"]
+    }
+  ],
+  "exercises": {
+    "bench_press": {
+      "aliases": ["BB Bench Press", "Barbell Bench Press"],
+      "substitutionGroupId": "chest_horizontal_push",
+      "instructions": [
+        "Your step-by-step instructions here.",
+        "One sentence per array item works best in the app."
+      ],
+      "formCues": ["Cue one.", "Cue two."],
+      "commonMistakes": ["Mistake one."],
+      "substitutions": ["dumbbell_press", "machine_chest_press"]
+    },
+    "dumbbell_press": {
+      "substitutionGroupId": "chest_horizontal_push"
+    }
+  }
+}

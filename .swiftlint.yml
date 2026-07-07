@@ -1,0 +1,28 @@
+disabled_rules:
+  - trailing_whitespace
+opt_in_rules:
+  - implicit_optional_initialization
+line_length:
+  warning: 120
+  error: 160
+file_length:
+  warning: 600
+  error: 1200
+type_body_length:
+  warning: 400
+  error: 600
+function_body_length:
+  warning: 50
+  error: 125
+identifier_name:
+  min_length:
+    warning: 2
+    error: 1
+  allowed_symbols: ["_"]
+  excluded:
+    - id
+    - x
+    - y
+cyclomatic_complexity:
+  warning: 15
+  error: 25

@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          brew install swiftlint peripheryapp/periphery/periphery xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: SwiftLint
+        run: swiftlint
+
+      - name: Periphery
+        run: periphery scan --project HotBod.xcodeproj --schemes HotBod --targets HotBod --quiet
+
+      - name: Build
+        run: |
+          xcodebuild \
+            -scheme HotBod \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' \
+            -quiet \
+            build
+
+      - name: Test
+        run: |
+          xcodebuild \
+            -scheme HotBod \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' \
+            -quiet \
+            test

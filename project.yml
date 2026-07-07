@@ -1,0 +1,75 @@
+name: HotBod
+options:
+  bundleIdPrefix: com.hotbod
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "15.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    TARGETED_DEVICE_FAMILY: "1"
+    DEVELOPMENT_TEAM: ""
+packages:
+  Supabase:
+    url: https://github.com/supabase/supabase-swift
+    from: "2.0.0"
+  Pow:
+    url: https://github.com/EmergeTools/Pow
+    from: "1.0.0"
+targets:
+  HotBod:
+    type: application
+    platform: iOS
+    sources:
+      - path: HotBod
+        excludes:
+          - "**/.DS_Store"
+          - "Tests/**"
+    resources:
+      - path: HotBod/Resources
+        excludes:
+          - "**/*.example"
+          - "**/ExerciseSeed.csv"
+    entitlements:
+      path: HotBod/HotBod.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hotbod.app
+        INFOPLIST_KEY_CFBundleDisplayName: HotBod
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "HotBod uses your photo library for progress photos."
+        INFOPLIST_KEY_NSHealthShareUsageDescription: "HotBod reads sleep and resting heart rate to show optional recovery hints. Not used for medical diagnosis."
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_ENTITLEMENTS: HotBod/HotBod.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 1.0.0
+    dependencies:
+      - package: Supabase
+        product: Supabase
+      - package: Pow
+        product: Pow
+    preBuildScripts:
+      - name: SwiftLint
+        basedOnDependencyAnalysis: false
+        script: |
+          if command -v swiftlint >/dev/null 2>&1; then
+            cd "${SRCROOT}"
+            swiftlint
+          else
+            echo "warning: SwiftLint not installed. Run: brew install swiftlint"
+          fi
+  HotBodTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: HotBod/Tests
+    dependencies:
+      - target: HotBod
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hotbod.app.tests
+        GENERATE_INFOPLIST_FILE: YES

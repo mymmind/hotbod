@@ -1,0 +1,12 @@
+HotBod/Resources/SupabaseConfig.plist
+HotBod/Resources/FoodAPIConfig.plist
+HotBod/Resources/GeminiConfig.plist
+.env
+
+# Xcode
+*.xcuserstate
+xcuserdata/
+DerivedData/
+
+# macOS
+.DS_Store
