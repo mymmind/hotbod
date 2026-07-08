@@ -36,31 +36,116 @@ extension AppEnvironment {
         )
     }
 
+    /// Clears "today completed" state and generates a fresh plan for the same day.
+    /// Useful for "restart training" / "redo session" UX.
+    @discardableResult
+    func restartTodayWorkout(profile: UserProfile, options: WorkoutGenerationOptions = WorkoutGenerationOptions()) async -> Bool {
+        guard TrainingSchedule.isTrainingDay(profile: profile) else { return false }
+        guard !isWorkoutGenerationInFlight else { return false }
+
+        await cancelActiveWorkoutIfNeeded()
+        await applyRecoveryDecay()
+
+        let splitFocus = TrainingSchedule.currentSplitFocus(state: programState, split: profile.preferredSplit)
+        var effectiveOptions = options
+
+        // Exclude the currently displayed workout exercises to encourage swaps.
+        if effectiveOptions.excludeExerciseIds.isEmpty, let current = todayWorkout {
+            effectiveOptions.excludeExerciseIds = current.exercises.map(\.exerciseId)
+            effectiveOptions.preferVariation = true
+        }
+
+        if await persistRegeneratedWorkout(
+            profile: profile,
+            splitDayFocus: splitFocus,
+            options: effectiveOptions
+        ) {
+            return await clearTodayCompletionMarkers()
+        }
+
+        // If excluding the previous exercises was too strict, retry without exclusions.
+        guard !effectiveOptions.excludeExerciseIds.isEmpty else { return false }
+        var fallbackOptions = options
+        fallbackOptions.excludeExerciseIds = []
+        fallbackOptions.preferVariation = true
+        guard await persistRegeneratedWorkout(
+            profile: profile,
+            splitDayFocus: splitFocus,
+            options: fallbackOptions
+        ) else { return false }
+
+        return await clearTodayCompletionMarkers()
+    }
+
     @discardableResult
     func switchTodaySplitFocus() async -> Bool {
         guard let profile = userProfile,
-              TrainingSchedule.isTrainingDay(profile: profile),
-              !isTodayWorkoutCompleted else { return false }
+              TrainingSchedule.isTrainingDay(profile: profile) else { return false }
+        guard !isWorkoutGenerationInFlight else { return false }
 
         await cancelActiveWorkoutIfNeeded()
+        await applyRecoveryDecay()
+
+        var proposedState = programState
+        let wasCompleted = TrainingSchedule.isTodayWorkoutCompleted(state: proposedState)
+        TrainingSchedule.toggleSplitFocus(state: &proposedState, split: profile.preferredSplit)
+        let splitFocus = TrainingSchedule.currentSplitFocus(state: proposedState, split: profile.preferredSplit)
+
+        var options = WorkoutGenerationOptions()
+        options.preferVariation = true
+        if let current = todayWorkout {
+            options.excludeExerciseIds = current.exercises.map(\.exerciseId)
+        }
+
+        if await persistRegeneratedWorkout(
+            profile: profile,
+            splitDayFocus: splitFocus,
+            options: options
+        ) {
+            return await applySplitFocusChange(proposedState, clearCompletion: wasCompleted)
+        }
+
+        guard !options.excludeExerciseIds.isEmpty else { return false }
+
+        var fallbackOptions = WorkoutGenerationOptions()
+        fallbackOptions.preferVariation = true
+        guard await persistRegeneratedWorkout(
+            profile: profile,
+            splitDayFocus: splitFocus,
+            options: fallbackOptions
+        ) else { return false }
+
+        return await applySplitFocusChange(proposedState, clearCompletion: wasCompleted)
+    }
+
+    @discardableResult
+    private func clearTodayCompletionMarkers() async -> Bool {
+        guard TrainingSchedule.isTodayWorkoutCompleted(state: programState) else { return true }
 
         var state = programState
-        TrainingSchedule.toggleSplitFocus(state: &state, split: profile.preferredSplit)
+        state.todayCompletedSessionId = nil
+        state.todayCompletedOn = nil
         programState = state
         try? await programStateRepository.saveState(state)
         if isSignedIn {
             try? await cloudSyncService.pushProgramState(state)
         }
+        return true
+    }
 
-        await applyRecoveryDecay()
-        let splitFocus = TrainingSchedule.currentSplitFocus(state: state, split: profile.preferredSplit)
-        var options = WorkoutGenerationOptions()
-        options.preferVariation = true
-        return await persistRegeneratedWorkout(
-            profile: profile,
-            splitDayFocus: splitFocus,
-            options: options
-        )
+    @discardableResult
+    private func applySplitFocusChange(_ state: TrainingProgramState, clearCompletion: Bool) async -> Bool {
+        var updated = state
+        if clearCompletion {
+            updated.todayCompletedSessionId = nil
+            updated.todayCompletedOn = nil
+        }
+        programState = updated
+        try? await programStateRepository.saveState(updated)
+        if isSignedIn {
+            try? await cloudSyncService.pushProgramState(updated)
+        }
+        return true
     }
 
     func persistRegeneratedWorkout(
@@ -156,6 +241,8 @@ extension AppEnvironment {
         options: WorkoutGenerationOptions = WorkoutGenerationOptions()
     ) async -> GeneratedWorkout? {
         workoutGenerationTask?.cancel()
+        workoutGenerationToken &+= 1
+        let token = workoutGenerationToken
 
         let task = Task<GeneratedWorkout?, Never> { @MainActor in
             guard !Task.isCancelled else { return nil }
@@ -189,7 +276,11 @@ extension AppEnvironment {
         }
 
         workoutGenerationTask = task
-        return await task.value
+        let result = await task.value
+        if token == workoutGenerationToken {
+            workoutGenerationTask = nil
+        }
+        return result
     }
 
     func saveTodayWorkout(_ workout: GeneratedWorkout) async throws {

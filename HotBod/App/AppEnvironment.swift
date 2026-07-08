@@ -46,10 +46,10 @@ final class AppEnvironment {
 
     var sessionSaveTask: Task<Void, Never>?
     var workoutGenerationTask: Task<GeneratedWorkout?, Never>?
+    var workoutGenerationToken: UInt = 0
 
     var isWorkoutGenerationInFlight: Bool {
-        guard let workoutGenerationTask else { return false }
-        return !workoutGenerationTask.isCancelled
+        workoutGenerationTask != nil
     }
 
     var syncStores: SyncLocalStores {

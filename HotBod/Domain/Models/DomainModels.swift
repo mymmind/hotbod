@@ -152,6 +152,9 @@ struct Exercise: Identifiable, Codable, Hashable {
     var substitutions: [String]
     var progressions: [String]
     var regressions: [String]
+    /// Source-of-truth for whether the UI/workout logs should treat this exercise as externally loadable.
+    /// Falls back to legacy heuristics/overrides when nil (e.g. old seed data).
+    var loadTrackingMode: LoadTrackingMode? = nil
     /// Alternate names shown in exercise detail (e.g. "BB Bench Press").
     var aliases: [String] = []
     /// Fitbod-style swap family — exercises in the same group target the same slot.
@@ -162,9 +165,49 @@ struct Exercise: Identifiable, Codable, Hashable {
     var isFavorite: Bool = false
     var isAvoided: Bool = false
 
+    /// Resolves `loadTrackingMode` for legacy data.
+    /// - Overrides: explicit mapping for known exercises.
+    /// - Fallback: only used when both the field and override are missing.
+    var resolvedLoadTrackingMode: LoadTrackingMode {
+        if let loadTrackingMode {
+            return loadTrackingMode
+        }
+        if let override = ExerciseLoadTrackingOverrides.map[id] {
+            return override
+        }
+        // Legacy fallback: treat non-bodyweight-tagged movements as externally loadable.
+        // This exists only to keep older seed content working.
+        let hasNonBodyweightEquipment = equipment.contains(where: { $0 != .bodyweight })
+        return hasNonBodyweightEquipment ? .supported : .none
+    }
+
     var usesBodyweightLoading: Bool {
         !equipment.isEmpty && equipment.allSatisfy { $0 == .bodyweight }
     }
+}
+
+/// Explicit mappings for exercises where the seed's `equipment` tags are not enough for correct UX.
+enum ExerciseLoadTrackingOverrides {
+    static let map: [String: LoadTrackingMode] = [
+        "ab_wheel_rollout": .none,
+        "battle_ropes": .none,
+        "bird_dog": .none,
+        "dead_bug": .none,
+        "glute_bridge": .supported,
+        "mountain_climber": .none,
+        "plank": .optional,
+        "push_up": .supported,
+        "russian_twist": .supported,
+        "side_plank": .optional,
+        "sled_push": .required,
+
+        "chin_up": .supported,
+        "pull_up": .supported,
+        "dips": .supported,
+        "inverted_row": .optional,
+        "calf_raise": .supported,
+        "walking_lunge": .supported
+    ]
 }
 
 struct ExerciseDemoVideo: Codable, Hashable, Identifiable {

@@ -146,11 +146,16 @@ extension AppEnvironment {
         state.activeSessionId = nil
         state.todayCompletedSessionId = session.id
         state.todayCompletedOn = TrainingSchedule.startOfDay(Date())
-        TrainingSchedule.advanceRotationIfMatchingFocus(
-            state: &state,
-            split: profile.preferredSplit,
-            completedFocus: session.splitDayFocus
-        )
+
+        let todayStart = state.todayCompletedOn
+        if !TrainingSchedule.rotationAlreadyAdvancedToday(state: state, on: todayStart ?? Date()) {
+            TrainingSchedule.advanceRotationIfMatchingFocus(
+                state: &state,
+                split: profile.preferredSplit,
+                completedFocus: session.splitDayFocus
+            )
+            state.todayRotationAdvancedOn = todayStart
+        }
         programState = state
         try? await programStateRepository.saveState(state)
 

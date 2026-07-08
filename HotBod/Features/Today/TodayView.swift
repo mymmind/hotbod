@@ -262,7 +262,10 @@ struct TodayView: View {
                 ? ("View Summary", { showSummary = true })
                 : (activeSession != nil ? "Resume Workout" : "Start Workout", { startWorkout(workout) }),
             secondaryActions: completed
-                ? [("Preview Plan", { router.navigate(to: .workoutPreview(workout)) })]
+                ? [
+                    ("Preview Plan", { router.navigate(to: .workoutPreview(workout)) }),
+                    ("Restart Training", { restartWorkoutOnly() })
+                  ]
                 : [
                     ("Regenerate", { regenerateWorkout() }),
                     ("Preview", { router.navigate(to: .workoutPreview(workout)) })
@@ -283,8 +286,7 @@ struct TodayView: View {
     }
 
     private var canToggleSplitFocus: Bool {
-        guard environment.todayWorkout != nil, !environment.isTodayWorkoutCompleted,
-              let profile = environment.userProfile else { return false }
+        guard environment.todayWorkout != nil, let profile = environment.userProfile else { return false }
         return TrainingSchedule.splitSequence(for: profile.preferredSplit).count > 1
     }
 
@@ -330,6 +332,30 @@ struct TodayView: View {
         performAnimatedWorkoutRefresh(.regenerate)
     }
 
+    private func restartWorkoutOnly() {
+        guard !environment.isWorkoutGenerationInFlight, !isRegenerating else { return }
+        guard let profile = environment.userProfile else { return }
+
+        Task { @MainActor in
+            withAnimation(ForgeMotion.regenerate) {
+                isRegenerating = true
+                regenSpin = true
+            }
+
+            _ = await environment.restartTodayWorkout(profile: profile)
+
+            await loadCompletedSession()
+            await loadActiveSession()
+            await loadExerciseCatalog()
+
+            try? await Task.sleep(for: .milliseconds(180))
+            withAnimation(ForgeMotion.regenerate) {
+                isRegenerating = false
+                regenSpin = false
+            }
+        }
+    }
+
     private enum WorkoutRefreshKind {
         case regenerate
         case switchSplit
@@ -349,6 +375,8 @@ struct TodayView: View {
             if await refreshResult {
                 await loadExerciseCatalog()
             }
+            await loadCompletedSession()
+            await loadActiveSession()
 
             try? await Task.sleep(for: .milliseconds(180))
 

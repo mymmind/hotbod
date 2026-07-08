@@ -25,6 +25,9 @@ struct TrainingProgramState: Codable, Hashable {
     var lastCompletedAt: Date?
     var todayCompletedSessionId: UUID?
     var todayCompletedOn: Date?
+    /// Tracks whether we already advanced the split rotation for the current calendar day.
+    /// This prevents double-advancing when users "restart" training and complete again.
+    var todayRotationAdvancedOn: Date?
     var activeSessionId: UUID?
     var upcomingWorkout: GeneratedWorkout?
     var upcomingWorkoutFor: Date?
@@ -171,6 +174,15 @@ enum TrainingSchedule {
         return calendar.isDate(completedOn, inSameDayAs: date)
     }
 
+    static func rotationAlreadyAdvancedToday(
+        state: TrainingProgramState,
+        on date: Date = Date(),
+        calendar: Calendar = .current
+    ) -> Bool {
+        guard let advancedOn = state.todayRotationAdvancedOn else { return false }
+        return calendar.isDate(advancedOn, inSameDayAs: date)
+    }
+
     static func isUpcomingWorkoutValid(
         state: TrainingProgramState,
         profile: UserProfile,
@@ -184,10 +196,14 @@ enum TrainingSchedule {
     }
 
     static func clearStaleCompletion(state: inout TrainingProgramState, date: Date = Date(), calendar: Calendar = .current) {
-        guard let completedOn = state.todayCompletedOn else { return }
-        if !calendar.isDate(completedOn, inSameDayAs: date) {
+        if let completedOn = state.todayCompletedOn,
+           !calendar.isDate(completedOn, inSameDayAs: date) {
             state.todayCompletedSessionId = nil
             state.todayCompletedOn = nil
+        }
+        if let advancedOn = state.todayRotationAdvancedOn,
+           !calendar.isDate(advancedOn, inSameDayAs: date) {
+            state.todayRotationAdvancedOn = nil
         }
     }
 

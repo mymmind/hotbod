@@ -562,8 +562,9 @@ final class HardeningValidationTests: XCTestCase {
     }
 
     func testRejectsLoadedWeightOnBodyweightExercise() {
-        let exercise = makeTestExercise(id: "push_up", pattern: .horizontalPush, equipment: [.bodyweight])
-        var workout = makeValidWorkout(exerciseId: "push_up", exercises: [exercise])
+        // Exercises like push-ups may support external loading; choose a true bodyweight-only exercise.
+        let exercise = makeTestExercise(id: "bird_dog", pattern: .horizontalPush, equipment: [.bodyweight])
+        var workout = makeValidWorkout(exerciseId: "bird_dog", exercises: [exercise])
         workout.exercises[0].targetSets = [PlannedSet(targetRepsMin: 8, targetRepsMax: 12, targetWeightKg: 20)]
 
         let result = WorkoutValidator.validate(
@@ -573,7 +574,7 @@ final class HardeningValidationTests: XCTestCase {
         )
 
         XCTAssertFalse(result.isValid)
-        XCTAssertTrue(result.errors.contains { $0.contains("Bodyweight") })
+        XCTAssertTrue(result.errors.contains { $0.contains("external loaded weight") })
     }
 
     func testWarnsOnLargeWeightJump() {
@@ -790,5 +791,47 @@ final class HardeningReviewFixTests: XCTestCase {
         try? await repo.clearTodayWorkout()
         let fetched = try? await repo.fetchTodayWorkout()
         XCTAssertNil(fetched)
+    }
+}
+
+final class LoadTrackingModeDomainTests: XCTestCase {
+    func testResolvedLoadTrackingModeUsesOverrides() {
+        let exercises = [
+            "push_up": LoadTrackingMode.supported,
+            "glute_bridge": LoadTrackingMode.supported,
+            "russian_twist": LoadTrackingMode.supported,
+            "sled_push": LoadTrackingMode.required,
+            "plank": LoadTrackingMode.optional,
+            "side_plank": LoadTrackingMode.optional,
+            "bird_dog": LoadTrackingMode.none,
+            "ab_wheel_rollout": LoadTrackingMode.none
+        ]
+
+        for (id, expected) in exercises {
+            let exercise = makeTestExercise(id: id, equipment: [.bodyweight])
+            XCTAssertEqual(exercise.resolvedLoadTrackingMode, expected, "Expected \(id) to resolve to \(expected)")
+        }
+    }
+
+    func testBodyweightOnlyNoneModeRejectsExternalLoad() {
+        let exercise = makeTestExercise(
+            id: "bird_dog",
+            primaryMuscles: [.chest],
+            pattern: .horizontalPush,
+            equipment: [.bodyweight]
+        )
+
+        var workout = makeValidWorkout(exerciseId: "bird_dog", exercises: [exercise])
+        workout.exercises[0].targetSets = [
+            PlannedSet(targetRepsMin: 8, targetRepsMax: 12, targetWeightKg: 20)
+        ]
+
+        let result = WorkoutValidator.validate(
+            workout: workout,
+            input: makeValidationInput(),
+            exercises: [exercise]
+        )
+
+        XCTAssertFalse(result.isValid)
     }
 }

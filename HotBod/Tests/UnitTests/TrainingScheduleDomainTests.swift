@@ -102,9 +102,20 @@ final class TrainingScheduleTests: XCTestCase {
         let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
         state.todayCompletedOn = TrainingSchedule.startOfDay(yesterday)
         state.todayCompletedSessionId = UUID()
+        state.todayRotationAdvancedOn = TrainingSchedule.startOfDay(yesterday)
         TrainingSchedule.clearStaleCompletion(state: &state)
         XCTAssertNil(state.todayCompletedOn)
         XCTAssertNil(state.todayCompletedSessionId)
+        XCTAssertNil(state.todayRotationAdvancedOn)
+    }
+
+    func testRotationAlreadyAdvancedToday() {
+        var state = TrainingProgramState()
+        let today = TrainingSchedule.startOfDay(Date())
+        XCTAssertFalse(TrainingSchedule.rotationAlreadyAdvancedToday(state: state, on: today))
+
+        state.todayRotationAdvancedOn = today
+        XCTAssertTrue(TrainingSchedule.rotationAlreadyAdvancedToday(state: state, on: today))
     }
 
     func testClearLegacyUpcomingWorkoutRemovesStoredPreview() {

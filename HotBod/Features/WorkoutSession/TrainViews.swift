@@ -5,7 +5,13 @@ struct TrainView: View {
     @Environment(AppRouter.self) private var router
     @State private var sessions: [WorkoutSession] = []
     @State private var activeSession: WorkoutSession?
+    @State private var completedSession: WorkoutSession?
     @State private var showLibrary = false
+    @State private var showSummary = false
+
+    @State private var isRegenerating = false
+    @State private var regenSpin = false
+    @State private var showGenerationFailureAlert = false
 
     var body: some View {
         NavigationStack {
@@ -19,6 +25,18 @@ struct TrainView: View {
                     if let workout = environment.todayWorkout {
                         workoutCard(workout)
                             .forgeAnimatedContent(id: workout.id)
+                    } else {
+                        VStack(spacing: 16) {
+                            EmptyStateView(
+                                title: "No workout yet",
+                                message: "Generate today’s session from your training plan."
+                            ) {
+                                if let profile = environment.userProfile {
+                                    Task { _ = await environment.regenerateTodayWorkout(profile: profile) }
+                                }
+                            }
+                        }
+                        .padding()
                     }
                     VStack(spacing: 16) {
                         historySection
@@ -51,12 +69,49 @@ struct TrainView: View {
             .task {
                 await loadSessions()
                 await loadActiveSession()
+                await loadCompletedSession()
             }
             .onChange(of: router.route) { _, newRoute in
                 if case .main = newRoute {
                     Task {
                         await loadSessions()
                         await loadActiveSession()
+                        await loadCompletedSession()
+                    }
+                }
+            }
+            .onChange(of: environment.isTodayWorkoutCompleted) { _, _ in
+                Task {
+                    await loadCompletedSession()
+                    await loadActiveSession()
+                    await loadSessions()
+                }
+            }
+            .onChange(of: environment.lastGenerationFailure?.userMessage) { _, message in
+                showGenerationFailureAlert = message != nil
+            }
+            .alert(
+                "Can't Build Workout",
+                isPresented: $showGenerationFailureAlert,
+                presenting: environment.lastGenerationFailure
+            ) { _ in
+                Button("OK", role: .cancel) {
+                    environment.lastGenerationFailure = nil
+                }
+            } message: { failure in
+                Text(failure.userMessage)
+            }
+            .sheet(isPresented: $showSummary) {
+                if let session = completedSession {
+                    NavigationStack {
+                        WorkoutCompletionView(session: session) {
+                            showSummary = false
+                        }
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                Button("Done") { showSummary = false }
+                            }
+                        }
                     }
                 }
             }
@@ -64,24 +119,49 @@ struct TrainView: View {
     }
 
     private func workoutCard(_ workout: GeneratedWorkout) -> some View {
-        let isResuming = activeSession != nil
+        let completed = environment.isTodayWorkoutCompleted
+        let isResuming = !completed && activeSession != nil
+
         return ForgeHeroCard(
-            eyebrow: isResuming ? "In Progress" : "Active Session",
+            eyebrow: completed ? "Session" : (isResuming ? "In Progress" : "Active Session"),
             title: workout.title,
-            durationMinutes: workout.estimatedDurationMinutes,
+            badge: completed ? "Completed" : nil,
+            durationMinutes: completed ? nil : workout.estimatedDurationMinutes,
             focusLine: isResuming
                 ? resumeProgressLine
                 : "\(workout.exercises.count) exercises · \(totalSets(workout)) working sets",
-            primaryAction: (isResuming ? "Resume" : "Start", { startWorkout(workout) }),
-            secondaryActions: [
-                ("Preview", { router.navigate(to: .workoutPreview(workout)) }),
-                ("Regenerate", {
-                    if let profile = environment.userProfile {
-                        Task { await environment.regenerateTodayWorkout(profile: profile) }
-                    }
-                })
-            ]
+            completed: completed,
+            titleAccessory: canToggleSplitFocus ? ForgeHeroTitleAccessory(
+                systemImage: "arrow.up.arrow.down",
+                accessibilityLabel: splitToggleAccessibilityLabel,
+                action: { switchSplitFocus() }
+            ) : nil,
+            loadingSecondaryTitle: isRegenerating ? "Regenerate" : nil,
+            primaryAction: completed
+                ? ("View Summary", { showSummary = true })
+                : (isResuming ? "Resume" : "Start", { startWorkout(workout) }),
+            secondaryActions: completed
+                ? [
+                    ("Preview Plan", { router.navigate(to: .workoutPreview(workout)) }),
+                    ("Restart Training", { restartWorkoutOnly() })
+                  ]
+                : [
+                    ("Regenerate", { regenerateWorkout() }),
+                    ("Preview Plan", { router.navigate(to: .workoutPreview(workout)) })
+                ]
         )
+        .id(workout.id)
+        .scaleEffect(isRegenerating ? 0.97 : 1)
+        .opacity(isRegenerating ? 0.88 : (completed ? 0.92 : 1))
+        .blur(radius: isRegenerating ? 1.5 : 0)
+        .animation(ForgeMotion.regenerate, value: isRegenerating)
+        .overlay {
+            if isRegenerating {
+                TrainHeroRegeneratingOverlay(isSpinning: regenSpin)
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            }
+        }
+        .allowsHitTesting(!isRegenerating)
     }
 
     private var resumeProgressLine: String {
@@ -160,6 +240,20 @@ struct TrainView: View {
         return "Generate today's session from the Today tab."
     }
 
+    private var canToggleSplitFocus: Bool {
+        guard environment.todayWorkout != nil, let profile = environment.userProfile else { return false }
+        return TrainingSchedule.splitSequence(for: profile.preferredSplit).count > 1
+    }
+
+    private var splitToggleAccessibilityLabel: String {
+        guard let profile = environment.userProfile,
+              let current = environment.currentSplitFocus,
+              let next = TrainingSchedule.nextSplitFocus(after: current, split: profile.preferredSplit) else {
+            return "Switch training focus"
+        }
+        return "Switch to \(next.displayName.lowercased()) training"
+    }
+
     private func startWorkout(_ workout: GeneratedWorkout) {
         Task {
             guard let session = await environment.resumeOrStartWorkout(from: workout) else { return }
@@ -174,6 +268,110 @@ struct TrainView: View {
 
     private func loadActiveSession() async {
         activeSession = await environment.fetchActiveWorkoutSession()
+    }
+
+    private func loadCompletedSession() async {
+        completedSession = await environment.fetchTodayCompletedSession()
+    }
+
+    private func regenerateWorkout() {
+        guard !environment.isWorkoutGenerationInFlight else { return }
+        performAnimatedWorkoutRefresh(.regenerate)
+    }
+
+    private func restartWorkoutOnly() {
+        guard !environment.isWorkoutGenerationInFlight, !isRegenerating else { return }
+        guard let profile = environment.userProfile else { return }
+
+        Task { @MainActor in
+            withAnimation(ForgeMotion.regenerate) {
+                isRegenerating = true
+                regenSpin = true
+            }
+
+            _ = await environment.restartTodayWorkout(profile: profile)
+
+            await loadCompletedSession()
+            await loadActiveSession()
+            await loadSessions()
+
+            try? await Task.sleep(for: .milliseconds(180))
+            withAnimation(ForgeMotion.regenerate) {
+                isRegenerating = false
+                regenSpin = false
+            }
+        }
+    }
+
+    private func switchSplitFocus() {
+        guard canToggleSplitFocus, !environment.isWorkoutGenerationInFlight else { return }
+        performAnimatedWorkoutRefresh(.switchSplit)
+    }
+
+    private enum WorkoutRefreshKind {
+        case regenerate
+        case switchSplit
+    }
+
+    private func performAnimatedWorkoutRefresh(_ kind: WorkoutRefreshKind) {
+        guard !isRegenerating, !environment.isWorkoutGenerationInFlight else { return }
+        Task { @MainActor in
+            withAnimation(ForgeMotion.regenerate) {
+                isRegenerating = true
+                regenSpin = true
+            }
+
+            async let refreshResult = performWorkoutRefresh(kind)
+            try? await Task.sleep(for: ForgeMotion.regenerateMinimum)
+
+            _ = await refreshResult
+            await loadCompletedSession()
+            await loadActiveSession()
+            await loadSessions()
+
+            try? await Task.sleep(for: .milliseconds(180))
+            withAnimation(ForgeMotion.regenerate) {
+                isRegenerating = false
+                regenSpin = false
+            }
+        }
+    }
+
+    @MainActor
+    private func performWorkoutRefresh(_ kind: WorkoutRefreshKind) async -> Bool {
+        switch kind {
+        case .regenerate:
+            guard let profile = environment.userProfile else { return false }
+            return await environment.regenerateTodayWorkout(profile: profile)
+        case .switchSplit:
+            return await environment.switchTodaySplitFocus()
+        }
+    }
+}
+
+private struct TrainHeroRegeneratingOverlay: View {
+    let isSpinning: Bool
+
+    var body: some View {
+        ZStack {
+            ForgeColors.surfaceInverse.opacity(0.82)
+
+            VStack(spacing: 16) {
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .font(.system(size: ForgeIcons.lg + 4, weight: .semibold))
+                    .foregroundStyle(ForgeColors.accent)
+                    .rotationEffect(.degrees(isSpinning ? 360 : 0))
+                    .animation(
+                        isSpinning ? .linear(duration: 0.9).repeatForever(autoreverses: false) : .default,
+                        value: isSpinning
+                    )
+
+                Text("Building new session...")
+                    .font(ForgeTypography.caption)
+                    .tracking(3)
+                    .foregroundStyle(ForgeColors.surface.opacity(0.92))
+            }
+        }
     }
 }
 
@@ -383,6 +581,10 @@ struct WorkoutPreviewView: View {
         .task {
             await loadExercises()
             hasActiveSession = await environment.fetchActiveWorkoutSession() != nil
+            syncWorkoutFromEnvironment()
+        }
+        .onChange(of: environment.todayWorkout?.id) { _, _ in
+            syncWorkoutFromEnvironment()
         }
         .sheet(isPresented: $showSwapSheet) {
             if let target = swapTarget {
@@ -512,5 +714,10 @@ struct WorkoutPreviewView: View {
             guard let session = await environment.resumeOrStartWorkout(from: workout) else { return }
             router.replace(with: .workoutSession(session))
         }
+    }
+
+    private func syncWorkoutFromEnvironment() {
+        guard let latest = environment.todayWorkout, latest.id != workout.id else { return }
+        workout = latest
     }
 }

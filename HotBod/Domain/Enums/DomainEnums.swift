@@ -173,6 +173,48 @@ enum Equipment: String, Codable, CaseIterable, Identifiable, Hashable {
     }
 }
 
+enum LoadTrackingMode: String, Codable, CaseIterable, Identifiable {
+    /// Do not show (or persist) external load tracking.
+    case none
+    /// Default to bodyweight-style logging, but allow enabling external load later.
+    case optional
+    /// Commonly supports added external load (e.g. vest/backpack/plate).
+    case supported
+    /// External load is fundamental to tracking performance for this movement.
+    case required
+
+    var id: String { rawValue }
+}
+
+extension LoadTrackingMode {
+    var shouldShowWeightFieldByDefault: Bool {
+        switch self {
+        case .supported, .required:
+            true
+        case .none, .optional:
+            false
+        }
+    }
+
+    var allowsExternalLoadPlanning: Bool {
+        switch self {
+        case .supported, .required:
+            true
+        case .none, .optional:
+            false
+        }
+    }
+
+    var disallowsExternalLoad: Bool {
+        switch self {
+        case .none, .optional:
+            true
+        case .supported, .required:
+            false
+        }
+    }
+}
+
 enum MovementPattern: String, Codable, CaseIterable, Identifiable {
     case horizontalPush, verticalPush, horizontalPull, verticalPull
     case squat, hinge, lunge, carry, rotation, antiRotation

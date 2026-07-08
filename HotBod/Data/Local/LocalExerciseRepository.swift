@@ -243,6 +243,7 @@ private struct ExerciseSeedDTO: Decodable {
     let primaryMuscles: [MuscleGroup]
     let secondaryMuscles: [MuscleGroup]
     let equipment: [Equipment]
+    let loadTrackingMode: LoadTrackingMode?
     let movementPattern: MovementPattern
     let difficulty: ExerciseDifficulty
     let mechanics: MechanicsType?
@@ -271,6 +272,7 @@ private struct ExerciseSeedDTO: Decodable {
             substitutions: substitutions,
             progressions: [],
             regressions: [],
+            loadTrackingMode: loadTrackingMode,
             demoVideos: demoVideos,
             imageUrl: nil,
             tags: []

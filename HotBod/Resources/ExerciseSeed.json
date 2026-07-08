@@ -99,6 +99,7 @@
     "equipment": [
       "bodyweight"
     ],
+    "loadTrackingMode": "supported",
     "movementPattern": "horizontalPush",
     "difficulty": "beginner",
     "instructions": [
@@ -298,6 +299,7 @@
       "pullUpBar",
       "bodyweight"
     ],
+    "loadTrackingMode": "supported",
     "movementPattern": "verticalPull",
     "difficulty": "intermediate",
     "instructions": [
@@ -811,6 +813,7 @@
       "dumbbell",
       "bodyweight"
     ],
+    "loadTrackingMode": "supported",
     "movementPattern": "lunge",
     "difficulty": "beginner",
     "instructions": [
@@ -940,6 +943,7 @@
       "machine",
       "bodyweight"
     ],
+    "loadTrackingMode": "supported",
     "movementPattern": "isolation",
     "difficulty": "beginner",
     "instructions": [
@@ -1396,6 +1400,7 @@
       "bodyweight",
       "bench"
     ],
+    "loadTrackingMode": "supported",
     "movementPattern": "verticalPush",
     "difficulty": "intermediate",
     "instructions": [
@@ -1429,6 +1434,7 @@
     "equipment": [
       "bodyweight"
     ],
+    "loadTrackingMode": "optional",
     "movementPattern": "antiRotation",
     "difficulty": "beginner",
     "instructions": [
@@ -1523,6 +1529,7 @@
     "equipment": [
       "bodyweight"
     ],
+    "loadTrackingMode": "supported",
     "movementPattern": "rotation",
     "difficulty": "beginner",
     "instructions": [
@@ -1861,6 +1868,7 @@
     "equipment": [
       "bodyweight"
     ],
+    "loadTrackingMode": "supported",
     "movementPattern": "hinge",
     "difficulty": "beginner",
     "instructions": [
@@ -1996,6 +2004,7 @@
       "pullUpBar",
       "bodyweight"
     ],
+    "loadTrackingMode": "supported",
     "movementPattern": "verticalPull",
     "difficulty": "intermediate",
     "instructions": [
@@ -2063,6 +2072,7 @@
       "bodyweight",
       "barbell"
     ],
+    "loadTrackingMode": "optional",
     "movementPattern": "horizontalPull",
     "difficulty": "beginner",
     "instructions": [
@@ -2416,6 +2426,7 @@
     "equipment": [
       "bodyweight"
     ],
+    "loadTrackingMode": "none",
     "movementPattern": "antiRotation",
     "difficulty": "intermediate",
     "instructions": [
@@ -2447,6 +2458,7 @@
     "equipment": [
       "bodyweight"
     ],
+    "loadTrackingMode": "none",
     "movementPattern": "antiRotation",
     "difficulty": "beginner",
     "instructions": [
@@ -2481,6 +2493,7 @@
     "equipment": [
       "bodyweight"
     ],
+    "loadTrackingMode": "none",
     "movementPattern": "antiRotation",
     "difficulty": "beginner",
     "instructions": [
@@ -2514,6 +2527,7 @@
     "equipment": [
       "bodyweight"
     ],
+    "loadTrackingMode": "optional",
     "movementPattern": "antiRotation",
     "difficulty": "beginner",
     "instructions": [
@@ -2547,6 +2561,7 @@
     "equipment": [
       "bodyweight"
     ],
+    "loadTrackingMode": "none",
     "movementPattern": "cardio",
     "difficulty": "beginner",
     "instructions": [
@@ -2580,6 +2595,7 @@
     "equipment": [
       "bodyweight"
     ],
+    "loadTrackingMode": "none",
     "movementPattern": "cardio",
     "difficulty": "beginner",
     "instructions": [
@@ -2681,6 +2697,7 @@
     "equipment": [
       "bodyweight"
     ],
+    "loadTrackingMode": "required",
     "movementPattern": "carry",
     "difficulty": "intermediate",
     "instructions": [

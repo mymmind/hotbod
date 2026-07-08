@@ -480,7 +480,17 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         }
 
         weight = GenerationConstants.Weight.roundToAvailable(weight, equipment: exercise.equipment)
-        let plannedWeight: Double? = exercise.usesBodyweightLoading ? nil : weight
+        let loadMode = exercise.resolvedLoadTrackingMode
+        let canPlanExternalLoad: Bool = switch loadMode {
+        case .none:
+            false
+        case .optional:
+            // Optional exercises start planning with external load once the user has logged it before.
+            stats?.planningWeightKg != nil
+        case .supported, .required:
+            true
+        }
+        let plannedWeight: Double? = canPlanExternalLoad ? weight : nil
 
         var (intensity, adjustedSetCount) = deloadAdjustment(baseSetCount: setCount, stats: stats)
         var rpeTarget = WorkoutGenerationAlgorithms.rpeTarget(
@@ -530,7 +540,9 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             )
         }
         let warmupSets: [PlannedSet]
-        if sessionMode == .standard, input.userProfile.includeWarmupSets, !exercise.usesBodyweightLoading {
+        if sessionMode == .standard,
+           input.userProfile.includeWarmupSets,
+           canPlanExternalLoad {
             warmupSets = WarmupSetPlanner.warmupSets(
                 workingWeight: weight,
                 workingRepsMin: minReps,
@@ -825,14 +837,23 @@ enum WorkoutValidator {
             errors.append("Invalid rest period for \(exercise.name).")
         }
 
-        let isBodyweightExercise = exercise.usesBodyweightLoading
+        let loadMode = exercise.resolvedLoadTrackingMode
+        let stats = input.exerciseStats.first { $0.exerciseId == planned.exerciseId }
+        let canPlanExternalLoad: Bool = switch loadMode {
+        case .none:
+            false
+        case .optional:
+            stats?.planningWeightKg != nil
+        case .supported, .required:
+            true
+        }
         for set in planned.targetSets {
             if let weight = set.targetWeightKg {
                 if weight < 0 || weight > GenerationConstants.Validation.maxPlannedWeightKg {
                     errors.append("Invalid weight for \(exercise.name).")
                 }
-                if isBodyweightExercise && weight > 0 {
-                    errors.append("Bodyweight exercise \(exercise.name) should not have a loaded weight.")
+                if !canPlanExternalLoad && weight > 0 {
+                    errors.append("Exercise \(exercise.name) should not have an external loaded weight for loadTrackingMode \(loadMode).")
                 }
             }
             if set.targetRepsMin < GenerationConstants.Validation.minRepCount

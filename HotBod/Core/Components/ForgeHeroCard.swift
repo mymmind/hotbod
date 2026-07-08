@@ -67,7 +67,7 @@ struct ForgeHeroCard: View {
                     .modifier(TitlePulseModifier(value: titlePulseValue))
                     .fixedSize(horizontal: false, vertical: true)
 
-                if let titleAccessory, !completed {
+                if let titleAccessory {
                     Button(action: titleAccessory.action) {
                         Image(systemName: titleAccessory.systemImage)
                             .font(.system(size: ForgeIcons.tab, weight: .bold))
