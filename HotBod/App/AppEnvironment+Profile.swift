@@ -26,6 +26,8 @@ extension AppEnvironment {
         try await userProfileRepository.setOnboardingComplete(true)
         userProfile = profile
         hasCompletedOnboarding = true
+        recoveryStates = RecoveryCalculator.defaultStates()
+        try await recoveryRepository.saveRecoveryStates(recoveryStates)
     }
 
     func resetOnboarding() async throws {

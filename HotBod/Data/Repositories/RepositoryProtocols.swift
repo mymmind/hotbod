@@ -7,6 +7,7 @@ protocol WorkoutRepository: Sendable {
     func saveSession(_ session: WorkoutSession) async throws
     func fetchTodayWorkout() async throws -> GeneratedWorkout?
     func saveTodayWorkout(_ workout: GeneratedWorkout) async throws
+    func clearTodayWorkout() async throws
     func fetchSessionSummaries() async throws -> [WorkoutSessionSummary]
 }
 

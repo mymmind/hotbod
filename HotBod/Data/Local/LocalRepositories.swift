@@ -26,6 +26,10 @@ actor LocalWorkoutRepository: WorkoutRepository {
         PersistenceHelper.save(workout, to: todayKey)
     }
 
+    func clearTodayWorkout() async throws {
+        PersistenceHelper.remove(todayKey)
+    }
+
     func fetchSessionSummaries() async throws -> [WorkoutSessionSummary] {
         let sessions = try await fetchSessions().filter { $0.status == .completed }
         let exerciseMap = Dictionary(uniqueKeysWithValues: ExerciseSeedLoader.load().map { ($0.id, $0) })
@@ -153,7 +157,8 @@ actor LocalRecoveryRepository: RecoveryRepository {
     private let key = "recovery_states.json"
 
     func fetchRecoveryStates() async throws -> [MuscleRecoveryState] {
-        PersistenceHelper.load([MuscleRecoveryState].self, from: key) ?? RecoveryCalculator.defaultStates()
+        let loaded = PersistenceHelper.load([MuscleRecoveryState].self, from: key) ?? RecoveryCalculator.defaultStates()
+        return RecoveryCalculator.normalizeStates(loaded)
     }
 
     func saveRecoveryStates(_ states: [MuscleRecoveryState]) async throws {

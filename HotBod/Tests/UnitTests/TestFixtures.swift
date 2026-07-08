@@ -75,7 +75,7 @@ func recoverySortKeyForTests(
             recovery = recovery.mapValues { max(0, $0 - GenerationConstants.Recovery.suboptimalSleepRecoveryPenalty) }
         }
     }
-    let base = recovery[muscle] ?? GenerationConstants.Recovery.defaultMuscleRecovery
+    let base = GenerationConstants.Recovery.recovery(for: muscle, in: recovery)
     let bonus = preferred.contains(muscle) ? GenerationConstants.Targeting.preferredMuscleRecoveryBonus : 0
     return base + bonus
 }

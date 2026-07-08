@@ -16,6 +16,7 @@ struct NoOpCloudSyncService: CloudSyncService, Sendable {
     func pushAll(local: SyncLocalStores) async throws { throw SyncError.notConfigured }
     func pushProfile(_ profile: UserProfile) async throws { throw SyncError.notConfigured }
     func pushTodayWorkout(_ workout: GeneratedWorkout) async throws { throw SyncError.notConfigured }
+    func clearTodayWorkout() async throws { throw SyncError.notConfigured }
     func pushSession(_ session: WorkoutSession) async throws { throw SyncError.notConfigured }
     func pushProteinEntry(_ entry: ProteinEntry) async throws { throw SyncError.notConfigured }
     func pushPhoto(_ photo: BodyProgressPhoto, fileData: Data?) async throws { throw SyncError.notConfigured }

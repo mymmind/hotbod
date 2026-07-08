@@ -274,6 +274,16 @@ enum SorenessLevel: String, Codable, CaseIterable, Identifiable {
         case .severe: 30
         }
     }
+
+    /// Full penalty on recently trained muscles; half on others (systemic fatigue).
+    func scopedRecoveryPenalty(trained: Bool) -> Double {
+        switch self {
+        case .none: 0
+        case .severe: trained ? 30 : 15
+        case .moderate: trained ? 15 : 7
+        case .mild: trained ? 5 : 2
+        }
+    }
 }
 
 enum TimeOfDayPreference: String, Codable, CaseIterable, Identifiable {

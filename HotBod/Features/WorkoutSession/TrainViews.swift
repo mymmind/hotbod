@@ -389,7 +389,10 @@ struct WorkoutPreviewView: View {
                 SwapExerciseSheet(
                     currentExerciseId: target.exerciseId,
                     substitutionGroup: swapResolver?.substitutionGroup(for: target.exerciseId),
-                    substitutes: swapResolver?.swapCandidates(for: target.exerciseId) ?? []
+                    substitutes: swapResolver?.swapCandidates(
+                        for: target.exerciseId,
+                        workoutExerciseIds: Set(workout.exercises.map(\.exerciseId))
+                    ) ?? []
                 ) { substitute in
                     swapExercise(target, to: substitute)
                 }

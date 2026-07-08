@@ -80,16 +80,25 @@ final class ProgressiveOverloadTests: XCTestCase {
         XCTAssertTrue(stats.volumeTrend == .stable || stats.volumeTrend == .decreasing)
     }
 
-    func testUpdateStatsTriggersDeloadOnVolumeDrop() {
+    func testUpdateStatsTriggersReturningFromBreakOnGapWeek() {
+        let now = Date()
+        let previousWindowSets = (0..<10).map { index in
+            CompletedSet(
+                setIndex: index,
+                weightKg: 80,
+                reps: 5,
+                completedAt: now.addingTimeInterval(-9 * 24 * 3600)
+            )
+        }
         var existing = UserExerciseStats(
             exerciseId: "squat",
-            recentSets: [],
+            recentSets: previousWindowSets,
             preferredRepRangeMin: 5,
             preferredRepRangeMax: 8
         )
         existing.weeklyVolume = [100, 100, 100]
 
-        let sets = [CompletedSet(setIndex: 0, weightKg: 80, reps: 5, completedAt: Date())]
+        let sets = [CompletedSet(setIndex: 0, weightKg: 80, reps: 5, completedAt: now)]
         let planned = [PlannedSet(targetRepsMin: 5, targetRepsMax: 8)]
 
         let stats = ProgressiveOverload.updateStats(
@@ -99,7 +108,8 @@ final class ProgressiveOverloadTests: XCTestCase {
             plannedSets: planned
         )
 
-        XCTAssertTrue(stats.isInDeloadWeek)
+        XCTAssertTrue(stats.returningFromBreak)
+        XCTAssertFalse(stats.isInDeloadWeek)
     }
 }
 
@@ -123,7 +133,7 @@ final class ProgressiveOverloadEnhancedTests: XCTestCase {
             preferredRepRangeMin: 5,
             preferredRepRangeMax: 8
         )
-        stats.isInDeloadWeek = true
+        stats.deloadStartedAt = Date()
         
         let nextWeight = ProgressiveOverload.nextWeight(
             current: 100,
@@ -208,22 +218,78 @@ final class ProgressiveOverloadEnhancedTests: XCTestCase {
 }
 
 final class DeloadDetectionTests: XCTestCase {
-    func testDeloadDetectionVolumeDrop() {
+    func testDeloadDetectionVolumeDropRequiresMeaningfulCurrentVolume() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let previousWindowSets = (0..<10).map { index in
+            CompletedSet(
+                setIndex: index,
+                weightKg: 100,
+                reps: 5,
+                completedAt: now.addingTimeInterval(-8 * 24 * 3600)
+            )
+        }
+        let currentWindowSets = (0..<6).map { index in
+            CompletedSet(
+                setIndex: index,
+                weightKg: 100,
+                reps: 5,
+                completedAt: now.addingTimeInterval(-2 * 24 * 3600)
+            )
+        }
+
         var stats = UserExerciseStats(
             exerciseId: "squat",
-            recentSets: [],
+            recentSets: previousWindowSets + currentWindowSets,
             preferredRepRangeMin: 5,
             preferredRepRangeMax: 8
         )
-        stats.weeklyVolume = [100, 100, 100, 60] // 40% drop
-        
+        stats.weeklyVolume = [100, 100, 100, 60]
+
         let analysis = DeloadDetector.analyzeDeloadNeed(
             stats: stats,
-            volumeHistory: stats.weeklyVolume
+            volumeHistory: stats.weeklyVolume,
+            now: now
         )
-        
+
         XCTAssertTrue(analysis.isDeloadRecommended)
         XCTAssertEqual(analysis.severity, .severe)
+    }
+
+    func testDeloadDetectionGapWeekSuggestsReturningFromBreak() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let previousWindowSets = (0..<10).map { index in
+            CompletedSet(
+                setIndex: index,
+                weightKg: 100,
+                reps: 5,
+                completedAt: now.addingTimeInterval(-8 * 24 * 3600)
+            )
+        }
+        let currentWindowSets = (0..<3).map { index in
+            CompletedSet(
+                setIndex: index,
+                weightKg: 100,
+                reps: 5,
+                completedAt: now.addingTimeInterval(-2 * 24 * 3600)
+            )
+        }
+
+        var stats = UserExerciseStats(
+            exerciseId: "squat",
+            recentSets: previousWindowSets + currentWindowSets,
+            preferredRepRangeMin: 5,
+            preferredRepRangeMax: 8
+        )
+        stats.weeklyVolume = [100, 100, 100, 60]
+
+        let analysis = DeloadDetector.analyzeDeloadNeed(
+            stats: stats,
+            volumeHistory: stats.weeklyVolume,
+            now: now
+        )
+
+        XCTAssertFalse(analysis.isDeloadRecommended)
+        XCTAssertTrue(analysis.suggestsReturningFromBreak)
     }
 
     func testDeloadDetectionConsecutiveHighVolume() {
@@ -264,18 +330,69 @@ final class DeloadDetectionTests: XCTestCase {
         XCTAssertEqual(analysis.severity, .none)
     }
 
-    func testUpdateDeloadState() {
+    func testUpdateDeloadStateSetsReturningFromBreakForGapWeek() {
+        let now = Date()
+        let previousWindowSets = (0..<10).map { index in
+            CompletedSet(
+                setIndex: index,
+                weightKg: 100,
+                reps: 5,
+                completedAt: now.addingTimeInterval(-9 * 24 * 3600)
+            )
+        }
+        let currentWindowSets = (0..<2).map { index in
+            CompletedSet(
+                setIndex: index,
+                weightKg: 100,
+                reps: 5,
+                completedAt: now.addingTimeInterval(-1 * 24 * 3600)
+            )
+        }
+
         var stats = UserExerciseStats(
             exerciseId: "squat",
-            recentSets: [],
+            recentSets: previousWindowSets + currentWindowSets,
             preferredRepRangeMin: 5,
             preferredRepRangeMax: 8
         )
         stats.weeklyVolume = [100, 100, 100, 50]
-        
-        DeloadDetector.updateDeloadState(stats: &stats)
-        
+
+        DeloadDetector.updateDeloadState(stats: &stats, now: now)
+
+        XCTAssertTrue(stats.returningFromBreak)
+        XCTAssertFalse(stats.isInDeloadWeek)
+    }
+
+    func testUpdateDeloadStateSetsDeloadStartedAt() {
+        let now = Date()
+        let previousWindowSets = (0..<10).map { index in
+            CompletedSet(
+                setIndex: index,
+                weightKg: 100,
+                reps: 5,
+                completedAt: now.addingTimeInterval(-9 * 24 * 3600)
+            )
+        }
+        let currentWindowSets = (0..<6).map { index in
+            CompletedSet(
+                setIndex: index,
+                weightKg: 100,
+                reps: 5,
+                completedAt: now.addingTimeInterval(-1 * 24 * 3600)
+            )
+        }
+
+        var stats = UserExerciseStats(
+            exerciseId: "squat",
+            recentSets: previousWindowSets + currentWindowSets,
+            preferredRepRangeMin: 5,
+            preferredRepRangeMax: 8
+        )
+        stats.weeklyVolume = [100, 100, 100, 50]
+
+        DeloadDetector.updateDeloadState(stats: &stats, now: now)
+
         XCTAssertTrue(stats.isInDeloadWeek)
-        XCTAssertNotNil(stats.lastDeloadDate)
+        XCTAssertNotNil(stats.deloadStartedAt)
     }
 }

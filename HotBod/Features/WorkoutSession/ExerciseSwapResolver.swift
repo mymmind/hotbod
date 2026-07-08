@@ -25,13 +25,14 @@ struct ExerciseSwapResolver {
         )
     }
 
-    func swapCandidates(for exerciseId: String) -> [Exercise] {
-        ExerciseSubstitution.candidates(
+    func swapCandidates(for exerciseId: String, workoutExerciseIds: Set<String>? = nil) -> [Exercise] {
+        let excludeIds = workoutExerciseIds ?? usedExerciseIds
+        return ExerciseSubstitution.candidates(
             for: exerciseId,
             from: allExercises,
             availableEquipment: profile.availableEquipment,
             injuries: profile.limitations,
-            excludeIds: usedExerciseIds
+            excludeIds: excludeIds
         )
     }
 

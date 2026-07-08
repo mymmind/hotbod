@@ -14,15 +14,109 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         let targetSelection = sessionMode == .recovery
             ? (muscles: selectRecoveryTargetMuscles(input: input), avoidedOverride: false)
             : selectTargetMuscles(input: input)
-        let targetMuscles = targetSelection.muscles
-        let favoriteIds = Set(input.userPreferences.favoriteExerciseIds)
 
-        let available = allExercises.filter { exercise in
-            !exercise.isAvoided &&
+        let ladder: [CandidateFilterOptions] = [
+            CandidateFilterOptions(),
+            CandidateFilterOptions(includeAvoided: true),
+            CandidateFilterOptions(includeAvoided: true, relaxDifficultyPenalty: true)
+        ]
+
+        var chosenOptions = ladder[0]
+        var available = filteredExercises(
+            allExercises,
+            input: input,
+            avoidedOverride: targetSelection.avoidedOverride,
+            options: chosenOptions
+        )
+
+        for options in ladder.dropFirst() where available.count < GenerationConstants.Targeting.minCandidatesBeforeRelaxation {
+            let relaxed = filteredExercises(
+                allExercises,
+                input: input,
+                avoidedOverride: targetSelection.avoidedOverride,
+                options: options
+            )
+            if relaxed.count >= GenerationConstants.Targeting.minCandidatesBeforeRelaxation {
+                chosenOptions = options
+                available = relaxed
+                break
+            }
+            if relaxed.count > available.count {
+                chosenOptions = options
+                available = relaxed
+            }
+        }
+
+        let minExercises = sessionMode == .recovery
+            ? GenerationConstants.RecoverySession.minExercises
+            : GenerationConstants.Session.minStandardExercises
+
+        if available.count < minExercises {
+            let blockers = countExerciseBlockers(allExercises: allExercises, input: input)
+            throw GenerationFailure.insufficientExercises(
+                available: available.count,
+                blockedByInjury: blockers.injury,
+                blockedByEquipment: blockers.equipment
+            )
+        }
+
+        return try buildWorkout(
+            available: available,
+            allExercises: allExercises,
+            input: input,
+            sessionMode: sessionMode,
+            targetSelection: targetSelection,
+            filterOptions: chosenOptions
+        )
+    }
+
+    private struct CandidateFilterOptions: Equatable {
+        var includeAvoided = false
+        var relaxDifficultyPenalty = false
+    }
+
+    private func filteredExercises(
+        _ allExercises: [Exercise],
+        input: WorkoutGenerationInput,
+        avoidedOverride: Bool,
+        options: CandidateFilterOptions
+    ) -> [Exercise] {
+        allExercises.filter { exercise in
+            (!exercise.isAvoided || options.includeAvoided) &&
             EquipmentFilter.isExerciseAvailable(exercise, availableEquipment: input.availableEquipment) &&
             !GenerationConstants.violatesInjuries(exercise, injuries: input.injuries) &&
-            (targetSelection.avoidedOverride || !exercise.primaryMuscles.contains(where: { input.avoidedMuscleGroups.contains($0) }))
+            (avoidedOverride || !exercise.primaryMuscles.contains(where: { input.avoidedMuscleGroups.contains($0) }))
         }
+    }
+
+    private func countExerciseBlockers(
+        allExercises: [Exercise],
+        input: WorkoutGenerationInput
+    ) -> (injury: Int, equipment: Int) {
+        var injury = 0
+        var equipment = 0
+        for exercise in allExercises {
+            let blockedByInjury = GenerationConstants.violatesInjuries(exercise, injuries: input.injuries)
+            let blockedByEquipment = !EquipmentFilter.isExerciseAvailable(
+                exercise,
+                availableEquipment: input.availableEquipment
+            )
+            if blockedByInjury { injury += 1 }
+            if blockedByEquipment { equipment += 1 }
+        }
+        return (injury, equipment)
+    }
+
+    private func buildWorkout(
+        available: [Exercise],
+        allExercises: [Exercise],
+        input: WorkoutGenerationInput,
+        sessionMode: SessionMode,
+        targetSelection: (muscles: [MuscleGroup], avoidedOverride: Bool),
+        filterOptions: CandidateFilterOptions
+    ) throws -> GeneratedWorkout {
+        let targetMuscles = targetSelection.muscles
+        let favoriteIds = Set(input.userPreferences.favoriteExerciseIds)
 
         let selection = sessionMode == .recovery
             ? selectRecoveryExercises(
@@ -31,7 +125,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                 stats: input.exerciseStats,
                 avoidIds: Set(input.userPreferences.avoidExerciseIds),
                 preferVariation: input.userPreferences.preferVariation,
-                favoriteIds: favoriteIds
+                favoriteIds: favoriteIds,
+                relaxDifficultyPenalty: filterOptions.relaxDifficultyPenalty
             )
             : selectExercises(
                 from: available,
@@ -41,7 +136,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                 stats: input.exerciseStats,
                 avoidIds: Set(input.userPreferences.avoidExerciseIds),
                 preferVariation: input.userPreferences.preferVariation,
-                favoriteIds: favoriteIds
+                favoriteIds: favoriteIds,
+                relaxDifficultyPenalty: filterOptions.relaxDifficultyPenalty
             )
 
         var planned = selection.exercises.enumerated().map { index, exercise in
@@ -87,8 +183,16 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             safetyNotes: input.injuries.filter { $0 != .none }.isEmpty ? [] : ["Movements adjusted for reported limitations."],
             generatedBy: .rulesEngine,
             createdAt: Date(),
-            sessionMode: sessionMode
+            sessionMode: sessionMode,
+            splitDayFocus: input.splitDayFocus
         )
+
+        if filterOptions.includeAvoided {
+            workout.safetyNotes.append(GenerationConstants.Targeting.avoidedExercisesRelaxationMessage)
+        }
+        if filterOptions.relaxDifficultyPenalty {
+            workout.safetyNotes.append(GenerationConstants.Targeting.difficultyRelaxationMessage)
+        }
 
         if let uncoveredWarning = WorkoutGenerationAlgorithms.uncoveredMuscleWarning(selection.uncoveredMuscles) {
             workout.safetyNotes.append(uncoveredWarning)
@@ -126,18 +230,16 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
 
     private func shouldUseRecoveryMode(input: WorkoutGenerationInput) -> Bool {
         if input.readiness?.soreness == .severe { return true }
-        let values = input.muscleRecovery.values
-        guard !values.isEmpty else { return false }
-        let average = values.reduce(0, +) / Double(values.count)
-        return average < GenerationConstants.Recovery.recoverySessionAvgThreshold
+        return GenerationConstants.Recovery.averageRecovery(in: input.muscleRecovery)
+            < GenerationConstants.Recovery.recoverySessionAvgThreshold
     }
 
     private func selectRecoveryTargetMuscles(input: WorkoutGenerationInput) -> [MuscleGroup] {
         Array(
             MuscleGroup.allCases
                 .sorted {
-                    (input.muscleRecovery[$0] ?? GenerationConstants.Recovery.defaultMuscleRecovery) >
-                    (input.muscleRecovery[$1] ?? GenerationConstants.Recovery.defaultMuscleRecovery)
+                    GenerationConstants.Recovery.recovery(for: $0, in: input.muscleRecovery) >
+                    GenerationConstants.Recovery.recovery(for: $1, in: input.muscleRecovery)
                 }
                 .prefix(GenerationConstants.RecoverySession.targetMuscleCount)
         )
@@ -161,7 +263,9 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             let (eligibleSplit, override) = applyAvoidedMuscles(splitMuscles, avoided: input.avoidedMuscleGroups)
             avoidedOverride = override
             let ready = eligibleSplit
-                .filter { (recovery[$0] ?? GenerationConstants.Recovery.defaultMuscleRecovery) >= GenerationConstants.Recovery.splitMuscleMinRecovery }
+                .filter {
+                    GenerationConstants.Recovery.recovery(for: $0, in: recovery) >= GenerationConstants.Recovery.splitMuscleMinRecovery
+                }
                 .sorted { recoverySortKey($0, recovery: recovery, preferred: input.preferredMuscleGroups) >
                     recoverySortKey($1, recovery: recovery, preferred: input.preferredMuscleGroups) }
             if ready.count >= 2 {
@@ -182,7 +286,7 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         avoidedOverride = avoidedOverride || override
         let ready = eligibleMuscles
             .filter {
-                (recovery[$0] ?? GenerationConstants.Recovery.defaultMuscleRecovery) >= GenerationConstants.Recovery.readyMuscleMinRecovery
+                GenerationConstants.Recovery.recovery(for: $0, in: recovery) >= GenerationConstants.Recovery.readyMuscleMinRecovery
                     && !recentlyTrained.contains($0)
             }
             .sorted {
@@ -195,8 +299,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             case .upperLower, .pushPullLegs:
                 let upper: [MuscleGroup] = [.chest, .back, .shoulders, .biceps, .triceps]
                 let lower: [MuscleGroup] = [.quads, .hamstrings, .glutes, .calves]
-                let upperAvg = upper.map { recovery[$0] ?? GenerationConstants.Recovery.defaultMuscleRecovery }.reduce(0, +) / Double(upper.count)
-                let lowerAvg = lower.map { recovery[$0] ?? GenerationConstants.Recovery.defaultMuscleRecovery }.reduce(0, +) / Double(lower.count)
+                let upperAvg = upper.map { GenerationConstants.Recovery.recovery(for: $0, in: recovery) }.reduce(0, +) / Double(upper.count)
+                let lowerAvg = lower.map { GenerationConstants.Recovery.recovery(for: $0, in: recovery) }.reduce(0, +) / Double(lower.count)
                 let chosen = upperAvg >= lowerAvg ? upper : lower
                 let (eligibleChosen, chosenOverride) = applyAvoidedMuscles(chosen, avoided: input.avoidedMuscleGroups)
                 avoidedOverride = avoidedOverride || chosenOverride
@@ -231,7 +335,7 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         recovery: [MuscleGroup: Double],
         preferred: [MuscleGroup]
     ) -> Double {
-        let base = recovery[muscle] ?? GenerationConstants.Recovery.defaultMuscleRecovery
+        let base = GenerationConstants.Recovery.recovery(for: muscle, in: recovery)
         let bonus = preferred.contains(muscle) ? GenerationConstants.Targeting.preferredMuscleRecoveryBonus : 0
         return base + bonus
     }
@@ -258,7 +362,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         stats: [UserExerciseStats],
         avoidIds: Set<String>,
         preferVariation: Bool = false,
-        favoriteIds: Set<String> = []
+        favoriteIds: Set<String> = [],
+        relaxDifficultyPenalty: Bool = false
     ) -> ExerciseSelectionResult {
         let maxExercises = min(
             GenerationConstants.Session.maxExercisesCap,
@@ -271,7 +376,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             experience: experience,
             stats: stats,
             recoveryBias: false,
-            favoriteIds: favoriteIds
+            favoriteIds: favoriteIds,
+            ignoreDifficultyPenalty: relaxDifficultyPenalty
         )
         let ranked = WorkoutGenerationAlgorithms.rankScored(
             scored,
@@ -292,7 +398,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         stats: [UserExerciseStats],
         avoidIds: Set<String>,
         preferVariation: Bool,
-        favoriteIds: Set<String> = []
+        favoriteIds: Set<String> = [],
+        relaxDifficultyPenalty: Bool = false
     ) -> ExerciseSelectionResult {
         let filtered = available.filter { !avoidIds.contains($0.id) }
         let scored = WorkoutGenerationAlgorithms.scoreExercises(
@@ -301,7 +408,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             experience: .intermediate,
             stats: stats,
             recoveryBias: true,
-            favoriteIds: favoriteIds
+            favoriteIds: favoriteIds,
+            ignoreDifficultyPenalty: relaxDifficultyPenalty
         )
         let ranked = WorkoutGenerationAlgorithms.rankScored(
             scored,
@@ -325,12 +433,13 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         sessionMode: SessionMode
     ) -> PlannedExercise {
         let stats = input.exerciseStats.first { $0.exerciseId == exercise.id }
-        let defaultRange = GenerationConstants.Prescription.repRange(
-            for: input.goal,
+        let repRange = GenerationConstants.Prescription.effectiveRepRange(
+            stats: stats,
+            goal: input.goal,
             experience: input.experienceLevel
         )
-        let minReps = stats?.preferredRepRangeMin ?? defaultRange.min
-        let maxReps = stats?.preferredRepRangeMax ?? defaultRange.max
+        let minReps = repRange.min
+        let maxReps = repRange.max
         let setCount = GenerationConstants.Prescription.setCount(
             experience: input.experienceLevel,
             pattern: exercise.movementPattern
@@ -359,7 +468,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                 stats: stats,
                 volumeCap: volumeCap,
                 setCountThisWeek: stats.weeklyMaxSets,
-                bodyweight: input.userProfile.weightKg ?? GenerationConstants.Session.defaultBodyweightKgFallback
+                bodyweight: input.userProfile.weightKg ?? GenerationConstants.Session.defaultBodyweightKgFallback,
+                equipment: exercise.equipment
             )
         } else {
             weight = defaultWeight(
@@ -369,6 +479,9 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             )
         }
 
+        weight = GenerationConstants.Weight.roundToAvailable(weight, equipment: exercise.equipment)
+        let plannedWeight: Double? = exercise.usesBodyweightLoading ? nil : weight
+
         var (intensity, adjustedSetCount) = deloadAdjustment(baseSetCount: setCount, stats: stats)
         var rpeTarget = WorkoutGenerationAlgorithms.rpeTarget(
             sessionMode: sessionMode,
@@ -376,6 +489,12 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             isDeload: stats?.isInDeloadWeek == true,
             sleepScore: input.readiness?.sleepScore
         )
+
+        if stats?.returningFromBreak == true {
+            adjustedSetCount = setCount
+            intensity = .moderate
+            rpeTarget = GenerationConstants.Deload.reEntryRPETarget
+        }
 
         if sessionMode == .recovery {
             adjustedSetCount = max(1, adjustedSetCount - 1)
@@ -394,6 +513,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         let reason: String
         if sessionMode == .recovery {
             reason = "Recovery work for \(exercise.primaryMuscles.map(\.displayName).joined(separator: ", "))."
+        } else if stats?.returningFromBreak == true {
+            reason = "Re-entry session — eased load after a training break"
         } else if stats?.isInDeloadWeek == true {
             reason = "Deload week — reduced volume and weight for recovery"
         } else {
@@ -404,12 +525,12 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             PlannedSet(
                 targetRepsMin: minReps,
                 targetRepsMax: maxReps,
-                targetWeightKg: weight,
+                targetWeightKg: plannedWeight,
                 rpeTarget: rpeTarget
             )
         }
         let warmupSets: [PlannedSet]
-        if sessionMode == .standard, input.userProfile.includeWarmupSets {
+        if sessionMode == .standard, input.userProfile.includeWarmupSets, !exercise.usesBodyweightLoading {
             warmupSets = WarmupSetPlanner.warmupSets(
                 workingWeight: weight,
                 workingRepsMin: minReps,
@@ -479,7 +600,7 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         baseSetCount: Int,
         stats: UserExerciseStats?
     ) -> (intensity: IntensityTarget, setCount: Int) {
-        guard let stats, stats.isInDeloadWeek else {
+        guard let stats, stats.isInDeloadWeek, !stats.returningFromBreak else {
             return (.moderate, baseSetCount)
         }
         let reducedSets = max(1, Int(Double(baseSetCount) * GenerationConstants.Session.deloadSetMultiplier))
@@ -515,7 +636,10 @@ enum WorkoutValidator {
             errors.append("Workout has fewer than \(minExercises) exercises.")
         }
 
-        let avgRecovery = input.muscleRecovery.values.reduce(0, +) / Double(max(1, input.muscleRecovery.count))
+        let workoutMuscles = workout.focus.isEmpty ? MuscleGroup.allCases : workout.focus
+        let avgRecovery = workoutMuscles
+            .map { GenerationConstants.Recovery.recovery(for: $0, in: input.muscleRecovery) }
+            .reduce(0, +) / Double(workoutMuscles.count)
         let workoutIntensity = IntensityCalculator.workoutIntensity(exercises: workout.exercises, exerciseMap: exerciseMap)
         let totalSets = VolumeCalculator.totalSets(exercises: workout.exercises)
         let weeklyVolume = VolumeCalculator.weeklyVolumeEstimate(recentWorkouts: input.recentWorkouts)
@@ -527,61 +651,24 @@ enum WorkoutValidator {
             soreness: soreness
         )
 
-        if soreness == .severe {
-            let message = "Severe soreness reported — consider rescheduling or significantly reducing intensity."
-            if isRecovery {
-                warnings.append(message)
-            } else {
-                errors.append(message)
-            }
-            suggestions.append("Swap 30% of compound exercises for isolation movements and reduce volume by 40%.")
-        } else if soreness == .moderate {
-            warnings.append("Moderate soreness reported — consider reducing volume by 20%.")
-            suggestions.append(
-                "Reduce volume: aim for \(Int(Double(totalSets) * GenerationConstants.Validation.moderateSorenessVolumeReduction)) "
-                    + "sets instead of \(totalSets)."
-            )
-        } else if soreness == .mild {
-            warnings.append("Mild soreness noted — monitor intensity.")
-        }
-
-        let minRecovery = input.muscleRecovery.values.min() ?? 50
-        if minRecovery < GenerationConstants.Recovery.criticalFatigueThreshold {
-            let message = "Critical fatigue detected (\(Int(minRecovery))% recovery). Recommend lighter session or rest day."
-            if isRecovery {
-                warnings.append(message)
-            } else {
-                errors.append(message)
-            }
-            suggestions.append("Reduce intensity to light/recovery work. Aim for RPE ≤ 6.")
-        } else if minRecovery < GenerationConstants.Recovery.lowRecoveryWarningThreshold {
-            warnings.append("Low fatigue threshold (\(Int(minRecovery))% recovery). Consider deload.")
-            suggestions.append("Reduce exercise intensity or volume; consider focusing on technique and recovery.")
-        }
-
-        let projectedWeeklyVolume = weeklyVolume + totalSets
-        if projectedWeeklyVolume > volumeCap {
-            errors.append("Projected weekly volume (\(projectedWeeklyVolume) sets) exceeds safe threshold (\(volumeCap)). Consider deload.")
-        } else if projectedWeeklyVolume > volumeWarningThreshold {
-            warnings.append("Weekly volume trending high (\(projectedWeeklyVolume) sets). Monitor for overtraining.")
-            suggestions.append("Consider reducing volume or extending recovery between sessions.")
-        }
-
-        let adjustedIntensity = IntensityCalculator.fatigueAdjustedIntensity(
-            baseIntensity: workoutIntensity,
-            recoveryPercent: avgRecovery
+        validateSoreness(input: input, isRecovery: isRecovery, totalSets: totalSets, warnings: &warnings, errors: &errors, suggestions: &suggestions)
+        validateGlobalRecovery(input: input, isRecovery: isRecovery, errors: &errors, warnings: &warnings, suggestions: &suggestions)
+        validateWeeklyVolume(
+            totalSets: totalSets,
+            weeklyVolume: weeklyVolume,
+            volumeCap: volumeCap,
+            volumeWarningThreshold: volumeWarningThreshold,
+            errors: &errors,
+            warnings: &warnings,
+            suggestions: &suggestions
         )
-        if workoutIntensity > GenerationConstants.Validation.highIntensityThreshold
-            && avgRecovery < GenerationConstants.Recovery.readyMuscleMinRecovery {
-            warnings.append("High intensity workout planned with low average recovery (\(Int(avgRecovery))%). Risk of overtraining.")
-            suggestions.append("Reduce intensity or defer high-intensity work. Replace heavy compounds with moderate-intensity accessory work.")
-        } else if adjustedIntensity > workoutIntensity * GenerationConstants.Validation.lowRecoveryAdjustedIntensityFraction
-            && avgRecovery < GenerationConstants.Recovery.lowRecoveryWarningThreshold {
-            suggestions.append(
-                "Estimated intensity reduced to \(String(format: "%.1f", adjustedIntensity * 100))% "
-                    + "due to low recovery. Session will be lighter-than-planned."
-            )
-        }
+
+        validateIntensity(
+            workoutIntensity: workoutIntensity,
+            avgRecovery: avgRecovery,
+            warnings: &warnings,
+            suggestions: &suggestions
+        )
 
         for planned in workout.exercises {
             if !exerciseIds.insert(planned.exerciseId).inserted {
@@ -601,31 +688,20 @@ enum WorkoutValidator {
                 errors.append("\(exercise.name) requires unavailable equipment.")
             }
 
-            for set in planned.targetSets {
-                if set.targetRepsMin < GenerationConstants.Validation.minRepCount
-                    || set.targetRepsMax > GenerationConstants.Validation.maxRepCount
-                    || set.targetRepsMin > set.targetRepsMax {
-                    errors.append("Invalid rep range for \(exercise.name).")
-                }
-            }
-
-            for muscle in exercise.primaryMuscles {
-                let muscleRecovery = input.muscleRecovery[muscle] ?? 100
-                if muscleRecovery < GenerationConstants.Recovery.criticalFatigueThreshold {
-                    let message = """
-                    \(muscle.displayName) critically fatigued \
-                    (<\(Int(GenerationConstants.Recovery.criticalFatigueThreshold))% recovery). \
-                    \(exercise.name) not recommended.
-                    """
-                    if isRecovery {
-                        warnings.append(message)
-                    } else {
-                        errors.append(message)
-                    }
-                } else if muscleRecovery < GenerationConstants.Recovery.lowRecoveryWarningThreshold {
-                    warnings.append("\(muscle.displayName) recovery very low. Consider swapping \(exercise.name) for a secondary muscle focus.")
-                }
-            }
+            validatePrescription(
+                planned: planned,
+                exercise: exercise,
+                input: input,
+                errors: &errors,
+                warnings: &warnings
+            )
+            validateMuscleRecovery(
+                exercise: exercise,
+                input: input,
+                isRecovery: isRecovery,
+                errors: &errors,
+                warnings: &warnings
+            )
         }
 
         if workout.estimatedDurationMinutes > input.targetDurationMinutes + GenerationConstants.Validation.durationOverTargetMinutes {
@@ -638,5 +714,165 @@ enum WorkoutValidator {
             warnings: warnings,
             suggestions: suggestions
         )
+    }
+
+    private static func validateSoreness(
+        input: WorkoutGenerationInput,
+        isRecovery: Bool,
+        totalSets: Int,
+        warnings: inout [String],
+        errors: inout [String],
+        suggestions: inout [String]
+    ) {
+        let soreness = input.readiness?.soreness ?? .none
+        if soreness == .severe {
+            let message = "Severe soreness reported — consider rescheduling or significantly reducing intensity."
+            if isRecovery {
+                warnings.append(message)
+            } else {
+                errors.append(message)
+            }
+            suggestions.append("Swap 30% of compound exercises for isolation movements and reduce volume by 40%.")
+        } else if soreness == .moderate {
+            warnings.append("Moderate soreness reported — consider reducing volume by 20%.")
+            suggestions.append(
+                "Reduce volume: aim for \(Int(Double(totalSets) * GenerationConstants.Validation.moderateSorenessVolumeReduction)) "
+                    + "sets instead of \(totalSets)."
+            )
+        } else if soreness == .mild {
+            warnings.append("Mild soreness noted — monitor intensity.")
+        }
+    }
+
+    private static func validateGlobalRecovery(
+        input: WorkoutGenerationInput,
+        isRecovery: Bool,
+        errors: inout [String],
+        warnings: inout [String],
+        suggestions: inout [String]
+    ) {
+        let minRecovery = GenerationConstants.Recovery.minimumRecovery(in: input.muscleRecovery)
+        if minRecovery < GenerationConstants.Recovery.criticalFatigueThreshold {
+            let message = "Critical fatigue detected (\(Int(minRecovery))% recovery). Recommend lighter session or rest day."
+            if isRecovery {
+                warnings.append(message)
+            } else {
+                errors.append(message)
+            }
+            suggestions.append("Reduce intensity to light/recovery work. Aim for RPE ≤ 6.")
+        } else if minRecovery < GenerationConstants.Recovery.lowRecoveryWarningThreshold {
+            warnings.append("Low fatigue threshold (\(Int(minRecovery))% recovery). Consider deload.")
+            suggestions.append("Reduce exercise intensity or volume; consider focusing on technique and recovery.")
+        }
+    }
+
+    private static func validateWeeklyVolume(
+        totalSets: Int,
+        weeklyVolume: Int,
+        volumeCap: Int,
+        volumeWarningThreshold: Int,
+        errors: inout [String],
+        warnings: inout [String],
+        suggestions: inout [String]
+    ) {
+        let projectedWeeklyVolume = weeklyVolume + totalSets
+        if projectedWeeklyVolume > volumeCap {
+            errors.append("Projected weekly volume (\(projectedWeeklyVolume) sets) exceeds safe threshold (\(volumeCap)). Consider deload.")
+        } else if projectedWeeklyVolume > volumeWarningThreshold {
+            warnings.append("Weekly volume trending high (\(projectedWeeklyVolume) sets). Monitor for overtraining.")
+            suggestions.append("Consider reducing volume or extending recovery between sessions.")
+        }
+    }
+
+    private static func validateIntensity(
+        workoutIntensity: Double,
+        avgRecovery: Double,
+        warnings: inout [String],
+        suggestions: inout [String]
+    ) {
+        let adjustedIntensity = IntensityCalculator.fatigueAdjustedIntensity(
+            baseIntensity: workoutIntensity,
+            recoveryPercent: avgRecovery
+        )
+        if workoutIntensity > GenerationConstants.Validation.highIntensityThreshold
+            && avgRecovery < GenerationConstants.Recovery.readyMuscleMinRecovery {
+            warnings.append("High intensity workout planned with low average recovery (\(Int(avgRecovery))%). Risk of overtraining.")
+            suggestions.append("Reduce intensity or defer high-intensity work. Replace heavy compounds with moderate-intensity accessory work.")
+        } else if adjustedIntensity > workoutIntensity * GenerationConstants.Validation.lowRecoveryAdjustedIntensityFraction
+            && avgRecovery < GenerationConstants.Recovery.lowRecoveryWarningThreshold {
+            suggestions.append(
+                "Estimated intensity reduced to \(String(format: "%.1f", adjustedIntensity * 100))% "
+                    + "due to low recovery. Session will be lighter-than-planned."
+            )
+        }
+    }
+
+    private static func validatePrescription(
+        planned: PlannedExercise,
+        exercise: Exercise,
+        input: WorkoutGenerationInput,
+        errors: inout [String],
+        warnings: inout [String]
+    ) {
+        let workingSets = planned.targetSets.filter { !$0.isWarmup }
+        if workingSets.count < GenerationConstants.Validation.minSetsPerExercise
+            || workingSets.count > GenerationConstants.Validation.maxSetsPerExercise {
+            errors.append("Invalid set count for \(exercise.name).")
+        }
+
+        if planned.restSeconds < GenerationConstants.Validation.minRestSeconds
+            || planned.restSeconds > GenerationConstants.Validation.maxRestSeconds {
+            errors.append("Invalid rest period for \(exercise.name).")
+        }
+
+        let isBodyweightExercise = exercise.usesBodyweightLoading
+        for set in planned.targetSets {
+            if let weight = set.targetWeightKg {
+                if weight < 0 || weight > GenerationConstants.Validation.maxPlannedWeightKg {
+                    errors.append("Invalid weight for \(exercise.name).")
+                }
+                if isBodyweightExercise && weight > 0 {
+                    errors.append("Bodyweight exercise \(exercise.name) should not have a loaded weight.")
+                }
+            }
+            if set.targetRepsMin < GenerationConstants.Validation.minRepCount
+                || set.targetRepsMax > GenerationConstants.Validation.maxRepCount
+                || set.targetRepsMin > set.targetRepsMax {
+                errors.append("Invalid rep range for \(exercise.name).")
+            }
+        }
+
+        if let lastWeight = input.exerciseStats.first(where: { $0.exerciseId == planned.exerciseId })?.lastWeightKg {
+            let jumpThreshold = lastWeight * GenerationConstants.Validation.weightJumpWarningMultiplier
+            if planned.targetSets.contains(where: { ($0.targetWeightKg ?? 0) > jumpThreshold }) {
+                warnings.append("Large weight jump for \(exercise.name) — verify planned load.")
+            }
+        }
+    }
+
+    private static func validateMuscleRecovery(
+        exercise: Exercise,
+        input: WorkoutGenerationInput,
+        isRecovery: Bool,
+        errors: inout [String],
+        warnings: inout [String]
+    ) {
+        for muscle in exercise.primaryMuscles {
+            let muscleRecovery = GenerationConstants.Recovery.recovery(for: muscle, in: input.muscleRecovery)
+            if muscleRecovery < GenerationConstants.Recovery.criticalFatigueThreshold {
+                let message = """
+                \(muscle.displayName) critically fatigued \
+                (<\(Int(GenerationConstants.Recovery.criticalFatigueThreshold))% recovery). \
+                \(exercise.name) not recommended.
+                """
+                if isRecovery {
+                    warnings.append(message)
+                } else {
+                    errors.append(message)
+                }
+            } else if muscleRecovery < GenerationConstants.Recovery.lowRecoveryWarningThreshold {
+                warnings.append("\(muscle.displayName) recovery very low. Consider swapping \(exercise.name) for a secondary muscle focus.")
+            }
+        }
     }
 }

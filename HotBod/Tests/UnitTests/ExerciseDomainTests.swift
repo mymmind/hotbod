@@ -65,6 +65,22 @@ final class ExerciseSubstitutionTests: XCTestCase {
         XCTAssertFalse(subs.contains(where: { $0.id == "cable_fly" }))
     }
 
+    func testSubstitutesExcludeExercisesAlreadyInWorkout() {
+        let bench = makeExercise(id: "bench_press", name: "Bench Press", pattern: .horizontalPush, muscles: [.chest])
+        let dumbbell = makeExercise(id: "dumbbell_press", name: "Dumbbell Press", pattern: .horizontalPush, muscles: [.chest])
+        let incline = makeExercise(id: "incline_press", name: "Incline Press", pattern: .horizontalPush, muscles: [.chest])
+
+        let subs = ExerciseCatalog.substitutes(
+            for: "bench_press",
+            from: [bench, dumbbell, incline],
+            availableEquipment: Equipment.allCases,
+            injuries: [],
+            excludeIds: ["dumbbell_press", "incline_press"]
+        )
+
+        XCTAssertTrue(subs.isEmpty)
+    }
+
     func testFetchExercisesInGroup() {
         var bench = makeExercise(id: "bench_press", name: "Bench Press", pattern: .horizontalPush, muscles: [.chest])
         bench.substitutionGroupId = "chest_horizontal_push"

@@ -15,6 +15,7 @@ struct TodayView: View {
     @State private var regenSpin = false
     @State private var contentAppeared = false
     @State private var showRecoveryDetails = false
+    @State private var showGenerationFailureAlert = false
 
     private var todayContentMode: String {
         if environment.isRestDay { return "rest" }
@@ -95,6 +96,20 @@ struct TodayView: View {
                 if case .main = newRoute {
                     Task { await loadActiveSession() }
                 }
+            }
+            .onChange(of: environment.lastGenerationFailure?.userMessage) { _, message in
+                showGenerationFailureAlert = message != nil
+            }
+            .alert(
+                "Can't Build Workout",
+                isPresented: $showGenerationFailureAlert,
+                presenting: environment.lastGenerationFailure
+            ) { _ in
+                Button("OK", role: .cancel) {
+                    environment.lastGenerationFailure = nil
+                }
+            } message: { failure in
+                Text(failure.userMessage)
             }
             .sheet(isPresented: $showSummary) {
                 if let session = completedSession {
@@ -283,6 +298,7 @@ struct TodayView: View {
     }
 
     private func switchSplitFocus() {
+        guard !environment.isWorkoutGenerationInFlight else { return }
         performAnimatedWorkoutRefresh(.switchSplit)
     }
 
@@ -310,6 +326,7 @@ struct TodayView: View {
     }
 
     private func regenerateWorkout() {
+        guard !environment.isWorkoutGenerationInFlight else { return }
         performAnimatedWorkoutRefresh(.regenerate)
     }
 
@@ -319,7 +336,7 @@ struct TodayView: View {
     }
 
     private func performAnimatedWorkoutRefresh(_ kind: WorkoutRefreshKind) {
-        guard !isRegenerating else { return }
+        guard !isRegenerating, !environment.isWorkoutGenerationInFlight else { return }
         Task { @MainActor in
             withAnimation(ForgeMotion.regenerate) {
                 isRegenerating = true

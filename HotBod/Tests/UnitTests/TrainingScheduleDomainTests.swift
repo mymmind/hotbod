@@ -107,6 +107,76 @@ final class TrainingScheduleTests: XCTestCase {
         XCTAssertNil(state.todayCompletedSessionId)
     }
 
+    func testClearLegacyUpcomingWorkoutRemovesStoredPreview() {
+        var state = TrainingProgramState()
+        state.upcomingWorkout = GeneratedWorkout(
+            id: UUID(),
+            title: "Preview",
+            estimatedDurationMinutes: 45,
+            focus: [.chest],
+            exercises: [],
+            rationale: "",
+            safetyNotes: [],
+            generatedBy: .rulesEngine,
+            createdAt: Date()
+        )
+        state.upcomingWorkoutFor = Date()
+
+        TrainingSchedule.clearLegacyUpcomingWorkout(state: &state)
+
+        XCTAssertNil(state.upcomingWorkout)
+        XCTAssertNil(state.upcomingWorkoutFor)
+    }
+
+    func testAdvanceRotationOnlyWhenCompletedFocusMatchesHead() {
+        var state = TrainingProgramState()
+        XCTAssertEqual(TrainingSchedule.currentSplitFocus(state: state, split: .pushPullLegs), .push)
+
+        TrainingSchedule.advanceRotationIfMatchingFocus(
+            state: &state,
+            split: .pushPullLegs,
+            completedFocus: .push
+        )
+        XCTAssertEqual(state.splitDayIndex, 1)
+        XCTAssertEqual(TrainingSchedule.currentSplitFocus(state: state, split: .pushPullLegs), .pull)
+
+        TrainingSchedule.advanceRotationIfMatchingFocus(
+            state: &state,
+            split: .pushPullLegs,
+            completedFocus: .push
+        )
+        XCTAssertEqual(state.splitDayIndex, 1)
+    }
+
+    func testTwoCompletionsSameFocusOnlyAdvanceOnce() {
+        var state = TrainingProgramState()
+        TrainingSchedule.advanceRotationIfMatchingFocus(
+            state: &state,
+            split: .pushPullLegs,
+            completedFocus: .push
+        )
+        TrainingSchedule.advanceRotationIfMatchingFocus(
+            state: &state,
+            split: .pushPullLegs,
+            completedFocus: .push
+        )
+        XCTAssertEqual(state.splitDayIndex, 1)
+    }
+
+    func testLegacyNilCompletedFocusAdvancesWhenHeadMatches() {
+        var state = TrainingProgramState()
+        XCTAssertEqual(TrainingSchedule.currentSplitFocus(state: state, split: .pushPullLegs), .push)
+
+        TrainingSchedule.advanceRotationIfMatchingFocus(
+            state: &state,
+            split: .pushPullLegs,
+            completedFocus: nil
+        )
+
+        XCTAssertEqual(state.splitDayIndex, 1)
+        XCTAssertEqual(TrainingSchedule.currentSplitFocus(state: state, split: .pushPullLegs), .pull)
+    }
+
     private func dateFor(weekday: Weekday) -> Date {
         var calendar = Calendar.current
         calendar.firstWeekday = Weekday.sunday.rawValue

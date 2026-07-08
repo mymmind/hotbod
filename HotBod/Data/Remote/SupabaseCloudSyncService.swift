@@ -113,6 +113,17 @@ actor SupabaseCloudSyncService: CloudSyncService {
             .execute()
     }
 
+    func clearTodayWorkout() async throws {
+        let userId = try await requireUserId()
+        struct PrefsPatch: Encodable {
+            let today_workout_json: GeneratedWorkout?
+        }
+        try await client.from("user_preferences")
+            .update(PrefsPatch(today_workout_json: nil))
+            .eq("user_id", value: userId.uuidString)
+            .execute()
+    }
+
     func pushSession(_ session: WorkoutSession) async throws {
         let userId = try await requireUserId()
         let row = WorkoutSessionRow(session: session, userId: userId)

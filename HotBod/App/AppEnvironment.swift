@@ -34,6 +34,7 @@ final class AppEnvironment {
     var hasCompletedOnboarding: Bool = false
     var sorenessLevel: SorenessLevel = .none
     var lastValidation: WorkoutValidationResult?
+    var lastGenerationFailure: GenerationFailure?
     var isSignedIn = false
     var authEmail: String?
     var syncMessage: String?
@@ -44,6 +45,12 @@ final class AppEnvironment {
     var isFoodAPIConfigured = FoodAPIConfig.isConfigured
 
     var sessionSaveTask: Task<Void, Never>?
+    var workoutGenerationTask: Task<GeneratedWorkout?, Never>?
+
+    var isWorkoutGenerationInFlight: Bool {
+        guard let workoutGenerationTask else { return false }
+        return !workoutGenerationTask.isCancelled
+    }
 
     var syncStores: SyncLocalStores {
         SyncLocalStores(
@@ -102,8 +109,13 @@ final class AppEnvironment {
         userProfile = try? await userProfileRepository.fetchProfile()
         todayWorkout = try? await workoutRepository.fetchTodayWorkout()
         programState = (try? await programStateRepository.fetchState()) ?? TrainingProgramState()
-        recoveryStates = (try? await recoveryRepository.fetchRecoveryStates()) ?? RecoveryCalculator.defaultStates()
-        await applyRecoveryDecay()
+        recoveryStates = RecoveryCalculator.normalizeStates(
+            (try? await recoveryRepository.fetchRecoveryStates()) ?? RecoveryCalculator.defaultStates()
+        )
+        let normalizedRecovery = recoveryStates
+        try? await recoveryRepository.saveRecoveryStates(normalizedRecovery)
+
+        let localDecayReference = programState.lastRecoveryDecayAppliedAt
         await refreshHealthReadiness()
 
         if authService.isAvailable, await authService.restoreSession() {
@@ -111,24 +123,113 @@ final class AppEnvironment {
             authEmail = await authService.currentEmail()
             photoCloudBackupEnabled = (try? await cloudSyncService.fetchPhotoBackupEnabled()) ?? false
             await pullFromCloud()
+            await mergeDecayReferenceAfterCloudPull(local: localDecayReference)
+            recoveryStates = RecoveryCalculator.normalizeStates(
+                (try? await recoveryRepository.fetchRecoveryStates()) ?? recoveryStates
+            )
         }
+
+        await repairPersistedCatalogReferences()
+        await applyRecoveryDecay()
 
         if hasCompletedOnboarding, let profile = userProfile {
             await normalizeProgramStateForToday(profile: profile)
+            let now = Date()
+            let calendar = Calendar.current
             if TrainingSchedule.isTrainingDay(profile: profile) {
                 if todayWorkout == nil, !isTodayWorkoutCompleted {
                     await regenerateTodayWorkout(profile: profile)
                 } else if let workout = todayWorkout,
-                          !Calendar.current.isDateInToday(workout.createdAt),
+                          await shouldRegenerateStaleTodayWorkout(workout, now: now, calendar: calendar),
                           !isTodayWorkoutCompleted {
                     await regenerateTodayWorkout(profile: profile)
                 }
             } else if !TrainingSchedule.isTrainingDay(profile: profile),
                       let workout = todayWorkout,
-                      !Calendar.current.isDateInToday(workout.createdAt) {
-                todayWorkout = nil
+                      await shouldRegenerateStaleTodayWorkout(workout, now: now, calendar: calendar) {
+                await clearTodayWorkout()
             }
         }
+    }
+
+    private func mergeDecayReferenceAfterCloudPull(local: Date?) async {
+        guard let local else { return }
+        let cloud = programState.lastRecoveryDecayAppliedAt
+        let merged = [local, cloud].compactMap { $0 }.max()
+        guard merged != programState.lastRecoveryDecayAppliedAt else { return }
+        var state = programState
+        state.lastRecoveryDecayAppliedAt = merged
+        programState = state
+        try? await programStateRepository.saveState(state)
+    }
+
+    func clearTodayWorkout() async {
+        todayWorkout = nil
+        try? await workoutRepository.clearTodayWorkout()
+        if isSignedIn {
+            try? await cloudSyncService.clearTodayWorkout()
+        }
+    }
+
+    func shouldRegenerateStaleTodayWorkout(
+        _ workout: GeneratedWorkout,
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) async -> Bool {
+        let hasActiveSession = await fetchActiveWorkoutSession() != nil
+        let hasCompletedSetsToday = await hasCompletedSetsLoggedToday(now: now, calendar: calendar)
+        return WorkoutStaleness.shouldRegenerate(
+            workoutCreatedAt: workout.createdAt,
+            hasActiveSession: hasActiveSession,
+            hasCompletedSetsToday: hasCompletedSetsToday,
+            now: now,
+            calendar: calendar
+        )
+    }
+
+    func hasCompletedSetsLoggedToday(now: Date = Date(), calendar: Calendar = .current) async -> Bool {
+        let sessions = (try? await workoutRepository.fetchSessions()) ?? []
+        return sessions.contains { session in
+            sessionHasCompletedSetsToday(session, now: now, calendar: calendar)
+        }
+    }
+
+    private func sessionHasCompletedSetsToday(
+        _ session: WorkoutSession,
+        now: Date,
+        calendar: Calendar
+    ) -> Bool {
+        session.exercises.flatMap(\.completedSets).contains {
+            calendar.isDate($0.completedAt, inSameDayAs: now)
+        }
+    }
+
+    func repairPersistedCatalogReferences() async {
+        let exercises = (try? await exerciseRepository.fetchAll()) ?? []
+        let catalogIds = Set(exercises.map(\.id))
+        var workout = todayWorkout
+        var stats = (try? await exerciseStatsRepository.fetchStats()) ?? []
+        let result = CatalogIntegrity.sweep(catalogIds: catalogIds, workout: &workout, stats: &stats)
+
+        if !result.flaggedOrphanStatIds.isEmpty {
+            try? await exerciseStatsRepository.saveStats(stats)
+        }
+
+        if !result.removedWorkoutExerciseIds.isEmpty || result.workoutNeedsRegeneration {
+            if let workout {
+                todayWorkout = workout
+                try? await workoutRepository.saveTodayWorkout(workout)
+            } else {
+                await clearTodayWorkout()
+            }
+        } else {
+            todayWorkout = workout
+        }
+    }
+
+    func blocksCoachWorkoutModification() async -> Bool {
+        if await fetchActiveWorkoutSession() != nil { return true }
+        return await hasCompletedSetsLoggedToday()
     }
 
     var isRestDay: Bool {

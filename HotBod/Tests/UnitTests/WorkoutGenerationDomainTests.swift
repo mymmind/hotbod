@@ -380,7 +380,7 @@ final class SleepScoreGenerationTests: XCTestCase {
         let compoundSets = workout.exercises.compactMap { planned -> Int? in
             guard let exercise = exerciseMap[planned.exerciseId],
                   exercise.resolvedMechanics == .compound else { return nil }
-            return planned.targetSets.count
+            return planned.targetSets.filter { !$0.isWarmup }.count
         }
         if let firstCompoundCount = compoundSets.first {
             XCTAssertLessThanOrEqual(firstCompoundCount, 3)
@@ -536,7 +536,8 @@ final class SuggestedStartWeightGenerationTests: XCTestCase {
             XCTFail("Expected bench_press")
             return
         }
-        XCTAssertEqual(bench.targetSets.first?.targetWeightKg ?? 0, 40, accuracy: 0.01)
+        let workingWeight = bench.targetSets.first { !$0.isWarmup }?.targetWeightKg ?? 0
+        XCTAssertEqual(workingWeight, 40, accuracy: 0.01)
     }
 
     func testBeginnerClampLimitsAggressiveSuggestion() {
@@ -572,7 +573,8 @@ final class SuggestedStartWeightGenerationTests: XCTestCase {
             XCTFail("Expected squat in legs workout")
             return
         }
-        XCTAssertEqual(squat.targetSets.first?.targetWeightKg ?? 0, 40, accuracy: 0.01)
+        let workingWeight = squat.targetSets.first { !$0.isWarmup }?.targetWeightKg ?? 0
+        XCTAssertEqual(workingWeight, 40, accuracy: 0.01)
     }
 }
 

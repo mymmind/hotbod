@@ -119,6 +119,7 @@ enum DeloadDetector {
         let isDeloadRecommended: Bool
         let reason: String
         let severity: DeloadSeverity
+        let suggestsReturningFromBreak: Bool
     }
 
     enum DeloadSeverity: String {
@@ -130,17 +131,30 @@ enum DeloadDetector {
     static func analyzeDeloadNeed(
         stats: UserExerciseStats,
         volumeHistory: [Int],
-        consecutiveWeeks: Int = 3
+        consecutiveWeeks: Int = 3,
+        now: Date = Date()
     ) -> DeloadAnalysis {
-        // Check for 30%+ volume drop week-over-week
-        if let lastWeek = volumeHistory.last, let prevWeek = volumeHistory.dropLast().last {
-            let volumeDrop = 1.0 - Double(lastWeek) / Double(max(1, prevWeek))
-            if volumeDrop > 0.3 {
-                return DeloadAnalysis(
-                    isDeloadRecommended: true,
-                    reason: "Volume dropped \(Int(volumeDrop * 100))% week-over-week — deload in progress",
-                    severity: .severe
-                )
+        if !stats.isInDeloadSuppressionWindow(at: now) {
+            let currentWindowSets = VolumeTracker.rollingSetCount(from: stats.recentSets, endingAt: now)
+            let previousWindowSets = VolumeTracker.rollingSetCountInPreviousWindow(from: stats.recentSets, endingAt: now)
+            if previousWindowSets >= GenerationConstants.Deload.minPreviousWindowSets {
+                if currentWindowSets < GenerationConstants.Deload.minCurrentWindowSetsForDrop {
+                    return DeloadAnalysis(
+                        isDeloadRecommended: false,
+                        reason: "Low volume after a break — re-entry ramp recommended",
+                        severity: .none,
+                        suggestsReturningFromBreak: true
+                    )
+                }
+                let volumeDrop = 1.0 - Double(currentWindowSets) / Double(previousWindowSets)
+                if volumeDrop > GenerationConstants.Deload.volumeDropThreshold {
+                    return DeloadAnalysis(
+                        isDeloadRecommended: true,
+                        reason: "Volume dropped \(Int(volumeDrop * 100))% over the trailing 7-day window — deload in progress",
+                        severity: .severe,
+                        suggestsReturningFromBreak: false
+                    )
+                }
             }
         }
 
@@ -154,7 +168,8 @@ enum DeloadDetector {
                     return DeloadAnalysis(
                         isDeloadRecommended: true,
                         reason: "3 consecutive weeks of 15%+ volume increase — suggest deload",
-                        severity: .moderate
+                        severity: .moderate,
+                        suggestsReturningFromBreak: false
                     )
                 }
             }
@@ -163,24 +178,31 @@ enum DeloadDetector {
         return DeloadAnalysis(
             isDeloadRecommended: false,
             reason: "Volume patterns nominal",
-            severity: .none
+            severity: .none,
+            suggestsReturningFromBreak: false
         )
     }
 
     /// Updates deload state based on volume history
-    static func updateDeloadState(stats: inout UserExerciseStats) {
+    static func updateDeloadState(stats: inout UserExerciseStats, now: Date = Date()) {
         let analysis = analyzeDeloadNeed(
             stats: stats,
             volumeHistory: stats.weeklyVolume,
-            consecutiveWeeks: stats.consecutiveHighVolumeWeeks
+            consecutiveWeeks: stats.consecutiveHighVolumeWeeks,
+            now: now
         )
 
-        if analysis.isDeloadRecommended {
-            stats.isInDeloadWeek = true
-            stats.lastDeloadDate = Date()
+        if analysis.suggestsReturningFromBreak {
+            stats.returningFromBreak = true
             stats.consecutiveHighVolumeWeeks = 0
-        } else {
-            stats.isInDeloadWeek = false
+            return
+        }
+
+        if analysis.isDeloadRecommended {
+            if stats.deloadStartedAt == nil || !stats.isInDeloadWeek {
+                stats.deloadStartedAt = now
+            }
+            stats.consecutiveHighVolumeWeeks = 0
         }
     }
 }

@@ -3,24 +3,78 @@ import Foundation
 enum RecoveryCalculator {
     static func defaultStates() -> [MuscleRecoveryState] {
         MuscleGroup.allCases.map {
-            MuscleRecoveryState(muscleGroup: $0, recoveryPercentage: 85, lastTrainedAt: nil, accumulatedFatigue: 0)
+            MuscleRecoveryState(
+                muscleGroup: $0,
+                recoveryPercentage: GenerationConstants.Recovery.defaultMuscleRecovery,
+                lastTrainedAt: nil,
+                accumulatedFatigue: 0
+            )
         }
+    }
+
+    /// Keeps the lowest recovery per muscle and backfills any missing muscle groups at 100%.
+    static func normalizeStates(_ states: [MuscleRecoveryState]) -> [MuscleRecoveryState] {
+        var byMuscle: [MuscleGroup: MuscleRecoveryState] = [:]
+        for state in states {
+            if let existing = byMuscle[state.muscleGroup] {
+                if state.recoveryPercentage < existing.recoveryPercentage {
+                    byMuscle[state.muscleGroup] = state
+                }
+            } else {
+                byMuscle[state.muscleGroup] = state
+            }
+        }
+
+        for muscle in MuscleGroup.allCases where byMuscle[muscle] == nil {
+            byMuscle[muscle] = MuscleRecoveryState(
+                muscleGroup: muscle,
+                recoveryPercentage: GenerationConstants.Recovery.defaultMuscleRecovery,
+                lastTrainedAt: nil,
+                accumulatedFatigue: 0
+            )
+        }
+
+        return MuscleGroup.allCases.compactMap { byMuscle[$0] }
+    }
+
+    static func recoveryMap(from states: [MuscleRecoveryState]) -> [MuscleGroup: Double] {
+        Dictionary(
+            normalizeStates(states).map { ($0.muscleGroup, $0.recoveryPercentage) },
+            uniquingKeysWith: min
+        )
     }
 
     static func decayRecovery(
         states: [MuscleRecoveryState],
         experienceLevel: ExperienceLevel,
-        hoursSinceReference: Double = 0
-    ) -> [MuscleRecoveryState] {
+        lastDecayAppliedAt: Date? = nil,
+        now: Date = Date()
+    ) -> (states: [MuscleRecoveryState], lastDecayAppliedAt: Date) {
         let rate = experienceLevel.recoveryRatePerHour
-        return states.map { state in
-            var updated = state
-            let hours = hoursSinceReference > 0 ? hoursSinceReference :
-                (state.lastTrainedAt.map { Date().timeIntervalSince($0) / 3600 } ?? 24)
-            updated.recoveryPercentage = min(100, state.recoveryPercentage + hours * rate)
-            updated.accumulatedFatigue = max(0, state.accumulatedFatigue - hours * 0.5)
-            return updated
+        let globalHours: Double
+
+        if let lastDecay = lastDecayAppliedAt {
+            let rawHours = now.timeIntervalSince(lastDecay) / 3600
+            globalHours = min(max(0, rawHours), GenerationConstants.Time.maxDecayHours)
+        } else {
+            globalHours = 0
         }
+
+        let updated = states.map { state -> MuscleRecoveryState in
+            var updatedState = state
+            let hours: Double
+            if lastDecayAppliedAt == nil, let lastTrained = state.lastTrainedAt {
+                let rawHours = now.timeIntervalSince(lastTrained) / 3600
+                hours = min(max(0, rawHours), GenerationConstants.Time.maxDecayHours)
+            } else {
+                hours = globalHours
+            }
+            updatedState.recoveryPercentage = min(100, state.recoveryPercentage + hours * rate)
+            updatedState.accumulatedFatigue = max(0, state.accumulatedFatigue - hours * 0.5)
+            return updatedState
+        }
+
+        return (updated, now)
     }
 
     static func applyWorkoutFatigue(
@@ -28,7 +82,10 @@ enum RecoveryCalculator {
         exercises: [Exercise],
         completedSets: [(exercise: Exercise, sets: [CompletedSet])]
     ) -> [MuscleRecoveryState] {
-        var map = Dictionary(uniqueKeysWithValues: states.map { ($0.muscleGroup, $0) })
+        var map = Dictionary(
+            normalizeStates(states).map { ($0.muscleGroup, $0) },
+            uniquingKeysWith: { left, _ in left }
+        )
 
         for item in completedSets {
             let workingSets = item.sets.filter { !$0.isWarmup }
@@ -36,7 +93,12 @@ enum RecoveryCalculator {
             let contributions = muscleContributions(for: item.exercise)
 
             for (muscle, contribution) in contributions {
-                var state = map[muscle] ?? MuscleRecoveryState(muscleGroup: muscle, recoveryPercentage: 85, lastTrainedAt: nil, accumulatedFatigue: 0)
+                var state = map[muscle] ?? MuscleRecoveryState(
+                    muscleGroup: muscle,
+                    recoveryPercentage: GenerationConstants.Recovery.defaultMuscleRecovery,
+                    lastTrainedAt: nil,
+                    accumulatedFatigue: 0
+                )
                 let fatigue = Double(workingSets.count) * intensityMultiplier * contribution * 8
                 state.recoveryPercentage = max(0, state.recoveryPercentage - fatigue)
                 state.accumulatedFatigue += fatigue
@@ -58,11 +120,17 @@ enum RecoveryCalculator {
         return contributions
     }
 
-    static func applySoreness(states: [MuscleRecoveryState], level: SorenessLevel) -> [MuscleRecoveryState] {
+    static func applySoreness(
+        states: [MuscleRecoveryState],
+        level: SorenessLevel,
+        recentlyTrainedMuscles: Set<MuscleGroup> = []
+    ) -> [MuscleRecoveryState] {
         guard level != .none else { return states }
         return states.map { state in
             var updated = state
-            updated.recoveryPercentage = max(0, state.recoveryPercentage - level.recoveryPenalty)
+            let trained = recentlyTrainedMuscles.contains(state.muscleGroup)
+            let penalty = level.scopedRecoveryPenalty(trained: trained)
+            updated.recoveryPercentage = max(0, state.recoveryPercentage - penalty)
             return updated
         }
     }
@@ -95,72 +163,65 @@ enum VolumeTracker {
     private static let maxWeeks = 12
 
     static func recordSession(on stats: inout UserExerciseStats, date: Date = Date()) {
-        let calendar = Calendar.current
-        let currentWeekReps = stats.recentSets
-            .filter { !$0.isWarmup && calendar.isDate($0.completedAt, equalTo: date, toGranularity: .weekOfYear) }
-            .reduce(0) { $0 + $1.reps }
-
-        let onlyCurrentWeekInRecent = stats.recentSets
-            .filter { !$0.isWarmup && $0.reps > 0 }
-            .allSatisfy { calendar.isDate($0.completedAt, equalTo: date, toGranularity: .weekOfYear) }
-
-        if stats.weeklyVolume.isEmpty {
-            stats.weeklyVolume = [currentWeekReps]
-        } else if onlyCurrentWeekInRecent {
-            if let lastWeekVolume = stats.weeklyVolume.last,
-               currentWeekReps < lastWeekVolume,
-               stats.recentSets.filter({ !$0.isWarmup }).count <= stats.weeklyMaxSets + 3 {
-                stats.weeklyVolume.append(currentWeekReps)
-            } else {
-                stats.weeklyVolume[stats.weeklyVolume.count - 1] = currentWeekReps
-            }
-        } else {
-            stats.weeklyVolume = weeklyVolumeHistory(from: stats.recentSets)
-        }
-
+        stats.weeklyVolume = weeklyVolumeHistory(from: stats.recentSets, endingAt: date)
         if stats.weeklyVolume.count > maxWeeks {
             stats.weeklyVolume.removeFirst(stats.weeklyVolume.count - maxWeeks)
         }
 
-        stats.weeklyMaxSets = weeklySetCount(from: stats.recentSets, date: date)
+        stats.weeklyMaxSets = rollingSetCount(from: stats.recentSets, endingAt: date)
         stats.volumeTrend = computeTrend(from: stats.weeklyVolume)
         updateConsecutiveHighVolumeWeeks(&stats)
     }
 
-    static func weeklyVolumeHistory(from sets: [CompletedSet]) -> [Int] {
-        let calendar = Calendar.current
-        let working = sets.filter { !$0.isWarmup && $0.reps > 0 }.sorted { $0.completedAt < $1.completedAt }
+    /// Rolling 7×24h rep totals for consecutive windows ending at `now`, oldest first.
+    static func weeklyVolumeHistory(from sets: [CompletedSet], endingAt now: Date = Date()) -> [Int] {
+        let working = sets.filter { !$0.isWarmup && $0.reps > 0 }
         guard !working.isEmpty else { return [] }
 
-        var weekVolumes: [Int] = []
-        var currentWeekKey: Int?
-        var currentVolume = 0
-
-        for set in working {
-            let week = calendar.component(.weekOfYear, from: set.completedAt)
-            let year = calendar.component(.yearForWeekOfYear, from: set.completedAt)
-            let key = year * 100 + week
-            if currentWeekKey == key {
-                currentVolume += set.reps
-            } else {
-                if currentWeekKey != nil {
-                    weekVolumes.append(currentVolume)
-                }
-                currentWeekKey = key
-                currentVolume = set.reps
+        var volumes: [Int] = []
+        var windowEnd = now
+        for _ in 0..<maxWeeks {
+            let windowStart = GenerationConstants.Time.rollingWindowStart(endingAt: windowEnd)
+            let reps = working
+                .filter { $0.completedAt >= windowStart && $0.completedAt <= windowEnd }
+                .reduce(0) { $0 + $1.reps }
+            if reps > 0 {
+                volumes.insert(reps, at: 0)
+            } else if !volumes.isEmpty {
+                break
             }
+            if windowStart <= Date(timeIntervalSince1970: 0) { break }
+            windowEnd = windowStart.addingTimeInterval(-1)
         }
-        if currentWeekKey != nil {
-            weekVolumes.append(currentVolume)
-        }
-        return Array(weekVolumes.suffix(maxWeeks))
+        return volumes
     }
 
-    static func weeklySetCount(from sets: [CompletedSet], date: Date) -> Int {
-        let calendar = Calendar.current
-        return sets.filter {
-            !$0.isWarmup && calendar.isDate($0.completedAt, equalTo: date, toGranularity: .weekOfYear)
+    static func rollingSetCount(from sets: [CompletedSet], endingAt now: Date) -> Int {
+        sets.filter {
+            !$0.isWarmup && GenerationConstants.Time.isInRollingWindow($0.completedAt, endingAt: now)
         }.count
+    }
+
+    static func rollingSetCountInPreviousWindow(from sets: [CompletedSet], endingAt now: Date) -> Int {
+        sets.filter {
+            !$0.isWarmup && GenerationConstants.Time.isInPreviousRollingWindow($0.completedAt, endingAt: now)
+        }.count
+    }
+
+    static func rollingRepCount(from sets: [CompletedSet], endingAt now: Date) -> Int {
+        sets.filter {
+            !$0.isWarmup && $0.reps > 0 && GenerationConstants.Time.isInRollingWindow($0.completedAt, endingAt: now)
+        }.reduce(0) { $0 + $1.reps }
+    }
+
+    static func rollingRepCountInPreviousWindow(from sets: [CompletedSet], endingAt now: Date) -> Int {
+        sets.filter {
+            !$0.isWarmup && $0.reps > 0 && GenerationConstants.Time.isInPreviousRollingWindow($0.completedAt, endingAt: now)
+        }.reduce(0) { $0 + $1.reps }
+    }
+
+    static func weeklySetCount(from sets: [CompletedSet], endingAt now: Date) -> Int {
+        rollingSetCount(from: sets, endingAt: now)
     }
 
     static func computeTrend(from history: [Int]) -> TrendDirection {
@@ -198,15 +259,18 @@ enum ProgressiveOverload {
     static func nextWeight(
         currentWeight: Double,
         completedAllSetsAtTopRange: Bool,
-        missedMinimumReps: Bool
+        missedMinimumReps: Bool,
+        equipment: [Equipment] = []
     ) -> Double {
+        let raw: Double
         if completedAllSetsAtTopRange {
-            return currentWeight + 2.5
+            raw = currentWeight + GenerationConstants.Weight.barbellIncrementKg
+        } else if missedMinimumReps {
+            raw = (currentWeight * 0.95 * 10).rounded() / 10
+        } else {
+            return GenerationConstants.Weight.roundToAvailable(currentWeight, equipment: equipment)
         }
-        if missedMinimumReps {
-            return (currentWeight * 0.95 * 10).rounded() / 10
-        }
-        return currentWeight
+        return GenerationConstants.Weight.roundToAvailable(raw, equipment: equipment)
     }
 
     static func nextWeight(
@@ -214,32 +278,27 @@ enum ProgressiveOverload {
         stats: UserExerciseStats,
         volumeCap: Int,
         setCountThisWeek: Int,
-        bodyweight: Double
+        bodyweight: Double,
+        equipment: [Equipment] = []
     ) -> Double {
+        let raw: Double
         // If in deload week, reduce weight by 10%
         if stats.isInDeloadWeek {
-            return current * 0.9
+            raw = current * 0.9
+        } else if stats.returningFromBreak {
+            raw = current * GenerationConstants.Deload.reEntryWeightMultiplier
+        } else if stats.volumeTrend == .decreasing {
+            raw = current
+        } else if setCountThisWeek >= volumeCap {
+            raw = current * 0.95
+        } else if stats.volumeTrend == .increasing {
+            let increment = current < 20 ? current * 0.025 : GenerationConstants.Weight.barbellIncrementKg
+            raw = current + increment
+        } else {
+            let increment = current < 20 ? current * 0.05 : 5.0
+            raw = current + increment
         }
-
-        // If volume is decreasing significantly, maintain or reduce weight
-        if stats.volumeTrend == .decreasing {
-            return current
-        }
-
-        // If user hit volume cap this week, reduce intensity for next week
-        if setCountThisWeek >= volumeCap {
-            return current * 0.95
-        }
-
-        // If volume is increasing steadily, increment conservatively
-        if stats.volumeTrend == .increasing {
-            let increment = current < 20 ? current * 0.025 : 2.5
-            return round((current + increment) * 2.0) / 2.0
-        }
-
-        // Stable volume: increment moderately
-        let increment = current < 20 ? current * 0.05 : 5.0
-        return round((current + increment) * 2.0) / 2.0
+        return GenerationConstants.Weight.roundToAvailable(raw, equipment: equipment)
     }
 
     static func estimateOneRepMax(weight: Double, reps: Int) -> Double {
@@ -253,7 +312,9 @@ enum ProgressiveOverload {
         completedSets: [CompletedSet],
         plannedSets: [PlannedSet],
         bodyweightKg: Double = 80,
-        experienceLevel: ExperienceLevel = .intermediate
+        experienceLevel: ExperienceLevel = .intermediate,
+        goal: TrainingGoal? = nil,
+        equipment: [Equipment] = []
     ) -> UserExerciseStats {
         let working = completedSets.filter { !$0.isWarmup && $0.reps > 0 }
         let last = working.last
@@ -292,13 +353,23 @@ enum ProgressiveOverload {
             stats.weeklyVolume = existing.weeklyVolume
             stats.weeklyMaxSets = existing.weeklyMaxSets
             stats.volumeTrend = existing.volumeTrend
-            stats.isInDeloadWeek = existing.isInDeloadWeek
-            stats.lastDeloadDate = existing.lastDeloadDate
+            stats.deloadStartedAt = existing.deloadStartedAt
+            stats.returningFromBreak = existing.returningFromBreak
             stats.consecutiveHighVolumeWeeks = existing.consecutiveHighVolumeWeeks
+            stats.isOrphaned = existing.isOrphaned
+            stats.goalAtLastUpdate = existing.goalAtLastUpdate
+        }
+
+        if let goal {
+            stats.goalAtLastUpdate = goal
         }
 
         VolumeTracker.recordSession(on: &stats)
         DeloadDetector.updateDeloadState(stats: &stats)
+
+        if stats.returningFromBreak, existing?.returningFromBreak == true {
+            stats.returningFromBreak = false
+        }
 
         if let lastWeight = lastWeight {
             let volumeCap = VolumeCapCalculator.adjustedWeeklySetCap(
@@ -309,7 +380,8 @@ enum ProgressiveOverload {
                 stats.suggestedNextWeightKg = nextWeight(
                     currentWeight: lastWeight,
                     completedAllSetsAtTopRange: hitTop,
-                    missedMinimumReps: missedMin
+                    missedMinimumReps: missedMin,
+                    equipment: equipment
                 )
             } else {
                 stats.suggestedNextWeightKg = nextWeight(
@@ -317,7 +389,8 @@ enum ProgressiveOverload {
                     stats: stats,
                     volumeCap: volumeCap,
                     setCountThisWeek: stats.weeklyMaxSets,
-                    bodyweight: bodyweightKg
+                    bodyweight: bodyweightKg,
+                    equipment: equipment
                 )
             }
         }
@@ -350,7 +423,10 @@ enum ProgressiveOverload {
         case .advanced: 1.3
         }
 
-        return round(baseWeight * experienceFactor * 2.0) / 2.0
+        return GenerationConstants.Weight.roundToAvailable(
+            baseWeight * experienceFactor,
+            equipment: exercise.equipment
+        )
     }
 }
 
@@ -422,12 +498,14 @@ enum VolumeCalculator {
         exercises.reduce(0) { $0 + $1.targetSets.filter { !$0.isWarmup }.count }
     }
 
-    /// Estimates weekly sets from recent workouts.
-    static func weeklyVolumeEstimate(recentWorkouts: [WorkoutSessionSummary], days: Int = 7) -> Int {
-        let calendar = Calendar.current
-        let weekAgo = calendar.date(byAdding: .day, value: -days, to: Date()) ?? Date()
-        let thisWeek = recentWorkouts.filter { $0.completedAt >= weekAgo }
-        return thisWeek.reduce(0) { $0 + $1.totalSets }
+    /// Estimates working sets in the trailing 7×24h window ending at `now`.
+    static func weeklyVolumeEstimate(
+        recentWorkouts: [WorkoutSessionSummary],
+        endingAt now: Date = Date()
+    ) -> Int {
+        recentWorkouts
+            .filter { GenerationConstants.Time.isInRollingWindow($0.completedAt, endingAt: now) }
+            .reduce(0) { $0 + $1.totalSets }
     }
 
     /// Volume reduction factor based on soreness level (single source: GenerationConstants).

@@ -37,11 +37,14 @@ extension AppEnvironment {
     }
 
     func resumeOrStartWorkout(from workout: GeneratedWorkout) async -> WorkoutSession? {
-        guard let userId = userProfile?.id else { return nil }
+        guard let profile = userProfile else { return nil }
 
         if let existing = await fetchActiveWorkoutSession() {
             return existing
         }
+
+        let splitFocus = workout.splitDayFocus
+            ?? TrainingSchedule.currentSplitFocus(state: programState, split: profile.preferredSplit)
 
         let exercises = workout.exercises.map { planned in
             WorkoutExercise(
@@ -52,12 +55,13 @@ extension AppEnvironment {
             )
         }
         let session = WorkoutSession(
-            userId: userId,
+            userId: profile.id,
             title: workout.title,
             startedAt: Date(),
             estimatedDurationMinutes: workout.estimatedDurationMinutes,
             exercises: exercises,
-            status: .inProgress
+            status: .inProgress,
+            splitDayFocus: splitFocus
         )
         try? await workoutRepository.saveSession(session)
         await setActiveWorkoutSession(session)
@@ -109,14 +113,18 @@ extension AppEnvironment {
         var notes: [String] = []
         let bodyweight = userProfile?.weightKg ?? 80
         let experience = userProfile?.experienceLevel ?? .intermediate
+        let goal = userProfile?.goal
         for we in session.exercises where !we.wasSkipped {
+            let exercise = map[we.exerciseId]
             let updated = ProgressiveOverload.updateStats(
                 existing: stats.first { $0.exerciseId == we.exerciseId },
                 exerciseId: we.exerciseId,
                 completedSets: we.completedSets,
                 plannedSets: we.plannedSets,
                 bodyweightKg: bodyweight,
-                experienceLevel: experience
+                experienceLevel: experience,
+                goal: goal,
+                equipment: exercise?.equipment ?? []
             )
             if let name = map[we.exerciseId]?.name, let next = updated.suggestedNextWeightKg {
                 notes.append("\(name): try \(Int(next))kg next session.")
@@ -138,11 +146,13 @@ extension AppEnvironment {
         state.activeSessionId = nil
         state.todayCompletedSessionId = session.id
         state.todayCompletedOn = TrainingSchedule.startOfDay(Date())
-        TrainingSchedule.advanceRotation(state: &state, split: profile.preferredSplit)
+        TrainingSchedule.advanceRotationIfMatchingFocus(
+            state: &state,
+            split: profile.preferredSplit,
+            completedFocus: session.splitDayFocus
+        )
         programState = state
         try? await programStateRepository.saveState(state)
-
-        await pregenerateUpcomingWorkout(profile: profile, state: state)
 
         if isSignedIn {
             try? await cloudSyncService.pushSession(session)

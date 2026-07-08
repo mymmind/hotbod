@@ -16,7 +16,8 @@ enum WorkoutGenerationAlgorithms {
         experience: ExperienceLevel,
         stats: [UserExerciseStats],
         recoveryBias: Bool,
-        favoriteIds: Set<String> = []
+        favoriteIds: Set<String> = [],
+        ignoreDifficultyPenalty: Bool = false
     ) -> [(Exercise, Double)] {
         exercises.map { exercise in
             let primaryMatches = exercise.primaryMuscles.filter { targetMuscles.contains($0) }.count
@@ -29,7 +30,7 @@ enum WorkoutGenerationAlgorithms {
             let favoriteBonus = favoriteIds.contains(exercise.id)
                 ? GenerationConstants.Scoring.favoriteBonus
                 : 0.0
-            let difficultyPenalty = exercise.difficulty == .advanced && experience == .beginner
+            let difficultyPenalty = !ignoreDifficultyPenalty && exercise.difficulty == .advanced && experience == .beginner
                 ? GenerationConstants.Scoring.beginnerAdvancedPenalty
                 : 0.0
             var recoveryBonus = 0.0
@@ -201,6 +202,14 @@ enum WorkoutGenerationAlgorithms {
         split: TrainingSplit,
         focus: SplitDayFocus?
     ) -> String {
+        if muscles.isEmpty {
+            #if DEBUG
+            if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
+                assertionFailure("workoutTitle called with empty muscle targets")
+            }
+            #endif
+            return "Workout"
+        }
         let suffix = GenerationConstants.Titles.goalSuffix(for: goal)
         if let focus {
             return "\(focus.displayName) \(suffix)"

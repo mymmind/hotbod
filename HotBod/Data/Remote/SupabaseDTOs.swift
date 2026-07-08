@@ -397,8 +397,9 @@ struct UserExerciseStatsRow: Codable {
     var weeklyVolume: [Int]
     var weeklyMaxSets: Int
     var volumeTrend: String
-    var isInDeloadWeek: Bool
-    var lastDeloadDate: Date?
+    var deloadStartedAt: Date?
+    var returningFromBreak: Bool
+    var goalAtLastUpdate: String?
     var consecutiveHighVolumeWeeks: Int
     var updatedAt: Date?
 
@@ -416,10 +417,13 @@ struct UserExerciseStatsRow: Codable {
         case weeklyVolume = "weekly_volume"
         case weeklyMaxSets = "weekly_max_sets"
         case volumeTrend = "volume_trend"
-        case isInDeloadWeek = "is_in_deload_week"
-        case lastDeloadDate = "last_deload_date"
+        case deloadStartedAt = "deload_started_at"
+        case returningFromBreak = "returning_from_break"
+        case goalAtLastUpdate = "goal_at_last_update"
         case consecutiveHighVolumeWeeks = "consecutive_high_volume_weeks"
         case updatedAt = "updated_at"
+        case legacyIsInDeloadWeek = "is_in_deload_week"
+        case legacyLastDeloadDate = "last_deload_date"
     }
 
     init(stat: UserExerciseStats, userId: UUID) {
@@ -436,10 +440,59 @@ struct UserExerciseStatsRow: Codable {
         weeklyVolume = stat.weeklyVolume
         weeklyMaxSets = stat.weeklyMaxSets
         volumeTrend = stat.volumeTrend.rawValue
-        isInDeloadWeek = stat.isInDeloadWeek
-        lastDeloadDate = stat.lastDeloadDate
+        deloadStartedAt = stat.deloadStartedAt
+        returningFromBreak = stat.returningFromBreak
+        goalAtLastUpdate = stat.goalAtLastUpdate?.rawValue
         consecutiveHighVolumeWeeks = stat.consecutiveHighVolumeWeeks
         updatedAt = Date()
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        userId = try container.decode(UUID.self, forKey: .userId)
+        exerciseId = try container.decode(String.self, forKey: .exerciseId)
+        lastWeightKg = try container.decodeIfPresent(Double.self, forKey: .lastWeightKg)
+        lastReps = try container.decodeIfPresent(Int.self, forKey: .lastReps)
+        suggestedNextWeightKg = try container.decodeIfPresent(Double.self, forKey: .suggestedNextWeightKg)
+        estimatedOneRepMax = try container.decodeIfPresent(Double.self, forKey: .estimatedOneRepMax)
+        bestVolumeSet = try container.decodeIfPresent(Double.self, forKey: .bestVolumeSet)
+        recentSets = try container.decodeIfPresent([CompletedSet].self, forKey: .recentSets) ?? []
+        preferredRepRangeMin = try container.decode(Int.self, forKey: .preferredRepRangeMin)
+        preferredRepRangeMax = try container.decode(Int.self, forKey: .preferredRepRangeMax)
+        weeklyVolume = try container.decodeIfPresent([Int].self, forKey: .weeklyVolume) ?? []
+        weeklyMaxSets = try container.decodeIfPresent(Int.self, forKey: .weeklyMaxSets) ?? 0
+        volumeTrend = try container.decodeIfPresent(String.self, forKey: .volumeTrend) ?? TrendDirection.stable.rawValue
+        deloadStartedAt = try container.decodeIfPresent(Date.self, forKey: .deloadStartedAt)
+        if deloadStartedAt == nil,
+           try container.decodeIfPresent(Bool.self, forKey: .legacyIsInDeloadWeek) == true {
+            deloadStartedAt = try container.decodeIfPresent(Date.self, forKey: .legacyLastDeloadDate) ?? Date()
+        }
+        returningFromBreak = try container.decodeIfPresent(Bool.self, forKey: .returningFromBreak) ?? false
+        goalAtLastUpdate = try container.decodeIfPresent(String.self, forKey: .goalAtLastUpdate)
+        consecutiveHighVolumeWeeks = try container.decodeIfPresent(Int.self, forKey: .consecutiveHighVolumeWeeks) ?? 0
+        updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(userId, forKey: .userId)
+        try container.encode(exerciseId, forKey: .exerciseId)
+        try container.encodeIfPresent(lastWeightKg, forKey: .lastWeightKg)
+        try container.encodeIfPresent(lastReps, forKey: .lastReps)
+        try container.encodeIfPresent(suggestedNextWeightKg, forKey: .suggestedNextWeightKg)
+        try container.encodeIfPresent(estimatedOneRepMax, forKey: .estimatedOneRepMax)
+        try container.encodeIfPresent(bestVolumeSet, forKey: .bestVolumeSet)
+        try container.encode(recentSets, forKey: .recentSets)
+        try container.encode(preferredRepRangeMin, forKey: .preferredRepRangeMin)
+        try container.encode(preferredRepRangeMax, forKey: .preferredRepRangeMax)
+        try container.encode(weeklyVolume, forKey: .weeklyVolume)
+        try container.encode(weeklyMaxSets, forKey: .weeklyMaxSets)
+        try container.encode(volumeTrend, forKey: .volumeTrend)
+        try container.encodeIfPresent(deloadStartedAt, forKey: .deloadStartedAt)
+        try container.encode(returningFromBreak, forKey: .returningFromBreak)
+        try container.encodeIfPresent(goalAtLastUpdate, forKey: .goalAtLastUpdate)
+        try container.encode(consecutiveHighVolumeWeeks, forKey: .consecutiveHighVolumeWeeks)
+        try container.encodeIfPresent(updatedAt, forKey: .updatedAt)
     }
 
     var toStats: UserExerciseStats {
@@ -452,13 +505,14 @@ struct UserExerciseStatsRow: Codable {
             bestVolumeSet: bestVolumeSet,
             recentSets: recentSets,
             preferredRepRangeMin: preferredRepRangeMin,
-            preferredRepRangeMax: preferredRepRangeMax
+            preferredRepRangeMax: preferredRepRangeMax,
+            goalAtLastUpdate: goalAtLastUpdate.flatMap(TrainingGoal.init(rawValue:)),
+            deloadStartedAt: deloadStartedAt,
+            returningFromBreak: returningFromBreak
         )
         stats.weeklyVolume = weeklyVolume
         stats.weeklyMaxSets = weeklyMaxSets
         stats.volumeTrend = TrendDirection(rawValue: volumeTrend) ?? .stable
-        stats.isInDeloadWeek = isInDeloadWeek
-        stats.lastDeloadDate = lastDeloadDate
         stats.consecutiveHighVolumeWeeks = consecutiveHighVolumeWeeks
         return stats
     }

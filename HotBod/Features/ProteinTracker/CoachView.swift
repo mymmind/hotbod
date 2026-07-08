@@ -210,7 +210,7 @@ struct CoachView: View {
                 latestPhotoDate: photos.first?.date,
                 averageLightingScore: nil
             ),
-            recovery: Dictionary(uniqueKeysWithValues: environment.recoveryStates.map { ($0.muscleGroup, $0.recoveryPercentage) }),
+            recovery: RecoveryCalculator.recoveryMap(from: environment.recoveryStates),
             limitations: profile?.limitations ?? [],
             allowedExerciseIds: exercises.map(\.id),
             availableEquipment: profile?.availableEquipment ?? Equipment.allCases,
@@ -237,6 +237,19 @@ struct CoachView: View {
 
     private func handleCoachAction(intent: CoachIntent?, userMessage: String, profile: UserProfile?) async {
         guard intent == .modifyWorkout, let profile else { return }
+
+        if await environment.blocksCoachWorkoutModification() {
+            let msg = CoachMessage(
+                id: UUID(),
+                role: .assistant,
+                content: "Finish or discard your current session before applying coach changes.",
+                createdAt: Date(),
+                intent: .modifyWorkout
+            )
+            messages.append(msg)
+            try? await environment.saveCoachMessage(msg)
+            return
+        }
 
         if let restMessage = CoachOfflineModify.restDayMessage(profile: profile) {
             let msg = CoachMessage(

@@ -232,7 +232,8 @@ struct WorkoutSessionView: View {
     }
 
     private func swapCandidates(for exerciseId: String) -> [Exercise] {
-        swapResolver?.swapCandidates(for: exerciseId) ?? []
+        let used = Set(session.exercises.map(\.exerciseId))
+        return swapResolver?.swapCandidates(for: exerciseId, workoutExerciseIds: used) ?? []
     }
 
     private func swapExercise(to newExerciseId: String) {

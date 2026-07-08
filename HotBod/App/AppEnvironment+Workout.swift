@@ -4,6 +4,7 @@ extension AppEnvironment {
     @discardableResult
     func regenerateTodayWorkout(profile: UserProfile, options: WorkoutGenerationOptions = WorkoutGenerationOptions()) async -> Bool {
         guard TrainingSchedule.isTrainingDay(profile: profile), !isTodayWorkoutCompleted else { return false }
+        guard !isWorkoutGenerationInFlight else { return false }
 
         await cancelActiveWorkoutIfNeeded()
         await applyRecoveryDecay()
@@ -70,6 +71,7 @@ extension AppEnvironment {
         guard let workout = await generateWorkout(profile: profile, splitDayFocus: splitDayFocus, options: options) else {
             return false
         }
+        guard !Task.isCancelled else { return false }
 
         todayWorkout = workout
         try? await workoutRepository.saveTodayWorkout(workout)
@@ -88,18 +90,7 @@ extension AppEnvironment {
     func normalizeProgramStateForToday(profile: UserProfile) async {
         var state = programState
         TrainingSchedule.clearStaleCompletion(state: &state)
-        TrainingSchedule.clearExpiredUpcomingWorkout(state: &state)
-
-        if TrainingSchedule.isUpcomingWorkoutValid(state: state, profile: profile),
-           let upcoming = state.upcomingWorkout {
-            todayWorkout = upcoming
-            try? await workoutRepository.saveTodayWorkout(upcoming)
-            state.upcomingWorkout = nil
-            state.upcomingWorkoutFor = nil
-            if isSignedIn {
-                try? await cloudSyncService.pushTodayWorkout(upcoming)
-            }
-        }
+        TrainingSchedule.clearLegacyUpcomingWorkout(state: &state)
 
         programState = state
         try? await programStateRepository.saveState(state)
@@ -125,12 +116,12 @@ extension AppEnvironment {
 
         let stats: [UserExerciseStats]
         if let exerciseStats {
-            stats = exerciseStats
+            stats = exerciseStats.filter { !$0.isOrphaned }
         } else {
-            stats = (try? await exerciseStatsRepository.fetchStats()) ?? []
+            stats = ((try? await exerciseStatsRepository.fetchStats()) ?? []).filter { !$0.isOrphaned }
         }
 
-        let recovery = Dictionary(uniqueKeysWithValues: recoveryStates.map { ($0.muscleGroup, $0.recoveryPercentage) })
+        let recovery = RecoveryCalculator.recoveryMap(from: recoveryStates)
         let exercises = (try? await exerciseRepository.fetchAll()) ?? []
         let favoriteIds = exercises.filter(\.isFavorite).map(\.id)
 
@@ -164,31 +155,41 @@ extension AppEnvironment {
         splitDayFocus: SplitDayFocus?,
         options: WorkoutGenerationOptions = WorkoutGenerationOptions()
     ) async -> GeneratedWorkout? {
-        let input = await makeWorkoutGenerationInput(
-            profile: profile,
-            splitDayFocus: splitDayFocus,
-            options: options
-        )
+        workoutGenerationTask?.cancel()
 
-        guard let workout = try? await workoutGenerationService.generate(input: input) else { return nil }
-        let validation = workoutGenerationService.validate(workout: workout, input: input)
-        lastValidation = validation
-        guard validation.isValid else { return nil }
-        return workout
-    }
+        let task = Task<GeneratedWorkout?, Never> { @MainActor in
+            guard !Task.isCancelled else { return nil }
 
-    func pregenerateUpcomingWorkout(profile: UserProfile, state: TrainingProgramState) async {
-        guard TrainingSchedule.nextTrainingDate(profile: profile) != nil else { return }
+            lastGenerationFailure = nil
+            let input = await makeWorkoutGenerationInput(
+                profile: profile,
+                splitDayFocus: splitDayFocus,
+                options: options
+            )
+            guard !Task.isCancelled else { return nil }
 
-        let splitFocus = TrainingSchedule.currentSplitFocus(state: state, split: profile.preferredSplit)
-        guard let workout = await generateWorkout(profile: profile, splitDayFocus: splitFocus) else { return }
-        guard let nextDate = TrainingSchedule.nextTrainingDate(profile: profile) else { return }
+            do {
+                let workout = try await workoutGenerationService.generate(input: input)
+                guard !Task.isCancelled else { return nil }
+                let validation = workoutGenerationService.validate(workout: workout, input: input)
+                lastValidation = validation
+                guard validation.isValid else { return nil }
+                guard !Task.isCancelled else { return nil }
+                return workout
+            } catch let failure as GenerationFailure {
+                guard !Task.isCancelled else { return nil }
+                lastGenerationFailure = failure
+                lastValidation = nil
+                return nil
+            } catch {
+                guard !Task.isCancelled else { return nil }
+                lastValidation = nil
+                return nil
+            }
+        }
 
-        var updated = state
-        updated.upcomingWorkout = workout
-        updated.upcomingWorkoutFor = TrainingSchedule.startOfDay(nextDate)
-        programState = updated
-        try? await programStateRepository.saveState(updated)
+        workoutGenerationTask = task
+        return await task.value
     }
 
     func saveTodayWorkout(_ workout: GeneratedWorkout) async throws {

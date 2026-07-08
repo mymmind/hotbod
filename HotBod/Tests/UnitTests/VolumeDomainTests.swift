@@ -211,7 +211,7 @@ final class VolumeCalculatorTests: XCTestCase {
                 totalVolumeKg: 1000, totalSets: 18, durationMinutes: 45, muscleGroups: []
             )
         ]
-        let volume = VolumeCalculator.weeklyVolumeEstimate(recentWorkouts: workouts, days: 7)
+        let volume = VolumeCalculator.weeklyVolumeEstimate(recentWorkouts: workouts, endingAt: today)
         XCTAssertEqual(volume, 38)
     }
 }

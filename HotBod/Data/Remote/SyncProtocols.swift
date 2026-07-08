@@ -16,6 +16,7 @@ protocol CloudSyncService: Sendable {
     func pushAll(local: SyncLocalStores) async throws
     func pushProfile(_ profile: UserProfile) async throws
     func pushTodayWorkout(_ workout: GeneratedWorkout) async throws
+    func clearTodayWorkout() async throws
     func pushSession(_ session: WorkoutSession) async throws
     func pushProteinEntry(_ entry: ProteinEntry) async throws
     func pushPhoto(_ photo: BodyProgressPhoto, fileData: Data?) async throws

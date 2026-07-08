@@ -34,7 +34,22 @@ enum GenerationConstants {
     }
 
     enum Recovery {
-        static let defaultMuscleRecovery: Double = 70
+        /// Muscles absent from the recovery map are treated as fully recovered (never trained).
+        static let defaultMuscleRecovery: Double = 100
+
+        static func recovery(for muscle: MuscleGroup, in map: [MuscleGroup: Double]) -> Double {
+            map[muscle] ?? defaultMuscleRecovery
+        }
+
+        static func minimumRecovery(in map: [MuscleGroup: Double]) -> Double {
+            MuscleGroup.allCases.map { recovery(for: $0, in: map) }.min() ?? defaultMuscleRecovery
+        }
+
+        static func averageRecovery(in map: [MuscleGroup: Double]) -> Double {
+            let values = MuscleGroup.allCases.map { recovery(for: $0, in: map) }
+            return values.reduce(0, +) / Double(values.count)
+        }
+
         static let splitMuscleMinRecovery: Double = 40
         static let readyMuscleMinRecovery: Double = 50
         static let lowRecoveryWarningThreshold: Double = 30
@@ -51,6 +66,11 @@ enum GenerationConstants {
     enum Targeting {
         static let preferredMuscleRecoveryBonus: Double = 15
         static let minCandidatesAfterAvoidance = 2
+        static let minCandidatesBeforeRelaxation = 6
+        static let avoidedExercisesRelaxationMessage =
+            "Including avoided exercises — not enough alternatives."
+        static let difficultyRelaxationMessage =
+            "Including advanced exercises — not enough alternatives for your experience level."
         static let avoidedMusclesOverrideMessage =
             "Avoided muscles overridden — insufficient recovered muscles for this session."
     }
@@ -137,6 +157,19 @@ enum GenerationConstants {
             }
         }
 
+        /// Uses historical rep ranges only when they were learned under the current goal.
+        static func effectiveRepRange(
+            stats: UserExerciseStats?,
+            goal: TrainingGoal,
+            experience: ExperienceLevel
+        ) -> (min: Int, max: Int) {
+            let goalRange = repRange(for: goal, experience: experience)
+            guard let stats, stats.goalAtLastUpdate == goal else {
+                return goalRange
+            }
+            return (stats.preferredRepRangeMin, stats.preferredRepRangeMax)
+        }
+
         static func setCount(experience: ExperienceLevel, pattern: MovementPattern) -> Int {
             let base = experience == .beginner
                 ? GenerationConstants.Session.beginnerBaseSets
@@ -164,6 +197,59 @@ enum GenerationConstants {
         static let lowRecoveryAdjustedIntensityFraction = 0.6
         static let minRepCount = 1
         static let maxRepCount = 30
+        static let maxPlannedWeightKg = 400.0
+        static let minRestSeconds = 15
+        static let maxRestSeconds = 600
+        static let minSetsPerExercise = 1
+        static let maxSetsPerExercise = 8
+        static let weightJumpWarningMultiplier = 1.5
+    }
+
+    enum Time {
+        static let rollingWindowSeconds: TimeInterval = 7 * 24 * 60 * 60
+        static let maxDecayHours: Double = 14 * 24
+
+        static func rollingWindowStart(endingAt now: Date) -> Date {
+            now.addingTimeInterval(-rollingWindowSeconds)
+        }
+
+        static func previousRollingWindowStart(endingAt now: Date) -> Date {
+            now.addingTimeInterval(-2 * rollingWindowSeconds)
+        }
+
+        static func isInRollingWindow(_ date: Date, endingAt now: Date) -> Bool {
+            date >= rollingWindowStart(endingAt: now) && date <= now
+        }
+
+        static func isInPreviousRollingWindow(_ date: Date, endingAt now: Date) -> Bool {
+            let windowEnd = rollingWindowStart(endingAt: now)
+            let windowStart = previousRollingWindowStart(endingAt: now)
+            return date >= windowStart && date < windowEnd
+        }
+    }
+
+    enum Deload {
+        static let minPreviousWindowSets = 10
+        static let minCurrentWindowSetsForDrop = 5
+        static let volumeDropThreshold = 0.3
+        static let reEntryWeightMultiplier = 0.9
+        static let reEntryRPETarget = 7.0
+    }
+
+    enum Weight {
+        static let dumbbellIncrementKg = 2.0
+        static let barbellIncrementKg = 2.5
+
+        // TODO: user-configurable micro-plate increments
+        static func roundToAvailable(_ kg: Double, equipment: [Equipment]) -> Double {
+            if equipment.contains(.dumbbell) {
+                return (kg / dumbbellIncrementKg).rounded() * dumbbellIncrementKg
+            }
+            if equipment.contains(.barbell) {
+                return (kg / barbellIncrementKg).rounded() * barbellIncrementKg
+            }
+            return (kg / barbellIncrementKg).rounded() * barbellIncrementKg
+        }
     }
 
     /// Movement-pattern blocks for reported body limitations.

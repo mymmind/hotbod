@@ -161,6 +161,10 @@ struct Exercise: Identifiable, Codable, Hashable {
     var tags: [String]
     var isFavorite: Bool = false
     var isAvoided: Bool = false
+
+    var usesBodyweightLoading: Bool {
+        !equipment.isEmpty && equipment.allSatisfy { $0 == .bodyweight }
+    }
 }
 
 struct ExerciseDemoVideo: Codable, Hashable, Identifiable {
@@ -286,6 +290,7 @@ struct GeneratedWorkout: Identifiable, Codable, Hashable {
     var generatedBy: WorkoutGenerationSource
     var createdAt: Date
     var sessionMode: SessionMode = .standard
+    var splitDayFocus: SplitDayFocus?
 }
 
 struct WorkoutExercise: Identifiable, Codable, Hashable {
@@ -333,6 +338,7 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
     var notes: String?
     var perceivedDifficulty: Int?
     var status: WorkoutStatus
+    var splitDayFocus: SplitDayFocus?
 
     init(
         id: UUID = UUID(),
@@ -344,7 +350,8 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
         exercises: [WorkoutExercise],
         notes: String? = nil,
         perceivedDifficulty: Int? = nil,
-        status: WorkoutStatus = .planned
+        status: WorkoutStatus = .planned,
+        splitDayFocus: SplitDayFocus? = nil
     ) {
         self.id = id
         self.userId = userId
@@ -356,6 +363,7 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
         self.notes = notes
         self.perceivedDifficulty = perceivedDifficulty
         self.status = status
+        self.splitDayFocus = splitDayFocus
     }
 }
 
@@ -388,16 +396,18 @@ struct UserExerciseStats: Identifiable, Codable, Hashable {
     var recentSets: [CompletedSet]
     var preferredRepRangeMin: Int
     var preferredRepRangeMax: Int
-    
+    var goalAtLastUpdate: TrainingGoal?
+
     // Volume tracking (last 12 weeks of weekly volume in reps)
     var weeklyVolume: [Int] = []
     var weeklyMaxSets: Int = 0
     var volumeTrend: TrendDirection = .stable
-    
-    // Deload tracking
-    var isInDeloadWeek: Bool = false
-    var lastDeloadDate: Date?
+
+    // Deload tracking — dated state; active for 7 rolling days from start
+    var deloadStartedAt: Date?
+    var returningFromBreak: Bool = false
     var consecutiveHighVolumeWeeks: Int = 0
+    var isOrphaned: Bool = false
 
     var id: String { exerciseId }
 
@@ -407,6 +417,102 @@ struct UserExerciseStats: Identifiable, Codable, Hashable {
 
     var planningWeightKg: Double? {
         suggestedNextWeightKg ?? lastWeightKg
+    }
+
+    func isInDeloadWeek(at now: Date = Date()) -> Bool {
+        guard let start = deloadStartedAt else { return false }
+        return now.timeIntervalSince(start) < GenerationConstants.Time.rollingWindowSeconds
+    }
+
+    var isInDeloadWeek: Bool { isInDeloadWeek(at: Date()) }
+
+    /// Suppresses volume-drop deload detection during deload and the week after.
+    func isInDeloadSuppressionWindow(at now: Date = Date()) -> Bool {
+        guard let start = deloadStartedAt else { return false }
+        return now.timeIntervalSince(start) < 2 * GenerationConstants.Time.rollingWindowSeconds
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case exerciseId, lastWeightKg, lastReps, suggestedNextWeightKg, estimatedOneRepMax
+        case bestVolumeSet, recentSets, preferredRepRangeMin, preferredRepRangeMax
+        case goalAtLastUpdate, deloadStartedAt, returningFromBreak
+        case weeklyVolume, weeklyMaxSets, volumeTrend, consecutiveHighVolumeWeeks, isOrphaned
+        case legacyIsInDeloadWeek = "isInDeloadWeek"
+        case legacyLastDeloadDate = "lastDeloadDate"
+    }
+
+    init(
+        exerciseId: String,
+        lastWeightKg: Double? = nil,
+        lastReps: Int? = nil,
+        suggestedNextWeightKg: Double? = nil,
+        estimatedOneRepMax: Double? = nil,
+        bestVolumeSet: Double? = nil,
+        recentSets: [CompletedSet] = [],
+        preferredRepRangeMin: Int,
+        preferredRepRangeMax: Int,
+        goalAtLastUpdate: TrainingGoal? = nil,
+        deloadStartedAt: Date? = nil,
+        returningFromBreak: Bool = false
+    ) {
+        self.exerciseId = exerciseId
+        self.lastWeightKg = lastWeightKg
+        self.lastReps = lastReps
+        self.suggestedNextWeightKg = suggestedNextWeightKg
+        self.estimatedOneRepMax = estimatedOneRepMax
+        self.bestVolumeSet = bestVolumeSet
+        self.recentSets = recentSets
+        self.preferredRepRangeMin = preferredRepRangeMin
+        self.preferredRepRangeMax = preferredRepRangeMax
+        self.goalAtLastUpdate = goalAtLastUpdate
+        self.deloadStartedAt = deloadStartedAt
+        self.returningFromBreak = returningFromBreak
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        exerciseId = try container.decode(String.self, forKey: .exerciseId)
+        lastWeightKg = try container.decodeIfPresent(Double.self, forKey: .lastWeightKg)
+        lastReps = try container.decodeIfPresent(Int.self, forKey: .lastReps)
+        suggestedNextWeightKg = try container.decodeIfPresent(Double.self, forKey: .suggestedNextWeightKg)
+        estimatedOneRepMax = try container.decodeIfPresent(Double.self, forKey: .estimatedOneRepMax)
+        bestVolumeSet = try container.decodeIfPresent(Double.self, forKey: .bestVolumeSet)
+        recentSets = try container.decodeIfPresent([CompletedSet].self, forKey: .recentSets) ?? []
+        preferredRepRangeMin = try container.decode(Int.self, forKey: .preferredRepRangeMin)
+        preferredRepRangeMax = try container.decode(Int.self, forKey: .preferredRepRangeMax)
+        goalAtLastUpdate = try container.decodeIfPresent(TrainingGoal.self, forKey: .goalAtLastUpdate)
+        deloadStartedAt = try container.decodeIfPresent(Date.self, forKey: .deloadStartedAt)
+        if deloadStartedAt == nil,
+           try container.decodeIfPresent(Bool.self, forKey: .legacyIsInDeloadWeek) == true {
+            deloadStartedAt = try container.decodeIfPresent(Date.self, forKey: .legacyLastDeloadDate) ?? Date()
+        }
+        returningFromBreak = try container.decodeIfPresent(Bool.self, forKey: .returningFromBreak) ?? false
+        weeklyVolume = try container.decodeIfPresent([Int].self, forKey: .weeklyVolume) ?? []
+        weeklyMaxSets = try container.decodeIfPresent(Int.self, forKey: .weeklyMaxSets) ?? 0
+        volumeTrend = try container.decodeIfPresent(TrendDirection.self, forKey: .volumeTrend) ?? .stable
+        consecutiveHighVolumeWeeks = try container.decodeIfPresent(Int.self, forKey: .consecutiveHighVolumeWeeks) ?? 0
+        isOrphaned = try container.decodeIfPresent(Bool.self, forKey: .isOrphaned) ?? false
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(exerciseId, forKey: .exerciseId)
+        try container.encodeIfPresent(lastWeightKg, forKey: .lastWeightKg)
+        try container.encodeIfPresent(lastReps, forKey: .lastReps)
+        try container.encodeIfPresent(suggestedNextWeightKg, forKey: .suggestedNextWeightKg)
+        try container.encodeIfPresent(estimatedOneRepMax, forKey: .estimatedOneRepMax)
+        try container.encodeIfPresent(bestVolumeSet, forKey: .bestVolumeSet)
+        try container.encode(recentSets, forKey: .recentSets)
+        try container.encode(preferredRepRangeMin, forKey: .preferredRepRangeMin)
+        try container.encode(preferredRepRangeMax, forKey: .preferredRepRangeMax)
+        try container.encodeIfPresent(goalAtLastUpdate, forKey: .goalAtLastUpdate)
+        try container.encodeIfPresent(deloadStartedAt, forKey: .deloadStartedAt)
+        try container.encode(returningFromBreak, forKey: .returningFromBreak)
+        try container.encode(weeklyVolume, forKey: .weeklyVolume)
+        try container.encode(weeklyMaxSets, forKey: .weeklyMaxSets)
+        try container.encode(volumeTrend, forKey: .volumeTrend)
+        try container.encode(consecutiveHighVolumeWeeks, forKey: .consecutiveHighVolumeWeeks)
+        try container.encode(isOrphaned, forKey: .isOrphaned)
     }
 }
 
@@ -533,6 +639,17 @@ struct WorkoutValidationResult: Codable {
         self.errors = errors
         self.warnings = warnings
         self.suggestions = suggestions
+    }
+}
+
+enum GenerationFailure: Error, Equatable {
+    case insufficientExercises(available: Int, blockedByInjury: Int, blockedByEquipment: Int)
+
+    var userMessage: String {
+        switch self {
+        case let .insufficientExercises(available, _, _):
+            "Your equipment and injury settings leave only \(available) exercises — add equipment or review limitations."
+        }
     }
 }
 

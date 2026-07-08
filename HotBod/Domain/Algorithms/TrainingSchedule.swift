@@ -28,6 +28,21 @@ struct TrainingProgramState: Codable, Hashable {
     var activeSessionId: UUID?
     var upcomingWorkout: GeneratedWorkout?
     var upcomingWorkoutFor: Date?
+    var lastRecoveryDecayAppliedAt: Date?
+}
+
+enum WorkoutStaleness {
+    /// Workout is stale when it was not created on the current calendar day, unless a session is in flight.
+    static func shouldRegenerate(
+        workoutCreatedAt: Date,
+        hasActiveSession: Bool,
+        hasCompletedSetsToday: Bool,
+        now: Date,
+        calendar: Calendar
+    ) -> Bool {
+        if hasActiveSession || hasCompletedSetsToday { return false }
+        return !calendar.isDate(workoutCreatedAt, inSameDayAs: now)
+    }
 }
 
 enum TrainingSchedule {
@@ -87,6 +102,34 @@ enum TrainingSchedule {
         let count = max(1, splitSequence(for: split).count)
         state.splitDayIndex = (state.splitDayIndex + 1) % count
         state.lastCompletedAt = Date()
+    }
+
+    /// Advances split rotation only when the completed session matched the current rotation head.
+    static func advanceRotationIfMatchingFocus(
+        state: inout TrainingProgramState,
+        split: TrainingSplit,
+        completedFocus: SplitDayFocus?
+    ) {
+        guard split != .adaptive else {
+            state.lastCompletedAt = Date()
+            return
+        }
+        guard let currentFocus = currentSplitFocus(state: state, split: split) else {
+            state.lastCompletedAt = Date()
+            return
+        }
+        // Legacy sessions without splitDayFocus are treated as matching the rotation head.
+        let effectiveFocus = completedFocus ?? currentFocus
+        guard effectiveFocus == currentFocus else {
+            state.lastCompletedAt = Date()
+            return
+        }
+        advanceRotation(state: &state, split: split)
+    }
+
+    static func clearLegacyUpcomingWorkout(state: inout TrainingProgramState) {
+        state.upcomingWorkout = nil
+        state.upcomingWorkoutFor = nil
     }
 
     static func toggleSplitFocus(state: inout TrainingProgramState, split: TrainingSplit) {

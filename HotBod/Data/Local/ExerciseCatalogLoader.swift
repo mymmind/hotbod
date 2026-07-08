@@ -1,6 +1,7 @@
 import Foundation
 
 enum ExerciseCatalogLoader {
+    /// Exercise IDs in ExerciseSeed.json are permanent — rename via `aliases` in ExerciseContent.json, never by changing `id`.
     static func loadExercises() -> [Exercise] {
         let seed = ExerciseSeedLoader.loadSeed()
         let content = loadContentBundle()

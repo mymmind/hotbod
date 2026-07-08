@@ -26,4 +26,11 @@ enum PersistenceHelper {
         guard let data = try? JSONEncoder().encode(value) else { return }
         try? data.write(to: url, options: .atomic)
     }
+
+    static func remove(_ filename: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        let url = appSupportURL.appendingPathComponent(filename)
+        try? FileManager.default.removeItem(at: url)
+    }
 }

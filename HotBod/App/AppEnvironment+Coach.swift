@@ -45,6 +45,11 @@ extension AppEnvironment {
         guard result.message.intent == .modifyWorkout,
               let proposed = result.proposedWorkout else { return false }
 
+        if await blocksCoachWorkoutModification() {
+            coachWorkoutUpdateMessage = "Finish or discard your current session before applying coach changes."
+            return false
+        }
+
         guard CoachModificationSafety.isSafeModification(
             proposed: proposed,
             current: todayWorkout,
@@ -72,6 +77,11 @@ extension AppEnvironment {
     @discardableResult
     func applyAIWorkout(_ workout: GeneratedWorkout, serverValidation: WorkoutValidationResult? = nil) async -> Bool {
         guard let profile = userProfile else { return false }
+
+        if await blocksCoachWorkoutModification() {
+            coachWorkoutUpdateMessage = "Finish or discard your current session before applying coach changes."
+            return false
+        }
 
         let input = await makeWorkoutGenerationInput(
             profile: profile,
