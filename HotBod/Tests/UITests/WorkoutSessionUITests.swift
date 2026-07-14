@@ -7,7 +7,9 @@ final class WorkoutSessionUITests: BaseUITestCase {
   private func tapSessionAction(_ identifier: String) {
     let button = app.buttons[identifier]
     XCTAssertTrue(button.waitForExistence(timeout: 8), "Missing \(identifier)")
-    if !button.isHittable { app.swipeUp() }
+    for _ in 0..<4 where !button.isHittable {
+      app.swipeUp()
+    }
     if button.isHittable {
       button.tap()
     } else {
@@ -110,7 +112,7 @@ final class WorkoutSessionUITests: BaseUITestCase {
 
   func testExitWorkoutReturnsToToday() {
     XCTAssertTrue(session.waitForSession())
-    tapSessionAction("session.ui.exitWorkout")
+    tapSessionAction("session.exitWorkout")
     XCTAssertTrue(waitForMainShell(timeout: 15) || waitForTabBar(timeout: 15))
   }
 }

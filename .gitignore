@@ -10,3 +10,10 @@ DerivedData/
 
 # macOS
 .DS_Store
+
+# xcodebuild / XCTest artifacts (repo-local)
+*.xcresult
+build/
+xcodebuild-output.txt
+swiftlint-output.txt
+build-settings-snapshot.txt

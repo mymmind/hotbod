@@ -115,6 +115,15 @@ struct WorkoutSessionView: View {
         }
         .animation(UITestConfiguration.isUITesting ? nil : ForgeMotion.standard, value: showCompletion)
         .animation(UITestConfiguration.isUITesting ? nil : ForgeMotion.exercise, value: currentExerciseIndex)
+        .overlay(alignment: .top) {
+            if showCompletion {
+                Text(L10n.Workout.completeTitle)
+                    .font(ForgeTypography.heroMetric)
+                    .foregroundStyle(ForgeColors.accentGreen)
+                    .padding(.top, ForgeSpacing.s6)
+                    .accessibilityIdentifier("session.workoutComplete")
+            }
+        }
         .background(ForgeColors.background)
         .navigationBarHidden(true)
         .toolbar(.hidden, for: .navigationBar)
@@ -309,9 +318,6 @@ struct WorkoutSessionView: View {
         .sheet(item: $swapTarget) { target in
             swapSheetContent(for: target)
         }
-        .fullScreenCover(item: UITestConfiguration.isUITesting ? $swapTarget : .constant(nil)) { target in
-            swapSheetContent(for: target)
-        }
     }
 
     private func sessionActionBar(exercise: WorkoutExercise, meta: Exercise) -> some View {
@@ -322,20 +328,19 @@ struct WorkoutSessionView: View {
 
             if UITestConfiguration.isUITesting {
                 HStack(spacing: ForgeSpacing.s3) {
-                    ForgeButton(
-                        title: "Exit",
-                        style: .secondary,
-                        accessibilityIdentifier: "session.ui.exitWorkout"
-                    ) {
-                        exitWorkoutForUITest()
+                    Button("Exit Session") { exitWorkoutForUITest() }
+                        .buttonStyle(.bordered)
+                        .accessibilityIdentifier("session.ui.exitWorkout")
+                    Button("End Workout") {
+                        showExerciseComplete = false
+                        showRIRPrompt = false
+                        showCompletion = true
+                        session.status = .completed
+                        session.completedAt = Date()
+                        Task { await persistWorkoutCompletion() }
                     }
-                    ForgeButton(
-                        title: "End",
-                        style: .secondary,
-                        accessibilityIdentifier: "session.ui.endWorkout"
-                    ) {
-                        finishWorkout()
-                    }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("session.ui.endWorkout")
                 }
             }
 
@@ -1150,29 +1155,23 @@ struct WorkoutSessionView: View {
         .background(ForgeColors.background)
     }
 
+    private func persistWorkoutCompletion() async {
+        try? await environment.saveWorkoutSessionImmediately(session)
+        progressionNotes = await environment.applyWorkoutSessionCompletion(session)
+        let sessions = await environment.fetchWorkoutSessions()
+        completionWorkoutStreak = TrainingStreakCalculator.workoutStreak(sessions: sessions)
+        feedback.play(.workoutComplete)
+    }
+
     private func finishWorkout() {
+        showExerciseComplete = false
+        showRIRPrompt = false
+        showCompletion = true
         session.status = .completed
         session.completedAt = Date()
         clearPersistedRestState()
         pendingPostSetAction = nil
-        if UITestConfiguration.isUITesting {
-            showCompletion = true
-        }
-        Task { @MainActor in
-            if UITestConfiguration.isUITesting {
-                await Task.yield()
-            }
-            try? await environment.saveWorkoutSessionImmediately(session)
-            progressionNotes = await environment.applyWorkoutSessionCompletion(session)
-            let sessions = await environment.fetchWorkoutSessions()
-            completionWorkoutStreak = TrainingStreakCalculator.workoutStreak(sessions: sessions)
-            feedback.play(.workoutComplete)
-            if !UITestConfiguration.isUITesting {
-                withAnimation(ForgeMotion.standard) {
-                    showCompletion = true
-                }
-            }
-        }
+        Task { await persistWorkoutCompletion() }
     }
 
   private func loadExercises() async {
