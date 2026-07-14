@@ -24,8 +24,12 @@ final class AppEnvironment {
     let exerciseMediaProvider: any ExerciseMediaProvider
     let bodyPhotoAnalyzer: any BodyPhotoAnalyzer
     let healthKitReadinessService: any HealthKitReadinessService
+    let healthKitWorkoutExportService: any HealthKitWorkoutExportService
+    let stravaIntegrationService: any StravaIntegrationService
     let authService: any AuthService
     let cloudSyncService: any CloudSyncService
+    let feedbackService: ForgeFeedbackService
+    let subscriptionService: ForgeSubscriptionService
 
     var userProfile: UserProfile?
     var todayWorkout: GeneratedWorkout?
@@ -43,6 +47,9 @@ final class AppEnvironment {
     var isSupabaseConfigured = SupabaseConfig.isConfigured
     var healthReadiness: HealthReadinessSnapshot = .empty
     var isFoodAPIConfigured = FoodAPIConfig.isConfigured
+    var paywallFeature: ProFeature?
+    var bodyPhotoRevision = 0
+    var onboardingViewModel = OnboardingViewModel()
 
     var sessionSaveTask: Task<Void, Never>?
     var workoutGenerationTask: Task<GeneratedWorkout?, Never>?
@@ -56,6 +63,7 @@ final class AppEnvironment {
         SyncLocalStores(
             userProfile: userProfileRepository,
             workout: workoutRepository,
+            exercise: exerciseRepository,
             nutrition: nutritionRepository,
             bodyProgress: bodyProgressRepository,
             recovery: recoveryRepository,
@@ -81,8 +89,12 @@ final class AppEnvironment {
         exerciseMediaProvider: any ExerciseMediaProvider = LocalExerciseMediaProvider(),
         bodyPhotoAnalyzer: any BodyPhotoAnalyzer = VisionBodyPhotoAnalyzer(),
         healthKitReadinessService: (any HealthKitReadinessService)? = nil,
+        healthKitWorkoutExportService: (any HealthKitWorkoutExportService)? = nil,
+        stravaIntegrationService: (any StravaIntegrationService)? = nil,
         authService: (any AuthService)? = nil,
-        cloudSyncService: (any CloudSyncService)? = nil
+        cloudSyncService: (any CloudSyncService)? = nil,
+        feedbackService: ForgeFeedbackService = ForgeFeedbackService(),
+        subscriptionService: ForgeSubscriptionService = ForgeSubscriptionService()
     ) {
         self.workoutRepository = workoutRepository
         self.exerciseRepository = exerciseRepository
@@ -101,10 +113,30 @@ final class AppEnvironment {
         self.exerciseMediaProvider = exerciseMediaProvider
         self.bodyPhotoAnalyzer = bodyPhotoAnalyzer
         self.healthKitReadinessService = healthKitReadinessService ?? HealthKitReadinessServiceFactory.makeDefault()
+        self.healthKitWorkoutExportService = healthKitWorkoutExportService ?? HealthKitWorkoutExportServiceFactory.makeDefault()
+        self.stravaIntegrationService = stravaIntegrationService ?? StravaIntegrationServiceFactory.makeDefault()
         self.cloudSyncService = cloudSyncService ?? BackendServices.makeCloudSyncService(auth: auth)
+        self.feedbackService = feedbackService
+        self.subscriptionService = subscriptionService
     }
 
     func bootstrap() async {
+        if UITestConfiguration.isUITesting, UITestConfiguration.shouldSkipOnboarding {
+            let profile = UITestConfiguration.defaultOnboardedProfile()
+            try? await userProfileRepository.saveProfile(profile)
+            try? await userProfileRepository.setOnboardingComplete(true)
+            userProfile = profile
+            hasCompletedOnboarding = true
+            recoveryStates = RecoveryCalculator.defaultStates()
+            try? await recoveryRepository.saveRecoveryStates(recoveryStates)
+            if TrainingSchedule.isTrainingDay(profile: profile),
+               !UITestConfiguration.shouldStartWorkout,
+               !UITestConfiguration.shouldOpenWorkoutPreview {
+                await ensureTodayWorkoutOnLaunch(profile: profile)
+            }
+            return
+        }
+
         hasCompletedOnboarding = (try? await userProfileRepository.isOnboardingComplete()) ?? false
         userProfile = try? await userProfileRepository.fetchProfile()
         todayWorkout = try? await workoutRepository.fetchTodayWorkout()
@@ -131,6 +163,8 @@ final class AppEnvironment {
 
         await repairPersistedCatalogReferences()
         await applyRecoveryDecay()
+        refreshRegenerationWeekIfNeeded()
+        await subscriptionService.bootstrap()
 
         if hasCompletedOnboarding, let profile = userProfile {
             await normalizeProgramStateForToday(profile: profile)
@@ -138,11 +172,11 @@ final class AppEnvironment {
             let calendar = Calendar.current
             if TrainingSchedule.isTrainingDay(profile: profile) {
                 if todayWorkout == nil, !isTodayWorkoutCompleted {
-                    await regenerateTodayWorkout(profile: profile)
+                    await ensureTodayWorkoutOnLaunch(profile: profile)
                 } else if let workout = todayWorkout,
                           await shouldRegenerateStaleTodayWorkout(workout, now: now, calendar: calendar),
                           !isTodayWorkoutCompleted {
-                    await regenerateTodayWorkout(profile: profile)
+                    await ensureTodayWorkoutOnLaunch(profile: profile)
                 }
             } else if !TrainingSchedule.isTrainingDay(profile: profile),
                       let workout = todayWorkout,

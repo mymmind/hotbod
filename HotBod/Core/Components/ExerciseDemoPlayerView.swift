@@ -75,6 +75,14 @@ struct ExerciseDemoPlayerView: View {
             isLoading = true
         }
 
+        if UITestConfiguration.isUITesting {
+            withAnimation(ForgeMotion.exercise) {
+                playbackURL = nil
+                isLoading = false
+            }
+            return
+        }
+
         let resolved: URL?
         if isPreview {
             resolved = ExerciseMediaResolver.bundledFallback(for: exerciseId)

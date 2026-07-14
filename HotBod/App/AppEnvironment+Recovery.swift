@@ -11,13 +11,6 @@ extension AppEnvironment {
             now: now
         )
         states = decay.states
-        let summaries = (try? await workoutRepository.fetchSessionSummaries()) ?? []
-        let recentlyTrained = Set(summaries.prefix(2).flatMap(\.muscleGroups))
-        states = RecoveryCalculator.applySoreness(
-            states: states,
-            level: sorenessLevel,
-            recentlyTrainedMuscles: recentlyTrained
-        )
         recoveryStates = states
         try? await recoveryRepository.saveRecoveryStates(states)
 
@@ -35,8 +28,7 @@ extension AppEnvironment {
         healthReadiness = await healthKitReadinessService.fetchReadinessSnapshot()
     }
 
-    func setSoreness(_ level: SorenessLevel) async {
+    func setSoreness(_ level: SorenessLevel) {
         sorenessLevel = level
-        await applyRecoveryDecay()
     }
 }

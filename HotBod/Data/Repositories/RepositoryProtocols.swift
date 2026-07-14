@@ -26,6 +26,13 @@ protocol ExerciseRepository: Sendable {
     ) async throws -> [Exercise]
     func updateFavorite(id: String, isFavorite: Bool) async throws
     func updateAvoided(id: String, isAvoided: Bool) async throws
+    func updatePreference(id: String, preference: ExercisePreference) async throws
+    func resetUserPreferences() async throws
+    func resetCustomExercises() async throws
+    func preferenceOverrides() async -> [String: ExercisePreference]
+    func applyPreferenceOverrides(_ overrides: [String: ExercisePreference]) async throws
+    func createCustomExercise(_ exercise: Exercise) async throws -> Exercise
+    func deleteCustomExercise(id: String) async throws
 }
 
 struct ExerciseFilters: Hashable {

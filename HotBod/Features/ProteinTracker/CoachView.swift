@@ -11,6 +11,7 @@ struct CoachView: View {
 
     @Environment(AppEnvironment.self) private var environment
     @Environment(AppRouter.self) private var router
+    @Environment(\.forgeFeedback) private var feedback
     @State private var messages: [CoachMessage] = []
     @State private var input = ""
     @State private var isSending = false
@@ -35,6 +36,7 @@ struct CoachView: View {
                 coachBody
             }
         }
+        .accessibilityIdentifier("coach.root")
     }
 
     private var coachBody: some View {
@@ -74,6 +76,7 @@ struct CoachView: View {
                                         .foregroundStyle(ForgeColors.textSecondary)
                                         .frame(maxWidth: .infinity, minHeight: ForgeTarget.min, alignment: .leading)
                                         .contentShape(Rectangle())
+                                        .accessibilityIdentifier(coachSuggestionIdentifier(for: s))
                                 }
                             }
                             .padding(ForgeSpacing.s4)
@@ -107,7 +110,10 @@ struct CoachView: View {
                         Button("Apply") {
                             Task {
                                 let applied = await environment.applyAIWorkout(workout, serverValidation: pending.validation)
-                                if applied { pendingCoachResult = nil }
+                                if applied {
+                                    feedback.play(.coachApply)
+                                    pendingCoachResult = nil
+                                }
                             }
                         }
                         .buttonStyle(.borderedProminent)
@@ -127,6 +133,7 @@ struct CoachView: View {
                 TextField("Ask coach...", text: $input)
                     .padding(ForgeSpacing.s3)
                     .overlay(Rectangle().stroke(ForgeColors.border, lineWidth: ForgeBorder.hairline))
+                    .accessibilityIdentifier("coach.input")
                 Button {
                     Task { await send() }
                 } label: {
@@ -177,6 +184,7 @@ struct CoachView: View {
                 .foregroundStyle(msg.role == .user ? ForgeColors.surface : ForgeColors.foreground)
                 .overlay(Rectangle().stroke(ForgeColors.border, lineWidth: msg.role == .assistant ? 1 : 0))
                 .frame(maxWidth: 280, alignment: msg.role == .user ? .trailing : .leading)
+                .accessibilityIdentifier(msg.role == .assistant ? "coach.assistantMessage" : "coach.userMessage")
             if msg.role == .assistant { Spacer() }
         }
     }
@@ -194,6 +202,7 @@ struct CoachView: View {
         let exercises = await environment.fetchAllExercises()
         let profile = environment.userProfile
         let photos = await environment.fetchBodyPhotos()
+        let sortedPhotos = BodyProgressPhoto.sortedByDateDescending(photos)
 
         let context = CoachContext(
             userProfile: UserProfileSummary(
@@ -207,8 +216,8 @@ struct CoachView: View {
             proteinSummary: proteinSummary,
             bodyProgressSummary: BodyProgressSummary(
                 photoCount: photos.count,
-                latestPhotoDate: photos.first?.date,
-                averageLightingScore: nil
+                latestPhotoDate: sortedPhotos.first?.date,
+                averageLightingScore: BodyProgressPhoto.averageLightingScore(in: photos)
             ),
             recovery: RecoveryCalculator.recoveryMap(from: environment.recoveryStates),
             limitations: profile?.limitations ?? [],
@@ -220,6 +229,7 @@ struct CoachView: View {
         if let result = try? await environment.aiWorkoutService.respond(to: text, context: context) {
             messages.append(result.message)
             try? await environment.saveCoachMessage(result.message)
+            feedback.play(.success)
             if let workout = result.proposedWorkout {
                 let autoApplied = await environment.tryAutoApplyCoachModification(
                     result: result,
@@ -267,11 +277,21 @@ struct CoachView: View {
         let options = CoachOfflineModify.generationOptions(from: userMessage, profile: profile)
         let updated = await environment.regenerateTodayWorkout(profile: profile, options: options)
         if updated {
+            feedback.play(.workoutRegenerate)
             environment.coachWorkoutUpdateMessage = "Workout updated"
         }
     }
 
     private func loadMessages() async {
         messages = await environment.fetchCoachMessages()
+    }
+
+    private func coachSuggestionIdentifier(for suggestion: String) -> String {
+        switch suggestion {
+        case "How much protein do I still need?": "coach.suggestion.protein"
+        case "Why am I doing this workout today?": "coach.suggestion.workout"
+        case "Make this workout 30 minutes.": "coach.suggestion.shorter"
+        default: "coach.suggestion.adjust"
+        }
     }
 }

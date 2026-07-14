@@ -16,6 +16,15 @@ struct ProfileRow: Codable {
     var preferredSplit: String?
     var proteinGoalGrams: Double?
     var photoTrackingEnabled: Bool?
+    var includeWarmupSets: Bool?
+    var includeCooldown: Bool?
+    var preferredExerciseGrouping: String?
+    var preferredExerciseVariability: String?
+    var cardioBlockPlacement: String?
+    var includeConditioning: Bool?
+    var includeCoreFinisher: Bool?
+    var maxAvailableWeightKg: [Equipment: Double]?
+    var exportWorkoutsToHealthKit: Bool?
     var onboardingComplete: Bool?
     var updatedAt: Date?
 
@@ -30,6 +39,15 @@ struct ProfileRow: Codable {
         case preferredSplit = "preferred_split"
         case proteinGoalGrams = "protein_goal_grams"
         case photoTrackingEnabled = "photo_tracking_enabled"
+        case includeWarmupSets = "include_warmup_sets"
+        case includeCooldown = "include_cooldown"
+        case preferredExerciseGrouping = "preferred_exercise_grouping"
+        case preferredExerciseVariability = "preferred_exercise_variability"
+        case cardioBlockPlacement = "cardio_block_placement"
+        case includeConditioning = "include_conditioning"
+        case includeCoreFinisher = "include_core_finisher"
+        case maxAvailableWeightKg = "max_available_weight_kg"
+        case exportWorkoutsToHealthKit = "export_workouts_to_health_kit"
         case onboardingComplete = "onboarding_complete"
         case updatedAt = "updated_at"
     }
@@ -48,6 +66,15 @@ struct ProfileRow: Codable {
         preferredSplit = profile.preferredSplit.rawValue
         proteinGoalGrams = profile.proteinGoalGrams
         photoTrackingEnabled = profile.photoTrackingEnabled
+        includeWarmupSets = profile.includeWarmupSets
+        includeCooldown = profile.includeCooldown
+        preferredExerciseGrouping = profile.preferredExerciseGrouping.rawValue
+        preferredExerciseVariability = profile.preferredExerciseVariability.rawValue
+        cardioBlockPlacement = profile.cardioBlockPlacement.rawValue
+        includeConditioning = profile.includeConditioning
+        includeCoreFinisher = profile.includeCoreFinisher
+        maxAvailableWeightKg = profile.maxAvailableWeightKg.isEmpty ? nil : profile.maxAvailableWeightKg
+        exportWorkoutsToHealthKit = profile.exportWorkoutsToHealthKit
         onboardingComplete = true
         updatedAt = profile.updatedAt
     }
@@ -72,7 +99,18 @@ struct ProfileRow: Codable {
             limitationNotes: fallback?.limitationNotes,
             proteinGoalGrams: proteinGoalGrams ?? fallback?.proteinGoalGrams ?? 145,
             photoTrackingEnabled: photoTrackingEnabled ?? fallback?.photoTrackingEnabled ?? false,
-            includeWarmupSets: fallback?.includeWarmupSets ?? true,
+            includeWarmupSets: includeWarmupSets ?? fallback?.includeWarmupSets ?? true,
+            includeCooldown: includeCooldown ?? fallback?.includeCooldown ?? false,
+            preferredExerciseGrouping: ExerciseGroupingPreference(rawValue: preferredExerciseGrouping ?? "")
+                ?? fallback?.preferredExerciseGrouping ?? .none,
+            preferredExerciseVariability: ExerciseVariabilityLevel(rawValue: preferredExerciseVariability ?? "")
+                ?? fallback?.preferredExerciseVariability ?? .balanced,
+            cardioBlockPlacement: CardioBlockPlacement(rawValue: cardioBlockPlacement ?? "")
+                ?? fallback?.cardioBlockPlacement ?? .none,
+            includeConditioning: includeConditioning ?? fallback?.includeConditioning ?? false,
+            includeCoreFinisher: includeCoreFinisher ?? fallback?.includeCoreFinisher ?? true,
+            maxAvailableWeightKg: maxAvailableWeightKg ?? fallback?.maxAvailableWeightKg ?? [:],
+            exportWorkoutsToHealthKit: exportWorkoutsToHealthKit ?? fallback?.exportWorkoutsToHealthKit ?? false,
             createdAt: fallback?.createdAt ?? Date(),
             updatedAt: updatedAt ?? Date()
         )
@@ -83,11 +121,13 @@ struct UserPrefsPull: Decodable {
     var todayWorkoutJson: GeneratedWorkout?
     var photoCloudBackupEnabled: Bool?
     var programStateJson: TrainingProgramState?
+    var exercisePreferencesJson: [String: ExercisePreference]?
 
     enum CodingKeys: String, CodingKey {
         case todayWorkoutJson = "today_workout_json"
         case photoCloudBackupEnabled = "photo_cloud_backup_enabled"
         case programStateJson = "program_state_json"
+        case exercisePreferencesJson = "exercise_preferences_json"
     }
 }
 
@@ -222,6 +262,7 @@ struct WorkoutExerciseRow: Codable {
     var wasSkipped: Bool
     var skipReason: String?
     var plannedSets: [PlannedSet]
+    var groupId: UUID?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -233,6 +274,7 @@ struct WorkoutExerciseRow: Codable {
         case wasSkipped = "was_skipped"
         case skipReason = "skip_reason"
         case plannedSets = "planned_sets"
+        case groupId = "group_id"
     }
 
     init(exercise: WorkoutExercise, sessionId: UUID) {
@@ -245,6 +287,7 @@ struct WorkoutExerciseRow: Codable {
         wasSkipped = exercise.wasSkipped
         skipReason = exercise.skipReason
         plannedSets = exercise.plannedSets
+        groupId = exercise.groupId
     }
 }
 
@@ -255,8 +298,12 @@ struct CompletedSetRow: Codable {
     var weightKg: Double?
     var reps: Int
     var rpe: Double?
+    var rir: Int?
+    var durationSeconds: Int?
+    var distanceMeters: Double?
     var isWarmup: Bool
     var isFailure: Bool
+    var isCooldown: Bool
     var completedAt: Date
 
     enum CodingKeys: String, CodingKey {
@@ -265,8 +312,12 @@ struct CompletedSetRow: Codable {
         case setIndex = "set_index"
         case weightKg = "weight_kg"
         case reps, rpe
+        case rir
+        case durationSeconds = "duration_seconds"
+        case distanceMeters = "distance_meters"
         case isWarmup = "is_warmup"
         case isFailure = "is_failure"
+        case isCooldown = "is_cooldown"
         case completedAt = "completed_at"
     }
 
@@ -277,8 +328,12 @@ struct CompletedSetRow: Codable {
         weightKg = set.weightKg
         reps = set.reps
         rpe = set.rpe
+        rir = set.rir
+        durationSeconds = set.durationSeconds
+        distanceMeters = set.distanceMeters
         isWarmup = set.isWarmup
         isFailure = set.isFailure
+        isCooldown = set.isCooldown
         completedAt = set.completedAt
     }
 }

@@ -22,6 +22,14 @@ struct UserProfile: Identifiable, Codable, Hashable {
     var proteinGoalGrams: Double
     var photoTrackingEnabled: Bool
     var includeWarmupSets: Bool
+    var includeCooldown: Bool
+    var preferredExerciseGrouping: ExerciseGroupingPreference
+    var preferredExerciseVariability: ExerciseVariabilityLevel
+    var cardioBlockPlacement: CardioBlockPlacement
+    var includeConditioning: Bool
+    var includeCoreFinisher: Bool
+    var maxAvailableWeightKg: [Equipment: Double]
+    var exportWorkoutsToHealthKit: Bool
     var createdAt: Date
     var updatedAt: Date
 
@@ -30,7 +38,12 @@ struct UserProfile: Identifiable, Codable, Hashable {
         case heightCm, weightKg, experienceLevel, trainingLocation, availableEquipment
         case trainingDaysPerWeek, preferredSessionLengthMinutes, preferredSplit
         case preferredTrainingDays, timeOfDayPreference, preferredMuscleGroups, avoidedMuscleGroups
-        case proteinGoalGrams, photoTrackingEnabled, includeWarmupSets, createdAt, updatedAt
+        case proteinGoalGrams, photoTrackingEnabled, includeWarmupSets, includeCooldown
+        case preferredExerciseGrouping, preferredExerciseVariability, cardioBlockPlacement
+        case includeConditioning, includeCoreFinisher
+        case maxAvailableWeightKg
+        case exportWorkoutsToHealthKit
+        case createdAt, updatedAt
     }
 
     init(
@@ -55,6 +68,14 @@ struct UserProfile: Identifiable, Codable, Hashable {
         proteinGoalGrams: Double,
         photoTrackingEnabled: Bool,
         includeWarmupSets: Bool = true,
+        includeCooldown: Bool = false,
+        preferredExerciseGrouping: ExerciseGroupingPreference = .none,
+        preferredExerciseVariability: ExerciseVariabilityLevel = .balanced,
+        cardioBlockPlacement: CardioBlockPlacement = .none,
+        includeConditioning: Bool = false,
+        includeCoreFinisher: Bool = true,
+        maxAvailableWeightKg: [Equipment: Double] = [:],
+        exportWorkoutsToHealthKit: Bool = false,
         createdAt: Date,
         updatedAt: Date
     ) {
@@ -79,6 +100,14 @@ struct UserProfile: Identifiable, Codable, Hashable {
         self.proteinGoalGrams = proteinGoalGrams
         self.photoTrackingEnabled = photoTrackingEnabled
         self.includeWarmupSets = includeWarmupSets
+        self.includeCooldown = includeCooldown
+        self.preferredExerciseGrouping = preferredExerciseGrouping
+        self.preferredExerciseVariability = preferredExerciseVariability
+        self.cardioBlockPlacement = cardioBlockPlacement
+        self.includeConditioning = includeConditioning
+        self.includeCoreFinisher = includeCoreFinisher
+        self.maxAvailableWeightKg = maxAvailableWeightKg
+        self.exportWorkoutsToHealthKit = exportWorkoutsToHealthKit
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -106,6 +135,23 @@ struct UserProfile: Identifiable, Codable, Hashable {
         proteinGoalGrams = try container.decode(Double.self, forKey: .proteinGoalGrams)
         photoTrackingEnabled = try container.decode(Bool.self, forKey: .photoTrackingEnabled)
         includeWarmupSets = try container.decodeIfPresent(Bool.self, forKey: .includeWarmupSets) ?? true
+        includeCooldown = try container.decodeIfPresent(Bool.self, forKey: .includeCooldown) ?? false
+        preferredExerciseGrouping = try container.decodeIfPresent(
+            ExerciseGroupingPreference.self,
+            forKey: .preferredExerciseGrouping
+        ) ?? .none
+        preferredExerciseVariability = try container.decodeIfPresent(
+            ExerciseVariabilityLevel.self,
+            forKey: .preferredExerciseVariability
+        ) ?? .balanced
+        cardioBlockPlacement = try container.decodeIfPresent(
+            CardioBlockPlacement.self,
+            forKey: .cardioBlockPlacement
+        ) ?? .none
+        includeConditioning = try container.decodeIfPresent(Bool.self, forKey: .includeConditioning) ?? false
+        includeCoreFinisher = try container.decodeIfPresent(Bool.self, forKey: .includeCoreFinisher) ?? true
+        maxAvailableWeightKg = try container.decodeIfPresent([Equipment: Double].self, forKey: .maxAvailableWeightKg) ?? [:]
+        exportWorkoutsToHealthKit = try container.decodeIfPresent(Bool.self, forKey: .exportWorkoutsToHealthKit) ?? false
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
     }
@@ -122,15 +168,73 @@ struct UserProfile: Identifiable, Codable, Hashable {
             preferredSplit: .upperLower,
             preferredTrainingDays: [.monday, .tuesday, .thursday, .friday],
             timeOfDayPreference: .flexible,
-            limitations: [],
+            limitations: [.none],
             preferredMuscleGroups: [],
             avoidedMuscleGroups: [],
             proteinGoalGrams: 145,
             photoTrackingEnabled: false,
             includeWarmupSets: true,
+            includeCooldown: false,
+            preferredExerciseGrouping: .none,
+            preferredExerciseVariability: .balanced,
+            cardioBlockPlacement: .none,
+            maxAvailableWeightKg: [:],
+            exportWorkoutsToHealthKit: false,
             createdAt: Date(),
             updatedAt: Date()
         )
+    }
+
+    func realigned(to newId: UUID) -> UserProfile {
+        UserProfile(
+            id: newId,
+            name: name,
+            age: age,
+            heightCm: heightCm,
+            weightKg: weightKg,
+            goal: goal,
+            experienceLevel: experienceLevel,
+            trainingLocation: trainingLocation,
+            availableEquipment: availableEquipment,
+            trainingDaysPerWeek: trainingDaysPerWeek,
+            preferredSessionLengthMinutes: preferredSessionLengthMinutes,
+            preferredSplit: preferredSplit,
+            preferredTrainingDays: preferredTrainingDays,
+            timeOfDayPreference: timeOfDayPreference,
+            limitations: limitations,
+            limitationNotes: limitationNotes,
+            preferredMuscleGroups: preferredMuscleGroups,
+            avoidedMuscleGroups: avoidedMuscleGroups,
+            proteinGoalGrams: proteinGoalGrams,
+            photoTrackingEnabled: photoTrackingEnabled,
+            includeWarmupSets: includeWarmupSets,
+            includeCooldown: includeCooldown,
+            preferredExerciseGrouping: preferredExerciseGrouping,
+            preferredExerciseVariability: preferredExerciseVariability,
+            cardioBlockPlacement: cardioBlockPlacement,
+            includeConditioning: includeConditioning,
+            includeCoreFinisher: includeCoreFinisher,
+            maxAvailableWeightKg: maxAvailableWeightKg,
+            exportWorkoutsToHealthKit: exportWorkoutsToHealthKit,
+            createdAt: createdAt,
+            updatedAt: Date()
+        )
+    }
+}
+
+enum ExercisePreference: String, Codable, CaseIterable, Hashable {
+    case neutral
+    case favorite
+    case less
+    case excluded
+
+    var displayName: String {
+        switch self {
+        case .neutral: "Default"
+        case .favorite: "Recommend More"
+        case .less: "Recommend Less"
+        case .excluded: "Never Show"
+        }
     }
 }
 
@@ -155,6 +259,10 @@ struct Exercise: Identifiable, Codable, Hashable {
     /// Source-of-truth for whether the UI/workout logs should treat this exercise as externally loadable.
     /// Falls back to legacy heuristics/overrides when nil (e.g. old seed data).
     var loadTrackingMode: LoadTrackingMode? = nil
+    var weightDisplaySemantics: WeightDisplaySemantics? = nil
+    var prescriptionType: PrescriptionType? = nil
+    var defaultDurationSeconds: Int? = nil
+    var defaultDistanceMeters: Double? = nil
     /// Alternate names shown in exercise detail (e.g. "BB Bench Press").
     var aliases: [String] = []
     /// Fitbod-style swap family — exercises in the same group target the same slot.
@@ -162,8 +270,12 @@ struct Exercise: Identifiable, Codable, Hashable {
     var demoVideos: [ExerciseDemoVideo]
     var imageUrl: URL?
     var tags: [String]
-    var isFavorite: Bool = false
-    var isAvoided: Bool = false
+    var preference: ExercisePreference = .neutral
+    var isCustom: Bool = false
+
+    var isFavorite: Bool { preference == .favorite }
+    var isAvoided: Bool { preference == .excluded }
+    var isLessPreferred: Bool { preference == .less }
 
     /// Resolves `loadTrackingMode` for legacy data.
     /// - Overrides: explicit mapping for known exercises.
@@ -183,6 +295,14 @@ struct Exercise: Identifiable, Codable, Hashable {
 
     var usesBodyweightLoading: Bool {
         !equipment.isEmpty && equipment.allSatisfy { $0 == .bodyweight }
+    }
+
+    var resolvedWeightDisplaySemantics: WeightDisplaySemantics {
+        ExerciseMetadataResolver.resolvedWeightDisplaySemantics(for: self)
+    }
+
+    var resolvedPrescriptionType: PrescriptionType {
+        ExerciseMetadataResolver.resolvedPrescriptionType(for: self)
     }
 }
 
@@ -226,7 +346,17 @@ struct PlannedSet: Identifiable, Codable, Hashable {
     var targetRepsMax: Int
     var targetWeightKg: Double?
     var rpeTarget: Double?
+    var targetDurationSeconds: Int?
+    var targetDistanceMeters: Double?
     var isWarmup: Bool
+    var isMaxEffort: Bool
+    var isCooldown: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id, targetRepsMin, targetRepsMax, targetWeightKg, rpeTarget
+        case targetDurationSeconds, targetDistanceMeters
+        case isWarmup, isMaxEffort, isCooldown
+    }
 
     init(
         id: UUID = UUID(),
@@ -234,14 +364,22 @@ struct PlannedSet: Identifiable, Codable, Hashable {
         targetRepsMax: Int,
         targetWeightKg: Double? = nil,
         rpeTarget: Double? = nil,
-        isWarmup: Bool = false
+        targetDurationSeconds: Int? = nil,
+        targetDistanceMeters: Double? = nil,
+        isWarmup: Bool = false,
+        isMaxEffort: Bool = false,
+        isCooldown: Bool = false
     ) {
         self.id = id
         self.targetRepsMin = targetRepsMin
         self.targetRepsMax = targetRepsMax
         self.targetWeightKg = targetWeightKg
         self.rpeTarget = rpeTarget
+        self.targetDurationSeconds = targetDurationSeconds
+        self.targetDistanceMeters = targetDistanceMeters
         self.isWarmup = isWarmup
+        self.isMaxEffort = isMaxEffort
+        self.isCooldown = isCooldown
     }
 
     init(from decoder: Decoder) throws {
@@ -251,7 +389,11 @@ struct PlannedSet: Identifiable, Codable, Hashable {
         targetRepsMax = try container.decode(Int.self, forKey: .targetRepsMax)
         targetWeightKg = try container.decodeIfPresent(Double.self, forKey: .targetWeightKg)
         rpeTarget = try container.decodeIfPresent(Double.self, forKey: .rpeTarget)
+        targetDurationSeconds = try container.decodeIfPresent(Int.self, forKey: .targetDurationSeconds)
+        targetDistanceMeters = try container.decodeIfPresent(Double.self, forKey: .targetDistanceMeters)
         isWarmup = try container.decodeIfPresent(Bool.self, forKey: .isWarmup) ?? false
+        isMaxEffort = try container.decodeIfPresent(Bool.self, forKey: .isMaxEffort) ?? false
+        isCooldown = try container.decodeIfPresent(Bool.self, forKey: .isCooldown) ?? false
     }
 }
 
@@ -261,9 +403,18 @@ struct CompletedSet: Identifiable, Codable, Hashable {
     var weightKg: Double?
     var reps: Int
     var rpe: Double?
+    var rir: Int?
+    var durationSeconds: Int?
+    var distanceMeters: Double?
     var completedAt: Date
     var isWarmup: Bool
     var isFailure: Bool
+    var isCooldown: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id, setIndex, weightKg, reps, rpe, rir, durationSeconds, distanceMeters
+        case completedAt, isWarmup, isFailure, isCooldown
+    }
 
     init(
         id: UUID = UUID(),
@@ -271,18 +422,42 @@ struct CompletedSet: Identifiable, Codable, Hashable {
         weightKg: Double? = nil,
         reps: Int = 0,
         rpe: Double? = nil,
+        rir: Int? = nil,
+        durationSeconds: Int? = nil,
+        distanceMeters: Double? = nil,
         completedAt: Date = Date(),
         isWarmup: Bool = false,
-        isFailure: Bool = false
+        isFailure: Bool = false,
+        isCooldown: Bool = false
     ) {
         self.id = id
         self.setIndex = setIndex
         self.weightKg = weightKg
         self.reps = reps
         self.rpe = rpe
+        self.rir = rir
+        self.durationSeconds = durationSeconds
+        self.distanceMeters = distanceMeters
         self.completedAt = completedAt
         self.isWarmup = isWarmup
         self.isFailure = isFailure
+        self.isCooldown = isCooldown
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        setIndex = try container.decode(Int.self, forKey: .setIndex)
+        weightKg = try container.decodeIfPresent(Double.self, forKey: .weightKg)
+        reps = try container.decode(Int.self, forKey: .reps)
+        rpe = try container.decodeIfPresent(Double.self, forKey: .rpe)
+        rir = try container.decodeIfPresent(Int.self, forKey: .rir)
+        durationSeconds = try container.decodeIfPresent(Int.self, forKey: .durationSeconds)
+        distanceMeters = try container.decodeIfPresent(Double.self, forKey: .distanceMeters)
+        completedAt = try container.decode(Date.self, forKey: .completedAt)
+        isWarmup = try container.decodeIfPresent(Bool.self, forKey: .isWarmup) ?? false
+        isFailure = try container.decodeIfPresent(Bool.self, forKey: .isFailure) ?? false
+        isCooldown = try container.decodeIfPresent(Bool.self, forKey: .isCooldown) ?? false
     }
 }
 
@@ -294,6 +469,7 @@ struct PlannedExercise: Identifiable, Codable, Hashable {
     var restSeconds: Int
     var intensity: IntensityTarget
     var reason: String
+    var groupId: UUID?
 
     init(
         id: UUID = UUID(),
@@ -302,7 +478,8 @@ struct PlannedExercise: Identifiable, Codable, Hashable {
         targetSets: [PlannedSet],
         restSeconds: Int = 90,
         intensity: IntensityTarget = .moderate,
-        reason: String = ""
+        reason: String = "",
+        groupId: UUID? = nil
     ) {
         self.id = id
         self.exerciseId = exerciseId
@@ -311,6 +488,19 @@ struct PlannedExercise: Identifiable, Codable, Hashable {
         self.restSeconds = restSeconds
         self.intensity = intensity
         self.reason = reason
+        self.groupId = groupId
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        exerciseId = try container.decode(String.self, forKey: .exerciseId)
+        orderIndex = try container.decode(Int.self, forKey: .orderIndex)
+        targetSets = try container.decode([PlannedSet].self, forKey: .targetSets)
+        restSeconds = try container.decodeIfPresent(Int.self, forKey: .restSeconds) ?? 90
+        intensity = try container.decodeIfPresent(IntensityTarget.self, forKey: .intensity) ?? .moderate
+        reason = try container.decodeIfPresent(String.self, forKey: .reason) ?? ""
+        groupId = try container.decodeIfPresent(UUID.self, forKey: .groupId)
     }
 }
 
@@ -329,11 +519,77 @@ struct GeneratedWorkout: Identifiable, Codable, Hashable {
     var focus: [MuscleGroup]
     var exercises: [PlannedExercise]
     var rationale: String
+    var selectionRationale: [String]
     var safetyNotes: [String]
     var generatedBy: WorkoutGenerationSource
     var createdAt: Date
     var sessionMode: SessionMode = .standard
     var splitDayFocus: SplitDayFocus?
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, estimatedDurationMinutes, focus, exercises, rationale
+        case selectionRationale, safetyNotes, generatedBy, createdAt, sessionMode, splitDayFocus
+    }
+
+    init(
+        id: UUID,
+        title: String,
+        estimatedDurationMinutes: Int,
+        focus: [MuscleGroup],
+        exercises: [PlannedExercise],
+        rationale: String,
+        selectionRationale: [String] = [],
+        safetyNotes: [String],
+        generatedBy: WorkoutGenerationSource,
+        createdAt: Date,
+        sessionMode: SessionMode = .standard,
+        splitDayFocus: SplitDayFocus? = nil
+    ) {
+        self.id = id
+        self.title = title
+        self.estimatedDurationMinutes = estimatedDurationMinutes
+        self.focus = focus
+        self.exercises = exercises
+        self.rationale = rationale
+        self.selectionRationale = selectionRationale
+        self.safetyNotes = safetyNotes
+        self.generatedBy = generatedBy
+        self.createdAt = createdAt
+        self.sessionMode = sessionMode
+        self.splitDayFocus = splitDayFocus
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        estimatedDurationMinutes = try container.decode(Int.self, forKey: .estimatedDurationMinutes)
+        focus = try container.decode([MuscleGroup].self, forKey: .focus)
+        exercises = try container.decode([PlannedExercise].self, forKey: .exercises)
+        rationale = try container.decode(String.self, forKey: .rationale)
+        selectionRationale = try container.decodeIfPresent([String].self, forKey: .selectionRationale) ?? []
+        safetyNotes = try container.decode([String].self, forKey: .safetyNotes)
+        generatedBy = try container.decode(WorkoutGenerationSource.self, forKey: .generatedBy)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        sessionMode = try container.decodeIfPresent(SessionMode.self, forKey: .sessionMode) ?? .standard
+        splitDayFocus = try container.decodeIfPresent(SplitDayFocus.self, forKey: .splitDayFocus)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(title, forKey: .title)
+        try container.encode(estimatedDurationMinutes, forKey: .estimatedDurationMinutes)
+        try container.encode(focus, forKey: .focus)
+        try container.encode(exercises, forKey: .exercises)
+        try container.encode(rationale, forKey: .rationale)
+        try container.encode(selectionRationale, forKey: .selectionRationale)
+        try container.encode(safetyNotes, forKey: .safetyNotes)
+        try container.encode(generatedBy, forKey: .generatedBy)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(sessionMode, forKey: .sessionMode)
+        try container.encodeIfPresent(splitDayFocus, forKey: .splitDayFocus)
+    }
 }
 
 struct WorkoutExercise: Identifiable, Codable, Hashable {
@@ -346,6 +602,7 @@ struct WorkoutExercise: Identifiable, Codable, Hashable {
     var notes: String?
     var wasSkipped: Bool
     var skipReason: String?
+    var groupId: UUID?
 
     init(
         id: UUID = UUID(),
@@ -356,7 +613,8 @@ struct WorkoutExercise: Identifiable, Codable, Hashable {
         restSeconds: Int = 90,
         notes: String? = nil,
         wasSkipped: Bool = false,
-        skipReason: String? = nil
+        skipReason: String? = nil,
+        groupId: UUID? = nil
     ) {
         self.id = id
         self.exerciseId = exerciseId
@@ -367,6 +625,21 @@ struct WorkoutExercise: Identifiable, Codable, Hashable {
         self.notes = notes
         self.wasSkipped = wasSkipped
         self.skipReason = skipReason
+        self.groupId = groupId
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        exerciseId = try container.decode(String.self, forKey: .exerciseId)
+        orderIndex = try container.decode(Int.self, forKey: .orderIndex)
+        plannedSets = try container.decode([PlannedSet].self, forKey: .plannedSets)
+        completedSets = try container.decodeIfPresent([CompletedSet].self, forKey: .completedSets) ?? []
+        restSeconds = try container.decodeIfPresent(Int.self, forKey: .restSeconds) ?? 90
+        notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        wasSkipped = try container.decodeIfPresent(Bool.self, forKey: .wasSkipped) ?? false
+        skipReason = try container.decodeIfPresent(String.self, forKey: .skipReason)
+        groupId = try container.decodeIfPresent(UUID.self, forKey: .groupId)
     }
 }
 
@@ -382,6 +655,15 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
     var perceivedDifficulty: Int?
     var status: WorkoutStatus
     var splitDayFocus: SplitDayFocus?
+    var activeRestEndAt: Date?
+    var activeRestTotalSeconds: Int?
+    var activeRestAdvancesExercise: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case id, userId, title, startedAt, completedAt, estimatedDurationMinutes
+        case exercises, notes, perceivedDifficulty, status, splitDayFocus
+        case activeRestEndAt, activeRestTotalSeconds, activeRestAdvancesExercise
+    }
 
     init(
         id: UUID = UUID(),
@@ -394,7 +676,10 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
         notes: String? = nil,
         perceivedDifficulty: Int? = nil,
         status: WorkoutStatus = .planned,
-        splitDayFocus: SplitDayFocus? = nil
+        splitDayFocus: SplitDayFocus? = nil,
+        activeRestEndAt: Date? = nil,
+        activeRestTotalSeconds: Int? = nil,
+        activeRestAdvancesExercise: Bool? = nil
     ) {
         self.id = id
         self.userId = userId
@@ -407,6 +692,27 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
         self.perceivedDifficulty = perceivedDifficulty
         self.status = status
         self.splitDayFocus = splitDayFocus
+        self.activeRestEndAt = activeRestEndAt
+        self.activeRestTotalSeconds = activeRestTotalSeconds
+        self.activeRestAdvancesExercise = activeRestAdvancesExercise
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        userId = try container.decode(UUID.self, forKey: .userId)
+        title = try container.decode(String.self, forKey: .title)
+        startedAt = try container.decodeIfPresent(Date.self, forKey: .startedAt)
+        completedAt = try container.decodeIfPresent(Date.self, forKey: .completedAt)
+        estimatedDurationMinutes = try container.decode(Int.self, forKey: .estimatedDurationMinutes)
+        exercises = try container.decode([WorkoutExercise].self, forKey: .exercises)
+        notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        perceivedDifficulty = try container.decodeIfPresent(Int.self, forKey: .perceivedDifficulty)
+        status = try container.decode(WorkoutStatus.self, forKey: .status)
+        splitDayFocus = try container.decodeIfPresent(SplitDayFocus.self, forKey: .splitDayFocus)
+        activeRestEndAt = try container.decodeIfPresent(Date.self, forKey: .activeRestEndAt)
+        activeRestTotalSeconds = try container.decodeIfPresent(Int.self, forKey: .activeRestTotalSeconds)
+        activeRestAdvancesExercise = try container.decodeIfPresent(Bool.self, forKey: .activeRestAdvancesExercise)
     }
 }
 
@@ -451,6 +757,8 @@ struct UserExerciseStats: Identifiable, Codable, Hashable {
     var returningFromBreak: Bool = false
     var consecutiveHighVolumeWeeks: Int = 0
     var isOrphaned: Bool = false
+    var lastMaxEffortAt: Date?
+    var sessionsSinceMaxEffort: Int = 0
 
     var id: String { exerciseId }
 
@@ -480,6 +788,7 @@ struct UserExerciseStats: Identifiable, Codable, Hashable {
         case bestVolumeSet, recentSets, preferredRepRangeMin, preferredRepRangeMax
         case goalAtLastUpdate, deloadStartedAt, returningFromBreak
         case weeklyVolume, weeklyMaxSets, volumeTrend, consecutiveHighVolumeWeeks, isOrphaned
+        case lastMaxEffortAt, sessionsSinceMaxEffort
         case legacyIsInDeloadWeek = "isInDeloadWeek"
         case legacyLastDeloadDate = "lastDeloadDate"
     }
@@ -496,7 +805,9 @@ struct UserExerciseStats: Identifiable, Codable, Hashable {
         preferredRepRangeMax: Int,
         goalAtLastUpdate: TrainingGoal? = nil,
         deloadStartedAt: Date? = nil,
-        returningFromBreak: Bool = false
+        returningFromBreak: Bool = false,
+        lastMaxEffortAt: Date? = nil,
+        sessionsSinceMaxEffort: Int = 0
     ) {
         self.exerciseId = exerciseId
         self.lastWeightKg = lastWeightKg
@@ -510,6 +821,8 @@ struct UserExerciseStats: Identifiable, Codable, Hashable {
         self.goalAtLastUpdate = goalAtLastUpdate
         self.deloadStartedAt = deloadStartedAt
         self.returningFromBreak = returningFromBreak
+        self.lastMaxEffortAt = lastMaxEffortAt
+        self.sessionsSinceMaxEffort = sessionsSinceMaxEffort
     }
 
     init(from decoder: Decoder) throws {
@@ -535,6 +848,8 @@ struct UserExerciseStats: Identifiable, Codable, Hashable {
         volumeTrend = try container.decodeIfPresent(TrendDirection.self, forKey: .volumeTrend) ?? .stable
         consecutiveHighVolumeWeeks = try container.decodeIfPresent(Int.self, forKey: .consecutiveHighVolumeWeeks) ?? 0
         isOrphaned = try container.decodeIfPresent(Bool.self, forKey: .isOrphaned) ?? false
+        lastMaxEffortAt = try container.decodeIfPresent(Date.self, forKey: .lastMaxEffortAt)
+        sessionsSinceMaxEffort = try container.decodeIfPresent(Int.self, forKey: .sessionsSinceMaxEffort) ?? 0
     }
 
     func encode(to encoder: Encoder) throws {
@@ -556,6 +871,8 @@ struct UserExerciseStats: Identifiable, Codable, Hashable {
         try container.encode(volumeTrend, forKey: .volumeTrend)
         try container.encode(consecutiveHighVolumeWeeks, forKey: .consecutiveHighVolumeWeeks)
         try container.encode(isOrphaned, forKey: .isOrphaned)
+        try container.encodeIfPresent(lastMaxEffortAt, forKey: .lastMaxEffortAt)
+        try container.encode(sessionsSinceMaxEffort, forKey: .sessionsSinceMaxEffort)
     }
 }
 
@@ -636,7 +953,7 @@ enum CoachMessageRole: String, Codable {
 struct WorkoutPreferences: Codable, Hashable {
     var avoidExerciseIds: [String] = []
     var favoriteExerciseIds: [String] = []
-    var preferVariation: Bool = false
+    var exerciseVariability: ExerciseVariabilityLevel = .balanced
 }
 
 struct ReadinessInput: Codable, Hashable {
@@ -682,6 +999,14 @@ struct WorkoutValidationResult: Codable {
         self.errors = errors
         self.warnings = warnings
         self.suggestions = suggestions
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        isValid = try container.decode(Bool.self, forKey: .isValid)
+        errors = try container.decode([String].self, forKey: .errors)
+        warnings = try container.decode([String].self, forKey: .warnings)
+        suggestions = try container.decodeIfPresent([String].self, forKey: .suggestions) ?? []
     }
 }
 

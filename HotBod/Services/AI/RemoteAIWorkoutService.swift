@@ -1,10 +1,12 @@
 import Foundation
+import OSLog
 
 #if canImport(Supabase)
 import Supabase
 #endif
 
 actor RemoteAIWorkoutService: AIWorkoutService {
+    private static let logger = Logger(subsystem: "com.hotbod.app", category: "RemoteAIWorkoutService")
     #if canImport(Supabase)
     private let client: SupabaseClient
     #endif
@@ -74,6 +76,7 @@ actor RemoteAIWorkoutService: AIWorkoutService {
                 droppedExerciseIds: mapping?.droppedExerciseIds ?? []
             )
         } catch {
+            logCoachFailure(error)
             var offline = try await fallback.respond(to: message, context: context)
             offline.message.content += "\n\n(Cloud coach unavailable — using offline responses.)"
             return offline
@@ -81,5 +84,15 @@ actor RemoteAIWorkoutService: AIWorkoutService {
         #else
         return try await fallback.respond(to: message, context: context)
         #endif
+    }
+
+    private func logCoachFailure(_ error: Error) {
+        if error is DecodingError {
+            Self.logger.error("Cloud coach response decoding failed: \(error.localizedDescription, privacy: .public)")
+        } else if error is URLError {
+            Self.logger.error("Cloud coach transport failed: \(error.localizedDescription, privacy: .public)")
+        } else {
+            Self.logger.error("Cloud coach request failed: \(error.localizedDescription, privacy: .public)")
+        }
     }
 }

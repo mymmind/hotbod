@@ -38,7 +38,7 @@ actor SupabaseCloudSyncService: CloudSyncService {
         }
 
         let prefs: [UserPrefsPull] = try await client.from("user_preferences")
-            .select("today_workout_json, photo_cloud_backup_enabled, program_state_json")
+            .select("today_workout_json, photo_cloud_backup_enabled, program_state_json, exercise_preferences_json")
             .eq("user_id", value: userId.uuidString)
             .execute()
             .value
@@ -48,6 +48,9 @@ actor SupabaseCloudSyncService: CloudSyncService {
         }
         if let pref = prefs.first, let state = pref.programStateJson {
             try await local.programState.saveState(state)
+        }
+        if let pref = prefs.first, let preferences = pref.exercisePreferencesJson {
+            try await local.exercise.applyPreferenceOverrides(preferences)
         }
 
         try await pullRecoveryStates(userId: userId, local: local)
@@ -94,6 +97,19 @@ actor SupabaseCloudSyncService: CloudSyncService {
         try await pushExerciseStats(stats)
         let programState = try await local.programState.fetchState()
         try await pushProgramState(programState)
+        let exercisePreferences = await local.exercise.preferenceOverrides()
+        try await pushExercisePreferences(exercisePreferences)
+    }
+
+    func pushExercisePreferences(_ preferences: [String: ExercisePreference]) async throws {
+        let userId = try await requireUserId()
+        struct PrefsPatch: Encodable {
+            let exercise_preferences_json: [String: ExercisePreference]
+        }
+        try await client.from("user_preferences")
+            .update(PrefsPatch(exercise_preferences_json: preferences))
+            .eq("user_id", value: userId.uuidString)
+            .execute()
     }
 
     func pushProfile(_ profile: UserProfile) async throws {

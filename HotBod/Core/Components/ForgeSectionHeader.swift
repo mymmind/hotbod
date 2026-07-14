@@ -16,5 +16,14 @@ struct ForgeSectionHeader: View {
                     .font(ForgeTypography.heading)
             }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilitySummary)
+    }
+
+    private var accessibilitySummary: String {
+        if let subtitle {
+            return "\(title). \(subtitle)"
+        }
+        return title
     }
 }

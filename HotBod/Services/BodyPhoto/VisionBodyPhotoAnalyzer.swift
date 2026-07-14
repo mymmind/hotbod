@@ -73,7 +73,7 @@ actor VisionBodyPhotoAnalyzer: BodyPhotoAnalyzer {
         )
     }
 
-    private struct PoseMeasurements {
+    private struct PoseMeasurements: Sendable {
         var poseConfidence: Double
         var framingScore: Double
         var shoulderWidth: Double?
@@ -84,23 +84,25 @@ actor VisionBodyPhotoAnalyzer: BodyPhotoAnalyzer {
     }
 
     private func detectPose(in cgImage: CGImage) async throws -> PoseMeasurements? {
-        try await withCheckedThrowingContinuation { continuation in
+        try await withCheckedContinuation { (continuation: CheckedContinuation<PoseMeasurements?, Never>) in
+            let resumeGuard = ContinuationGuard<PoseMeasurements?>()
+
             let request = VNDetectHumanBodyPoseRequest { request, error in
                 if error != nil {
-                    continuation.resume(returning: nil)
+                    resumeGuard.resume(continuation, returning: nil)
                     return
                 }
                 guard let observation = (request.results as? [VNHumanBodyPoseObservation])?.first else {
-                    continuation.resume(returning: nil)
+                    resumeGuard.resume(continuation, returning: nil)
                     return
                 }
-                continuation.resume(returning: Self.measurements(from: observation))
+                resumeGuard.resume(continuation, returning: Self.measurements(from: observation))
             }
             let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
             do {
                 try handler.perform([request])
             } catch {
-                continuation.resume(returning: nil)
+                resumeGuard.resume(continuation, returning: nil)
             }
         }
     }
@@ -186,10 +188,10 @@ actor VisionBodyPhotoAnalyzer: BodyPhotoAnalyzer {
         var luminances: [Double] = []
         luminances.reserveCapacity(width * height)
         for pixel in stride(from: 0, to: width * height * 4, by: 4) {
-            let r = Double(buffer[pixel])
-            let g = Double(buffer[pixel + 1])
-            let b = Double(buffer[pixel + 2])
-            luminances.append((0.299 * r + 0.587 * g + 0.114 * b) / 255)
+            let red = Double(buffer[pixel])
+            let green = Double(buffer[pixel + 1])
+            let blue = Double(buffer[pixel + 2])
+            luminances.append((0.299 * red + 0.587 * green + 0.114 * blue) / 255)
         }
 
         let mean = luminances.reduce(0, +) / Double(luminances.count)
@@ -207,5 +209,18 @@ actor VisionBodyPhotoAnalyzer: BodyPhotoAnalyzer {
 
         let contrastScore = min(1.0, stdDev / 0.18)
         return min(1.0, max(0.2, (exposureScore * 0.6) + (contrastScore * 0.4)))
+    }
+}
+
+private final class ContinuationGuard<T: Sendable>: @unchecked Sendable {
+    private var resumed = false
+    private let lock = NSLock()
+
+    func resume(_ continuation: CheckedContinuation<T, Never>, returning value: T) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !resumed else { return }
+        resumed = true
+        continuation.resume(returning: value)
     }
 }

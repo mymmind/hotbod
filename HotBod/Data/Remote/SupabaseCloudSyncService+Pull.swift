@@ -51,14 +51,17 @@ extension SupabaseCloudSyncService {
                 let completed = setRows.map {
                     CompletedSet(
                         id: $0.id, setIndex: $0.setIndex, weightKg: $0.weightKg, reps: $0.reps,
-                        rpe: $0.rpe, completedAt: $0.completedAt, isWarmup: $0.isWarmup, isFailure: $0.isFailure
+                        rpe: $0.rpe, rir: $0.rir, durationSeconds: $0.durationSeconds,
+                        distanceMeters: $0.distanceMeters, completedAt: $0.completedAt,
+                        isWarmup: $0.isWarmup, isFailure: $0.isFailure, isCooldown: $0.isCooldown
                     )
                 }
                 exercises.append(WorkoutExercise(
                     id: exRow.id, exerciseId: exRow.exerciseId, orderIndex: exRow.orderIndex,
                     plannedSets: exRow.plannedSets, completedSets: completed,
                     restSeconds: exRow.restSeconds, notes: exRow.notes,
-                    wasSkipped: exRow.wasSkipped, skipReason: exRow.skipReason
+                    wasSkipped: exRow.wasSkipped, skipReason: exRow.skipReason,
+                    groupId: exRow.groupId
                 ))
             }
 
@@ -91,20 +94,24 @@ extension SupabaseCloudSyncService {
         try FileManager.default.createDirectory(at: photosDir, withIntermediateDirectories: true)
 
         for row in rows {
-            var localPath = photosDir.appendingPathComponent("\(row.id.uuidString).jpg").path
-            if let storagePath = row.storagePath {
+            let fileURL = photosDir.appendingPathComponent("\(row.id.uuidString).jpg")
+            var hasLocalFile = FileManager.default.fileExists(atPath: fileURL.path)
+
+            if !hasLocalFile, let storagePath = row.storagePath {
                 do {
                     let data = try await client.storage
                         .from("body-progress")
                         .download(path: storagePath)
-                    let fileURL = photosDir.appendingPathComponent("\(row.id.uuidString).jpg")
-                    try data.write(to: fileURL)
-                    localPath = fileURL.path
+                    try data.write(to: fileURL, options: .atomic)
+                    hasLocalFile = true
                 } catch {
-                    continue
+                    // Persist metadata so a later sync can retry the download.
                 }
             }
-            let photo = row.toBodyProgressPhoto(localImagePath: localPath)
+
+            guard hasLocalFile || row.storagePath != nil else { continue }
+
+            let photo = row.toBodyProgressPhoto(localImagePath: fileURL.path)
             try await local.bodyProgress.savePhoto(photo)
         }
     }

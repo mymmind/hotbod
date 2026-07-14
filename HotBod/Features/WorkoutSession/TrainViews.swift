@@ -3,6 +3,7 @@ import SwiftUI
 struct TrainView: View {
     @Environment(AppEnvironment.self) private var environment
     @Environment(AppRouter.self) private var router
+    @Environment(\.forgeFeedback) private var feedback
     @State private var sessions: [WorkoutSession] = []
     @State private var activeSession: WorkoutSession?
     @State private var completedSession: WorkoutSession?
@@ -49,6 +50,7 @@ struct TrainView: View {
             .background(ForgeColors.background)
             .forgeFloatingTabBarClearance()
             .forgeScreenNavigationHidden()
+            .accessibilityIdentifier("train.root")
             .navigationDestination(isPresented: $showLibrary) {
                 ExerciseLibraryView()
             }
@@ -215,7 +217,10 @@ struct TrainView: View {
     private var librarySection: some View {
         ForgeCard {
             ForgeSectionHeader(title: "Exercise Library", accent: ForgeColors.accent)
-            ForgeButton(title: "Browse Exercises") { showLibrary = true }
+            ForgeButton(
+                title: "Browse Exercises",
+                accessibilityIdentifier: "train.browseExercises"
+            ) { showLibrary = true }
         }
     }
 
@@ -324,7 +329,10 @@ struct TrainView: View {
             async let refreshResult = performWorkoutRefresh(kind)
             try? await Task.sleep(for: ForgeMotion.regenerateMinimum)
 
-            _ = await refreshResult
+            let succeeded = await refreshResult
+            if succeeded {
+                feedback.play(kind == .regenerate ? .workoutRegenerate : .success)
+            }
             await loadCompletedSession()
             await loadActiveSession()
             await loadSessions()
@@ -511,13 +519,34 @@ struct WorkoutHistoryDetailView: View {
     }
 
     private func setLine(for set: CompletedSet) -> String {
-        let weightText: String
-        if let weight = set.weightKg {
-            weightText = "\(Int(weight.rounded()))kg"
+        var line = "Set \(set.setIndex + 1):"
+        if set.reps > 0 {
+            let weightText: String
+            if let weight = set.weightKg {
+                weightText = "\(Int(weight.rounded()))kg"
+            } else {
+                weightText = "Bodyweight"
+            }
+            line += " \(weightText) x \(set.reps)"
+        } else if let seconds = set.durationSeconds, seconds > 0 {
+            line += " \(seconds)s"
+            if let weight = set.weightKg {
+                line += " @ \(Int(weight.rounded()))kg"
+            }
+        } else if let meters = set.distanceMeters, meters > 0 {
+            line += " \(Int(meters.rounded()))m"
+            if let weight = set.weightKg {
+                line += " @ \(Int(weight.rounded()))kg"
+            }
         } else {
-            weightText = "Bodyweight"
+            line += " logged"
         }
-        return "Set \(set.setIndex + 1): \(weightText) x \(set.reps)"
+        if let rir = set.rir {
+            line += " @ RIR \(rir)"
+        } else if let rpe = set.rpe {
+            line += " @ RPE \(String(format: "%.0f", rpe))"
+        }
+        return line
     }
 
     private func loadExerciseNames() async {
@@ -530,194 +559,5 @@ struct WorkoutHistoryDetailView: View {
             return completedAt.formatted(.dateTime.month(.abbreviated).day().year())
         }
         return "Completed workout"
-    }
-}
-
-struct WorkoutPreviewView: View {
-    @Environment(AppEnvironment.self) private var environment
-    @Environment(AppRouter.self) private var router
-    @State private var workout: GeneratedWorkout
-    @State private var exercises: [String: Exercise] = [:]
-    @State private var swapResolver: ExerciseSwapResolver?
-    @State private var swapTarget: PlannedExercise?
-    @State private var showSwapSheet = false
-    @State private var hasActiveSession = false
-
-    init(workout: GeneratedWorkout) {
-        _workout = State(initialValue: workout)
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            ForgeScreenHeader(
-                title: workout.title,
-                style: .compact,
-                eyebrow: "Preview",
-                subtitle: workout.focus.map(\.displayName).joined(separator: " · "),
-                leading: {
-                    ForgeHeaderBackButton { router.dismissRoute() }
-                }
-            )
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    previewHeader
-                    exerciseTimeline
-                }
-            }
-
-            VStack(spacing: 0) {
-                Divider()
-                ForgeButton(title: hasActiveSession ? "Resume Workout" : "Start Workout", style: .accent) { startSession() }
-                    .padding()
-            }
-            .background(ForgeColors.surface)
-        }
-        .background(ForgeColors.background)
-        .forgeScreenNavigationHidden()
-        .navigationDestination(for: String.self) { exerciseId in
-            ExerciseDetailView(exerciseId: exerciseId)
-        }
-        .task {
-            await loadExercises()
-            hasActiveSession = await environment.fetchActiveWorkoutSession() != nil
-            syncWorkoutFromEnvironment()
-        }
-        .onChange(of: environment.todayWorkout?.id) { _, _ in
-            syncWorkoutFromEnvironment()
-        }
-        .sheet(isPresented: $showSwapSheet) {
-            if let target = swapTarget {
-                SwapExerciseSheet(
-                    currentExerciseId: target.exerciseId,
-                    substitutionGroup: swapResolver?.substitutionGroup(for: target.exerciseId),
-                    substitutes: swapResolver?.swapCandidates(
-                        for: target.exerciseId,
-                        workoutExerciseIds: Set(workout.exercises.map(\.exerciseId))
-                    ) ?? []
-                ) { substitute in
-                    swapExercise(target, to: substitute)
-                }
-            }
-        }
-    }
-
-    private var previewHeader: some View {
-        let weightKg = environment.userProfile?.weightKg ?? 80
-        let estimatedCalories = WorkoutSessionCalculator.estimatedCaloriesBurned(
-            elapsedSeconds: workout.estimatedDurationMinutes * 60,
-            bodyWeightKg: weightKg
-        )
-
-        return VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 0) {
-                previewMetric(label: "Exercises", value: "\(workout.exercises.count)")
-                previewMetricDivider
-                previewMetric(label: "Duration", value: "\(workout.estimatedDurationMinutes)m")
-                previewMetricDivider
-                previewMetric(label: "Calories", value: "~\(estimatedCalories)")
-            }
-            .padding(.vertical, 4)
-
-            HStack(spacing: 8) {
-                ForgePill(label: "\(totalSets) sets")
-                ForgePill(label: "\(muscleCount) muscles")
-            }
-        }
-        .padding(.horizontal, 20)
-        .padding(.bottom, 20)
-    }
-
-    private func previewMetric(label: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label.uppercased())
-                .font(ForgeTypography.caption)
-                .tracking(1.5)
-                .foregroundStyle(ForgeColors.muted)
-            Text(value)
-                .font(ForgeTypography.monoMetric)
-                .foregroundStyle(ForgeColors.foreground)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var previewMetricDivider: some View {
-        Rectangle()
-            .fill(ForgeColors.border)
-            .frame(width: 1, height: 36)
-    }
-
-    private var exerciseTimeline: some View {
-        let sorted = workout.exercises.sorted { $0.orderIndex < $1.orderIndex }
-        return VStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(sorted.enumerated()), id: \.element.id) { index, planned in
-                HStack(alignment: .top, spacing: 12) {
-                    NavigationLink(value: planned.exerciseId) {
-                        WorkoutExerciseTimelineRow(
-                            planned: planned,
-                            exercise: exercises[planned.exerciseId],
-                            isFocus: index == 0,
-                            isLast: index == sorted.count - 1
-                        )
-                    }
-                    .buttonStyle(.plain)
-
-                    Menu {
-                        Button("Swap") {
-                            swapTarget = planned
-                            showSwapSheet = true
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis")
-                            .foregroundStyle(ForgeColors.muted)
-                            .padding(.top, 8)
-                    }
-                }
-                .padding(.horizontal, 20)
-            }
-        }
-        .padding(.bottom, 24)
-    }
-
-    private var muscleCount: Int {
-        Set(workout.exercises.flatMap { exercises[$0.exerciseId]?.primaryMuscles ?? [] }).count
-    }
-
-    private var totalSets: Int {
-        workout.exercises.reduce(0) { $0 + $1.targetSets.count }
-    }
-
-    private func loadExercises() async {
-        let used = Set(workout.exercises.map(\.exerciseId))
-        guard let resolver = await environment.loadExerciseSwapResolver(usedExerciseIds: used) else { return }
-        swapResolver = resolver
-        exercises = resolver.exerciseMap
-    }
-
-    private func swapExercise(_ planned: PlannedExercise, to substitute: Exercise) {
-        guard let idx = workout.exercises.firstIndex(where: { $0.id == planned.id }) else { return }
-        workout.exercises[idx] = PlannedExercise(
-            id: planned.id,
-            exerciseId: substitute.id,
-            orderIndex: planned.orderIndex,
-            targetSets: planned.targetSets,
-            restSeconds: planned.restSeconds,
-            intensity: planned.intensity,
-            reason: "Swapped from \(planned.exerciseId) to \(substitute.name)."
-        )
-        environment.todayWorkout = workout
-        Task { try? await environment.saveTodayWorkout(workout) }
-    }
-
-    private func startSession() {
-        Task {
-            guard let session = await environment.resumeOrStartWorkout(from: workout) else { return }
-            router.replace(with: .workoutSession(session))
-        }
-    }
-
-    private func syncWorkoutFromEnvironment() {
-        guard let latest = environment.todayWorkout, latest.id != workout.id else { return }
-        workout = latest
     }
 }

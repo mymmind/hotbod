@@ -64,3 +64,23 @@ Before marking any task complete:
 - Check empty states.
 - Check local persistence.
 - Check previews where possible.
+
+## Test hygiene
+
+- New algorithm → unit test required.
+- New `AppEnvironment` method → integration test required.
+- New user-facing flow → UI test or explicit exemption comment in the test file.
+- Bug fix → regression test named `testRegression_<issue>`.
+- UI tests launch with `-UITesting -ResetState -MockAI -MockFoodSearch`; use `-SkipOnboarding` unless exercising onboarding.
+- Prefer stable `accessibilityIdentifier` values on primary CTAs; fall back to ForgeButton accessibility labels.
+- Run PR tests via `HotBod.xctestplan` configuration **PR**; run full suite + property iterations (500+) on **Nightly**.
+- Backend edge functions: add Deno tests beside `supabase/functions/` when changing validation or coach handlers.
+
+### Coverage gates (ramp)
+
+| Milestone | Gate |
+|-----------|------|
+| After Phase 1 | 60% |
+| After Phase 3 | 70% |
+| After Phase 4 | 80% |
+| Domain/Algorithms | 90% (scoped gate on `HotBod/Domain/`) |

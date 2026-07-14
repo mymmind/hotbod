@@ -1,3 +1,4 @@
+// swiftlint:disable type_body_length function_body_length
 import Foundation
 
 final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
@@ -85,8 +86,19 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             (!exercise.isAvoided || options.includeAvoided) &&
             EquipmentFilter.isExerciseAvailable(exercise, availableEquipment: input.availableEquipment) &&
             !GenerationConstants.violatesInjuries(exercise, injuries: input.injuries) &&
-            (avoidedOverride || !exercise.primaryMuscles.contains(where: { input.avoidedMuscleGroups.contains($0) }))
+            (avoidedOverride || !exercise.primaryMuscles.contains(where: { input.avoidedMuscleGroups.contains($0) })) &&
+            !shouldExcludeCardio(exercise, input: input)
         }
+    }
+
+    private func shouldExcludeCardio(_ exercise: Exercise, input: WorkoutGenerationInput) -> Bool {
+        guard exercise.movementPattern == .cardio else { return false }
+        let strengthGoals: Set<TrainingGoal> = [.buildMuscle, .gainStrength]
+        guard strengthGoals.contains(input.goal) else { return false }
+        if input.userProfile.includeConditioning {
+            return input.userProfile.cardioBlockPlacement != .none
+        }
+        return true
     }
 
     private func countExerciseBlockers(
@@ -124,7 +136,7 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                 targetMuscles: targetMuscles,
                 stats: input.exerciseStats,
                 avoidIds: Set(input.userPreferences.avoidExerciseIds),
-                preferVariation: input.userPreferences.preferVariation,
+                variability: input.userPreferences.exerciseVariability,
                 favoriteIds: favoriteIds,
                 relaxDifficultyPenalty: filterOptions.relaxDifficultyPenalty
             )
@@ -135,7 +147,7 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                 durationMinutes: input.targetDurationMinutes,
                 stats: input.exerciseStats,
                 avoidIds: Set(input.userPreferences.avoidExerciseIds),
-                preferVariation: input.userPreferences.preferVariation,
+                variability: input.userPreferences.exerciseVariability,
                 favoriteIds: favoriteIds,
                 relaxDifficultyPenalty: filterOptions.relaxDifficultyPenalty
             )
@@ -149,7 +161,7 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             )
         }
 
-        let exerciseMap = Dictionary(uniqueKeysWithValues: allExercises.map { ($0.id, $0) })
+        let exerciseMap = ExerciseCatalog.indexedById(allExercises)
         if sessionMode == .standard {
             WorkoutGenerationAlgorithms.trimToDuration(
                 planned: &planned,
@@ -158,6 +170,30 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                 exerciseMap: exerciseMap,
                 targetDurationMinutes: input.targetDurationMinutes
             )
+            ExerciseGroupPlanner.applyGrouping(
+                to: &planned,
+                preference: input.userProfile.preferredExerciseGrouping,
+                exerciseMap: exerciseMap
+            )
+            SessionStructurePlanner.applyCardioBlock(
+                to: &planned,
+                placement: input.userProfile.cardioBlockPlacement,
+                exercises: allExercises,
+                availableEquipment: input.availableEquipment,
+                includeConditioning: input.userProfile.includeConditioning
+                    || !([TrainingGoal.buildMuscle, .gainStrength].contains(input.goal))
+            )
+            if input.userProfile.includeCoreFinisher {
+                CoreFinisherPlanner.appendCoreFinisher(
+                    to: &planned,
+                    exercises: allExercises,
+                    availableEquipment: input.availableEquipment,
+                    experience: input.experienceLevel
+                )
+            }
+            if input.userProfile.includeCooldown {
+                SessionStructurePlanner.appendCooldownSets(to: &planned, exerciseMap: exerciseMap)
+            }
         }
 
         let title = sessionMode == .recovery
@@ -172,6 +208,16 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         let rationale = sessionMode == .recovery
             ? "Recovery session — reduced volume and intensity based on soreness and fatigue."
             : buildRationale(input: input, muscles: targetMuscles)
+        let selectionRationale = WorkoutSelectionRationale.build(
+            input: input,
+            muscles: targetMuscles,
+            selectedExercises: selection.exercises,
+            sessionMode: sessionMode,
+            filterOptions: WorkoutSelectionFilterContext(
+                includeAvoided: filterOptions.includeAvoided,
+                relaxDifficultyPenalty: filterOptions.relaxDifficultyPenalty
+            )
+        )
 
         var workout = GeneratedWorkout(
             id: UUID(),
@@ -180,6 +226,7 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             focus: targetMuscles,
             exercises: planned,
             rationale: rationale,
+            selectionRationale: selectionRationale,
             safetyNotes: input.injuries.filter { $0 != .none }.isEmpty ? [] : ["Movements adjusted for reported limitations."],
             generatedBy: .rulesEngine,
             createdAt: Date(),
@@ -216,9 +263,6 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                 suggestions: validation.suggestions
             )
         }
-        if !validation.isValid {
-            workout.safetyNotes.append(contentsOf: validation.errors)
-        }
         return workout
     }
 
@@ -249,11 +293,6 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
 
     private func selectTargetMuscles(input: WorkoutGenerationInput) -> (muscles: [MuscleGroup], avoidedOverride: Bool) {
         var recovery = input.muscleRecovery
-        if input.readiness?.soreness == .severe {
-            recovery = recovery.mapValues { max(0, $0 - GenerationConstants.Recovery.severeSorenessRecoveryPenalty) }
-        } else if input.readiness?.soreness == .moderate {
-            recovery = recovery.mapValues { max(0, $0 - GenerationConstants.Recovery.moderateSorenessRecoveryPenalty) }
-        }
         applySleepRecoveryPenalty(readiness: input.readiness, recovery: &recovery)
 
         var avoidedOverride = false
@@ -361,7 +400,7 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         durationMinutes: Int,
         stats: [UserExerciseStats],
         avoidIds: Set<String>,
-        preferVariation: Bool = false,
+        variability: ExerciseVariabilityLevel = .balanced,
         favoriteIds: Set<String> = [],
         relaxDifficultyPenalty: Bool = false
     ) -> ExerciseSelectionResult {
@@ -381,7 +420,7 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         )
         let ranked = WorkoutGenerationAlgorithms.rankScored(
             scored,
-            preferVariation: preferVariation,
+            variability: variability,
             avoidIds: avoidIds
         )
         return WorkoutGenerationAlgorithms.selectExercises(
@@ -397,7 +436,7 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         targetMuscles: [MuscleGroup],
         stats: [UserExerciseStats],
         avoidIds: Set<String>,
-        preferVariation: Bool,
+        variability: ExerciseVariabilityLevel,
         favoriteIds: Set<String> = [],
         relaxDifficultyPenalty: Bool = false
     ) -> ExerciseSelectionResult {
@@ -413,7 +452,7 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         )
         let ranked = WorkoutGenerationAlgorithms.rankScored(
             scored,
-            preferVariation: preferVariation,
+            variability: variability,
             avoidIds: avoidIds
         )
         return WorkoutGenerationAlgorithms.selectExercises(
@@ -433,14 +472,17 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         sessionMode: SessionMode
     ) -> PlannedExercise {
         let stats = input.exerciseStats.first { $0.exerciseId == exercise.id }
-        let repRange = GenerationConstants.Prescription.effectiveRepRange(
+        let prescription = exercise.resolvedPrescriptionType
+        let repRange = ExercisePrescriptionOverrides.effectiveRepRange(
+            exerciseId: exercise.id,
             stats: stats,
             goal: input.goal,
             experience: input.experienceLevel
         )
         let minReps = repRange.min
         let maxReps = repRange.max
-        let setCount = GenerationConstants.Prescription.setCount(
+        let setCount = ExercisePrescriptionOverrides.effectiveSetCount(
+            exerciseId: exercise.id,
             experience: input.experienceLevel,
             pattern: exercise.movementPattern
         )
@@ -479,7 +521,11 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             )
         }
 
-        weight = GenerationConstants.Weight.roundToAvailable(weight, equipment: exercise.equipment)
+        weight = GenerationConstants.Weight.roundToAvailable(
+            weight,
+            equipment: exercise.equipment,
+            ceilings: input.userProfile.maxAvailableWeightKg
+        )
         let loadMode = exercise.resolvedLoadTrackingMode
         let canPlanExternalLoad: Bool = switch loadMode {
         case .none:
@@ -493,11 +539,14 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         let plannedWeight: Double? = canPlanExternalLoad ? weight : nil
 
         var (intensity, adjustedSetCount) = deloadAdjustment(baseSetCount: setCount, stats: stats)
-        var rpeTarget = WorkoutGenerationAlgorithms.rpeTarget(
-            sessionMode: sessionMode,
-            experience: input.experienceLevel,
-            isDeload: stats?.isInDeloadWeek == true,
-            sleepScore: input.readiness?.sleepScore
+        var rpeTarget = ExercisePrescriptionOverrides.effectiveRPETarget(
+            exerciseId: exercise.id,
+            fallback: WorkoutGenerationAlgorithms.rpeTarget(
+                sessionMode: sessionMode,
+                experience: input.experienceLevel,
+                isDeload: stats?.isInDeloadWeek == true,
+                sleepScore: input.readiness?.sleepScore
+            )
         )
 
         if stats?.returningFromBreak == true {
@@ -515,7 +564,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             adjustedSetCount = max(1, adjustedSetCount - 1)
         }
 
-        let restSeconds = WorkoutGenerationAlgorithms.restSeconds(
+        let restSeconds = ExercisePrescriptionOverrides.effectiveRestSeconds(
+            exerciseId: exercise.id,
             goal: input.goal,
             mechanics: exercise.resolvedMechanics
         )
@@ -532,17 +582,24 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         }
 
         let workingSets = (0..<adjustedSetCount).map { _ in
-            PlannedSet(
-                targetRepsMin: minReps,
-                targetRepsMax: maxReps,
-                targetWeightKg: plannedWeight,
+            plannedWorkingSet(
+                prescription: prescription,
+                exercise: exercise,
+                minReps: minReps,
+                maxReps: maxReps,
+                plannedWeight: plannedWeight,
                 rpeTarget: rpeTarget
             )
+        }
+        var mutableWorkingSets = workingSets
+        if MaxEffortPlanner.shouldScheduleMaxEffort(stats: stats, sessionMode: sessionMode) {
+            MaxEffortPlanner.markMaxEffortSet(in: &mutableWorkingSets)
         }
         let warmupSets: [PlannedSet]
         if sessionMode == .standard,
            input.userProfile.includeWarmupSets,
-           canPlanExternalLoad {
+           canPlanExternalLoad,
+           prescription == .reps {
             warmupSets = WarmupSetPlanner.warmupSets(
                 workingWeight: weight,
                 workingRepsMin: minReps,
@@ -555,11 +612,57 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         return PlannedExercise(
             exerciseId: exercise.id,
             orderIndex: orderIndex,
-            targetSets: warmupSets + workingSets,
+            targetSets: warmupSets + mutableWorkingSets,
             restSeconds: restSeconds,
             intensity: intensity,
             reason: reason
         )
+    }
+
+    private func plannedWorkingSet(
+        prescription: PrescriptionType,
+        exercise: Exercise,
+        minReps: Int,
+        maxReps: Int,
+        plannedWeight: Double?,
+        rpeTarget: Double
+    ) -> PlannedSet {
+        switch prescription {
+        case .time:
+            let seconds = ExerciseMetadataResolver.defaultDurationSeconds(for: exercise)
+            return PlannedSet(
+                targetRepsMin: 0,
+                targetRepsMax: 0,
+                targetWeightKg: plannedWeight,
+                rpeTarget: rpeTarget,
+                targetDurationSeconds: seconds
+            )
+        case .distance:
+            let meters = ExerciseMetadataResolver.defaultDistanceMeters(for: exercise)
+            return PlannedSet(
+                targetRepsMin: 0,
+                targetRepsMax: 0,
+                targetWeightKg: plannedWeight,
+                rpeTarget: rpeTarget,
+                targetDistanceMeters: meters
+            )
+        case .distanceOrTime:
+            let meters = ExerciseMetadataResolver.defaultDistanceMeters(for: exercise)
+            return PlannedSet(
+                targetRepsMin: 0,
+                targetRepsMax: 0,
+                targetWeightKg: plannedWeight,
+                rpeTarget: rpeTarget,
+                targetDistanceMeters: meters
+            )
+        case .reps:
+            return PlannedSet(
+                targetRepsMin: minReps,
+                targetRepsMax: maxReps,
+                targetWeightKg: plannedWeight,
+                rpeTarget: rpeTarget
+            )
+        }
     }
 
     private func defaultWeight(
@@ -638,7 +741,7 @@ enum WorkoutValidator {
         var suggestions: [String] = []
 
         let isRecovery = workout.sessionMode == .recovery
-        let exerciseMap = Dictionary(uniqueKeysWithValues: exercises.map { ($0.id, $0) })
+        let exerciseMap = ExerciseCatalog.indexedById(exercises)
         var exerciseIds = Set<String>()
 
         let minExercises = isRecovery

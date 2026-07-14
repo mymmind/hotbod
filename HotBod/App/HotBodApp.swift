@@ -2,19 +2,47 @@ import SwiftUI
 
 @main
 struct HotBodApp: App {
-    @State private var environment = AppEnvironment()
-    @State private var router = AppRouter()
+    @State private var environment = HotBodApp.makeEnvironment()
+    @State private var router = AppRouter(initialRoute: LaunchRouteResolver.initialRoute())
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(environment)
                 .environment(router)
+                .environment(\.forgeFeedback, environment.feedbackService)
                 .task {
+                    UITestConfiguration.applyLaunchConfiguration()
+                    if UITestConfiguration.shouldResetState {
+                        UITestConfiguration.resetOnboardingState(in: environment)
+                    }
                     await environment.bootstrap()
-                    router.route = environment.hasCompletedOnboarding ? .main : .onboarding
+                    if UITestConfiguration.shouldSkipOnboarding {
+                        router.route = .main
+                        await UITestConfiguration.applyDeepLinks(environment: environment, router: router)
+                        return
+                    }
+                    if environment.hasCompletedOnboarding {
+                        router.route = .main
+                    } else if case .onboarding = router.route {
+                        return
+                    } else {
+                        router.route = .onboarding
+                    }
                 }
         }
+    }
+
+    private static func makeEnvironment() -> AppEnvironment {
+        if UITestConfiguration.isUITesting {
+            return AppEnvironment(
+                aiWorkoutService: UITestConfiguration.shouldMockAI ? MockAIWorkoutService() : nil,
+                foodSearchService: UITestConfiguration.shouldMockFoodSearch ? MockFoodSearchService() : nil,
+                authService: NoOpAuthService(),
+                cloudSyncService: NoOpCloudSyncService()
+            )
+        }
+        return AppEnvironment()
     }
 }
 
@@ -58,7 +86,7 @@ struct RootView: View {
                 .forgeAnimatedContent(id: "coach")
             }
         }
-        .animation(ForgeMotion.standard, value: router.route)
+        .animation(UITestConfiguration.isUITesting ? nil : ForgeMotion.standard, value: router.route)
         .tint(ForgeColors.accent)
     }
 }

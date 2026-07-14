@@ -1,0 +1,37 @@
+name: CI Nightly
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  nightly-tests:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Nightly property tests
+        run: |
+          xcodebuild \
+            -scheme HotBod \
+            -testPlan HotBod \
+            -only-test-configuration Nightly \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' \
+            -enableCodeCoverage YES \
+            -quiet \
+            test
+        env:
+          PROPERTY_ITERATIONS: "500"
+
+      - name: Deno backend tests
+        run: |
+          brew install deno
+          deno test --allow-env --allow-net supabase/functions/

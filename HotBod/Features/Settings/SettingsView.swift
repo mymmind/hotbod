@@ -27,6 +27,9 @@ struct SettingsView: View {
     @State var showLimitations = false
     @State var showMusclePreferences = false
     @State var didLoad = false
+    @State var showDeleteDataConfirmation = false
+    @State var isDeletingAccount = false
+    @State var deleteError: String?
 
     let sessionLengths = [20, 30, 45, 60, 75, 90]
 
@@ -59,6 +62,8 @@ struct SettingsView: View {
                     .font(ForgeTypography.caption)
                     .foregroundStyle(ForgeColors.accent)
                     .disabled(isSaving)
+                    .accessibilityIdentifier("settings.done")
+                    .accessibilityAddTraits(.isButton)
                 }
             )
 
@@ -88,11 +93,14 @@ struct SettingsView: View {
                     }
 
                     trainingSection
+                    sessionStructureSection
+                    equipmentLimitsSection
                     musclePreferencesSection
                     scheduleSection
                     bodySection
                     proteinSection
                     limitationsSection
+                    integrationsSection
                     appSection
                 }
                 .padding(.horizontal, ForgeSpacing.s5)
@@ -102,7 +110,20 @@ struct SettingsView: View {
         .background(ForgeColors.background)
         .forgeScreenNavigationHidden()
         .sheet(isPresented: $showEquipmentPicker) { equipmentPicker }
+        .confirmationDialog(
+            deleteConfirmationTitle,
+            isPresented: $showDeleteDataConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(deleteConfirmationActionTitle, role: .destructive) {
+                Task { await performDeleteUserData() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(deleteConfirmationMessage)
+        }
         .onAppear(perform: loadDraft)
+        .accessibilityIdentifier("settings.root")
     }
 }
 

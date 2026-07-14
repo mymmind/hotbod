@@ -38,7 +38,95 @@ enum ExerciseSubstitution {
         score += Double(Set(source.primaryMuscles).intersection(Set(candidate.primaryMuscles)).count) * 10
         score += source.movementPattern == candidate.movementPattern ? 5 : 0
         score += source.difficulty == candidate.difficulty ? 2 : 0
+        if candidate.preference == .favorite {
+            score += GenerationConstants.Scoring.favoriteBonus
+        } else if candidate.preference == .less {
+            score += GenerationConstants.Scoring.lessPreferredPenalty
+        }
         return score
+    }
+}
+
+enum WorkoutPlanEditor {
+    static func sortedExercises(_ exercises: [PlannedExercise]) -> [PlannedExercise] {
+        exercises.sorted { $0.orderIndex < $1.orderIndex }
+    }
+
+    static func reordered(
+        _ exercises: [PlannedExercise],
+        from source: IndexSet,
+        to destination: Int
+    ) -> [PlannedExercise] {
+        var ordered = sortedExercises(exercises)
+        ordered.move(fromOffsets: source, toOffset: destination)
+        return ordered.enumerated().map { index, exercise in
+            var updated = exercise
+            updated.orderIndex = index
+            return updated
+        }
+    }
+}
+
+enum ExerciseSwapReplanner {
+    /// Rebuilds planned sets for a substitute while preserving set structure from the original slot.
+    static func replannedSets(
+        preservingStructureFrom existing: [PlannedSet],
+        for substitute: Exercise,
+        stats: UserExerciseStats?,
+        bodyweightKg: Double,
+        experience: ExperienceLevel,
+        weightCeilings: [Equipment: Double] = [:]
+    ) -> [PlannedSet] {
+        guard substitute.resolvedLoadTrackingMode != .none else {
+            return existing.map { set in
+                PlannedSet(
+                    targetRepsMin: set.targetRepsMin,
+                    targetRepsMax: set.targetRepsMax,
+                    targetWeightKg: nil,
+                    rpeTarget: set.rpeTarget,
+                    isWarmup: set.isWarmup,
+                    isMaxEffort: set.isMaxEffort,
+                    isCooldown: set.isCooldown
+                )
+            }
+        }
+
+        let workingWeight = stats?.suggestedNextWeightKg
+            ?? stats?.lastWeightKg
+            ?? ProgressiveOverload.suggestedStartWeight(
+                for: substitute,
+                bodyweight: bodyweightKg,
+                experience: experience
+            )
+
+        return existing.map { set in
+            let weight: Double?
+            if set.isWarmup {
+                weight = WarmupSetPlanner.warmupSets(
+                    workingWeight: workingWeight,
+                    workingRepsMin: set.targetRepsMin,
+                    rpeTarget: set.rpeTarget
+                ).last?.targetWeightKg
+            } else if set.isCooldown {
+                weight = nil
+            } else {
+                weight = GenerationConstants.Weight.roundToAvailable(
+                    workingWeight,
+                    equipment: substitute.equipment,
+                    ceilings: weightCeilings
+                )
+            }
+
+            return PlannedSet(
+                targetRepsMin: set.targetRepsMin,
+                targetRepsMax: set.targetRepsMax,
+                targetWeightKg: weight,
+                rpeTarget: set.rpeTarget,
+                isWarmup: set.isWarmup,
+                isMaxEffort: set.isMaxEffort,
+                isCooldown: set.isCooldown
+            )
+        }
     }
 }
 
@@ -91,6 +179,14 @@ enum StrengthHistory {
         let e1rm: Double
     }
 
+    struct MuscleStrengthScore: Identifiable, Hashable {
+        let muscleGroup: MuscleGroup
+        let score: Int
+        let anchorExerciseName: String
+
+        var id: String { muscleGroup.rawValue }
+    }
+
     static func e1rmTrend(for exerciseId: String, stats: [UserExerciseStats]) -> [DataPoint] {
         guard let stat = stats.first(where: { $0.exerciseId == exerciseId }) else { return [] }
         return stat.recentSets.compactMap { set in
@@ -100,7 +196,7 @@ enum StrengthHistory {
     }
 
     static func topLifts(stats: [UserExerciseStats], exercises: [Exercise], limit: Int = 3) -> [(exercise: Exercise, e1rm: Double)] {
-        let exerciseMap = Dictionary(uniqueKeysWithValues: exercises.map { ($0.id, $0) })
+        let exerciseMap = ExerciseCatalog.indexedById(exercises)
         return stats
             .compactMap { stat -> (Exercise, Double)? in
                 guard let e1rm = stat.estimatedOneRepMax, let exercise = exerciseMap[stat.exerciseId] else { return nil }
@@ -109,6 +205,60 @@ enum StrengthHistory {
             .sorted { $0.1 > $1.1 }
             .prefix(limit)
             .map { ($0.0, $0.1) }
+    }
+
+    static func muscleGroupScores(
+        stats: [UserExerciseStats],
+        exercises: [Exercise],
+        bodyweightKg: Double
+    ) -> [MuscleStrengthScore] {
+        guard bodyweightKg > 0 else { return [] }
+
+        let exerciseMap = ExerciseCatalog.indexedById(exercises)
+        var bestByMuscle: [MuscleGroup: (e1rm: Double, name: String)] = [:]
+
+        for stat in stats {
+            guard let e1rm = stat.estimatedOneRepMax, e1rm > 0,
+                  let exercise = exerciseMap[stat.exerciseId] else { continue }
+            for muscle in exercise.primaryMuscles {
+                if let current = bestByMuscle[muscle], current.e1rm >= e1rm { continue }
+                bestByMuscle[muscle] = (e1rm, exercise.name)
+            }
+        }
+
+        return MuscleGroup.preferenceSelectable.compactMap { muscle in
+            guard let best = bestByMuscle[muscle] else { return nil }
+            let score = normalizedStrengthScore(
+                e1rm: best.e1rm,
+                muscle: muscle,
+                bodyweightKg: bodyweightKg
+            )
+            return MuscleStrengthScore(
+                muscleGroup: muscle,
+                score: score,
+                anchorExerciseName: best.name
+            )
+        }
+        .sorted { $0.score > $1.score }
+    }
+
+    static func normalizedStrengthScore(e1rm: Double, muscle: MuscleGroup, bodyweightKg: Double) -> Int {
+        let benchmark = benchmarkE1RMRatio(for: muscle)
+        let ratio = e1rm / (bodyweightKg * benchmark)
+        return Int(min(100, max(0, (ratio * 100).rounded())))
+    }
+
+    static func benchmarkE1RMRatio(for muscle: MuscleGroup) -> Double {
+        switch muscle {
+        case .chest, .shoulders: 1.25
+        case .back, .traps, .lowerBack: 1.0
+        case .quads: 2.0
+        case .hamstrings, .glutes: 1.5
+        case .biceps, .triceps, .forearms: 0.55
+        case .calves: 0.9
+        case .abs, .obliques: 0.35
+        case .adductors, .abductors: 1.0
+        }
     }
 }
 
@@ -173,6 +323,21 @@ enum DeloadDetector {
                     )
                 }
             }
+        }
+
+        let loggedRPESets = stats.recentSets.filter {
+            EffortFeedbackMapping.isWorkingSet($0)
+                && EffortFeedbackMapping.effectiveRPE(rpe: $0.rpe, rir: $0.rir) != nil
+        }
+        if loggedRPESets.count >= GenerationConstants.Progression.highRPEDeloadSetCount,
+           let averageRPE = ProgressiveOverload.averageLoggedRPE(from: loggedRPESets),
+           averageRPE >= GenerationConstants.Progression.veryHardRPEThreshold {
+            return DeloadAnalysis(
+                isDeloadRecommended: true,
+                reason: "Logged effort averaging \(String(format: "%.1f", averageRPE)) RPE — recovery recommended",
+                severity: .mild,
+                suggestsReturningFromBreak: false
+            )
         }
 
         return DeloadAnalysis(

@@ -15,5 +15,6 @@ struct ForgePill: View {
             .overlay {
                 Capsule().stroke(inverted ? ForgeColors.surface.opacity(0.25) : ForgeColors.border, lineWidth: 1)
             }
+            .accessibilityLabel(label)
     }
 }

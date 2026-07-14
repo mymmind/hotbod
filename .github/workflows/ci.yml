@@ -36,6 +36,40 @@ jobs:
         run: |
           xcodebuild \
             -scheme HotBod \
+            -testPlan HotBod \
+            -only-test-configuration PR \
             -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' \
+            -enableCodeCoverage YES \
+            -resultBundlePath TestResults.xcresult \
             -quiet \
             test
+
+      - name: Coverage report
+        run: |
+          xcrun xccov view --report --json TestResults.xcresult > coverage.json
+          python3 - <<'PY'
+          import json, sys
+          with open("coverage.json") as f:
+              data = json.load(f)
+          targets = data if isinstance(data, list) else data.get("targets", [])
+          total = 0.0
+          count = 0
+          for target in targets:
+              name = target.get("name", "")
+              if "HotBod.app" in name or name.endswith("HotBod"):
+                  cov = target.get("lineCoverage", 0) * 100
+                  print(f"HotBod line coverage: {cov:.1f}%")
+                  total += cov
+                  count += 1
+          if count == 0:
+              print("warning: Could not find HotBod coverage target")
+              sys.exit(0)
+          avg = total / count
+          gate = float(__import__("os").environ.get("COVERAGE_GATE", "60"))
+          print(f"Coverage gate: {gate}%")
+          if avg < gate:
+              print(f"Coverage {avg:.1f}% is below gate {gate}%")
+              sys.exit(1)
+          PY
+        env:
+          COVERAGE_GATE: "60"

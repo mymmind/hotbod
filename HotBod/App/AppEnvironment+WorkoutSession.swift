@@ -51,7 +51,8 @@ extension AppEnvironment {
                 exerciseId: planned.exerciseId,
                 orderIndex: planned.orderIndex,
                 plannedSets: planned.targetSets,
-                restSeconds: planned.restSeconds
+                restSeconds: planned.restSeconds,
+                groupId: planned.groupId
             )
         }
         let session = WorkoutSession(
@@ -92,6 +93,28 @@ extension AppEnvironment {
         }
     }
 
+    func syncTodayWorkoutExerciseSwap(
+        orderIndex: Int,
+        newExerciseId: String,
+        plannedSets: [PlannedSet]
+    ) async {
+        guard var workout = todayWorkout,
+              let idx = workout.exercises.firstIndex(where: { $0.orderIndex == orderIndex }) else { return }
+        let planned = workout.exercises[idx]
+        workout.exercises[idx] = PlannedExercise(
+            id: planned.id,
+            exerciseId: newExerciseId,
+            orderIndex: planned.orderIndex,
+            targetSets: plannedSets,
+            restSeconds: planned.restSeconds,
+            intensity: planned.intensity,
+            reason: "Swapped during session.",
+            groupId: planned.groupId
+        )
+        todayWorkout = workout
+        try? await workoutRepository.saveTodayWorkout(workout)
+    }
+
     func saveWorkoutSessionImmediately(_ session: WorkoutSession) async throws {
         sessionSaveTask?.cancel()
         try await workoutRepository.saveSession(session)
@@ -99,7 +122,7 @@ extension AppEnvironment {
 
     func applyWorkoutSessionCompletion(_ session: WorkoutSession) async -> [String] {
         let allExercises = (try? await exerciseRepository.fetchAll()) ?? []
-        let map = Dictionary(uniqueKeysWithValues: allExercises.map { ($0.id, $0) })
+        let map = ExerciseCatalog.indexedById(allExercises)
         let completed = session.exercises.compactMap { we -> (Exercise, [CompletedSet])? in
             guard let ex = map[we.exerciseId], !we.wasSkipped else { return nil }
             return (ex, we.completedSets)
@@ -114,6 +137,7 @@ extension AppEnvironment {
         let bodyweight = userProfile?.weightKg ?? 80
         let experience = userProfile?.experienceLevel ?? .intermediate
         let goal = userProfile?.goal
+        let weightCeilings = userProfile?.maxAvailableWeightKg ?? [:]
         for we in session.exercises where !we.wasSkipped {
             let exercise = map[we.exerciseId]
             let updated = ProgressiveOverload.updateStats(
@@ -124,7 +148,8 @@ extension AppEnvironment {
                 bodyweightKg: bodyweight,
                 experienceLevel: experience,
                 goal: goal,
-                equipment: exercise?.equipment ?? []
+                equipment: exercise?.equipment ?? [],
+                weightCeilings: weightCeilings
             )
             if let name = map[we.exerciseId]?.name, let next = updated.suggestedNextWeightKg {
                 notes.append("\(name): try \(Int(next))kg next session.")
@@ -136,6 +161,7 @@ extension AppEnvironment {
             }
         }
         try? await exerciseStatsRepository.saveStats(stats)
+        await exportCompletedWorkoutIfEnabled(session)
         return notes
     }
 

@@ -1,11 +1,13 @@
 import SwiftUI
 
+// swiftlint:disable:next type_body_length
 struct TodayView: View {
     @Environment(AppEnvironment.self) private var environment
     @Environment(AppRouter.self) private var router
+    @Environment(\.forgeFeedback) private var feedback
     @State private var proteinToday: Double = 0
     @State private var proteinStreak = 0
-    @State private var showSettings = false
+    @State private var workoutStreak = 0
     @State private var showCoach = false
     @State private var completedSession: WorkoutSession?
     @State private var activeSession: WorkoutSession?
@@ -52,7 +54,6 @@ struct TodayView: View {
             .background(ForgeColors.background)
             .forgeFloatingTabBarClearance()
             .forgeScreenNavigationHidden()
-            .sheet(isPresented: $showSettings) { SettingsView(presentation: .sheet) }
             .sheet(isPresented: $showRecoveryDetails) {
                 RecoveryDetailSheet(
                     averageReadiness: averageReadiness,
@@ -64,6 +65,7 @@ struct TodayView: View {
             }
             .task {
                 await loadProtein()
+                await loadWorkoutStreak()
                 await loadExerciseCatalog()
                 await environment.refreshHealthReadiness()
                 await loadCompletedSession()
@@ -130,9 +132,7 @@ struct TodayView: View {
 
     @ViewBuilder
     private var primaryTodayContent: some View {
-        if environment.isRestDay {
-            editorialLayout(hero: { restDayHero })
-        } else if let workout = environment.todayWorkout {
+        if let workout = environment.todayWorkout {
             editorialLayout(
                 workout: workout,
                 hero: {
@@ -144,6 +144,8 @@ struct TodayView: View {
                     }
                 }
             )
+        } else if environment.isRestDay {
+            editorialLayout(hero: { restDayHero })
         } else {
             VStack(spacing: 16) {
                 EmptyStateView(
@@ -197,7 +199,7 @@ struct TodayView: View {
     }
 
     private var settingsButton: some View {
-        Button { showSettings = true } label: {
+        Button { router.navigate(to: .settings) } label: {
             Image(systemName: "gearshape")
                 .font(.body.weight(.semibold))
                 .foregroundStyle(ForgeColors.accent)
@@ -209,6 +211,8 @@ struct TodayView: View {
         .frame(width: ForgeTarget.min, height: ForgeTarget.min)
         .contentShape(Rectangle())
         .accessibilityLabel("Settings")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityIdentifier("today.settings")
     }
 
     // MARK: - Hero
@@ -220,8 +224,24 @@ struct TodayView: View {
             footerLine: restDayFooterLine,
             inverted: true,
             ambientGlow: true,
-            accent: ForgeColors.accentGreen
+            accent: ForgeColors.accentGreen,
+            primaryAction: (
+                title: "Train anyway",
+                action: trainAnyway
+            ),
+            primaryAccessibilityIdentifier: "today.trainAnyway"
         )
+        .scaleEffect(isRegenerating ? 0.97 : 1)
+        .opacity(isRegenerating ? 0.88 : 1)
+        .blur(radius: isRegenerating ? 1.5 : 0)
+        .animation(ForgeMotion.regenerate, value: isRegenerating)
+        .overlay {
+            if isRegenerating {
+                ForgeHeroRegeneratingOverlay(isSpinning: regenSpin)
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            }
+        }
+        .allowsHitTesting(!isRegenerating)
     }
 
     private var restDayFooterLine: String? {
@@ -255,6 +275,7 @@ struct TodayView: View {
             titleAccessory: canToggleSplitFocus ? ForgeHeroTitleAccessory(
                 systemImage: "arrow.up.arrow.down",
                 accessibilityLabel: splitToggleAccessibilityLabel,
+                accessibilityIdentifier: "today.switchFocus",
                 action: { switchSplitFocus() }
             ) : nil,
             loadingSecondaryTitle: isRegenerating ? "Regenerate" : nil,
@@ -269,7 +290,13 @@ struct TodayView: View {
                 : [
                     ("Regenerate", { regenerateWorkout() }),
                     ("Preview", { router.navigate(to: .workoutPreview(workout)) })
-                ]
+                  ],
+            primaryAccessibilityIdentifier: completed
+                ? "today.viewSummary"
+                : (activeSession != nil ? "today.resumeWorkout" : "today.startWorkout"),
+            secondaryAccessibilityIdentifiers: completed
+                ? ["Preview Plan": "today.previewPlan", "Restart Training": "today.restartTraining"]
+                : ["Regenerate": "today.regenerate", "Preview": "today.preview"]
         )
         .id(workout.id)
         .scaleEffect(isRegenerating ? 0.97 : 1)
@@ -332,6 +359,20 @@ struct TodayView: View {
         performAnimatedWorkoutRefresh(.regenerate)
     }
 
+    private func trainAnyway() {
+        guard !environment.isWorkoutGenerationInFlight else { return }
+        performAnimatedWorkoutRefresh(.trainAnyway)
+    }
+
+    private func applySorenessChange(_ level: SorenessLevel) {
+        guard environment.sorenessLevel != level else { return }
+        environment.setSoreness(level)
+        guard !environment.isTodayWorkoutCompleted else { return }
+        guard !environment.isRestDay || environment.todayWorkout != nil else { return }
+        guard !isRegenerating, !environment.isWorkoutGenerationInFlight else { return }
+        performAnimatedWorkoutRefresh(.readiness)
+    }
+
     private func restartWorkoutOnly() {
         guard !environment.isWorkoutGenerationInFlight, !isRegenerating else { return }
         guard let profile = environment.userProfile else { return }
@@ -359,6 +400,8 @@ struct TodayView: View {
     private enum WorkoutRefreshKind {
         case regenerate
         case switchSplit
+        case trainAnyway
+        case readiness
     }
 
     private func performAnimatedWorkoutRefresh(_ kind: WorkoutRefreshKind) {
@@ -373,7 +416,10 @@ struct TodayView: View {
             try? await Task.sleep(for: ForgeMotion.regenerateMinimum)
 
             if await refreshResult {
+                feedback.play(feedbackKind(for: kind))
                 await loadExerciseCatalog()
+            } else if environment.paywallFeature == nil, environment.lastGenerationFailure == nil {
+                feedback.play(.warning)
             }
             await loadCompletedSession()
             await loadActiveSession()
@@ -395,6 +441,19 @@ struct TodayView: View {
             return await environment.regenerateTodayWorkout(profile: profile)
         case .switchSplit:
             return await environment.switchTodaySplitFocus()
+        case .trainAnyway:
+            guard let profile = environment.userProfile else { return false }
+            return await environment.generateTodayWorkoutOnRestDay(profile: profile)
+        case .readiness:
+            guard let profile = environment.userProfile else { return false }
+            return await environment.refreshTodayWorkoutForReadinessChange(profile: profile)
+        }
+    }
+
+    private func feedbackKind(for kind: WorkoutRefreshKind) -> ForgeFeedbackEvent {
+        switch kind {
+        case .regenerate: .workoutRegenerate
+        case .switchSplit, .trainAnyway, .readiness: .success
         }
     }
 
@@ -468,7 +527,7 @@ struct TodayView: View {
             HStack(spacing: 6) {
                 ForEach(SorenessLevel.allCases) { level in
                     SelectableChip(title: level.id.capitalized, isSelected: environment.sorenessLevel == level) {
-                        Task { await environment.setSoreness(level) }
+                        applySorenessChange(level)
                     }
                 }
             }
@@ -533,6 +592,12 @@ struct TodayView: View {
                     icon: "scalemass.fill"
                 )
                 progressStatCard(
+                    label: "Training Streak",
+                    value: "\(workoutStreak)d",
+                    icon: "figure.strengthtraining.traditional",
+                    accent: ForgeColors.accent
+                )
+                progressStatCard(
                     label: "Protein Streak",
                     value: "\(proteinStreak)d",
                     icon: "flame.fill",
@@ -590,7 +655,7 @@ struct TodayView: View {
 
     private func loadExerciseCatalog() async {
         let all = await environment.fetchAllExercises()
-        exerciseCatalog = Dictionary(uniqueKeysWithValues: all.map { ($0.id, $0) })
+        exerciseCatalog = ExerciseCatalog.indexedById(all)
     }
 
     private var readinessLabel: String {
@@ -637,6 +702,11 @@ struct TodayView: View {
         let summary = await environment.proteinSummary()
         proteinToday = summary.todayGrams
         proteinStreak = summary.streakDays
+    }
+
+    private func loadWorkoutStreak() async {
+        let sessions = await environment.fetchWorkoutSessions()
+        workoutStreak = TrainingStreakCalculator.workoutStreak(sessions: sessions)
     }
 
     private func loadCompletedSession() async {

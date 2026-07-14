@@ -131,6 +131,19 @@ final class AIWorkoutPayloadMapperTests: XCTestCase {
         XCTAssertEqual(response.intent, "modifyWorkout")
         XCTAssertNil(response.proposedWorkout)
     }
+
+    func testRegression_validationDecodesWithoutSuggestions() throws {
+        let json = """
+        {
+          "isValid": true,
+          "errors": [],
+          "warnings": []
+        }
+        """
+        let validation = try JSONDecoder().decode(WorkoutValidationResult.self, from: Data(json.utf8))
+        XCTAssertTrue(validation.isValid)
+        XCTAssertEqual(validation.suggestions, [])
+    }
 }
 
 final class CoachModificationSafetyTests: XCTestCase {

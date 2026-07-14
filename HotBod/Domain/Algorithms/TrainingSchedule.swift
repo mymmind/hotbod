@@ -32,6 +32,70 @@ struct TrainingProgramState: Codable, Hashable {
     var upcomingWorkout: GeneratedWorkout?
     var upcomingWorkoutFor: Date?
     var lastRecoveryDecayAppliedAt: Date?
+    var weeklyRegenerationCount: Int = 0
+    var regenerationWeekAnchor: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case splitDayIndex, lastCompletedAt, todayCompletedSessionId, todayCompletedOn
+        case todayRotationAdvancedOn, activeSessionId, upcomingWorkout, upcomingWorkoutFor
+        case lastRecoveryDecayAppliedAt, weeklyRegenerationCount, regenerationWeekAnchor
+    }
+
+    init(
+        splitDayIndex: Int = 0,
+        lastCompletedAt: Date? = nil,
+        todayCompletedSessionId: UUID? = nil,
+        todayCompletedOn: Date? = nil,
+        todayRotationAdvancedOn: Date? = nil,
+        activeSessionId: UUID? = nil,
+        upcomingWorkout: GeneratedWorkout? = nil,
+        upcomingWorkoutFor: Date? = nil,
+        lastRecoveryDecayAppliedAt: Date? = nil,
+        weeklyRegenerationCount: Int = 0,
+        regenerationWeekAnchor: Date? = nil
+    ) {
+        self.splitDayIndex = splitDayIndex
+        self.lastCompletedAt = lastCompletedAt
+        self.todayCompletedSessionId = todayCompletedSessionId
+        self.todayCompletedOn = todayCompletedOn
+        self.todayRotationAdvancedOn = todayRotationAdvancedOn
+        self.activeSessionId = activeSessionId
+        self.upcomingWorkout = upcomingWorkout
+        self.upcomingWorkoutFor = upcomingWorkoutFor
+        self.lastRecoveryDecayAppliedAt = lastRecoveryDecayAppliedAt
+        self.weeklyRegenerationCount = weeklyRegenerationCount
+        self.regenerationWeekAnchor = regenerationWeekAnchor
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        splitDayIndex = try container.decodeIfPresent(Int.self, forKey: .splitDayIndex) ?? 0
+        lastCompletedAt = try container.decodeIfPresent(Date.self, forKey: .lastCompletedAt)
+        todayCompletedSessionId = try container.decodeIfPresent(UUID.self, forKey: .todayCompletedSessionId)
+        todayCompletedOn = try container.decodeIfPresent(Date.self, forKey: .todayCompletedOn)
+        todayRotationAdvancedOn = try container.decodeIfPresent(Date.self, forKey: .todayRotationAdvancedOn)
+        activeSessionId = try container.decodeIfPresent(UUID.self, forKey: .activeSessionId)
+        upcomingWorkout = try container.decodeIfPresent(GeneratedWorkout.self, forKey: .upcomingWorkout)
+        upcomingWorkoutFor = try container.decodeIfPresent(Date.self, forKey: .upcomingWorkoutFor)
+        lastRecoveryDecayAppliedAt = try container.decodeIfPresent(Date.self, forKey: .lastRecoveryDecayAppliedAt)
+        weeklyRegenerationCount = try container.decodeIfPresent(Int.self, forKey: .weeklyRegenerationCount) ?? 0
+        regenerationWeekAnchor = try container.decodeIfPresent(Date.self, forKey: .regenerationWeekAnchor)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(splitDayIndex, forKey: .splitDayIndex)
+        try container.encodeIfPresent(lastCompletedAt, forKey: .lastCompletedAt)
+        try container.encodeIfPresent(todayCompletedSessionId, forKey: .todayCompletedSessionId)
+        try container.encodeIfPresent(todayCompletedOn, forKey: .todayCompletedOn)
+        try container.encodeIfPresent(todayRotationAdvancedOn, forKey: .todayRotationAdvancedOn)
+        try container.encodeIfPresent(activeSessionId, forKey: .activeSessionId)
+        try container.encodeIfPresent(upcomingWorkout, forKey: .upcomingWorkout)
+        try container.encodeIfPresent(upcomingWorkoutFor, forKey: .upcomingWorkoutFor)
+        try container.encodeIfPresent(lastRecoveryDecayAppliedAt, forKey: .lastRecoveryDecayAppliedAt)
+        try container.encode(weeklyRegenerationCount, forKey: .weeklyRegenerationCount)
+        try container.encodeIfPresent(regenerationWeekAnchor, forKey: .regenerationWeekAnchor)
+    }
 }
 
 enum WorkoutStaleness {

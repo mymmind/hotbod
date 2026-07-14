@@ -23,6 +23,24 @@ extension SettingsView {
             SettingsComponents.divider
             SettingsComponents.toggleRow(title: "Warm-up sets", isOn: $draft.includeWarmupSets)
             SettingsComponents.divider
+            SettingsComponents.menuRow(
+                title: "Exercise grouping",
+                value: draft.preferredExerciseGrouping.displayName
+            ) {
+                ForEach(ExerciseGroupingPreference.allCases, id: \.self) { preference in
+                    Button(preference.displayName) { draft.preferredExerciseGrouping = preference }
+                }
+            }
+            SettingsComponents.divider
+            SettingsComponents.menuRow(
+                title: "Exercise variability",
+                value: draft.preferredExerciseVariability.displayName
+            ) {
+                ForEach(ExerciseVariabilityLevel.allCases, id: \.self) { level in
+                    Button(level.displayName) { draft.preferredExerciseVariability = level }
+                }
+            }
+            SettingsComponents.divider
             SettingsComponents.menuRow(title: "Location", value: draft.trainingLocation.displayName) {
                 ForEach(TrainingLocation.allCases) { location in
                     Button(location.displayName) { draft.trainingLocation = location }
@@ -37,6 +55,8 @@ extension SettingsView {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("settings.equipment.row")
+            .accessibilityAddTraits(.isButton)
         }
     }
 
@@ -92,10 +112,8 @@ extension SettingsView {
 
     var scheduleSection: some View {
         SettingsComponents.section(title: "Schedule", subtitle: "Frequency and length") {
-            Stepper(value: $draft.trainingDaysPerWeek, in: 2...7) {
-                Text("Days per week: \(draft.trainingDaysPerWeek)")
-                    .font(ForgeTypography.body)
-            }
+            Text("\(draft.preferredTrainingDays.count) days per week")
+                .font(ForgeTypography.body)
 
             Text("Session length")
                 .font(ForgeTypography.caption)

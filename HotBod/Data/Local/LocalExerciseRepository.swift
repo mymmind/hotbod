@@ -1,14 +1,55 @@
 import Foundation
 
 actor LocalExerciseRepository: ExerciseRepository {
+    private static let preferencesKey = "exercise_preferences.json"
+    private static let customExercisesKey = "custom_exercises.json"
+
     private var exercises: [Exercise] = []
+    private var preferenceOverrides: [String: ExercisePreference] = [:]
     private let substitutionGroups: [ExerciseSubstitutionGroup]
-    private let exercisesByGroup: [String: [Exercise]]
+    private var exercisesByGroup: [String: [Exercise]]
 
     init() {
-        exercises = ExerciseCatalogLoader.loadExercises()
+        let seed = ExerciseCatalogLoader.loadExercises()
+        let customs = PersistenceHelper.load([Exercise].self, from: Self.customExercisesKey) ?? []
+        exercises = Self.mergeCatalog(seed: seed, customs: customs)
+        let overrides = PersistenceHelper.load([String: ExercisePreference].self, from: Self.preferencesKey) ?? [:]
+        for index in exercises.indices {
+            if let preference = overrides[exercises[index].id] {
+                exercises[index].preference = preference
+            }
+        }
+        preferenceOverrides = overrides
         substitutionGroups = ExerciseCatalogLoader.loadSubstitutionGroups()
         exercisesByGroup = ExerciseCatalogLoader.buildGroupIndex(exercises: exercises)
+    }
+
+    private static func mergeCatalog(seed: [Exercise], customs: [Exercise]) -> [Exercise] {
+        let dedupedCustoms = ExerciseCatalog.indexedById(customs)
+        var merged = seed.filter { dedupedCustoms[$0.id] == nil }
+        merged.append(contentsOf: dedupedCustoms.values.map { custom in
+            var updated = custom
+            updated.isCustom = true
+            return updated
+        })
+        return merged
+    }
+
+    private func rebuildGroupIndex() {
+        exercisesByGroup = ExerciseCatalogLoader.buildGroupIndex(exercises: exercises)
+    }
+
+    private func persistPreferences() {
+        var saved: [String: ExercisePreference] = [:]
+        for exercise in exercises where exercise.preference != .neutral {
+            saved[exercise.id] = exercise.preference
+        }
+        PersistenceHelper.save(saved, to: Self.preferencesKey)
+    }
+
+    private func persistCustomExercises() {
+        let customs = ExerciseCatalog.indexedById(exercises.filter(\.isCustom)).values.sorted { $0.name < $1.name }
+        PersistenceHelper.save(Array(customs), to: Self.customExercisesKey)
     }
 
     func fetchAll() async throws -> [Exercise] {
@@ -50,14 +91,95 @@ actor LocalExerciseRepository: ExerciseRepository {
         )
     }
 
-    func updateFavorite(id: String, isFavorite: Bool) async throws {
+    func updatePreference(id: String, preference: ExercisePreference) async throws {
         guard let index = exercises.firstIndex(where: { $0.id == id }) else { return }
-        exercises[index].isFavorite = isFavorite
+        exercises[index].preference = preference
+        if preference == .neutral {
+            preferenceOverrides.removeValue(forKey: id)
+        } else {
+            preferenceOverrides[id] = preference
+        }
+        persistPreferences()
+    }
+
+    func updateFavorite(id: String, isFavorite: Bool) async throws {
+        let current = exercises.first { $0.id == id }?.preference ?? .neutral
+        let next: ExercisePreference
+        if isFavorite {
+            next = .favorite
+        } else if current == .favorite {
+            next = .neutral
+        } else {
+            next = current
+        }
+        try await updatePreference(id: id, preference: next)
     }
 
     func updateAvoided(id: String, isAvoided: Bool) async throws {
-        guard let index = exercises.firstIndex(where: { $0.id == id }) else { return }
-        exercises[index].isAvoided = isAvoided
+        let current = exercises.first { $0.id == id }?.preference ?? .neutral
+        let next: ExercisePreference
+        if isAvoided {
+            next = .excluded
+        } else if current == .excluded {
+            next = .neutral
+        } else {
+            next = current
+        }
+        try await updatePreference(id: id, preference: next)
+    }
+
+    func resetUserPreferences() async throws {
+        for index in exercises.indices {
+            exercises[index].preference = .neutral
+        }
+        preferenceOverrides.removeAll()
+        persistPreferences()
+    }
+
+    func resetCustomExercises() async throws {
+        let seed = ExerciseCatalogLoader.loadExercises()
+        exercises = seed
+        for index in exercises.indices {
+            exercises[index].preference = .neutral
+        }
+        preferenceOverrides.removeAll()
+        rebuildGroupIndex()
+        persistPreferences()
+        persistCustomExercises()
+    }
+
+    func preferenceOverrides() async -> [String: ExercisePreference] {
+        preferenceOverrides
+    }
+
+    func applyPreferenceOverrides(_ overrides: [String: ExercisePreference]) async throws {
+        preferenceOverrides = overrides
+        for index in exercises.indices {
+            exercises[index].preference = overrides[exercises[index].id] ?? .neutral
+        }
+        persistPreferences()
+    }
+
+    func createCustomExercise(_ exercise: Exercise) async throws -> Exercise {
+        var custom = exercise
+        custom.isCustom = true
+        if let index = exercises.firstIndex(where: { $0.id == custom.id }) {
+            exercises[index] = custom
+        } else {
+            exercises.append(custom)
+        }
+        rebuildGroupIndex()
+        persistCustomExercises()
+        return custom
+    }
+
+    func deleteCustomExercise(id: String) async throws {
+        guard exercises.contains(where: { $0.id == id && $0.isCustom }) else { return }
+        exercises.removeAll { $0.id == id }
+        preferenceOverrides.removeValue(forKey: id)
+        rebuildGroupIndex()
+        persistPreferences()
+        persistCustomExercises()
     }
 }
 
@@ -67,7 +189,7 @@ enum ExerciseSeedLoader {
     }
 
     static func loadSeed() -> [Exercise] {
-        guard let url = Bundle.main.url(forResource: "ExerciseSeed", withExtension: "json"),
+        guard let url = ExerciseCatalogLoader.resourceBundle.url(forResource: "ExerciseSeed", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let seed = try? JSONDecoder().decode([ExerciseSeedDTO].self, from: data) else {
             return fallbackExercises()
@@ -349,17 +471,23 @@ struct MockFoodSearchService: FoodSearchService, Sendable {
 
 struct MockBodyPhotoAnalyzer: BodyPhotoAnalyzer, Sendable {
     func analyze(photo: BodyProgressPhoto, previous: BodyProgressPhoto?) async throws -> BodyPhotoAnalysis {
-        BodyPhotoAnalysis(
+        let ratio = 1.35
+        let comparisonSummary = BodyPhotoVisionMetrics.comparisonSummary(
+            currentRatio: ratio,
+            previousRatio: previous?.analysis?.shoulderWaistRatio,
+            hasPrevious: previous != nil
+        )
+        return BodyPhotoAnalysis(
             poseConfidence: 0.82,
             lightingScore: 0.75,
             framingScore: 0.88,
             shoulderWidthEstimate: 0.42,
             waistWidthEstimate: 0.31,
             hipWidthEstimate: 0.35,
-            shoulderWaistRatio: 1.35,
+            shoulderWaistRatio: ratio,
             postureNotes: ["Shoulders appear level.", "Consistent framing with prior session."],
-            comparisonSummary: previous != nil ? "Visual trend stable. Shoulder-to-waist ratio unchanged." : "Baseline photo captured.",
-            limitations: ["Visual trend analysis only. Not medical body composition."]
+            comparisonSummary: comparisonSummary,
+            limitations: BodyPhotoVisionMetrics.limitations
         )
     }
 }

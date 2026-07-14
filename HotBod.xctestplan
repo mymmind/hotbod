@@ -1,0 +1,90 @@
+{
+  "configurations": [
+    {
+      "id": "F4A1C2E8-6B3D-4F10-9A2C-000000000001",
+      "name": "PR",
+      "options": {
+        "environmentVariableEntries": [
+          {
+            "key": "PROPERTY_ITERATIONS",
+            "value": "50"
+          }
+        ]
+      },
+      "testTargets": [
+        {
+          "target": {
+            "containerPath": "container:HotBod.xcodeproj",
+            "identifier": "105DC4A1BC6BECC003121A8C",
+            "name": "HotBodTests"
+          }
+        },
+        {
+          "target": {
+            "containerPath": "container:HotBod.xcodeproj",
+            "identifier": "E41F35104FD97C01B4597ED4",
+            "name": "HotBodUITests"
+          },
+          "selectedTests": [
+            "LaunchUITests/testAppLaunchesToMainTabs",
+            "LaunchUITests/testTodayTabShowsHero",
+            "LaunchUITests/testTrainTabOpens",
+            "TodayWorkoutUITests/testTodayShowsWorkoutHero",
+            "TodayWorkoutUITests/testRegression_trainAnywayReplacesRestHeroWithPlan",
+            "ProteinTrackerUITests/testProteinTabShowsDailyHero",
+            "CoachUITests/testCoachTabShowsSuggestions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F4A1C2E8-6B3D-4F10-9A2C-000000000002",
+      "name": "Nightly",
+      "options": {
+        "environmentVariableEntries": [
+          {
+            "key": "PROPERTY_ITERATIONS",
+            "value": "500"
+          }
+        ]
+      },
+      "testTargets": [
+        {
+          "target": {
+            "containerPath": "container:HotBod.xcodeproj",
+            "identifier": "105DC4A1BC6BECC003121A8C",
+            "name": "HotBodTests"
+          }
+        },
+        {
+          "target": {
+            "containerPath": "container:HotBod.xcodeproj",
+            "identifier": "E41F35104FD97C01B4597ED4",
+            "name": "HotBodUITests"
+          }
+        }
+      ]
+    }
+  ],
+  "defaultOptions": {
+    "codeCoverage": true,
+    "testTimeoutsEnabled": true
+  },
+  "testTargets": [
+    {
+      "target": {
+        "containerPath": "container:HotBod.xcodeproj",
+        "identifier": "105DC4A1BC6BECC003121A8C",
+        "name": "HotBodTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:HotBod.xcodeproj",
+        "identifier": "E41F35104FD97C01B4597ED4",
+        "name": "HotBodUITests"
+      }
+    }
+  ],
+  "version": 1
+}

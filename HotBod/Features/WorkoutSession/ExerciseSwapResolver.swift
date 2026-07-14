@@ -37,6 +37,6 @@ struct ExerciseSwapResolver {
     }
 
     var exerciseMap: [String: Exercise] {
-        Dictionary(uniqueKeysWithValues: allExercises.map { ($0.id, $0) })
+        ExerciseCatalog.indexedById(allExercises)
     }
 }

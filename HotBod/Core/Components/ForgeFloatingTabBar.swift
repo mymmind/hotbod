@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ForgeFloatingTabBar: View {
     @Binding var selectedTab: AppRouter.MainTab
+    @Environment(\.forgeFeedback) private var feedback
 
     var body: some View {
         HStack(spacing: ForgeSpacing.s0) {
@@ -25,6 +26,8 @@ struct ForgeFloatingTabBar: View {
     private func tabButton(_ tab: AppRouter.MainTab) -> some View {
         let isSelected = selectedTab == tab
         return Button {
+            guard selectedTab != tab else { return }
+            feedback.play(.tabSelection)
             withAnimation(ForgeMotion.quick) { selectedTab = tab }
         } label: {
             VStack(spacing: ForgeSpacing.s1) {
@@ -46,6 +49,8 @@ struct ForgeFloatingTabBar: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(tab.title), tab")
+        .accessibilityIdentifier("tab.\(tab.title.lowercased())")
+        .accessibilityAddTraits(.isButton)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

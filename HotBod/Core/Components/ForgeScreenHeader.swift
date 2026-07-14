@@ -57,17 +57,22 @@ struct ForgeScreenHeader<Leading: View, Trailing: View>: View {
 
     private var rootBody: some View {
         VStack(alignment: .leading, spacing: ForgeSpacing.s3 - 2) {
-            if let eyebrow, !eyebrow.isEmpty {
-                Text(eyebrow.uppercased())
-                    .font(ForgeTypography.label)
-                    .tracking(ForgeTracking.eyebrowWide)
-                    .foregroundStyle(accent)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            HStack(alignment: .top, spacing: ForgeSpacing.s3) {
+                VStack(alignment: .leading, spacing: ForgeSpacing.s3 - 2) {
+                    if let eyebrow, !eyebrow.isEmpty {
+                        Text(eyebrow.uppercased())
+                            .font(ForgeTypography.label)
+                            .tracking(ForgeTracking.eyebrowWide)
+                            .foregroundStyle(accent)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
 
-            Text(title)
-                .font(ForgeTypography.hero)
-                .foregroundStyle(ForgeColors.textPrimary)
+                    Text(title)
+                        .font(ForgeTypography.hero)
+                        .foregroundStyle(ForgeColors.textPrimary)
+                }
+                trailing()
+            }
 
             if subtitle != nil || meta != nil {
                 HStack(alignment: .firstTextBaseline, spacing: ForgeSpacing.s3) {
@@ -91,13 +96,8 @@ struct ForgeScreenHeader<Leading: View, Trailing: View>: View {
             accentMark
         }
         .padding(.horizontal, ForgeSpacing.s5)
-        .padding(.top, ForgeSpacing.s2)
         .padding(.bottom, ForgeSpacing.s1)
-        .overlay(alignment: .topTrailing) {
-            trailing()
-                .padding(.trailing, ForgeSpacing.s5)
-                .padding(.top, ForgeSpacing.s2)
-        }
+        .safeAreaPadding(.top, ForgeSpacing.s2)
     }
 
     private var compactBody: some View {

@@ -91,7 +91,13 @@ final class ResolvedMechanicsTests: XCTestCase {
         }
         XCTAssertEqual(bench.resolvedMechanics, .compound)
 
-        let service = RulesWorkoutGenerationService()
+        let pushCatalog = [
+            bench,
+            makeTestExercise(id: "incline_db_press", primaryMuscles: [.chest], pattern: .horizontalPush, equipment: [.dumbbell, .bench]),
+            makeTestExercise(id: "cable_fly", primaryMuscles: [.chest], pattern: .isolation, equipment: [.cable]),
+            makeTestExercise(id: "ohp", primaryMuscles: [.shoulders], pattern: .verticalPush, equipment: [.barbell])
+        ]
+        let service = RulesWorkoutGenerationService(exerciseRepository: TestRepositories.empty(exercises: pushCatalog).exercise)
         let profile = UserProfile.empty()
         let input = WorkoutGenerationInput(
             userProfile: profile,
@@ -511,7 +517,19 @@ final class SuggestedStartWeightGenerationTests: XCTestCase {
     }
 
     func testZeroBodyweightFallsBackToFlatDefault() async throws {
-        let service = RulesWorkoutGenerationService()
+        let bench = makeTestExercise(
+            id: "bench_press",
+            primaryMuscles: [.chest],
+            pattern: .horizontalPush,
+            equipment: [.barbell, .bench]
+        )
+        let support = [
+            makeTestExercise(id: "incline_barbell_press", primaryMuscles: [.chest], pattern: .horizontalPush, equipment: [.barbell, .bench]),
+            makeTestExercise(id: "close_grip_bench", primaryMuscles: [.chest, .triceps], pattern: .horizontalPush, equipment: [.barbell, .bench]),
+            makeTestExercise(id: "ohp", primaryMuscles: [.shoulders], pattern: .verticalPush, equipment: [.barbell])
+        ]
+        let repos = TestRepositories.empty(exercises: [bench] + support)
+        let service = RulesWorkoutGenerationService(exerciseRepository: repos.exercise)
         var profile = UserProfile.empty()
         profile.weightKg = 0
         profile.experienceLevel = .beginner
@@ -548,7 +566,14 @@ final class SuggestedStartWeightGenerationTests: XCTestCase {
     }
 
     func testBeginnerHeavySquatClampedInGeneratedWorkout() async throws {
-        let service = RulesWorkoutGenerationService()
+        let squat = makeTestExercise(id: "squat", primaryMuscles: [.quads], pattern: .squat, equipment: [.barbell, .squatRack])
+        let support = [
+            makeTestExercise(id: "rdl", primaryMuscles: [.hamstrings], pattern: .hinge, equipment: [.barbell]),
+            makeTestExercise(id: "leg_press", primaryMuscles: [.quads], pattern: .squat, equipment: [.machine]),
+            makeTestExercise(id: "leg_curl", primaryMuscles: [.hamstrings], pattern: .isolation, equipment: [.machine])
+        ]
+        let repos = TestRepositories.empty(exercises: [squat] + support)
+        let service = RulesWorkoutGenerationService(exerciseRepository: repos.exercise)
         var profile = UserProfile.empty()
         profile.weightKg = 120
         profile.experienceLevel = .beginner
@@ -788,7 +813,7 @@ final class WorkoutGenerationAlgorithmsTests: XCTestCase {
             stats: [],
             recoveryBias: false
         )
-        let ranked = WorkoutGenerationAlgorithms.rankScored(scored, preferVariation: false, avoidIds: [])
+        let ranked = WorkoutGenerationAlgorithms.rankScored(scored, variability: .consistent, avoidIds: [])
         let result = WorkoutGenerationAlgorithms.selectExercises(
             ranked: ranked,
             targetMuscles: targets,
@@ -825,6 +850,26 @@ final class WorkoutGenerationAlgorithmsTests: XCTestCase {
         let secondaryScore = scored.first { $0.0.id == "secondary_match" }?.1 ?? 0
         XCTAssertGreaterThan(primaryScore, secondaryScore)
         XCTAssertEqual(secondaryScore, GenerationConstants.Scoring.secondaryMuscleWeight)
+    }
+
+    func testLessPreferredExerciseScoresLowerThanNeutralPeer() {
+        let neutral = makeTestExercise(id: "neutral_press", primaryMuscles: [.chest])
+        var less = makeTestExercise(id: "less_press", primaryMuscles: [.chest])
+        less.preference = .less
+        let scored = WorkoutGenerationAlgorithms.scoreExercises(
+            [neutral, less],
+            targetMuscles: [.chest],
+            experience: .intermediate,
+            stats: [],
+            recoveryBias: false
+        )
+        let neutralScore = scored.first { $0.0.id == "neutral_press" }?.1 ?? 0
+        let lessScore = scored.first { $0.0.id == "less_press" }?.1 ?? 0
+        XCTAssertEqual(
+            lessScore,
+            neutralScore + GenerationConstants.Scoring.lessPreferredPenalty,
+            accuracy: 0.001
+        )
     }
 
     func testStrengthGoalUsesLongCompoundRest() {
@@ -895,18 +940,26 @@ final class WorkoutGenerationAlgorithmsTests: XCTestCase {
         let scored: [(Exercise, Double)] = [(low, 10), (high, 20)]
         let ranked1 = WorkoutGenerationAlgorithms.rankScored(
             scored,
-            preferVariation: true,
+            variability: .varied,
             avoidIds: ["unused"],
             variationSeed: 42
         )
         let ranked2 = WorkoutGenerationAlgorithms.rankScored(
             scored,
-            preferVariation: true,
+            variability: .varied,
             avoidIds: ["unused"],
             variationSeed: 42
         )
         XCTAssertEqual(ranked1.map(\.0.id), ranked2.map(\.0.id))
         XCTAssertEqual(ranked1.first?.0.id, "high")
+    }
+
+    func testConsistentVariabilitySkipsJitterWithoutExclusions() {
+        let low = makeTestExercise(id: "low", primaryMuscles: [.chest])
+        let high = makeTestExercise(id: "high", primaryMuscles: [.chest])
+        let scored: [(Exercise, Double)] = [(low, 10), (high, 20)]
+        let ranked = WorkoutGenerationAlgorithms.rankScored(scored, variability: .consistent, avoidIds: [])
+        XCTAssertEqual(ranked.map(\.0.id), ["high", "low"])
     }
 }
 

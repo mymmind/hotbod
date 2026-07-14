@@ -4,6 +4,7 @@ import PhotosUI
 
 struct ProteinTrackerView: View {
     @Environment(AppEnvironment.self) private var environment
+    @Environment(\.forgeFeedback) private var feedback
     @State private var entries: [ProteinEntry] = []
     @State private var weekEntries: [ProteinEntry] = []
     @State private var showCustom = false
@@ -61,6 +62,7 @@ struct ProteinTrackerView: View {
             titleStyle: .metric,
             titlePulseValue: todayTotal
         )
+        .accessibilityIdentifier("protein.hero")
     }
 
     private var fastAddButtons: some View {
@@ -74,9 +76,15 @@ struct ProteinTrackerView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
                         .overlay(Rectangle().stroke(ForgeColors.accentBlue.opacity(0.35), lineWidth: 1))
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("+\(grams)g")
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityIdentifier("protein.add\(grams)g")
                 }
             }
-            ForgeButton(title: "Custom", style: .secondary) { showCustom = true }
+            ForgeButton(title: "Custom", style: .secondary, accessibilityIdentifier: "protein.custom") {
+                showCustom = true
+            }
         }
     }
 
@@ -207,7 +215,12 @@ struct ProteinTrackerView: View {
         let source: NutritionDataSource = fromSearch && environment.isFoodAPIConfigured ? .usda : .manual
         let entry = ProteinEntry(foodName: name, proteinGrams: grams, source: source)
         try? await environment.saveProteinEntry(entry)
+        let wasBelowGoal = todayTotal < goal
         await load()
+        feedback.play(.proteinAdded)
+        if wasBelowGoal, todayTotal >= goal {
+            feedback.play(.success)
+        }
     }
 
     private func load() async {

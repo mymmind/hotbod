@@ -33,6 +33,22 @@ actor SupabaseAuthService: AuthService {
         try await client.auth.signOut()
     }
 
+    func deleteAccount() async throws {
+        struct EmptyBody: Encodable {}
+        struct DeleteAccountResponse: Decodable {
+            let success: Bool?
+            let error: String?
+        }
+
+        let response: DeleteAccountResponse = try await client.functions.invoke(
+            "delete-account",
+            options: FunctionInvokeOptions(body: EmptyBody())
+        )
+        if response.success != true {
+            throw SyncError.remote(response.error ?? "Account deletion failed.")
+        }
+    }
+
     func restoreSession() async -> Bool {
         (try? await client.auth.session) != nil
     }

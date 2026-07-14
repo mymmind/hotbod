@@ -4,7 +4,11 @@ struct ActiveWorkoutPreviewView: View {
     @Environment(\.dismiss) private var dismiss
     let session: WorkoutSession
     let currentExerciseIndex: Int
+    let furthestExerciseIndex: Int
     let exerciseMap: [String: Exercise]
+    var canSwapAtIndex: ((Int) -> Bool)? = nil
+    var onSelectExercise: ((Int) -> Void)? = nil
+    var onSwapExercise: ((Int) -> Void)? = nil
 
     private var sortedExercises: [WorkoutExercise] {
         session.exercises.sorted { $0.orderIndex < $1.orderIndex }
@@ -48,16 +52,54 @@ struct ActiveWorkoutPreviewView: View {
     private var exerciseTimeline: some View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(sortedExercises.enumerated()), id: \.element.id) { index, workoutExercise in
-                ActiveWorkoutTimelineRow(
-                    workoutExercise: workoutExercise,
-                    exercise: exerciseMap[workoutExercise.exerciseId],
-                    status: rowStatus(for: workoutExercise, at: index),
-                    isLast: index == sortedExercises.count - 1
-                )
-                .padding(.horizontal, 20)
+                timelineRow(workoutExercise: workoutExercise, index: index)
             }
         }
         .padding(.bottom, 24)
+    }
+
+    private func timelineRow(workoutExercise: WorkoutExercise, index: Int) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Group {
+                if onSelectExercise != nil {
+                    Button {
+                        onSelectExercise?(index)
+                    } label: {
+                        ActiveWorkoutTimelineRow(
+                            workoutExercise: workoutExercise,
+                            exercise: exerciseMap[workoutExercise.exerciseId],
+                            status: rowStatus(for: workoutExercise, at: index),
+                            isLast: index == sortedExercises.count - 1,
+                            showsJumpHint: index != currentExerciseIndex
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("session.previewExercise.\(index)")
+                } else {
+                    ActiveWorkoutTimelineRow(
+                        workoutExercise: workoutExercise,
+                        exercise: exerciseMap[workoutExercise.exerciseId],
+                        status: rowStatus(for: workoutExercise, at: index),
+                        isLast: index == sortedExercises.count - 1
+                    )
+                }
+            }
+
+            if canSwapAtIndex?(index) == true, let onSwapExercise {
+                Button {
+                    onSwapExercise(index)
+                } label: {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(ForgeColors.accent)
+                        .frame(width: ForgeTarget.min, height: ForgeTarget.min)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Swap exercise")
+                .accessibilityIdentifier("session.previewSwap.\(index)")
+            }
+        }
+        .padding(.horizontal, 20)
     }
 
     private func rowStatus(for exercise: WorkoutExercise, at index: Int) -> ActiveWorkoutRowStatus {
@@ -77,6 +119,7 @@ private struct ActiveWorkoutTimelineRow: View {
     let exercise: Exercise?
     let status: ActiveWorkoutRowStatus
     let isLast: Bool
+    var showsJumpHint: Bool = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
@@ -113,6 +156,12 @@ private struct ActiveWorkoutTimelineRow: View {
                 Text(progressLine)
                     .font(ForgeTypography.caption)
                     .foregroundStyle(ForgeColors.muted)
+
+                if showsJumpHint {
+                    Text("Tap to view")
+                        .font(ForgeTypography.caption)
+                        .foregroundStyle(ForgeColors.accent)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, 4)
@@ -159,6 +208,7 @@ struct WorkoutExplanationSheet: View {
     @Environment(\.dismiss) private var dismiss
     let title: String
     let rationale: String
+    let selectionRationale: [String]
     let safetyNotes: [String]
 
     var body: some View {
@@ -169,6 +219,19 @@ struct WorkoutExplanationSheet: View {
                         ForgeSectionHeader(title: "Why This Workout?")
                         Text(rationale.isEmpty ? "This session targets your current training focus with equipment you have available." : rationale)
                             .font(ForgeTypography.body)
+                    }
+
+                    if !selectionRationale.isEmpty {
+                        ForgeCard {
+                            ForgeSectionHeader(title: "Selection Details")
+                            VStack(alignment: .leading, spacing: 8) {
+                                ForEach(selectionRationale, id: \.self) { line in
+                                    Text("· \(line)")
+                                        .font(ForgeTypography.body)
+                                        .foregroundStyle(ForgeColors.textSecondary)
+                                }
+                            }
+                        }
                     }
 
                     if !safetyNotes.isEmpty {

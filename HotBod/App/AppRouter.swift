@@ -14,9 +14,13 @@ enum AppRoute: Hashable {
 @Observable
 @MainActor
 final class AppRouter {
-    var route: AppRoute = .onboarding
+    var route: AppRoute
     var selectedTab: MainTab = .today
     private(set) var routeStack: [AppRoute] = []
+
+    init(initialRoute: AppRoute = .onboarding) {
+        route = initialRoute
+    }
 
     enum MainTab: Int, CaseIterable, Identifiable {
         case today, train, protein, progress, coach

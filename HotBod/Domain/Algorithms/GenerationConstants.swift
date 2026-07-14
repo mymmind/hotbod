@@ -93,7 +93,29 @@ enum GenerationConstants {
         static let historyBonus = 2.0
         static let beginnerAdvancedPenalty = -5.0
         static let favoriteBonus = 3.0
+        static let lessPreferredPenalty = -4.0
         static let variationJitterMagnitude = 1.5
+    }
+
+    enum Progression {
+        static let easyRPEThreshold = 7.0
+        static let hardRPEThreshold = 9.0
+        static let veryHardRPEThreshold = 9.5
+        static let easyProgressionMultiplier = 1.5
+        static let moderateProgressionMultiplier = 0.5
+        static let highRPEDeloadSetCount = 3
+    }
+
+    enum MaxEffort {
+        static let sessionsBetweenCalibration = 5
+        static let workingWeightFraction = 0.80
+    }
+
+    enum Grouping {
+        static let supersetSize = 2
+        static let circuitSize = 3
+        static let transitionRestSeconds = 15
+        static let defaultGroupRestSeconds = 90
     }
 
     enum Session {
@@ -146,6 +168,20 @@ enum GenerationConstants {
         static let heavyLoadFractions: [Double] = [0.4, 0.6, 0.8]
         static let bodyweightRepFraction = 0.6
         static let plateIncrementKg = 2.5
+    }
+
+    enum Cooldown {
+        static let repsMin = 10
+        static let repsMax = 15
+        static let rpeTarget = 4.0
+        static let restSeconds = 30
+    }
+
+    enum CardioBlock {
+        static let repsMin = 5
+        static let repsMax = 10
+        static let rpeTarget = 6.0
+        static let restSeconds = 60
     }
 
     enum Prescription {
@@ -241,14 +277,35 @@ enum GenerationConstants {
         static let barbellIncrementKg = 2.5
 
         // TODO: user-configurable micro-plate increments
-        static func roundToAvailable(_ kg: Double, equipment: [Equipment]) -> Double {
+        static func roundToAvailable(
+            _ kg: Double,
+            equipment: [Equipment],
+            ceilings: [Equipment: Double] = [:]
+        ) -> Double {
+            let rounded: Double
             if equipment.contains(.dumbbell) {
-                return (kg / dumbbellIncrementKg).rounded() * dumbbellIncrementKg
+                rounded = (kg / dumbbellIncrementKg).rounded() * dumbbellIncrementKg
+            } else if equipment.contains(.barbell) {
+                rounded = (kg / barbellIncrementKg).rounded() * barbellIncrementKg
+            } else {
+                rounded = (kg / barbellIncrementKg).rounded() * barbellIncrementKg
             }
-            if equipment.contains(.barbell) {
-                return (kg / barbellIncrementKg).rounded() * barbellIncrementKg
+            return applyCeilings(to: rounded, equipment: equipment, ceilings: ceilings)
+        }
+
+        static func applyCeilings(
+            to kg: Double,
+            equipment: [Equipment],
+            ceilings: [Equipment: Double]
+        ) -> Double {
+            guard !ceilings.isEmpty else { return kg }
+            var capped = kg
+            for piece in equipment {
+                if let ceiling = ceilings[piece] {
+                    capped = min(capped, ceiling)
+                }
             }
-            return (kg / barbellIncrementKg).rounded() * barbellIncrementKg
+            return capped
         }
     }
 

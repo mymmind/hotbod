@@ -173,6 +173,43 @@ enum Equipment: String, Codable, CaseIterable, Identifiable, Hashable {
     }
 }
 
+enum WeightDisplaySemantics: String, Codable, CaseIterable, Hashable {
+    /// Total load (barbell, machine stack, etc.).
+    case total
+    /// Weight per dumbbell / kettlebell / hand.
+    case perHand
+
+    var sessionWeightLabel: String {
+        switch self {
+        case .total: "KG"
+        case .perHand: "KG EACH"
+        }
+    }
+
+    var settingsWeightLabel: String {
+        switch self {
+        case .total: "kg"
+        case .perHand: "kg per dumbbell"
+        }
+    }
+}
+
+enum PrescriptionType: String, Codable, CaseIterable, Hashable {
+    case reps
+    case time
+    case distance
+    case distanceOrTime
+
+    var sessionMetricLabel: String {
+        switch self {
+        case .reps: "REPS"
+        case .time: "SEC"
+        case .distance: "M"
+        case .distanceOrTime: "M/SEC"
+        }
+    }
+}
+
 enum LoadTrackingMode: String, Codable, CaseIterable, Identifiable {
     /// Do not show (or persist) external load tracking.
     case none

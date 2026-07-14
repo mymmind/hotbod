@@ -30,6 +30,9 @@ enum WorkoutGenerationAlgorithms {
             let favoriteBonus = favoriteIds.contains(exercise.id)
                 ? GenerationConstants.Scoring.favoriteBonus
                 : 0.0
+            let lessPenalty = exercise.preference == .less
+                ? GenerationConstants.Scoring.lessPreferredPenalty
+                : 0.0
             let difficultyPenalty = !ignoreDifficultyPenalty && exercise.difficulty == .advanced && experience == .beginner
                 ? GenerationConstants.Scoring.beginnerAdvancedPenalty
                 : 0.0
@@ -44,19 +47,28 @@ enum WorkoutGenerationAlgorithms {
                 case .advanced: recoveryBonus += GenerationConstants.RecoverySession.advancedDifficultyPenalty
                 }
             }
-            let score = muscleScore + secondaryScore + statBonus + favoriteBonus + difficultyPenalty + recoveryBonus
+            let score = muscleScore + secondaryScore + statBonus + favoriteBonus + lessPenalty + difficultyPenalty + recoveryBonus
             return (exercise, score)
         }
     }
 
     static func rankScored(
         _ scored: [(Exercise, Double)],
-        preferVariation: Bool,
+        variability: ExerciseVariabilityLevel,
         avoidIds: Set<String>,
         variationSeed: UInt64? = nil
     ) -> [(Exercise, Double)] {
-        guard !avoidIds.isEmpty || preferVariation else {
+        let exclusionJitter = !avoidIds.isEmpty
+        let preferenceJitter = variability.appliesJitter
+        guard exclusionJitter || preferenceJitter else {
             return scored.sorted { $0.1 > $1.1 }
+        }
+
+        let magnitude: Double
+        if preferenceJitter {
+            magnitude = GenerationConstants.Scoring.variationJitterMagnitude * variability.jitterMultiplier
+        } else {
+            magnitude = GenerationConstants.Scoring.variationJitterMagnitude
         }
 
         var rng: any RandomNumberGenerator = SystemRandomNumberGenerator()
@@ -68,7 +80,7 @@ enum WorkoutGenerationAlgorithms {
             (
                 exercise,
                 score + Double.random(
-                    in: -GenerationConstants.Scoring.variationJitterMagnitude...GenerationConstants.Scoring.variationJitterMagnitude,
+                    in: -magnitude...magnitude,
                     using: &rng
                 )
             )
@@ -224,8 +236,14 @@ enum WorkoutGenerationAlgorithms {
     }
 
     static func estimateDurationMinutes(planned: [PlannedExercise]) -> Int {
-        let totalSets = planned.reduce(0) { $0 + $1.targetSets.count }
-        let workSeconds = totalSets * GenerationConstants.Session.durationWorkSecondsPerSet
+        let workSeconds = planned.reduce(0) { partial, exercise in
+            partial + exercise.targetSets.reduce(0) { setPartial, set in
+                if let duration = set.targetDurationSeconds, duration > 0 {
+                    return setPartial + duration
+                }
+                return setPartial + GenerationConstants.Session.durationWorkSecondsPerSet
+            }
+        }
         let restSeconds = planned.reduce(0) { partial, exercise in
             let sets = exercise.targetSets
             guard sets.count > 1 else { return partial }

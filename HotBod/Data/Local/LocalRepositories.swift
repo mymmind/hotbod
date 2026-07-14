@@ -32,7 +32,7 @@ actor LocalWorkoutRepository: WorkoutRepository {
 
     func fetchSessionSummaries() async throws -> [WorkoutSessionSummary] {
         let sessions = try await fetchSessions().filter { $0.status == .completed }
-        let exerciseMap = Dictionary(uniqueKeysWithValues: ExerciseSeedLoader.load().map { ($0.id, $0) })
+        let exerciseMap = ExerciseCatalog.indexedById(ExerciseSeedLoader.load())
 
         return sessions.compactMap { session in
             guard let completedAt = session.completedAt else { return nil }
@@ -114,9 +114,14 @@ actor LocalBodyProgressRepository: BodyProgressRepository {
     }
 
     func deletePhoto(id: UUID) async throws {
-        var photos = try await fetchPhotos()
-        photos.removeAll { $0.id == id }
-        PersistenceHelper.save(photos, to: key)
+        let photos = try await fetchPhotos()
+        guard let photo = photos.first(where: { $0.id == id }) else { return }
+        if FileManager.default.fileExists(atPath: photo.localImagePath) {
+            try FileManager.default.removeItem(atPath: photo.localImagePath)
+        }
+        var remaining = photos
+        remaining.removeAll { $0.id == id }
+        PersistenceHelper.save(remaining, to: key)
     }
 }
 

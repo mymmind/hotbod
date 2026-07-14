@@ -38,14 +38,49 @@ enum SettingsDraftEditing {
             || draft.preferredMuscleGroups != original.preferredMuscleGroups
             || draft.avoidedMuscleGroups != original.avoidedMuscleGroups
             || draft.includeWarmupSets != original.includeWarmupSets
+            || draft.includeCooldown != original.includeCooldown
+            || draft.preferredExerciseGrouping != original.preferredExerciseGrouping
+            || draft.preferredExerciseVariability != original.preferredExerciseVariability
+            || draft.includeCoreFinisher != original.includeCoreFinisher
+            || draft.includeConditioning != original.includeConditioning
+            || draft.cardioBlockPlacement != original.cardioBlockPlacement
+            || draft.maxAvailableWeightKg != original.maxAvailableWeightKg
     }
 
-    static func toggleTrainingDay(_ day: Weekday, in draft: inout UserProfile) {
+    static let weightLimitEquipment: [Equipment] = [.dumbbell, .barbell, .kettlebell]
+
+    static func weightLimitedEquipment(in draft: UserProfile) -> [Equipment] {
+        weightLimitEquipment.filter { draft.availableEquipment.contains($0) }
+    }
+
+    static func setEquipmentWeightLimit(equipment: Equipment, text: String, in draft: inout UserProfile) {
+        if let value = Double(text), value > 0 {
+            draft.maxAvailableWeightKg[equipment] = value
+        } else {
+            draft.maxAvailableWeightKg.removeValue(forKey: equipment)
+        }
+    }
+
+    static func reconcileSchedule(_ draft: inout UserProfile) {
+        let selected = Set(draft.preferredTrainingDays)
+        draft.preferredTrainingDays = Weekday.allCases.filter(selected.contains)
+        draft.trainingDaysPerWeek = draft.preferredTrainingDays.count
+    }
+
+    static func hasValidSchedule(_ draft: UserProfile) -> Bool {
+        Set(draft.preferredTrainingDays).count >= 2
+    }
+
+    @discardableResult
+    static func toggleTrainingDay(_ day: Weekday, in draft: inout UserProfile) -> Bool {
         if draft.preferredTrainingDays.contains(day) {
+            guard Set(draft.preferredTrainingDays).count > 2 else { return false }
             draft.preferredTrainingDays.removeAll { $0 == day }
         } else {
             draft.preferredTrainingDays.append(day)
         }
+        reconcileSchedule(&draft)
+        return true
     }
 
     static func toggleEquipment(_ equipment: Equipment, in draft: inout UserProfile) {

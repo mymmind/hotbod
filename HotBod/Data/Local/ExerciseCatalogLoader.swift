@@ -1,11 +1,35 @@
 import Foundation
 
 enum ExerciseCatalogLoader {
+    /// Host app bundle when running unit tests (xctest bundle does not embed ExerciseSeed.json).
+    static var resourceBundle: Bundle {
+        if Bundle.main.url(forResource: "ExerciseSeed", withExtension: "json") != nil {
+            return Bundle.main
+        }
+        if let host = Bundle.allBundles.first(where: {
+            $0.bundlePath.hasSuffix(".app")
+                && $0.url(forResource: "ExerciseSeed", withExtension: "json") != nil
+        }) {
+            return host
+        }
+        for bundle in Bundle.allBundles where bundle.url(forResource: "ExerciseSeed", withExtension: "json") != nil {
+            return bundle
+        }
+        return Bundle.main
+    }
+
     /// Exercise IDs in ExerciseSeed.json are permanent — rename via `aliases` in ExerciseContent.json, never by changing `id`.
     static func loadExercises() -> [Exercise] {
         let seed = ExerciseSeedLoader.loadSeed()
         let content = loadContentBundle()
         return seed.map { merge($0, content: content.exercises[$0.id], groups: content.substitutionGroups) }
+            .map { exercise in
+                var updated = exercise
+                if let override = ExercisePrescriptionOverrides.override(for: updated.id) {
+                    ExercisePrescriptionOverridesLoader.apply(override, to: &updated)
+                }
+                return updated
+            }
     }
 
     static func loadSubstitutionGroups() -> [ExerciseSubstitutionGroup] {
@@ -30,7 +54,7 @@ enum ExerciseCatalogLoader {
     // MARK: - Private
 
     private static func loadContentBundle() -> ExerciseContentBundle {
-        guard let url = Bundle.main.url(forResource: "ExerciseContent", withExtension: "json"),
+        guard let url = resourceBundle.url(forResource: "ExerciseContent", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let bundle = try? JSONDecoder().decode(ExerciseContentBundle.self, from: data) else {
             return ExerciseContentBundle()

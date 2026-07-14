@@ -7,6 +7,7 @@ struct NoOpAuthService: AuthService, Sendable {
     func signUp(email: String, password: String) async throws { throw SyncError.notConfigured }
     func signIn(email: String, password: String) async throws { throw SyncError.notConfigured }
     func signOut() async throws {}
+    func deleteAccount() async throws { throw SyncError.notConfigured }
     func restoreSession() async -> Bool { false }
 }
 

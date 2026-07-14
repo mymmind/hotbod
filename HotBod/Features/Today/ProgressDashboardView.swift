@@ -1,8 +1,5 @@
 import SwiftUI
 import Charts
-
-import SwiftUI
-import Charts
 import Observation
 
 struct ProgressDashboardView: View {
@@ -29,6 +26,7 @@ struct ProgressDashboardView: View {
                                 e1rmTrendCard
                                 volumeTrendCard
                                 topLiftsCard
+                                strengthScoreCard
                                 recoveryCard
                                 insightsCard
                                 bodyProgressCard
@@ -43,7 +41,8 @@ struct ProgressDashboardView: View {
             .background(ForgeColors.background)
             .forgeFloatingTabBarClearance()
             .forgeScreenNavigationHidden()
-            .task {
+            .accessibilityIdentifier("progress.dashboard")
+            .task(id: environment.bodyPhotoRevision) {
                 await viewModel.loadData(from: environment)
             }
             .onChange(of: environment.todayWorkout) { _, _ in
@@ -60,8 +59,6 @@ struct ProgressDashboardView: View {
         }
         return "\(viewModel.workoutFrequency) sessions this week · \(Int(viewModel.proteinCompliancePercent))% protein compliance"
     }
-
-    // MARK: - Compliance Card
 
     private var complianceCard: some View {
         ForgeCard {
@@ -94,6 +91,7 @@ struct ProgressDashboardView: View {
             }
             .padding(.top, 8)
         }
+        .accessibilityIdentifier("progress.compliance")
     }
 
     // MARK: - E1RM Trend Card
@@ -185,6 +183,48 @@ struct ProgressDashboardView: View {
         }
     }
 
+    // MARK: - Strength Score Card
+
+    private var strengthScoreCard: some View {
+        ForgeCard {
+            ForgeSectionHeader(
+                title: "Strength Score",
+                subtitle: "Per muscle group · 0–100",
+                accent: ForgeColors.accent
+            )
+            if !viewModel.muscleStrengthScores.isEmpty {
+                VStack(spacing: 12) {
+                    ForEach(viewModel.muscleStrengthScores.prefix(6)) { item in
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(item.muscleGroup.displayName)
+                                    .font(ForgeTypography.body)
+                                    .lineLimit(1)
+                                Text(item.anchorExerciseName)
+                                    .font(ForgeTypography.caption)
+                                    .foregroundStyle(ForgeColors.muted)
+                                    .lineLimit(1)
+                            }
+                            Spacer()
+                            HStack(spacing: 8) {
+                                ProgressView(value: Double(item.score) / 100)
+                                    .tint(ForgeColors.accent)
+                                    .frame(maxWidth: 80, alignment: .leading)
+                                Text("\(item.score)")
+                                    .font(ForgeTypography.monoMetric)
+                                    .foregroundStyle(ForgeColors.accent)
+                                    .frame(width: 28, alignment: .trailing)
+                            }
+                        }
+                    }
+                }
+            } else {
+                Text("Log weighted sets and add body weight in Settings to see strength scores.")
+                    .foregroundStyle(ForgeColors.muted)
+            }
+        }
+    }
+
     // MARK: - Recovery Card
 
     private var recoveryCard: some View {
@@ -253,7 +293,7 @@ struct ProgressDashboardView: View {
                 if !viewModel.bodyPhotos.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
-                            ForEach(viewModel.bodyPhotos.sorted(by: { $0.date > $1.date }).prefix(6), id: \.id) { photo in
+                            ForEach(BodyProgressPhoto.sortedByDateDescending(viewModel.bodyPhotos).prefix(6), id: \.id) { photo in
                                 VStack(alignment: .center, spacing: 8) {
                                     if let image = loadImage(path: photo.localImagePath) {
                                         image
@@ -276,16 +316,25 @@ struct ProgressDashboardView: View {
                         }
                     }
                 } else {
-                    Text("No progress photos yet. Tap to add your first photo.")
+                    Text(bodyProgressEmptyMessage)
                         .foregroundStyle(ForgeColors.muted)
                 }
             }
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("progress.bodyProgressLink")
+    }
+
+    private var bodyProgressEmptyMessage: String {
+        if environment.isPhotoTrackingEnabled {
+            return "Photo tracking is on. Tap to add your first progress photo."
+        }
+        return "No progress photos yet. Tap to add your first photo."
     }
 
     private func loadImage(path: String) -> Image? {
-        guard let uiImage = UIImage(contentsOfFile: path) else { return nil }
+        guard BodyPhotoImageProcessor.fileExists(at: path),
+              let uiImage = UIImage(contentsOfFile: path) else { return nil }
         return Image(uiImage: uiImage)
     }
 }
@@ -304,6 +353,7 @@ final class ProgressDashboardViewModel {
     var volumeChartData: [VolumeChartPoint] = []
     var avgSetsPerWeek: Double = 0
     var topLifts: [(exercise: Exercise, e1rm: Double, changePercent: Double?)] = []
+    var muscleStrengthScores: [StrengthHistory.MuscleStrengthScore] = []
     var recoveryByMuscle: [MuscleRecoveryState] = []
     var bodyPhotos: [BodyProgressPhoto] = []
     var insights: [String] = []
@@ -360,6 +410,13 @@ final class ProgressDashboardViewModel {
             let changePercent = previousAverage > 0 ? ((e1rm - previousAverage) / previousAverage) * 100 : nil
             return (exercise: exercise, e1rm: e1rm, changePercent: changePercent)
         }
+
+        let bodyweightKg = environment.userProfile?.weightKg ?? 0
+        muscleStrengthScores = StrengthHistory.muscleGroupScores(
+            stats: stats,
+            exercises: exercises,
+            bodyweightKg: bodyweightKg
+        )
 
         // Generate insights
         generateInsights(

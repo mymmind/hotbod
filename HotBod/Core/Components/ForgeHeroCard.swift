@@ -8,6 +8,7 @@ enum ForgeHeroTitleStyle {
 struct ForgeHeroTitleAccessory {
     let systemImage: String
     let accessibilityLabel: String
+    var accessibilityIdentifier: String? = nil
     let action: () -> Void
 }
 
@@ -34,6 +35,8 @@ struct ForgeHeroCard: View {
     var loadingSecondaryTitle: String? = nil
     var primaryAction: (title: String, action: () -> Void)? = nil
     var secondaryActions: [(title: String, action: () -> Void)] = []
+    var primaryAccessibilityIdentifier: String? = nil
+    var secondaryAccessibilityIdentifiers: [String: String] = [:]
 
     var body: some View {
         VStack(alignment: .leading, spacing: ForgeSpacing.s4) {
@@ -79,6 +82,7 @@ struct ForgeHeroCard: View {
                     .frame(width: ForgeTarget.min, height: ForgeTarget.min)
                     .contentShape(Rectangle())
                     .accessibilityLabel(titleAccessory.accessibilityLabel)
+                    .accessibilityIdentifier(titleAccessory.accessibilityIdentifier ?? "")
                 }
             }
 
@@ -194,6 +198,7 @@ struct ForgeHeroCard: View {
             ForgeButton(
                 title: primaryAction.title,
                 style: inverted && !completed ? .accent : (inverted ? .inverse : .primary),
+                accessibilityIdentifier: primaryAccessibilityIdentifier,
                 action: primaryAction.action
             )
         }
@@ -204,6 +209,7 @@ struct ForgeHeroCard: View {
                         title: action.title,
                         style: inverted ? .inverse : .secondary,
                         isLoading: loadingSecondaryTitle?.caseInsensitiveCompare(action.title) == .orderedSame,
+                        accessibilityIdentifier: secondaryAccessibilityIdentifiers[action.title],
                         action: action.action
                     )
                 }

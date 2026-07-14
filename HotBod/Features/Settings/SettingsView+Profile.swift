@@ -66,9 +66,45 @@ extension SettingsView {
 
     var appSection: some View {
         SettingsComponents.section(title: "App", subtitle: "About HotBod") {
+            SettingsComponents.valueRow(
+                label: "Plan",
+                value: environment.isPro ? "Pro" : "Free (\(environment.remainingFreeRegenerations) regen left)"
+            )
+            if !environment.isPro {
+                SettingsComponents.divider
+                SettingsComponents.actionRow(title: "Upgrade to Pro") {
+                    environment.presentPaywall(for: .unlimitedGeneration)
+                }
+            }
+            SettingsComponents.divider
+            SettingsComponents.toggleRow(
+                title: "Haptic feedback",
+                isOn: Binding(
+                    get: { environment.feedbackService.hapticsEnabled },
+                    set: { environment.feedbackService.hapticsEnabled = $0 }
+                )
+            )
+            SettingsComponents.divider
+            SettingsComponents.toggleRow(
+                title: "Sound effects",
+                isOn: Binding(
+                    get: { environment.feedbackService.soundsEnabled },
+                    set: { environment.feedbackService.soundsEnabled = $0 }
+                )
+            )
+            SettingsComponents.divider
             SettingsComponents.valueRow(label: "Version", value: "1.0.0")
             SettingsComponents.divider
             SettingsComponents.valueRow(label: "Name", value: AppConfig.appName)
+            if !environment.isSupabaseConfigured {
+                SettingsComponents.divider
+                deleteDataActionRow(title: "Delete All Data", identifier: "settings.deleteAllData")
+                if let deleteError {
+                    Text(deleteError)
+                        .font(ForgeTypography.caption)
+                        .foregroundStyle(ForgeColors.destructive)
+                }
+            }
             SettingsComponents.divider
             SettingsComponents.actionRow(title: "Reset Onboarding", destructive: true) {
                 Task {
@@ -84,6 +120,7 @@ extension SettingsView {
         guard !didLoad, let profile = environment.userProfile else { return }
         didLoad = true
         draft = profile
+        SettingsDraftEditing.reconcileSchedule(&draft)
         weightText = SettingsDraftEditing.formatted(profile.weightKg)
         heightText = SettingsDraftEditing.formatted(profile.heightCm)
         ageText = profile.age.map(String.init) ?? ""
@@ -106,6 +143,11 @@ extension SettingsView {
             proteinText: proteinText,
             limitationNotes: limitationNotes
         )
+        SettingsDraftEditing.reconcileSchedule(&draft)
+        guard SettingsDraftEditing.hasValidSchedule(draft) else {
+            saveError = "Select at least two training days."
+            return
+        }
         guard let original = environment.userProfile else {
             dismissSettings()
             return

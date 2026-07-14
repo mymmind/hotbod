@@ -93,4 +93,9 @@ enum ExerciseCatalog {
     private static func sharesPrimaryMuscle(_ a: Exercise, _ b: Exercise) -> Bool {
         !Set(a.primaryMuscles).isDisjoint(with: Set(b.primaryMuscles))
     }
+
+    /// Builds an id-indexed map; later entries win when duplicate ids appear in persisted custom data.
+    static func indexedById(_ exercises: [Exercise]) -> [String: Exercise] {
+        Dictionary(exercises.map { ($0.id, $0) }, uniquingKeysWith: { _, latest in latest })
+    }
 }

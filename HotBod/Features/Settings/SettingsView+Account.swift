@@ -11,12 +11,22 @@ extension SettingsView {
                 SettingsComponents.actionRow(title: "Sign Out", destructive: true) {
                     Task { try? await environment.signOut() }
                 }
+                SettingsComponents.divider
+                deleteDataActionRow(title: "Delete Account", identifier: "settings.deleteAccount")
             } else {
                 ForgeTextField(label: "Email", text: $authEmail, keyboardType: .emailAddress)
                     .textInputAutocapitalization(.never)
                 ForgeTextField(label: "Password", text: $authPassword, isSecure: true)
                 SettingsComponents.actionRow(title: "Sign In") { Task { await performSignIn() } }
                 SettingsComponents.actionRow(title: "Create Account") { Task { await performSignUp() } }
+                SettingsComponents.divider
+                deleteDataActionRow(title: "Delete All Data", identifier: "settings.deleteAllData")
+            }
+
+            if let deleteError {
+                Text(deleteError)
+                    .font(ForgeTypography.caption)
+                    .foregroundStyle(ForgeColors.destructive)
             }
 
             if let authError {
@@ -45,6 +55,23 @@ extension SettingsView {
                 .font(ForgeTypography.caption)
                 .foregroundStyle(ForgeColors.muted)
         }
+    }
+
+    private func userFacingSyncMessage(_ message: String) -> String {
+        let normalized = message.lowercased()
+        if normalized.contains("sync complete") || normalized.contains("data synced") {
+            return "You're signed in and up to date."
+        }
+        if normalized.contains("sign in to sync") {
+            return "Sign in to sync your data."
+        }
+        if normalized.contains("signed out") {
+            return "Signed out."
+        }
+        if normalized.contains("error") || normalized.contains("failed") {
+            return "Sync could not complete. Please try again."
+        }
+        return message
     }
 
     func performSignIn() async {
@@ -76,20 +103,54 @@ extension SettingsView {
         return "Something went wrong while signing in. Please try again."
     }
 
-    private func userFacingSyncMessage(_ message: String) -> String {
-        let normalized = message.lowercased()
-        if normalized.contains("sync complete") || normalized.contains("data synced") {
-            return "You're signed in and up to date."
+    func deleteDataActionRow(title: String, identifier: String) -> some View {
+        SettingsComponents.actionRow(title: isDeletingAccount ? "Deleting…" : title, destructive: true) {
+            guard !isDeletingAccount else { return }
+            deleteError = nil
+            showDeleteDataConfirmation = true
         }
-        if normalized.contains("sign in to sync") {
-            return "Sign in to sync your data."
+        .disabled(isDeletingAccount)
+        .accessibilityIdentifier(identifier)
+    }
+
+    var deleteConfirmationTitle: String {
+        environment.isSignedIn ? "Delete Account?" : "Delete All Data?"
+    }
+
+    var deleteConfirmationActionTitle: String {
+        environment.isSignedIn ? "Delete Account" : "Delete All Data"
+    }
+
+    var deleteConfirmationMessage: String {
+        if environment.isSignedIn {
+            return "This permanently deletes your cloud account and removes all data from this device. This cannot be undone."
         }
-        if normalized.contains("signed out") {
-            return "Signed out."
+        return "This permanently removes all workouts, progress, and settings from this device. This cannot be undone."
+    }
+
+    func performDeleteUserData() async {
+        deleteError = nil
+        isDeletingAccount = true
+        defer { isDeletingAccount = false }
+
+        do {
+            if environment.isSignedIn {
+                try await environment.deleteAccount()
+            } else {
+                try await environment.wipeAllLocalUserData()
+            }
+            dismissSettings()
+            router.showOnboarding()
+        } catch {
+            deleteError = userFacingDeleteError(error)
         }
-        if normalized.contains("error") || normalized.contains("failed") {
-            return "Sync could not complete. Please try again."
+    }
+
+    private func userFacingDeleteError(_ error: Error) -> String {
+        let message = error.localizedDescription.lowercased()
+        if message.contains("network") || message.contains("internet") || message.contains("offline") {
+            return "No connection. Try again when you are back online."
         }
-        return message
+        return "Could not delete your data. Please try again."
     }
 }

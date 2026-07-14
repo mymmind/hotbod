@@ -7,6 +7,7 @@ struct ExerciseLibraryView: View {
     @State private var query = ""
     @State private var selectedMuscle: MuscleGroup?
     @State private var selectedEquipment: Equipment?
+    @State private var showCreateExercise = false
 
     private var filterSignature: String {
         "\(query)-\(selectedMuscle?.rawValue ?? "all")-\(selectedEquipment?.rawValue ?? "all")"
@@ -21,6 +22,14 @@ struct ExerciseLibraryView: View {
                 subtitle: "Search, filter, and favorite movements.",
                 leading: {
                     ForgeHeaderBackButton { dismiss() }
+                },
+                trailing: {
+                    Button {
+                        showCreateExercise = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .accessibilityIdentifier("library.createExercise")
                 }
             )
             searchBar
@@ -35,12 +44,15 @@ struct ExerciseLibraryView: View {
                                 .foregroundStyle(ForgeColors.muted)
                         }
                         Spacer()
-                        if exercise.isFavorite {
-                            Image(systemName: "star.fill")
-                                .foregroundStyle(ForgeColors.accentAmber)
+                        if exercise.isCustom {
+                            Text("Custom")
+                                .font(ForgeTypography.caption)
+                                .foregroundStyle(ForgeColors.accentBlue)
                         }
+                        preferenceBadge(for: exercise)
                     }
                 }
+                .accessibilityIdentifier("library.row.\(exercise.id)")
             }
             .listStyle(.plain)
             .forgeAnimatedContent(id: filterSignature)
@@ -48,6 +60,12 @@ struct ExerciseLibraryView: View {
         }
         .forgeScreenNavigationHidden()
         .task { await load() }
+        .sheet(isPresented: $showCreateExercise) {
+            CreateExerciseView()
+        }
+        .onChange(of: showCreateExercise) { _, isPresented in
+            if !isPresented { Task { await load() } }
+        }
     }
 
     private var searchBar: some View {
@@ -55,6 +73,7 @@ struct ExerciseLibraryView: View {
             .padding(12)
             .overlay(Rectangle().stroke(ForgeColors.border, lineWidth: 1))
             .padding()
+            .accessibilityIdentifier("library.search")
     }
 
     private var filterBar: some View {
@@ -83,6 +102,23 @@ struct ExerciseLibraryView: View {
             query: query,
             filters: ExerciseFilters(muscleGroup: selectedMuscle, equipment: selectedEquipment)
         )
+    }
+
+    @ViewBuilder
+    private func preferenceBadge(for exercise: Exercise) -> some View {
+        switch exercise.preference {
+        case .favorite:
+            Image(systemName: "star.fill")
+                .foregroundStyle(ForgeColors.accentAmber)
+        case .less:
+            Image(systemName: "minus.circle")
+                .foregroundStyle(ForgeColors.muted)
+        case .excluded:
+            Image(systemName: "nosign")
+                .foregroundStyle(ForgeColors.destructive)
+        case .neutral:
+            EmptyView()
+        }
     }
 
     private func load() async {

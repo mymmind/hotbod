@@ -22,6 +22,14 @@ struct MockAIWorkoutService: AIWorkoutService, Sendable {
             content = context.currentWorkout?.rationale ??
                 "Today's session prioritizes recovered muscle groups and respects your equipment profile."
         case .modifyWorkout:
+            if let proposed = CoachOfflineWorkoutProposer.proposeModification(message: message, context: context) {
+                content = """
+                I compressed today's session while keeping main compounds. \
+                Review the proposal and tap Apply to update your plan.
+                """
+                let msg = CoachMessage(id: UUID(), role: .assistant, content: content, createdAt: Date(), intent: intent)
+                return CoachAIResult(message: msg, proposedWorkout: proposed, validation: nil)
+            }
             content = "I can compress this session by reducing accessories and tightening rest. Main compounds stay. Confirm and I'll regenerate."
         case .generateWorkout:
             content = "Sign in with cloud coach enabled to generate a structured workout from AI. Offline mode uses the rules engine via Today → Regenerate."

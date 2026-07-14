@@ -17,6 +17,7 @@ struct ForgeCard<Content: View>: View {
             Rectangle()
                 .stroke(ForgeColors.border, lineWidth: 1)
         )
+        .accessibilityElement(children: .contain)
         .modifier(ForgeCardAnimationModifier(animated: animated))
     }
 }

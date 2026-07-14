@@ -7,6 +7,7 @@ protocol AuthService: Sendable {
     func signUp(email: String, password: String) async throws
     func signIn(email: String, password: String) async throws
     func signOut() async throws
+    func deleteAccount() async throws
     func restoreSession() async -> Bool
 }
 
@@ -30,6 +31,7 @@ protocol CloudSyncService: Sendable {
 struct SyncLocalStores {
     let userProfile: any UserProfileRepository
     let workout: any WorkoutRepository
+    let exercise: any ExerciseRepository
     let nutrition: any NutritionRepository
     let bodyProgress: any BodyProgressRepository
     let recovery: any RecoveryRepository

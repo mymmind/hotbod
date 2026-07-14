@@ -23,64 +23,106 @@ struct SwapExerciseSheet: View {
                     }
                 )
 
-                List {
-                if let substitutionGroup {
-                    Section {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(substitutionGroup.name)
-                                .font(ForgeTypography.heading)
-                            Text(substitutionGroup.primaryMuscles.map(\.displayName).joined(separator: ", "))
-                                .font(ForgeTypography.caption)
-                                .foregroundStyle(ForgeColors.muted)
-                            if let description = substitutionGroup.description, !description.isEmpty {
-                                Text(description)
-                                    .font(ForgeTypography.body)
-                                    .foregroundStyle(ForgeColors.muted)
-                            }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: ForgeSpacing.s4) {
+                        if let substitutionGroup {
+                            groupCard(substitutionGroup)
                         }
-                        .padding(.vertical, 4)
-                    } header: {
-                        Text("Swap Group")
-                    }
-                }
 
-                if substitutes.isEmpty {
-                    Text("No substitutes available for your equipment and limitations.")
+                        if substitutes.isEmpty {
+                            Text("No substitutes available for your equipment and limitations.")
+                                .font(ForgeTypography.body)
+                                .foregroundStyle(ForgeColors.muted)
+                                .padding(.horizontal, ForgeSpacing.s4)
+                        } else {
+                            alternativesSection
+                        }
+                    }
+                    .padding(.vertical, ForgeSpacing.s4)
+                }
+            }
+            .background(ForgeColors.background)
+            .forgeScreenNavigationHidden()
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("swap.sheet")
+        .presentationDetents([.medium, .large])
+    }
+
+    private func groupCard(_ group: ExerciseSubstitutionGroup) -> some View {
+        ForgeCard {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("SWAP GROUP")
+                    .font(ForgeTypography.caption)
+                    .tracking(ForgeTracking.eyebrowWide)
+                    .foregroundStyle(ForgeColors.muted)
+                Text(group.name)
+                    .font(ForgeTypography.heading)
+                Text(group.primaryMuscles.map(\.displayName).joined(separator: ", "))
+                    .font(ForgeTypography.caption)
+                    .foregroundStyle(ForgeColors.muted)
+                if let description = group.description, !description.isEmpty {
+                    Text(description)
+                        .font(ForgeTypography.body)
                         .foregroundStyle(ForgeColors.muted)
-                } else {
-                    Section {
-                        ForEach(substitutes) { exercise in
-                            Button {
-                                onSelect(exercise)
-                                dismiss()
-                            } label: {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(exercise.name).font(ForgeTypography.heading)
-                                        Text(exercise.equipment.map(\.displayName).joined(separator: " · "))
-                                            .font(ForgeTypography.caption)
-                                            .foregroundStyle(ForgeColors.muted)
-                                    }
-                                    Spacer()
-                                    if exercise.id == currentExerciseId {
-                                        Text("Current")
-                                            .font(ForgeTypography.caption)
-                                            .foregroundStyle(ForgeColors.muted)
-                                    }
+                }
+            }
+        }
+        .padding(.horizontal, ForgeSpacing.s4)
+    }
+
+    private var alternativesSection: some View {
+        VStack(alignment: .leading, spacing: ForgeSpacing.s3) {
+            Text("ALTERNATIVES")
+                .font(ForgeTypography.caption)
+                .tracking(ForgeTracking.eyebrowWide)
+                .foregroundStyle(ForgeColors.muted)
+                .padding(.horizontal, ForgeSpacing.s4)
+
+            ForgeCard {
+                VStack(spacing: 0) {
+                    ForEach(substitutes) { exercise in
+                        Button {
+                            onSelect(exercise)
+                            dismiss()
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(exercise.name)
+                                        .font(ForgeTypography.heading)
+                                        .foregroundStyle(ForgeColors.foreground)
+                                    Text(exercise.equipment.map(\.displayName).joined(separator: " · "))
+                                        .font(ForgeTypography.caption)
+                                        .foregroundStyle(ForgeColors.muted)
+                                }
+                                Spacer()
+                                if exercise.id == currentExerciseId {
+                                    Text("Current")
+                                        .font(ForgeTypography.caption)
+                                        .foregroundStyle(ForgeColors.muted)
                                 }
                             }
-                            .buttonStyle(.plain)
-                            .disabled(exercise.id == currentExerciseId)
+                            .padding(.horizontal, ForgeSpacing.s4)
+                            .padding(.vertical, ForgeSpacing.s3)
                         }
-                    } header: {
-                        Text("Alternatives")
-                    } footer: {
-                        Text("Swaps stay within the same muscle group and movement pattern.")
+                        .buttonStyle(.plain)
+                        .disabled(exercise.id == currentExerciseId)
+                        .accessibilityIdentifier("swap.substitute.\(exercise.id)")
+
+                        if exercise.id != substitutes.last?.id {
+                            Rectangle()
+                                .fill(ForgeColors.border)
+                                .frame(height: ForgeBorder.hairline)
+                        }
                     }
                 }
             }
-            }
-            .forgeScreenNavigationHidden()
+            .padding(.horizontal, ForgeSpacing.s4)
+
+            Text("Swaps stay within the same muscle group and movement pattern.")
+                .font(ForgeTypography.caption)
+                .foregroundStyle(ForgeColors.muted)
+                .padding(.horizontal, ForgeSpacing.s4)
         }
     }
 }

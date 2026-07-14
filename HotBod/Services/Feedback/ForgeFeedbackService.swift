@@ -1,0 +1,134 @@
+import SwiftUI
+
+enum ForgeFeedbackEvent: Equatable {
+    case setComplete
+    case personalRecord
+    case restTimerStart
+    case restTimerWarning
+    case restTimerEnd
+    case workoutComplete
+    case proteinAdded
+    case tabSelection
+    case buttonPress
+    case selection
+    case success
+    case warning
+    case error
+    case increase
+    case coachApply
+    case exerciseSwap
+    case workoutRegenerate
+}
+
+@Observable
+final class ForgeFeedbackService: @unchecked Sendable {
+    var hapticsEnabled: Bool {
+        didSet { ForgeFeedbackPreferences.hapticsEnabled = hapticsEnabled }
+    }
+
+    var soundsEnabled: Bool {
+        didSet { ForgeFeedbackPreferences.soundsEnabled = soundsEnabled }
+    }
+
+    private let haptics = ForgeHapticEngine()
+    private let sounds = ForgeSoundEngine()
+
+    init() {
+        if UITestConfiguration.isUITesting {
+            hapticsEnabled = false
+            soundsEnabled = false
+        } else {
+            hapticsEnabled = ForgeFeedbackPreferences.hapticsEnabled
+            soundsEnabled = ForgeFeedbackPreferences.soundsEnabled
+        }
+    }
+
+    var allowsHaptics: Bool {
+        hapticsEnabled && !UIAccessibility.isReduceMotionEnabled
+    }
+
+    func play(_ event: ForgeFeedbackEvent) {
+        guard !UITestConfiguration.isUITesting else { return }
+        if allowsHaptics {
+            playHaptic(event)
+        }
+        if soundsEnabled {
+            playSound(event)
+        }
+    }
+
+    func prepare(for event: ForgeFeedbackEvent) {
+        guard allowsHaptics else { return }
+        switch event {
+        case .restTimerEnd, .restTimerWarning:
+            haptics.prepare()
+        default:
+            break
+        }
+    }
+
+    private func playHaptic(_ event: ForgeFeedbackEvent) {
+        switch event {
+        case .setComplete, .buttonPress:
+            haptics.playLightImpact()
+        case .personalRecord, .workoutComplete, .coachApply, .success:
+            haptics.playSuccess()
+        case .restTimerStart:
+            haptics.playSelection()
+        case .restTimerWarning:
+            haptics.playRestWarning()
+        case .restTimerEnd:
+            haptics.playRestEnd()
+        case .proteinAdded, .increase:
+            haptics.playIncrease()
+        case .tabSelection, .selection, .exerciseSwap:
+            haptics.playSelection()
+        case .warning, .workoutRegenerate:
+            haptics.playWarning()
+        case .error:
+            haptics.playError()
+        }
+    }
+
+    private func playSound(_ event: ForgeFeedbackEvent) {
+        switch event {
+        case .setComplete:
+            sounds.playTone(frequency: 880, duration: 0.06, volume: 0.18)
+        case .personalRecord:
+            sounds.playTone(frequency: 660, duration: 0.08, volume: 0.2)
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(90))
+                sounds.playTone(frequency: 990, duration: 0.12, volume: 0.22)
+            }
+        case .restTimerWarning:
+            sounds.playTone(frequency: 520, duration: 0.08, volume: 0.16)
+        case .restTimerEnd:
+            sounds.playTone(frequency: 440, duration: 0.14, volume: 0.2)
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(150))
+                sounds.playTone(frequency: 587, duration: 0.18, volume: 0.18)
+            }
+        case .workoutComplete:
+            sounds.playTone(frequency: 330, duration: 0.2, volume: 0.22)
+        case .proteinAdded:
+            sounds.playTone(frequency: 740, duration: 0.05, volume: 0.14)
+        case .error:
+            sounds.playTone(frequency: 220, duration: 0.1, volume: 0.18)
+        case .coachApply, .success:
+            sounds.playTone(frequency: 587, duration: 0.1, volume: 0.16)
+        default:
+            break
+        }
+    }
+}
+
+extension EnvironmentValues {
+    var forgeFeedback: ForgeFeedbackService {
+        get { self[ForgeFeedbackServiceKey.self] }
+        set { self[ForgeFeedbackServiceKey.self] = newValue }
+    }
+}
+
+private struct ForgeFeedbackServiceKey: EnvironmentKey {
+    static let defaultValue = ForgeFeedbackService()
+}

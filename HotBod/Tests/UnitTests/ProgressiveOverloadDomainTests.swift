@@ -12,6 +12,40 @@ final class ProgressiveOverloadTests: XCTestCase {
         XCTAssertLessThan(next, 100)
     }
 
+    func testLowLoggedRPEIncreasesWeightMoreAggressively() {
+        let baseline = ProgressiveOverload.nextWeight(
+            currentWeight: 100,
+            completedAllSetsAtTopRange: true,
+            missedMinimumReps: false
+        )
+        let withEasyRPE = ProgressiveOverload.nextWeight(
+            currentWeight: 100,
+            completedAllSetsAtTopRange: true,
+            missedMinimumReps: false,
+            averageLoggedRPE: 7.0
+        )
+        XCTAssertGreaterThan(withEasyRPE, baseline)
+    }
+
+    func testHighLoggedRPEHoldsWeightWhenHittingTopRange() {
+        let next = ProgressiveOverload.nextWeight(
+            currentWeight: 100,
+            completedAllSetsAtTopRange: true,
+            missedMinimumReps: false,
+            averageLoggedRPE: 9.5
+        )
+        XCTAssertEqual(next, 100, accuracy: 0.1)
+    }
+
+    func testAverageLoggedRPEIgnoresWarmups() {
+        let sets = [
+            CompletedSet(setIndex: 0, weightKg: 40, reps: 10, rpe: 5, isWarmup: true),
+            CompletedSet(setIndex: 1, weightKg: 100, reps: 8, rpe: 8),
+            CompletedSet(setIndex: 2, weightKg: 100, reps: 8, rpe: 10)
+        ]
+        XCTAssertEqual(ProgressiveOverload.averageLoggedRPE(from: sets)!, 9.0, accuracy: 0.01)
+    }
+
     func testUpdateStatsSeparatesLastAndSuggestedWeight() {
         let sets = [
             CompletedSet(setIndex: 0, weightKg: 100, reps: 10),
@@ -328,6 +362,28 @@ final class DeloadDetectionTests: XCTestCase {
         
         XCTAssertFalse(analysis.isDeloadRecommended)
         XCTAssertEqual(analysis.severity, .none)
+    }
+
+    func testDeloadRecommendedFromConsistentlyHighLoggedRPE() {
+        let recentSets = [
+            CompletedSet(setIndex: 0, weightKg: 100, reps: 8, rpe: 9.5),
+            CompletedSet(setIndex: 1, weightKg: 100, reps: 8, rpe: 10),
+            CompletedSet(setIndex: 2, weightKg: 100, reps: 7, rpe: 9.5)
+        ]
+        var stats = UserExerciseStats(
+            exerciseId: "squat",
+            recentSets: recentSets,
+            preferredRepRangeMin: 5,
+            preferredRepRangeMax: 8
+        )
+
+        let analysis = DeloadDetector.analyzeDeloadNeed(
+            stats: stats,
+            volumeHistory: stats.weeklyVolume
+        )
+
+        XCTAssertTrue(analysis.isDeloadRecommended)
+        XCTAssertEqual(analysis.severity, .mild)
     }
 
     func testUpdateDeloadStateSetsReturningFromBreakForGapWeek() {

@@ -29,6 +29,18 @@ extension AppEnvironment {
         try await exerciseRepository.updateAvoided(id: id, isAvoided: isAvoided)
     }
 
+    func updateExercisePreference(id: String, preference: ExercisePreference) async throws {
+        try await exerciseRepository.updatePreference(id: id, preference: preference)
+    }
+
+    func createCustomExercise(_ exercise: Exercise) async throws -> Exercise {
+        try await exerciseRepository.createCustomExercise(exercise)
+    }
+
+    func deleteCustomExercise(id: String) async throws {
+        try await exerciseRepository.deleteCustomExercise(id: id)
+    }
+
     func loadExerciseSwapResolver(usedExerciseIds: Set<String>) async -> ExerciseSwapResolver? {
         guard let profile = userProfile else { return nil }
         return await ExerciseSwapResolver.load(
@@ -77,6 +89,11 @@ extension AppEnvironment {
     @discardableResult
     func applyAIWorkout(_ workout: GeneratedWorkout, serverValidation: WorkoutValidationResult? = nil) async -> Bool {
         guard let profile = userProfile else { return false }
+
+        if !canAccess(.coachWorkoutApply) {
+            presentPaywall(for: .coachWorkoutApply)
+            return false
+        }
 
         if await blocksCoachWorkoutModification() {
             coachWorkoutUpdateMessage = "Finish or discard your current session before applying coach changes."

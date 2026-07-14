@@ -2,63 +2,6 @@ import XCTest
 import os
 @testable import HotBod
 
-private struct StubExerciseRepository: ExerciseRepository {
-    let exercises: [Exercise]
-
-    func fetchAll() async throws -> [Exercise] { exercises }
-    func fetch(id: String) async throws -> Exercise? { exercises.first { $0.id == id } }
-    func search(query: String, filters: ExerciseFilters) async throws -> [Exercise] {
-        ExerciseFilter.apply(exercises: exercises, query: query, filters: filters)
-    }
-    func fetchSubstitutionGroups() async throws -> [ExerciseSubstitutionGroup] { [] }
-    func fetchExercises(inGroup groupId: String) async throws -> [Exercise] { [] }
-    func substitutionGroup(for exerciseId: String) async throws -> ExerciseSubstitutionGroup? { nil }
-    func substitutes(
-        for exerciseId: String,
-        availableEquipment: [Equipment],
-        injuries: [BodyLimitation],
-        excludeIds: Set<String>
-    ) async throws -> [Exercise] {
-        []
-    }
-    func updateFavorite(id: String, isFavorite: Bool) async throws {}
-    func updateAvoided(id: String, isAvoided: Bool) async throws {}
-}
-
-private func makeStubExercise(
-    id: String,
-    muscles: [MuscleGroup],
-    pattern: MovementPattern,
-    equipment: [Equipment] = [.bodyweight],
-    isAvoided: Bool = false,
-    difficulty: ExerciseDifficulty = .intermediate,
-    contraindications: [String] = []
-) -> Exercise {
-    Exercise(
-        id: id,
-        name: id,
-        slug: id,
-        primaryMuscles: muscles,
-        secondaryMuscles: [],
-        equipment: equipment,
-        movementPattern: pattern,
-        difficulty: difficulty,
-        forceType: nil,
-        mechanics: pattern.inferredMechanics,
-        instructions: [],
-        formCues: [],
-        commonMistakes: [],
-        contraindications: contraindications,
-        substitutions: [],
-        progressions: [],
-        regressions: [],
-        demoVideos: [],
-        imageUrl: nil,
-        tags: [],
-        isAvoided: isAvoided
-    )
-}
-
 final class HardeningWorkoutGenerationTests: XCTestCase {
     func testEmptyRecoveryMapGeneratesValidWorkout() async throws {
         let service = RulesWorkoutGenerationService()
@@ -490,56 +433,15 @@ final class HardeningProgressionTests: XCTestCase {
 
 // MARK: - PR E+F: Validation and concurrency hardening
 
-private func makeValidationInput(stats: [UserExerciseStats] = []) -> WorkoutGenerationInput {
-    let profile = UserProfile.empty()
-    return WorkoutGenerationInput(
-        userProfile: profile,
-        goal: profile.goal,
-        experienceLevel: profile.experienceLevel,
-        availableEquipment: profile.availableEquipment,
-        targetDurationMinutes: 45,
-        preferredMuscleGroups: [],
-        avoidedMuscleGroups: [],
-        injuries: [],
-        recentWorkouts: [],
-        muscleRecovery: Dictionary(uniqueKeysWithValues: MuscleGroup.allCases.map { ($0, 80.0) }),
-        exerciseStats: stats,
-        userPreferences: WorkoutPreferences(),
-        readiness: ReadinessInput(soreness: .none),
-        splitDayFocus: nil
-    )
-}
-
-private func makeValidWorkout(exerciseId: String, exercises: [Exercise]) -> GeneratedWorkout {
-    GeneratedWorkout(
-        id: UUID(),
-        title: "Test",
-        estimatedDurationMinutes: 45,
-        focus: [.chest],
-        exercises: [
-            PlannedExercise(
-                exerciseId: exerciseId,
-                orderIndex: 0,
-                targetSets: [PlannedSet(targetRepsMin: 8, targetRepsMax: 10, targetWeightKg: 60)],
-                restSeconds: 90
-            )
-        ],
-        rationale: "",
-        safetyNotes: [],
-        generatedBy: .rulesEngine,
-        createdAt: Date()
-    )
-}
-
 final class HardeningValidationTests: XCTestCase {
     func testRejectsNegativeWeight() {
         let exercise = makeTestExercise(id: "curl", equipment: [.dumbbell])
-        var workout = makeValidWorkout(exerciseId: "curl", exercises: [exercise])
+        var workout = FixtureBuilders.makeValidWorkout(exerciseId: "curl", exercises: [exercise])
         workout.exercises[0].targetSets = [PlannedSet(targetRepsMin: 8, targetRepsMax: 10, targetWeightKg: -5)]
 
         let result = WorkoutValidator.validate(
             workout: workout,
-            input: makeValidationInput(),
+            input: FixtureBuilders.makeValidationInput(),
             exercises: [exercise]
         )
 
@@ -549,12 +451,12 @@ final class HardeningValidationTests: XCTestCase {
 
     func testRejectsAbsurdWeight() {
         let exercise = makeTestExercise(id: "curl", equipment: [.dumbbell])
-        var workout = makeValidWorkout(exerciseId: "curl", exercises: [exercise])
+        var workout = FixtureBuilders.makeValidWorkout(exerciseId: "curl", exercises: [exercise])
         workout.exercises[0].targetSets = [PlannedSet(targetRepsMin: 8, targetRepsMax: 10, targetWeightKg: 500)]
 
         let result = WorkoutValidator.validate(
             workout: workout,
-            input: makeValidationInput(),
+            input: FixtureBuilders.makeValidationInput(),
             exercises: [exercise]
         )
 
@@ -564,12 +466,12 @@ final class HardeningValidationTests: XCTestCase {
     func testRejectsLoadedWeightOnBodyweightExercise() {
         // Exercises like push-ups may support external loading; choose a true bodyweight-only exercise.
         let exercise = makeTestExercise(id: "bird_dog", pattern: .horizontalPush, equipment: [.bodyweight])
-        var workout = makeValidWorkout(exerciseId: "bird_dog", exercises: [exercise])
+        var workout = FixtureBuilders.makeValidWorkout(exerciseId: "bird_dog", exercises: [exercise])
         workout.exercises[0].targetSets = [PlannedSet(targetRepsMin: 8, targetRepsMax: 12, targetWeightKg: 20)]
 
         let result = WorkoutValidator.validate(
             workout: workout,
-            input: makeValidationInput(),
+            input: FixtureBuilders.makeValidationInput(),
             exercises: [exercise]
         )
 
@@ -608,7 +510,7 @@ final class HardeningValidationTests: XCTestCase {
 
         let result = WorkoutValidator.validate(
             workout: workout,
-            input: makeValidationInput(stats: [stats]),
+            input: FixtureBuilders.makeValidationInput(stats: [stats]),
             exercises: exercises
         )
 
@@ -618,12 +520,12 @@ final class HardeningValidationTests: XCTestCase {
 
     func testRejectsInvalidRestPeriod() {
         let exercise = makeTestExercise(id: "curl")
-        var workout = makeValidWorkout(exerciseId: "curl", exercises: [exercise])
+        var workout = FixtureBuilders.makeValidWorkout(exerciseId: "curl", exercises: [exercise])
         workout.exercises[0].restSeconds = 5
 
         let result = WorkoutValidator.validate(
             workout: workout,
-            input: makeValidationInput(),
+            input: FixtureBuilders.makeValidationInput(),
             exercises: [exercise]
         )
 
@@ -633,7 +535,7 @@ final class HardeningValidationTests: XCTestCase {
 
     func testRejectsInvalidSetCount() {
         let exercise = makeTestExercise(id: "curl")
-        var workout = makeValidWorkout(exerciseId: "curl", exercises: [exercise])
+        var workout = FixtureBuilders.makeValidWorkout(exerciseId: "curl", exercises: [exercise])
         workout.exercises[0].targetSets = Array(
             repeating: PlannedSet(targetRepsMin: 8, targetRepsMax: 10, targetWeightKg: 20),
             count: 10
@@ -641,7 +543,7 @@ final class HardeningValidationTests: XCTestCase {
 
         let result = WorkoutValidator.validate(
             workout: workout,
-            input: makeValidationInput(),
+            input: FixtureBuilders.makeValidationInput(),
             exercises: [exercise]
         )
 
@@ -657,47 +559,6 @@ final class HardeningValidationTests: XCTestCase {
             focus: nil
         )
         XCTAssertEqual(title, "Workout")
-    }
-}
-
-private final class SlowMockWorkoutGenerationService: WorkoutGenerationService, @unchecked Sendable {
-    private let callCount = OSAllocatedUnfairLock(initialState: 0)
-    let delayNanoseconds: UInt64
-
-    init(delayNanoseconds: UInt64 = 100_000_000) {
-        self.delayNanoseconds = delayNanoseconds
-    }
-
-    func generate(input: WorkoutGenerationInput) async throws -> GeneratedWorkout {
-        let call = callCount.withLock { count -> Int in
-            count += 1
-            return count
-        }
-
-        try await Task.sleep(nanoseconds: delayNanoseconds)
-        try Task.checkCancellation()
-
-        return GeneratedWorkout(
-            id: UUID(),
-            title: "Generation-\(call)",
-            estimatedDurationMinutes: 45,
-            focus: [.chest],
-            exercises: [
-                PlannedExercise(
-                    exerciseId: "bench_press",
-                    orderIndex: 0,
-                    targetSets: [PlannedSet(targetRepsMin: 8, targetRepsMax: 10, targetWeightKg: 60)]
-                )
-            ],
-            rationale: "",
-            safetyNotes: [],
-            generatedBy: .rulesEngine,
-            createdAt: Date()
-        )
-    }
-
-    func validate(workout: GeneratedWorkout, input: WorkoutGenerationInput) -> WorkoutValidationResult {
-        WorkoutValidationResult(isValid: true, errors: [], warnings: [], suggestions: [])
     }
 }
 
@@ -821,14 +682,14 @@ final class LoadTrackingModeDomainTests: XCTestCase {
             equipment: [.bodyweight]
         )
 
-        var workout = makeValidWorkout(exerciseId: "bird_dog", exercises: [exercise])
+        var workout = FixtureBuilders.makeValidWorkout(exerciseId: "bird_dog", exercises: [exercise])
         workout.exercises[0].targetSets = [
             PlannedSet(targetRepsMin: 8, targetRepsMax: 12, targetWeightKg: 20)
         ]
 
         let result = WorkoutValidator.validate(
             workout: workout,
-            input: makeValidationInput(),
+            input: FixtureBuilders.makeValidationInput(),
             exercises: [exercise]
         )
 

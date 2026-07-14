@@ -12,12 +12,21 @@ struct ForgeButton: View {
     var style: ForgeButtonStyle = .primary
     var isLoading: Bool = false
     var isEnabled: Bool = true
+    var accessibilityIdentifier: String? = nil
+    var playsFeedback: Bool = true
     let action: () -> Void
+
+    @Environment(\.forgeFeedback) private var feedback
 
     private var isInteractive: Bool { isEnabled && !isLoading }
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            if playsFeedback, style == .accent {
+                feedback.play(.buttonPress)
+            }
+            action()
+        } label: {
             HStack {
                 if isLoading {
                     ProgressView()
@@ -39,11 +48,15 @@ struct ForgeButton: View {
                 }
             }
             .forgeElevation(style == .accent ? .accentButton : .none)
+            .contentShape(Rectangle())
         }
         .buttonStyle(ForgePressButtonStyle())
         .disabled(!isInteractive)
         .opacity(isInteractive ? 1 : 0.4)
         .accessibilityLabel(title)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint(isLoading ? "Loading" : (isEnabled ? "" : "Disabled"))
+        .accessibilityIdentifier(accessibilityIdentifier ?? title)
     }
 
     @ViewBuilder

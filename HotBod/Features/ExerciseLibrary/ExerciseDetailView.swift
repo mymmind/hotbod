@@ -8,7 +8,7 @@ struct ExerciseDetailView: View {
     let exerciseId: String
 
     @State private var exercise: Exercise?
-    @State private var isFavorite = false
+    @State private var preference: ExercisePreference = .neutral
     @State private var selectedTab: DetailTab = .instructions
 
     private enum DetailTab: String, CaseIterable {
@@ -60,22 +60,27 @@ struct ExerciseDetailView: View {
 
     private var exerciseActionsMenu: some View {
         Menu {
-            Button(isFavorite ? "Remove Favorite" : "Add Favorite") {
-                Task {
-                    isFavorite.toggle()
-                    try? await environment.updateExerciseFavorite(
-                        id: exerciseId,
-                        isFavorite: isFavorite
-                    )
+            ForEach(ExercisePreference.allCases.filter { $0 != .neutral }, id: \.self) { option in
+                Button {
+                    Task { await setPreference(option) }
+                } label: {
+                    if preference == option {
+                        Label(option.displayName, systemImage: "checkmark")
+                    } else {
+                        Text(option.displayName)
+                    }
                 }
             }
-            Button("Avoid Exercise", role: .destructive) {
-                Task {
-                    try? await environment.updateExerciseAvoided(
-                        id: exerciseId,
-                        isAvoided: true
-                    )
-                    handleBack()
+            if preference != .neutral {
+                Divider()
+                Button("Reset to Default") {
+                    Task { await setPreference(.neutral) }
+                }
+            }
+            if exercise?.isCustom == true {
+                Divider()
+                Button("Delete Custom Exercise", role: .destructive) {
+                    Task { await deleteCustomExercise() }
                 }
             }
         } label: {
@@ -83,6 +88,20 @@ struct ExerciseDetailView: View {
                 .foregroundStyle(ForgeColors.muted)
                 .padding(8)
         }
+        .accessibilityIdentifier("exercise.preferenceMenu")
+    }
+
+    private func setPreference(_ newPreference: ExercisePreference) async {
+        preference = newPreference
+        try? await environment.updateExercisePreference(id: exerciseId, preference: newPreference)
+        if newPreference == .excluded {
+            handleBack()
+        }
+    }
+
+    private func deleteCustomExercise() async {
+        try? await environment.deleteCustomExercise(id: exerciseId)
+        handleBack()
     }
 
     // MARK: - Sections
@@ -256,7 +275,7 @@ struct ExerciseDetailView: View {
 
     private func load() async {
         exercise = await environment.fetchExercise(id: exerciseId)
-        isFavorite = exercise?.isFavorite ?? false
+        preference = exercise?.preference ?? .neutral
     }
 }
 

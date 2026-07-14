@@ -45,31 +45,8 @@ extension AppEnvironment {
     func alignProfileWithAuthUser() async {
         guard let userId = await authService.currentUserId() else { return }
         if let profile = userProfile, profile.id != userId {
-            let aligned = UserProfile(
-                id: userId,
-                name: profile.name,
-                age: profile.age,
-                heightCm: profile.heightCm,
-                weightKg: profile.weightKg,
-                goal: profile.goal,
-                experienceLevel: profile.experienceLevel,
-                trainingLocation: profile.trainingLocation,
-                availableEquipment: profile.availableEquipment,
-                trainingDaysPerWeek: profile.trainingDaysPerWeek,
-                preferredSessionLengthMinutes: profile.preferredSessionLengthMinutes,
-                preferredSplit: profile.preferredSplit,
-                preferredTrainingDays: profile.preferredTrainingDays,
-                timeOfDayPreference: profile.timeOfDayPreference,
-                limitations: profile.limitations,
-                limitationNotes: profile.limitationNotes,
-                preferredMuscleGroups: profile.preferredMuscleGroups,
-                avoidedMuscleGroups: profile.avoidedMuscleGroups,
-                proteinGoalGrams: profile.proteinGoalGrams,
-                photoTrackingEnabled: profile.photoTrackingEnabled,
-                includeWarmupSets: profile.includeWarmupSets,
-                createdAt: profile.createdAt,
-                updatedAt: Date()
-            )
+            await realignBodyPhotoUserIds(from: profile.id, to: userId)
+            let aligned = profile.realigned(to: userId)
             try? await userProfileRepository.saveProfile(aligned)
             userProfile = aligned
         }
@@ -82,6 +59,7 @@ extension AppEnvironment {
             todayWorkout = try? await workoutRepository.fetchTodayWorkout()
             programState = (try? await programStateRepository.fetchState()) ?? programState
             hasCompletedOnboarding = (try? await userProfileRepository.isOnboardingComplete()) ?? hasCompletedOnboarding
+            bumpBodyPhotoRevision()
         } catch {
             syncMessage = error.localizedDescription
         }

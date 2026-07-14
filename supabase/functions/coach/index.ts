@@ -6,12 +6,19 @@ import {
 } from "../_shared/schemas.ts";
 import { buildSystemPrompt, validateWorkout } from "../_shared/validate.ts";
 
-const corsHeaders = {
+export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-Deno.serve(async (req) => {
+export function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+export async function handleCoachRequest(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -128,11 +135,8 @@ Deno.serve(async (req) => {
     console.error(error);
     return json({ error: error instanceof Error ? error.message : "Unknown error" }, 500);
   }
-});
+}
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+if (import.meta.main) {
+  Deno.serve(handleCoachRequest);
 }

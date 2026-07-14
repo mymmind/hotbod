@@ -2,6 +2,7 @@ import SwiftUI
 
 enum WorkoutSessionMenuAction {
     case previewWorkout
+    case swapExercise
     case workoutExplanation
     case endWorkout
     case cancelWorkout
@@ -10,10 +11,15 @@ enum WorkoutSessionMenuAction {
 struct WorkoutSessionHeaderView: View {
     var onExit: (() -> Void)? = nil
     var onMenuAction: ((WorkoutSessionMenuAction) -> Void)? = nil
+    var onPreviousExercise: (() -> Void)? = nil
+    var onNextExercise: (() -> Void)? = nil
+    var onSelectExercise: ((Int) -> Void)? = nil
+    var onShowExerciseInfo: (() -> Void)? = nil
     let sessionTitle: String
     let exerciseName: String
     let muscleLine: String
     let currentExerciseIndex: Int
+    let furthestExerciseIndex: Int
     let exerciseCount: Int
     let completedSets: Int
     let totalSets: Int
@@ -56,6 +62,9 @@ struct WorkoutSessionHeaderView: View {
                     Button { onMenuAction(.previewWorkout) } label: {
                         Label("Preview Workout", systemImage: "list.bullet")
                     }
+                    Button { onMenuAction(.swapExercise) } label: {
+                        Label("Swap Exercise", systemImage: "arrow.triangle.2.circlepath")
+                    }
                     Button { onMenuAction(.workoutExplanation) } label: {
                         Label("Workout Explanation", systemImage: "text.alignleft")
                     }
@@ -63,6 +72,7 @@ struct WorkoutSessionHeaderView: View {
                     Button(role: .destructive) { onMenuAction(.endWorkout) } label: {
                         Label("End Workout", systemImage: "flag.checkered")
                     }
+                    .accessibilityIdentifier("session.menu.endWorkout")
                     Button(role: .destructive) { onMenuAction(.cancelWorkout) } label: {
                         Label("Cancel Workout", systemImage: "xmark.circle")
                     }
@@ -70,6 +80,7 @@ struct WorkoutSessionHeaderView: View {
                     toolbarButtonLabel(systemName: "ellipsis")
                 }
                 .accessibilityLabel("Workout options")
+                .accessibilityIdentifier("session.workoutMenu")
             }
 
             liveTimer(seconds: elapsed)
@@ -87,6 +98,7 @@ struct WorkoutSessionHeaderView: View {
         .frame(width: ForgeTarget.min, height: ForgeTarget.min)
         .contentShape(Rectangle())
         .accessibilityLabel(label)
+        .accessibilityIdentifier(label == "Exit workout" ? "session.exitWorkout" : label)
     }
 
     private func toolbarButtonLabel(systemName: String) -> some View {
@@ -115,19 +127,29 @@ struct WorkoutSessionHeaderView: View {
     private func sessionHero(elapsed: Int, calories: Int) -> some View {
         VStack(alignment: .leading, spacing: ForgeSpacing.s4) {
             VStack(alignment: .leading, spacing: ForgeSpacing.s2) {
-                Text("Exercise \(currentExerciseIndex + 1) of \(exerciseCount)")
-                    .font(ForgeTypography.label)
-                    .tracking(ForgeTracking.eyebrowWide)
-                    .foregroundStyle(ForgeColors.accent)
+                exercisePositionRow
 
-                Text(exerciseName)
-                    .font(ForgeTypography.display)
-                    .foregroundStyle(ForgeColors.textOnInverse)
-                    .lineLimit(3)
-                    .minimumScaleFactor(0.85)
-                    .id(exerciseName)
-                    .transition(ForgeMotion.exerciseChange)
-                    .forgeMetricPulse(value: currentExerciseIndex)
+                HStack(alignment: .firstTextBaseline, spacing: ForgeSpacing.s2) {
+                    Text(exerciseName)
+                        .font(ForgeTypography.display)
+                        .foregroundStyle(ForgeColors.textOnInverse)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.85)
+                        .id(exerciseName)
+                        .transition(ForgeMotion.exerciseChange)
+                        .forgeMetricPulse(value: currentExerciseIndex)
+
+                    if let onShowExerciseInfo {
+                        Button(action: onShowExerciseInfo) {
+                            Image(systemName: "info.circle")
+                                .font(ForgeTypography.body)
+                                .foregroundStyle(ForgeColors.textOnInverse.opacity(0.7))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Exercise instructions")
+                        .accessibilityIdentifier("session.exerciseInfo")
+                    }
+                }
 
                 if !muscleLine.isEmpty {
                     Text(muscleLine)
@@ -150,17 +172,86 @@ struct WorkoutSessionHeaderView: View {
         .animation(ForgeMotion.quick, value: currentExerciseCompletedSets)
     }
 
+    private var exercisePositionRow: some View {
+        HStack(spacing: ForgeSpacing.s2) {
+            exerciseNavButton(
+                systemName: "chevron.left",
+                label: "Previous exercise",
+                identifier: "session.previousExercise",
+                enabled: currentExerciseIndex > 0,
+                action: { onPreviousExercise?() }
+            )
+
+            Text("Exercise \(currentExerciseIndex + 1) of \(exerciseCount)")
+                .font(ForgeTypography.label)
+                .tracking(ForgeTracking.eyebrowWide)
+                .foregroundStyle(ForgeColors.accent)
+                .frame(maxWidth: .infinity)
+                .accessibilityIdentifier("session.exercisePosition")
+
+            exerciseNavButton(
+                systemName: "chevron.right",
+                label: "Next exercise",
+                identifier: "session.nextExercise",
+                enabled: currentExerciseIndex + 1 < exerciseCount,
+                action: { onNextExercise?() }
+            )
+        }
+    }
+
+    private func exerciseNavButton(
+        systemName: String,
+        label: String,
+        identifier: String,
+        enabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(enabled ? ForgeColors.textOnInverse : ForgeColors.textOnInverse.opacity(0.25))
+                .frame(width: ForgeTarget.min, height: ForgeTarget.min)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled || (systemName == "chevron.left" ? onPreviousExercise == nil : onNextExercise == nil))
+        .accessibilityLabel(label)
+        .accessibilityIdentifier(identifier)
+    }
+
     private var exerciseSegments: some View {
         HStack(spacing: 3) {
             ForEach(0..<max(exerciseCount, 1), id: \.self) { index in
-                Rectangle()
-                    .fill(segmentColor(for: index))
-                    .frame(height: 2)
-                    .frame(maxWidth: .infinity)
-                    .animation(ForgeMotion.standard.delay(Double(index) * 0.02), value: currentExerciseIndex)
+                let isSelectable = onSelectExercise != nil
+                Group {
+                    if isSelectable {
+                        Button {
+                            onSelectExercise?(index)
+                        } label: {
+                            segmentBar(for: index)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Go to exercise \(index + 1)")
+                        .accessibilityIdentifier("session.exerciseSegment.\(index)")
+                    } else {
+                        segmentBar(for: index)
+                    }
+                }
             }
         }
         .accessibilityLabel("Exercise \(currentExerciseIndex + 1) of \(exerciseCount)")
+    }
+
+    private func segmentBar(for index: Int) -> some View {
+        Rectangle()
+            .fill(segmentColor(for: index))
+            .frame(height: isSelectableSegment(index) ? 4 : 2)
+            .frame(maxWidth: .infinity)
+            .animation(ForgeMotion.standard.delay(Double(index) * 0.02), value: currentExerciseIndex)
+    }
+
+    private func isSelectableSegment(_ index: Int) -> Bool {
+        onSelectExercise != nil
     }
 
     private func segmentColor(for index: Int) -> Color {
@@ -231,6 +322,7 @@ struct WorkoutSessionHeaderView: View {
                 exerciseName: "Landmine Press",
                 muscleLine: "Shoulders · Chest · Triceps",
                 currentExerciseIndex: 0,
+                furthestExerciseIndex: 2,
                 exerciseCount: 7,
                 completedSets: 0,
                 totalSets: 23,
