@@ -358,6 +358,7 @@ final class AppEnvironmentWorkoutSessionTests: XCTestCase {
 
         let session = await env.resumeOrStartWorkout(from: workout)
         XCTAssertNotNil(session)
+        XCTAssertNotNil(session?.startedAt)
         XCTAssertEqual(session?.status, .inProgress)
         XCTAssertEqual(env.programState.activeSessionId, session?.id)
         let persisted = try await repos.workout.fetchSessions()
@@ -378,6 +379,45 @@ final class AppEnvironmentWorkoutSessionTests: XCTestCase {
         let env = AppEnvironment.makeForTests()
         let session = await env.resumeOrStartWorkout(from: FixtureBuilders.makeGeneratedWorkout())
         XCTAssertNil(session)
+    }
+
+    func testResumeOrStartWorkoutDefersStartTimestampWhenRequested() async throws {
+        let repos = TestRepositories.empty(exercises: exercises)
+        let env = AppEnvironment.makeForTests(repos: repos)
+        try await env.seedOnboardedProfile()
+        let workout = FixtureBuilders.makeGeneratedWorkout()
+
+        let session = await env.resumeOrStartWorkout(from: workout, deferStartTimestamp: true)
+
+        XCTAssertNotNil(session)
+        XCTAssertNil(session?.startedAt)
+    }
+
+    func testCommitWorkoutSessionStartIfNeededSetsStartedAt() async throws {
+        let repos = TestRepositories.empty(exercises: exercises)
+        let env = AppEnvironment.makeForTests(repos: repos)
+        try await env.seedOnboardedProfile()
+        let workout = FixtureBuilders.makeGeneratedWorkout()
+        let pending = await env.resumeOrStartWorkout(from: workout, deferStartTimestamp: true)
+        XCTAssertNotNil(pending?.startedAt == nil)
+
+        let started = await env.commitWorkoutSessionStartIfNeeded(pending!)
+        XCTAssertNotNil(started.startedAt)
+
+        let persisted = try await repos.workout.fetchSessions().first { $0.id == started.id }
+        XCTAssertNotNil(persisted?.startedAt)
+    }
+
+    func testCommitWorkoutSessionStartIfNeededIsIdempotent() async throws {
+        let repos = TestRepositories.empty(exercises: exercises)
+        let env = AppEnvironment.makeForTests(repos: repos)
+        try await env.seedOnboardedProfile()
+        let workout = FixtureBuilders.makeGeneratedWorkout()
+        let session = await env.resumeOrStartWorkout(from: workout)
+        let firstStartedAt = session?.startedAt
+
+        let committed = await env.commitWorkoutSessionStartIfNeeded(session!)
+        XCTAssertEqual(committed.startedAt, firstStartedAt)
     }
 
     func testApplyWorkoutSessionCompletionUpdatesStats() async throws {

@@ -5,7 +5,9 @@ enum ForgeFeedbackEvent: Equatable {
     case personalRecord
     case restTimerStart
     case restTimerWarning
-    case restTimerEnd
+    case restTimerCountdown(second: Int)
+    case restTimerEnd(kind: RestTimerEndKind)
+    case exerciseComplete
     case workoutComplete
     case proteinAdded
     case tabSelection
@@ -60,7 +62,7 @@ final class ForgeFeedbackService: @unchecked Sendable {
     func prepare(for event: ForgeFeedbackEvent) {
         guard allowsHaptics else { return }
         switch event {
-        case .restTimerEnd, .restTimerWarning:
+        case .restTimerEnd(_), .restTimerWarning, .restTimerCountdown:
             haptics.prepare()
         default:
             break
@@ -77,8 +79,21 @@ final class ForgeFeedbackService: @unchecked Sendable {
             haptics.playSelection()
         case .restTimerWarning:
             haptics.playRestWarning()
-        case .restTimerEnd:
-            haptics.playRestEnd()
+        case let .restTimerCountdown(second):
+            if second == 1 {
+                haptics.playLightImpact()
+            } else {
+                haptics.playSelection()
+            }
+        case let .restTimerEnd(kind):
+            switch kind {
+            case .setRest:
+                haptics.playRestEnd()
+            case .transition:
+                haptics.playIncrease()
+            }
+        case .exerciseComplete:
+            haptics.playIncrease()
         case .proteinAdded, .increase:
             haptics.playIncrease()
         case .tabSelection, .selection, .exerciseSwap:
@@ -102,12 +117,26 @@ final class ForgeFeedbackService: @unchecked Sendable {
             }
         case .restTimerWarning:
             sounds.playTone(frequency: 520, duration: 0.08, volume: 0.16)
-        case .restTimerEnd:
-            sounds.playTone(frequency: 440, duration: 0.14, volume: 0.2)
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(150))
-                sounds.playTone(frequency: 587, duration: 0.18, volume: 0.18)
+        case let .restTimerCountdown(second):
+            let step = Float(6 - second)
+            sounds.playTone(
+                frequency: 480 + Double(step) * 35,
+                duration: 0.05,
+                volume: 0.14 + step * 0.02
+            )
+        case let .restTimerEnd(kind):
+            switch kind {
+            case .setRest:
+                sounds.playTone(frequency: 440, duration: 0.14, volume: 0.2)
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(150))
+                    sounds.playTone(frequency: 587, duration: 0.18, volume: 0.18)
+                }
+            case .transition:
+                sounds.playTone(frequency: 784, duration: 0.1, volume: 0.22)
             }
+        case .exerciseComplete:
+            sounds.playTone(frequency: 620, duration: 0.07, volume: 0.16)
         case .workoutComplete:
             sounds.playTone(frequency: 330, duration: 0.2, volume: 0.22)
         case .proteinAdded:

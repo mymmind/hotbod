@@ -38,7 +38,8 @@ struct WorkoutSessionView: View {
     @State var flashSetId: UUID?
     @State var prSetId: UUID?
     @State var restTotalSeconds = 0
-    @State var restWarningPlayed = false
+    @State var restTimerKind: RestTimerKind = .setRest
+    @State var restFeedbackCuesPlayed: Set<RestTimerFeedbackCue> = []
     @State private var completionWorkoutStreak = 0
     @State var durationTexts: [UUID: String] = [:]
     @State var distanceTexts: [UUID: String] = [:]
@@ -347,7 +348,8 @@ struct WorkoutSessionView: View {
             ForgeButton(
                 title: "Complete Set",
                 style: .accent,
-                accessibilityIdentifier: "session.completeSet"
+                accessibilityIdentifier: "session.completeSet",
+                playsFeedback: false
             ) {
                 completeCurrentSet(exercise: exercise, meta: meta, showWeightInput: showWeightInput)
             }
@@ -1079,7 +1081,10 @@ struct WorkoutSessionView: View {
         finishRIRPromptFlow()
     }
 
-    func presentExerciseCompleteOrAdvance() {
+    func presentExerciseCompleteOrAdvance(playFeedback: Bool = true) {
+        if playFeedback {
+            feedback.play(.exerciseComplete)
+        }
         withAnimation(ForgeMotion.standard) {
             showExerciseComplete = true
         }

@@ -692,9 +692,13 @@ struct TodayView: View {
 
     private func startWorkout(_ workout: GeneratedWorkout) {
         Task {
-            guard let session = await environment.resumeOrStartWorkout(from: workout) else { return }
+            guard let session = await WorkoutStartFlow.begin(
+                from: workout,
+                isResume: activeSession != nil,
+                environment: environment,
+                router: router
+            ) else { return }
             activeSession = session
-            router.replace(with: .workoutSession(session))
         }
     }
 

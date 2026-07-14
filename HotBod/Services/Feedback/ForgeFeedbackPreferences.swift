@@ -14,7 +14,7 @@ enum ForgeFeedbackPreferences {
 
     static var soundsEnabled: Bool {
         get {
-            if UserDefaults.standard.object(forKey: soundsKey) == nil { return false }
+            if UserDefaults.standard.object(forKey: soundsKey) == nil { return true }
             return UserDefaults.standard.bool(forKey: soundsKey)
         }
         set { UserDefaults.standard.set(newValue, forKey: soundsKey) }

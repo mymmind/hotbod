@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchKit
 
 @main
 struct HotBodWatchApp: App {
@@ -67,11 +68,24 @@ struct WatchWorkoutView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .onReceive(timer) { _ in
-            snapshot = AppGroupSessionStore.readSnapshot()
+            let updated = AppGroupSessionStore.readSnapshot()
+            playRestEndHapticIfNeeded(previous: snapshot, updated: updated)
+            snapshot = updated
         }
         .onAppear {
             snapshot = AppGroupSessionStore.readSnapshot()
         }
+    }
+
+    private func playRestEndHapticIfNeeded(previous: WatchSessionSnapshot, updated: WatchSessionSnapshot) {
+        guard previous.isResting,
+              let previousRest = previous.restSecondsRemaining,
+              previousRest > 0 else { return }
+
+        let restEnded = !updated.isResting || (updated.restSecondsRemaining ?? 0) == 0
+        guard restEnded else { return }
+
+        WKInterfaceDevice.current().play(.notification)
     }
 }
 

@@ -357,8 +357,12 @@ struct WorkoutPreviewView: View {
 
     private func startSession() {
         Task {
-            guard let session = await environment.resumeOrStartWorkout(from: workout) else { return }
-            router.replace(with: .workoutSession(session))
+            guard await WorkoutStartFlow.begin(
+                from: workout,
+                isResume: hasActiveSession,
+                environment: environment,
+                router: router
+            ) != nil else { return }
         }
     }
 

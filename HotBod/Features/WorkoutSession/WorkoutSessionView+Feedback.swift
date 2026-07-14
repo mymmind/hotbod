@@ -7,14 +7,15 @@ enum PendingPostSetAction: Equatable {
 
 extension WorkoutSessionView {
     func endRestTimer(skipped: Bool) {
+        let endKind = restTimerKind
         if !skipped, restSecondsRemaining == 0 {
-            feedback.play(.restTimerEnd)
+            feedback.play(.restTimerEnd(kind: RestTimerFeedbackPlanner.endKind(for: endKind)))
         }
         clearRestTimerState()
         environment.scheduleWorkoutSessionSave(session)
         if shouldAdvanceExerciseAfterRest {
             shouldAdvanceExerciseAfterRest = false
-            presentExerciseCompleteOrAdvance()
+            presentExerciseCompleteOrAdvance(playFeedback: endKind != .transitionRest)
         }
         syncWatchSnapshot()
     }
@@ -27,9 +28,14 @@ extension WorkoutSessionView {
             return
         }
 
-        if restSecondsRemaining == 10, !restWarningPlayed {
-            restWarningPlayed = true
-            feedback.play(.restTimerWarning)
+        if let cue = RestTimerFeedbackPlanner.pendingCue(
+            secondsRemaining: restSecondsRemaining,
+            totalSeconds: max(restTotalSeconds, 1),
+            timerKind: restTimerKind,
+            played: restFeedbackCuesPlayed
+        ) {
+            restFeedbackCuesPlayed.insert(cue)
+            feedback.play(feedbackEvent(for: cue))
         }
 
         syncWatchSnapshot()
@@ -38,12 +44,16 @@ extension WorkoutSessionView {
     func startRestTimer(seconds: Int) {
         let total = max(seconds, 1)
         restTotalSeconds = total
+        restTimerKind = RestTimerFeedbackPlanner.timerKind(
+            advancesExercise: shouldAdvanceExerciseAfterRest,
+            totalSeconds: total
+        )
         restEndDate = Date().addingTimeInterval(TimeInterval(total))
         session.activeRestEndAt = restEndDate
         session.activeRestTotalSeconds = total
         session.activeRestAdvancesExercise = shouldAdvanceExerciseAfterRest
-        restWarningPlayed = false
-        feedback.prepare(for: .restTimerEnd)
+        restFeedbackCuesPlayed = []
+        feedback.prepare(for: .restTimerEnd(kind: RestTimerFeedbackPlanner.endKind(for: restTimerKind)))
         feedback.play(.restTimerStart)
         isResting = true
         environment.scheduleWorkoutSessionSave(session)
@@ -54,7 +64,13 @@ extension WorkoutSessionView {
         guard isResting else { return }
         let base = restEndDate ?? Date()
         restEndDate = base.addingTimeInterval(TimeInterval(seconds))
+        restTotalSeconds += seconds
+        restTimerKind = RestTimerFeedbackPlanner.timerKind(
+            advancesExercise: shouldAdvanceExerciseAfterRest,
+            totalSeconds: max(restTotalSeconds, 1)
+        )
         session.activeRestEndAt = restEndDate
+        session.activeRestTotalSeconds = restTotalSeconds
         environment.scheduleWorkoutSessionSave(session)
         syncWatchSnapshot()
     }
@@ -65,13 +81,27 @@ extension WorkoutSessionView {
         if end > Date() {
             restEndDate = end
             restTotalSeconds = session.activeRestTotalSeconds ?? max(1, Int(ceil(end.timeIntervalSince(Date()))))
+            restTimerKind = RestTimerFeedbackPlanner.timerKind(
+                advancesExercise: shouldAdvanceExerciseAfterRest,
+                totalSeconds: max(restTotalSeconds, 1)
+            )
+            restFeedbackCuesPlayed = RestTimerFeedbackPlanner.cuesToMarkSkipped(
+                afterResumingWith: restSecondsRemaining,
+                totalSeconds: max(restTotalSeconds, 1),
+                timerKind: restTimerKind
+            )
             isResting = true
         } else {
+            let expiredKind = RestTimerFeedbackPlanner.timerKind(
+                advancesExercise: shouldAdvanceExerciseAfterRest,
+                totalSeconds: session.activeRestTotalSeconds ?? 0
+            )
+            feedback.play(.restTimerEnd(kind: RestTimerFeedbackPlanner.endKind(for: expiredKind)))
             clearRestTimerState()
             environment.scheduleWorkoutSessionSave(session)
             if shouldAdvanceExerciseAfterRest {
                 shouldAdvanceExerciseAfterRest = false
-                presentExerciseCompleteOrAdvance()
+                presentExerciseCompleteOrAdvance(playFeedback: expiredKind != .transitionRest)
             }
         }
     }
@@ -79,7 +109,8 @@ extension WorkoutSessionView {
     func clearRestTimerState() {
         isResting = false
         restEndDate = nil
-        restWarningPlayed = false
+        restFeedbackCuesPlayed = []
+        restTimerKind = .setRest
         session.activeRestEndAt = nil
         session.activeRestTotalSeconds = nil
         session.activeRestAdvancesExercise = nil
@@ -170,6 +201,15 @@ extension WorkoutSessionView {
             try? await Task.sleep(for: .milliseconds(isPR ? 700 : 450))
             if flashSetId == setId { flashSetId = nil }
             if prSetId == setId { prSetId = nil }
+        }
+    }
+
+    private func feedbackEvent(for cue: RestTimerFeedbackCue) -> ForgeFeedbackEvent {
+        switch cue {
+        case .tenSecondWarning:
+            return .restTimerWarning
+        case let .countdown(second):
+            return .restTimerCountdown(second: second)
         }
     }
 }

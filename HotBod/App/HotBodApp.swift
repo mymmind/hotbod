@@ -88,5 +88,18 @@ struct RootView: View {
         }
         .animation(UITestConfiguration.isUITesting ? nil : ForgeMotion.standard, value: router.route)
         .tint(ForgeColors.accent)
+        .overlay {
+            if router.workoutStartCountdownSession != nil {
+                WorkoutStartCountdownView {
+                    Task { await WorkoutStartFlow.finishCountdown(environment: environment, router: router) }
+                }
+                .transition(.opacity)
+                .zIndex(1)
+            }
+        }
+        .animation(
+            UITestConfiguration.isUITesting ? nil : ForgeMotion.standard,
+            value: router.workoutStartCountdownSession?.id
+        )
     }
 }

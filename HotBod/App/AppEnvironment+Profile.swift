@@ -64,7 +64,10 @@ extension AppEnvironment {
             }
             return nil
         }
-        return await resumeOrStartWorkout(from: workout)
+        return await resumeOrStartWorkout(
+            from: workout,
+            deferStartTimestamp: !UITestConfiguration.isUITesting
+        )
     }
 
     func resetOnboarding() async throws {

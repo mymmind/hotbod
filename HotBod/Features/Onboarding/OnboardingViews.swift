@@ -150,7 +150,7 @@ struct OnboardingContainerView: View {
             lockSplit: viewModel.hasManualSplitSelection
         ) {
             viewModel.profile = environment.userProfile ?? viewModel.profile
-            router.replace(with: .workoutSession(session))
+            await WorkoutStartFlow.routeAfterStart(session, environment: environment, router: router)
             return
         }
 

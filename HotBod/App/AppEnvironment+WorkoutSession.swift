@@ -36,7 +36,10 @@ extension AppEnvironment {
         }
     }
 
-    func resumeOrStartWorkout(from workout: GeneratedWorkout) async -> WorkoutSession? {
+    func resumeOrStartWorkout(
+        from workout: GeneratedWorkout,
+        deferStartTimestamp: Bool = false
+    ) async -> WorkoutSession? {
         guard let profile = userProfile else { return nil }
 
         if let existing = await fetchActiveWorkoutSession() {
@@ -58,7 +61,7 @@ extension AppEnvironment {
         let session = WorkoutSession(
             userId: profile.id,
             title: workout.title,
-            startedAt: Date(),
+            startedAt: deferStartTimestamp ? nil : Date(),
             estimatedDurationMinutes: workout.estimatedDurationMinutes,
             exercises: exercises,
             status: .inProgress,
@@ -67,6 +70,14 @@ extension AppEnvironment {
         try? await workoutRepository.saveSession(session)
         await setActiveWorkoutSession(session)
         return session
+    }
+
+    func commitWorkoutSessionStartIfNeeded(_ session: WorkoutSession) async -> WorkoutSession {
+        guard session.startedAt == nil else { return session }
+        var updated = session
+        updated.startedAt = Date()
+        try? await saveWorkoutSessionImmediately(updated)
+        return updated
     }
 
     func pauseWorkoutSession(_ session: WorkoutSession) async {

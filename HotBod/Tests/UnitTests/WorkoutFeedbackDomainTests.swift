@@ -187,6 +187,155 @@ final class RestTimerPersistenceTests: XCTestCase {
     }
 }
 
+final class RestTimerFeedbackPlannerTests: XCTestCase {
+    func testTenSecondWarningFiresOnce() {
+        let cue = RestTimerFeedbackPlanner.pendingCue(
+            secondsRemaining: 10,
+            totalSeconds: 90,
+            timerKind: .setRest,
+            played: []
+        )
+        XCTAssertEqual(cue, .tenSecondWarning)
+
+        let replay = RestTimerFeedbackPlanner.pendingCue(
+            secondsRemaining: 10,
+            totalSeconds: 90,
+            timerKind: .setRest,
+            played: [.tenSecondWarning]
+        )
+        XCTAssertNil(replay)
+    }
+
+    func testCountdownOnlyOnLongRests() {
+        XCTAssertNil(
+            RestTimerFeedbackPlanner.pendingCue(
+                secondsRemaining: 5,
+                totalSeconds: 15,
+                timerKind: .setRest,
+                played: []
+            )
+        )
+        XCTAssertEqual(
+            RestTimerFeedbackPlanner.pendingCue(
+                secondsRemaining: 5,
+                totalSeconds: 90,
+                timerKind: .setRest,
+                played: []
+            ),
+            .countdown(second: 5)
+        )
+    }
+
+    func testTransitionRestSkipsCountdownAndWarning() {
+        XCTAssertNil(
+            RestTimerFeedbackPlanner.pendingCue(
+                secondsRemaining: 10,
+                totalSeconds: 15,
+                timerKind: .transitionRest,
+                played: []
+            )
+        )
+        XCTAssertNil(
+            RestTimerFeedbackPlanner.pendingCue(
+                secondsRemaining: 3,
+                totalSeconds: 15,
+                timerKind: .transitionRest,
+                played: []
+            )
+        )
+    }
+
+    func testTimerKindClassification() {
+        XCTAssertEqual(
+            RestTimerFeedbackPlanner.timerKind(advancesExercise: true, totalSeconds: 15),
+            .transitionRest
+        )
+        XCTAssertEqual(
+            RestTimerFeedbackPlanner.timerKind(advancesExercise: true, totalSeconds: 90),
+            .setRest
+        )
+        XCTAssertEqual(
+            RestTimerFeedbackPlanner.timerKind(advancesExercise: false, totalSeconds: 90),
+            .setRest
+        )
+        XCTAssertEqual(
+            RestTimerFeedbackPlanner.endKind(for: .transitionRest),
+            .transition
+        )
+        XCTAssertEqual(
+            RestTimerFeedbackPlanner.endKind(for: .setRest),
+            .setRest
+        )
+    }
+
+    func testCountdownFiresEachSecondOnce() {
+        var played = Set<RestTimerFeedbackCue>()
+        for second in [5, 4, 3, 2, 1] {
+            let cue = RestTimerFeedbackPlanner.pendingCue(
+                secondsRemaining: second,
+                totalSeconds: 90,
+                timerKind: .setRest,
+                played: played
+            )
+            XCTAssertEqual(cue, .countdown(second: second))
+            played.insert(cue!)
+        }
+        XCTAssertNil(
+            RestTimerFeedbackPlanner.pendingCue(
+                secondsRemaining: 1,
+                totalSeconds: 90,
+                timerKind: .setRest,
+                played: played
+            )
+        )
+    }
+
+    func testResumeSkipsMissedCues() {
+        let skipped = RestTimerFeedbackPlanner.cuesToMarkSkipped(
+            afterResumingWith: 3,
+            totalSeconds: 90,
+            timerKind: .setRest
+        )
+        XCTAssertTrue(skipped.contains(.tenSecondWarning))
+        XCTAssertTrue(skipped.contains(.countdown(second: 5)))
+        XCTAssertTrue(skipped.contains(.countdown(second: 4)))
+        XCTAssertFalse(skipped.contains(.countdown(second: 3)))
+    }
+
+    func testExtendedTransitionRestReclassifiesAsSetRest() {
+        XCTAssertEqual(
+            RestTimerFeedbackPlanner.timerKind(advancesExercise: true, totalSeconds: 45),
+            .setRest
+        )
+    }
+
+    func testTransitionResumeMarksNoSkippedCues() {
+        XCTAssertTrue(
+            RestTimerFeedbackPlanner.cuesToMarkSkipped(
+                afterResumingWith: 3,
+                totalSeconds: 15,
+                timerKind: .transitionRest
+            ).isEmpty
+        )
+    }
+}
+
+final class ForgeFeedbackPreferencesTests: XCTestCase {
+    func testSoundsDefaultOnWhenUnset() {
+        let key = "forge.feedback.soundsEnabled"
+        let prior = UserDefaults.standard.object(forKey: key)
+        defer {
+            if let prior {
+                UserDefaults.standard.set(prior, forKey: key)
+            } else {
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+        }
+        UserDefaults.standard.removeObject(forKey: key)
+        XCTAssertTrue(ForgeFeedbackPreferences.soundsEnabled)
+    }
+}
+
 final class SessionStructurePlannerFeedbackTests: XCTestCase {
     func testCooldownSkippedForTimedExercises() {
         let plank = makeTestExercise(

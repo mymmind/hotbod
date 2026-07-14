@@ -189,6 +189,11 @@ struct CoachView: View {
         }
     }
 
+    private func playCoachProposalWarningIfNeeded(_ result: CoachAIResult) {
+        guard let warnings = result.validation?.warnings, !warnings.isEmpty else { return }
+        feedback.play(.warning)
+    }
+
     private func send() async {
         let text = input.trimmingCharacters(in: .whitespaces)
         guard !text.isEmpty else { return }
@@ -237,6 +242,7 @@ struct CoachView: View {
                 )
                 if !autoApplied {
                     pendingCoachResult = result
+                    playCoachProposalWarningIfNeeded(result)
                 }
             } else {
                 await handleCoachAction(intent: result.message.intent, userMessage: text, profile: profile)

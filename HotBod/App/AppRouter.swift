@@ -17,6 +17,7 @@ final class AppRouter {
     var route: AppRoute
     var selectedTab: MainTab = .today
     private(set) var routeStack: [AppRoute] = []
+    var workoutStartCountdownSession: WorkoutSession?
 
     init(initialRoute: AppRoute = .onboarding) {
         route = initialRoute
@@ -93,5 +94,14 @@ final class AppRouter {
     func dismissToMain() {
         routeStack.removeAll()
         route = .main
+    }
+
+    func showWorkoutStartCountdown(for session: WorkoutSession) {
+        workoutStartCountdownSession = session
+    }
+
+    func finishWorkoutStartCountdown(navigatingTo session: WorkoutSession) {
+        workoutStartCountdownSession = nil
+        replace(with: .workoutSession(session))
     }
 }
