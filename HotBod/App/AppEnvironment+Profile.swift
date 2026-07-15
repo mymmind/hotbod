@@ -8,8 +8,8 @@ extension AppEnvironment {
         do {
             try await userProfileRepository.saveProfile(updated)
             userProfile = updated
-            if isSignedIn {
-                try? await cloudSyncService.pushProfile(updated)
+            await cloudSyncIfSignedIn {
+                try await cloudSyncService.pushProfile(updated)
             }
             if refreshWorkout {
                 _ = await regenerateTodayWorkout(profile: updated)

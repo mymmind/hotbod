@@ -230,8 +230,8 @@ final class AppEnvironment {
     func clearTodayWorkout() async {
         todayWorkout = nil
         try? await workoutRepository.clearTodayWorkout()
-        if isSignedIn {
-            try? await cloudSyncService.clearTodayWorkout()
+        await cloudSyncIfSignedIn {
+            try await cloudSyncService.clearTodayWorkout()
         }
     }
 
@@ -316,5 +316,10 @@ final class AppEnvironment {
     var currentSplitFocus: SplitDayFocus? {
         guard let profile = userProfile else { return nil }
         return TrainingSchedule.currentSplitFocus(state: programState, split: profile.preferredSplit)
+    }
+
+    func cloudSyncIfSignedIn(_ action: () async throws -> Void) async {
+        guard isSignedIn else { return }
+        try? await action()
     }
 }

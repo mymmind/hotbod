@@ -42,8 +42,8 @@ extension AppEnvironment {
         refreshRegenerationWeekIfNeeded(now: now)
         guard programState != before else { return }
         try? await programStateRepository.saveState(programState)
-        if isSignedIn {
-            try? await cloudSyncService.pushProgramState(programState)
+        await cloudSyncIfSignedIn {
+            try await cloudSyncService.pushProgramState(programState)
         }
     }
 

@@ -23,8 +23,8 @@ extension AppEnvironment {
 
     func saveProteinEntry(_ entry: ProteinEntry) async throws {
         try await nutritionRepository.saveEntry(entry)
-        if isSignedIn {
-            try? await cloudSyncService.pushProteinEntry(entry)
+        await cloudSyncIfSignedIn {
+            try await cloudSyncService.pushProteinEntry(entry)
         }
     }
 

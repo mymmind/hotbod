@@ -79,7 +79,7 @@ extension SettingsView {
         do {
             try await environment.signIn(email: authEmail, password: authPassword)
         } catch {
-            authError = userFacingAuthError(error)
+            authError = SettingsErrorMessages.auth(error)
         }
     }
 
@@ -88,19 +88,8 @@ extension SettingsView {
         do {
             try await environment.signUp(email: authEmail, password: authPassword)
         } catch {
-            authError = userFacingAuthError(error)
+            authError = SettingsErrorMessages.auth(error)
         }
-    }
-
-    private func userFacingAuthError(_ error: Error) -> String {
-        let message = error.localizedDescription.lowercased()
-        if message.contains("password") || message.contains("credential") {
-            return "Could not sign in. Check your email and password."
-        }
-        if message.contains("network") || message.contains("internet") || message.contains("offline") {
-            return "No connection. Try again when you are back online."
-        }
-        return "Something went wrong while signing in. Please try again."
     }
 
     func deleteDataActionRow(title: String, identifier: String) -> some View {
@@ -142,15 +131,8 @@ extension SettingsView {
             dismissSettings()
             router.showOnboarding()
         } catch {
-            deleteError = userFacingDeleteError(error)
+            deleteError = SettingsErrorMessages.delete(error)
         }
     }
 
-    private func userFacingDeleteError(_ error: Error) -> String {
-        let message = error.localizedDescription.lowercased()
-        if message.contains("network") || message.contains("internet") || message.contains("offline") {
-            return "No connection. Try again when you are back online."
-        }
-        return "Could not delete your data. Please try again."
-    }
 }

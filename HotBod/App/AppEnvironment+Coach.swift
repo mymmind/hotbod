@@ -112,8 +112,8 @@ extension AppEnvironment {
 
         todayWorkout = workout
         try? await workoutRepository.saveTodayWorkout(workout)
-        if isSignedIn {
-            try? await cloudSyncService.pushTodayWorkout(workout)
+        await cloudSyncIfSignedIn {
+            try await cloudSyncService.pushTodayWorkout(workout)
         }
         return true
     }

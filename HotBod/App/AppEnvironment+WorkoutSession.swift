@@ -20,8 +20,8 @@ extension AppEnvironment {
         state.activeSessionId = session.id
         programState = state
         try? await programStateRepository.saveState(state)
-        if isSignedIn {
-            try? await cloudSyncService.pushProgramState(state)
+        await cloudSyncIfSignedIn {
+            try await cloudSyncService.pushProgramState(state)
         }
     }
 
@@ -31,8 +31,8 @@ extension AppEnvironment {
         state.activeSessionId = nil
         programState = state
         try? await programStateRepository.saveState(state)
-        if isSignedIn {
-            try? await cloudSyncService.pushProgramState(state)
+        await cloudSyncIfSignedIn {
+            try await cloudSyncService.pushProgramState(state)
         }
     }
 
@@ -221,13 +221,13 @@ extension AppEnvironment {
         programState = state
         try? await programStateRepository.saveState(state)
 
-        if isSignedIn {
-            try? await cloudSyncService.pushSession(session)
-            try? await cloudSyncService.pushRecoveryStates(recoveryStates)
+        await cloudSyncIfSignedIn {
+            try await cloudSyncService.pushSession(session)
+            try await cloudSyncService.pushRecoveryStates(recoveryStates)
             if let stats = try? await exerciseStatsRepository.fetchStats() {
-                try? await cloudSyncService.pushExerciseStats(stats)
+                try await cloudSyncService.pushExerciseStats(stats)
             }
-            try? await cloudSyncService.pushProgramState(programState)
+            try await cloudSyncService.pushProgramState(programState)
         }
     }
 

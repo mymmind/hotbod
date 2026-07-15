@@ -31,7 +31,7 @@ struct SettingsView: View {
     @State var isDeletingAccount = false
     @State var deleteError: String?
 
-    let sessionLengths = [20, 30, 45, 60, 75, 90]
+    let sessionLengths = GenerationConstants.Session.preferredSessionLengthOptions
 
     var body: some View {
         Group {

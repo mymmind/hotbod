@@ -62,25 +62,16 @@ enum SettingsDraftEditing {
     }
 
     static func reconcileSchedule(_ draft: inout UserProfile) {
-        let selected = Set(draft.preferredTrainingDays)
-        draft.preferredTrainingDays = Weekday.allCases.filter(selected.contains)
-        draft.trainingDaysPerWeek = draft.preferredTrainingDays.count
+        ProfileScheduleEditing.reconcileSchedule(&draft)
     }
 
     static func hasValidSchedule(_ draft: UserProfile) -> Bool {
-        Set(draft.preferredTrainingDays).count >= 2
+        ProfileScheduleEditing.hasValidSchedule(draft)
     }
 
     @discardableResult
     static func toggleTrainingDay(_ day: Weekday, in draft: inout UserProfile) -> Bool {
-        if draft.preferredTrainingDays.contains(day) {
-            guard Set(draft.preferredTrainingDays).count > 2 else { return false }
-            draft.preferredTrainingDays.removeAll { $0 == day }
-        } else {
-            draft.preferredTrainingDays.append(day)
-        }
-        reconcileSchedule(&draft)
-        return true
+        ProfileScheduleEditing.toggleTrainingDay(day, in: &draft)
     }
 
     static func toggleEquipment(_ equipment: Equipment, in draft: inout UserProfile) {

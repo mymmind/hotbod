@@ -350,7 +350,7 @@ struct OnboardingEquipmentView: View {
 struct OnboardingScheduleView: View {
     @Bindable var viewModel: OnboardingViewModel
 
-    private let durations = [20, 30, 45, 60, 75, 90]
+    private let durations = GenerationConstants.Session.preferredSessionLengthOptions
 
     var body: some View {
         ScrollView {

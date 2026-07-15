@@ -108,11 +108,8 @@ actor SupabaseCloudSyncService: CloudSyncService {
 
     func pushExercisePreferences(_ preferences: [String: ExercisePreference]) async throws {
         let userId = try await requireUserId()
-        struct PrefsPatch: Encodable {
-            let exercise_preferences_json: [String: ExercisePreference]
-        }
         try await client.from("user_preferences")
-            .update(PrefsPatch(exercise_preferences_json: preferences))
+            .update(UserPreferencesPatch.exercisePreferences(preferences))
             .eq("user_id", value: userId.uuidString)
             .execute()
     }
@@ -125,22 +122,16 @@ actor SupabaseCloudSyncService: CloudSyncService {
 
     func pushTodayWorkout(_ workout: GeneratedWorkout) async throws {
         let userId = try await requireUserId()
-        struct PrefsPatch: Encodable {
-            let today_workout_json: GeneratedWorkout
-        }
         try await client.from("user_preferences")
-            .update(PrefsPatch(today_workout_json: workout))
+            .update(UserPreferencesPatch.todayWorkout(workout))
             .eq("user_id", value: userId.uuidString)
             .execute()
     }
 
     func clearTodayWorkout() async throws {
         let userId = try await requireUserId()
-        struct PrefsPatch: Encodable {
-            let today_workout_json: GeneratedWorkout?
-        }
         try await client.from("user_preferences")
-            .update(PrefsPatch(today_workout_json: nil))
+            .update(UserPreferencesPatch.clearTodayWorkout())
             .eq("user_id", value: userId.uuidString)
             .execute()
     }
@@ -238,11 +229,8 @@ actor SupabaseCloudSyncService: CloudSyncService {
 
     func pushProgramState(_ state: TrainingProgramState) async throws {
         let userId = try await requireUserId()
-        struct PrefsPatch: Encodable {
-            let program_state_json: TrainingProgramState
-        }
         try await client.from("user_preferences")
-            .update(PrefsPatch(program_state_json: state))
+            .update(UserPreferencesPatch.programState(state))
             .eq("user_id", value: userId.uuidString)
             .execute()
     }

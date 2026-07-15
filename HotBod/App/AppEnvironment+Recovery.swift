@@ -18,8 +18,8 @@ extension AppEnvironment {
         state.lastRecoveryDecayAppliedAt = decay.lastDecayAppliedAt
         programState = state
         try? await programStateRepository.saveState(state)
-        if isSignedIn {
-            try? await cloudSyncService.pushProgramState(state)
+        await cloudSyncIfSignedIn {
+            try await cloudSyncService.pushProgramState(state)
         }
     }
 

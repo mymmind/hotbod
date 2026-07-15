@@ -233,8 +233,8 @@ extension AppEnvironment {
         state.todayCompletedOn = nil
         programState = state
         try? await programStateRepository.saveState(state)
-        if isSignedIn {
-            try? await cloudSyncService.pushProgramState(state)
+        await cloudSyncIfSignedIn {
+            try await cloudSyncService.pushProgramState(state)
         }
         return true
     }
@@ -248,8 +248,8 @@ extension AppEnvironment {
         }
         programState = updated
         try? await programStateRepository.saveState(updated)
-        if isSignedIn {
-            try? await cloudSyncService.pushProgramState(updated)
+        await cloudSyncIfSignedIn {
+            try await cloudSyncService.pushProgramState(updated)
         }
         return true
     }
@@ -266,8 +266,8 @@ extension AppEnvironment {
 
         todayWorkout = workout
         try? await workoutRepository.saveTodayWorkout(workout)
-        if isSignedIn {
-            try? await cloudSyncService.pushTodayWorkout(workout)
+        await cloudSyncIfSignedIn {
+            try await cloudSyncService.pushTodayWorkout(workout)
         }
         return true
     }
@@ -287,8 +287,8 @@ extension AppEnvironment {
 
         programState = state
         try? await programStateRepository.saveState(state)
-        if isSignedIn {
-            try? await cloudSyncService.pushProgramState(state)
+        await cloudSyncIfSignedIn {
+            try await cloudSyncService.pushProgramState(state)
         }
     }
 
@@ -401,8 +401,8 @@ extension AppEnvironment {
     func saveTodayWorkout(_ workout: GeneratedWorkout) async throws {
         todayWorkout = workout
         try await workoutRepository.saveTodayWorkout(workout)
-        if isSignedIn {
-            try? await cloudSyncService.pushTodayWorkout(workout)
+        await cloudSyncIfSignedIn {
+            try await cloudSyncService.pushTodayWorkout(workout)
         }
     }
 

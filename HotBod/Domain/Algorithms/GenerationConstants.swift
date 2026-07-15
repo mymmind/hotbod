@@ -155,6 +155,7 @@ enum GenerationConstants {
         static let flatIntermediateDumbbellWeightKg = 20.0
         static let flatAdvancedDumbbellWeightKg = 28.0
         static let defaultBodyweightKgFallback = 80.0
+        static let preferredSessionLengthOptions = [20, 30, 45, 60, 75, 90]
     }
 
     enum Warmup {

@@ -168,7 +168,7 @@ extension SettingsView {
         if saved {
             dismissSettings()
         } else {
-            saveError = userFacingSaveError(environment.syncMessage)
+            saveError = SettingsErrorMessages.save(syncMessage: environment.syncMessage)
         }
     }
 
@@ -181,15 +181,4 @@ extension SettingsView {
         }
     }
 
-    private func userFacingSaveError(_ syncMessage: String?) -> String {
-        guard let syncMessage else { return "Could not save settings." }
-        let normalized = syncMessage.lowercased()
-        if normalized.contains("network") || normalized.contains("offline") {
-            return "Could not save settings while offline. Try again when connected."
-        }
-        if normalized.contains("auth") || normalized.contains("sign in") {
-            return "Sign in again to save these settings to cloud."
-        }
-        return "Could not save settings. Please try again."
-    }
 }
