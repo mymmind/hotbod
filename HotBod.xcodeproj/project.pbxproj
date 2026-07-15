@@ -210,6 +210,7 @@
 		E5BB13EEE78061979C0C2E63 /* ForgeHapticEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A069504316F8AA890CBE165B /* ForgeHapticEngine.swift */; };
 		E6E0D12C604A2756F0E24D21 /* AppEnvironment+Workout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F8DDB73A26BDBC37BA0A92 /* AppEnvironment+Workout.swift */; };
 		E994FBF4811EAD1A3CFFC0D6 /* SettingsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 126F41042DC2C9DADD043E75 /* SettingsUITests.swift */; };
+		E9C401AFB20B75FA1C7DF44C /* HotBodWatch.app in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = 3AB1AC93A9B37D26210CDA05 /* HotBodWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E9FAF98FDFD26430AC5172E5 /* MockAIWorkoutService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3BB3466ECD9B84EEFD3AF66 /* MockAIWorkoutService.swift */; };
 		EA3C4029E4A2A98879E6CD89 /* StravaIntegrationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A2E85D41EA5D963D31781F /* StravaIntegrationService.swift */; };
 		EAEFFC13BA6F111DDE6C7C37 /* SupabaseCloudSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B3D96FCCC673D93F7ED4BD /* SupabaseCloudSyncService.swift */; };
@@ -229,6 +230,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		26D77D63AD053F3A1970C39F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 65F98573506F4C599088B2BA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9C994F91E7BDCF5E119805B1;
+			remoteInfo = HotBodWatch;
+		};
 		353D4B449012B5F5AA4B8402 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 65F98573506F4C599088B2BA /* Project object */;
@@ -244,6 +252,20 @@
 			remoteInfo = HotBod;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A137DD98EC89B71DC9546510 /* Embed Dependencies */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E9C401AFB20B75FA1C7DF44C /* HotBodWatch.app in Embed Dependencies */,
+			);
+			name = "Embed Dependencies";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		003177D369F352DDA5C5CC85 /* TodayMetricTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayMetricTile.swift; sourceTree = "<group>"; };
@@ -1092,10 +1114,12 @@
 				5BD851C0B802E183EACFE79E /* Sources */,
 				FCC9A7A9EBB73F1E1C4D20DF /* Resources */,
 				5C084FABFCED4A13ECA7F9DC /* Frameworks */,
+				A137DD98EC89B71DC9546510 /* Embed Dependencies */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				3984774A7BBDB86DE0E8800D /* PBXTargetDependency */,
 			);
 			name = HotBod;
 			packageProductDependencies = (
@@ -1148,7 +1172,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					105DC4A1BC6BECC003121A8C = {
 						DevelopmentTeam = "";
@@ -1476,6 +1500,11 @@
 			isa = PBXTargetDependency;
 			target = 4239CA905B5131A8DF381A7B /* HotBod */;
 			targetProxy = 353D4B449012B5F5AA4B8402 /* PBXContainerItemProxy */;
+		};
+		3984774A7BBDB86DE0E8800D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9C994F91E7BDCF5E119805B1 /* HotBodWatch */;
+			targetProxy = 26D77D63AD053F3A1970C39F /* PBXContainerItemProxy */;
 		};
 		AD9D99DB94EFBF1DC03A27B7 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
