@@ -7,8 +7,10 @@ final class IntegrationFlowTests: XCTestCase {
 
   func testColdStartBootstrapGeneratesFirstWorkoutOnTrainingDay() async throws {
     let env = makeEnvironment()
+    var profile = UserProfile.empty()
+    profile.preferredTrainingDays = [TrainingSchedule.weekday(), .monday, .tuesday, .thursday, .friday]
 
-    try await env.seedOnboardedProfile()
+    try await env.seedOnboardedProfile(profile)
     await env.bootstrap()
 
     XCTAssertTrue(env.hasCompletedOnboarding)

@@ -57,7 +57,7 @@ extension AppEnvironment {
         }
 
         await normalizeProgramStateForToday(profile: updated)
-        guard await regenerateTodayWorkout(profile: updated),
+        guard await ensureTodayWorkoutOnLaunch(profile: updated),
               let workout = todayWorkout else {
             if todayWorkout == nil {
                 syncMessage = "Onboarding saved, but today's workout could not be generated. Open Today to regenerate."

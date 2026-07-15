@@ -950,6 +950,7 @@ enum WorkoutValidator {
         case .supported, .required:
             true
         }
+        let prescription = exercise.resolvedPrescriptionType
         for set in planned.targetSets {
             if let weight = set.targetWeightKg {
                 if weight < 0 || weight > GenerationConstants.Validation.maxPlannedWeightKg {
@@ -959,10 +960,21 @@ enum WorkoutValidator {
                     errors.append("Exercise \(exercise.name) should not have an external loaded weight for loadTrackingMode \(loadMode).")
                 }
             }
-            if set.targetRepsMin < GenerationConstants.Validation.minRepCount
-                || set.targetRepsMax > GenerationConstants.Validation.maxRepCount
-                || set.targetRepsMin > set.targetRepsMax {
-                errors.append("Invalid rep range for \(exercise.name).")
+            switch prescription {
+            case .reps:
+                if set.targetRepsMin < GenerationConstants.Validation.minRepCount
+                    || set.targetRepsMax > GenerationConstants.Validation.maxRepCount
+                    || set.targetRepsMin > set.targetRepsMax {
+                    errors.append("Invalid rep range for \(exercise.name).")
+                }
+            case .time:
+                if (set.targetDurationSeconds ?? 0) <= 0 {
+                    errors.append("Invalid hold duration for \(exercise.name).")
+                }
+            case .distance, .distanceOrTime:
+                if (set.targetDistanceMeters ?? 0) <= 0 {
+                    errors.append("Invalid distance for \(exercise.name).")
+                }
             }
         }
 

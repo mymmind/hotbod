@@ -12,8 +12,9 @@ extension AppEnvironment {
 
     /// Removes all persisted user data on this device without touching cloud auth.
     func wipeAllLocalUserData(clearAuthSession: Bool = false) async throws {
-        workoutGenerationTask?.cancel()
-        workoutGenerationTask = nil
+        workoutGenerationToken &+= 1
+        isWorkoutGenerationActive = false
+        isReservingWorkoutGeneration = false
         sessionSaveTask?.cancel()
         sessionSaveTask = nil
 

@@ -284,7 +284,6 @@ struct TrainView: View {
     }
 
     private func regenerateWorkout() {
-        guard !environment.isWorkoutGenerationInFlight else { return }
         performAnimatedWorkoutRefresh(.regenerate)
     }
 
@@ -293,6 +292,12 @@ struct TrainView: View {
         guard let profile = environment.userProfile else { return }
 
         Task { @MainActor in
+            defer {
+                withAnimation(ForgeMotion.regenerate) {
+                    isRegenerating = false
+                    regenSpin = false
+                }
+            }
             withAnimation(ForgeMotion.regenerate) {
                 isRegenerating = true
                 regenSpin = true
@@ -305,10 +310,6 @@ struct TrainView: View {
             await loadSessions()
 
             try? await Task.sleep(for: .milliseconds(180))
-            withAnimation(ForgeMotion.regenerate) {
-                isRegenerating = false
-                regenSpin = false
-            }
         }
     }
 
@@ -323,8 +324,18 @@ struct TrainView: View {
     }
 
     private func performAnimatedWorkoutRefresh(_ kind: WorkoutRefreshKind) {
-        guard !isRegenerating, !environment.isWorkoutGenerationInFlight else { return }
+        guard !isRegenerating else { return }
+        if environment.isWorkoutGenerationInFlight {
+            feedback.play(.warning)
+            return
+        }
         Task { @MainActor in
+            defer {
+                withAnimation(ForgeMotion.regenerate) {
+                    isRegenerating = false
+                    regenSpin = false
+                }
+            }
             withAnimation(ForgeMotion.regenerate) {
                 isRegenerating = true
                 regenSpin = true
@@ -336,16 +347,14 @@ struct TrainView: View {
             let succeeded = await refreshResult
             if succeeded {
                 feedback.play(kind == .regenerate ? .workoutRegenerate : .success)
+            } else if environment.paywallFeature == nil, environment.lastGenerationFailure == nil {
+                feedback.play(.warning)
             }
             await loadCompletedSession()
             await loadActiveSession()
             await loadSessions()
 
             try? await Task.sleep(for: .milliseconds(180))
-            withAnimation(ForgeMotion.regenerate) {
-                isRegenerating = false
-                regenSpin = false
-            }
         }
     }
 

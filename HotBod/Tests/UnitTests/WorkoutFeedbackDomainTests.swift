@@ -64,6 +64,58 @@ final class ExerciseMetadataResolverTests: XCTestCase {
 
         XCTAssertEqual(ExerciseMetadataResolver.resolvedPrescriptionType(for: exercise), .time)
     }
+
+    func testRegression_timedPrescriptionDoesNotFailRepValidation() {
+        let plank = makeTestExercise(
+            id: "plank",
+            primaryMuscles: [.abs],
+            pattern: .antiRotation,
+            equipment: [.bodyweight]
+        )
+        let workout = GeneratedWorkout(
+            id: UUID(),
+            title: "Core",
+            estimatedDurationMinutes: 30,
+            focus: [.abs],
+            exercises: [
+                PlannedExercise(
+                    exerciseId: plank.id,
+                    orderIndex: 0,
+                    targetSets: [
+                        PlannedSet(
+                            targetRepsMin: 0,
+                            targetRepsMax: 0,
+                            targetDurationSeconds: 45
+                        )
+                    ]
+                )
+            ],
+            rationale: "",
+            safetyNotes: [],
+            generatedBy: .rulesEngine,
+            createdAt: Date()
+        )
+        let profile = UserProfile.empty()
+        let input = WorkoutGenerationInput(
+            userProfile: profile,
+            goal: profile.goal,
+            experienceLevel: profile.experienceLevel,
+            availableEquipment: profile.availableEquipment,
+            targetDurationMinutes: 30,
+            preferredMuscleGroups: [],
+            avoidedMuscleGroups: [],
+            injuries: [],
+            recentWorkouts: [],
+            muscleRecovery: [:],
+            exerciseStats: [],
+            userPreferences: WorkoutPreferences(),
+            readiness: nil,
+            splitDayFocus: nil
+        )
+
+        let result = WorkoutValidator.validate(workout: workout, input: input, exercises: [plank])
+        XCTAssertTrue(result.isValid, "Timed holds should validate on duration, not rep counts")
+    }
 }
 
 final class CoreFinisherPlannerTests: XCTestCase {

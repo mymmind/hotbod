@@ -353,12 +353,10 @@ struct TodayView: View {
     }
 
     private func regenerateWorkout() {
-        guard !environment.isWorkoutGenerationInFlight else { return }
         performAnimatedWorkoutRefresh(.regenerate)
     }
 
     private func trainAnyway() {
-        guard !environment.isWorkoutGenerationInFlight else { return }
         performAnimatedWorkoutRefresh(.trainAnyway)
     }
 
@@ -376,6 +374,12 @@ struct TodayView: View {
         guard let profile = environment.userProfile else { return }
 
         Task { @MainActor in
+            defer {
+                withAnimation(ForgeMotion.regenerate) {
+                    isRegenerating = false
+                    regenSpin = false
+                }
+            }
             withAnimation(ForgeMotion.regenerate) {
                 isRegenerating = true
                 regenSpin = true
@@ -388,10 +392,6 @@ struct TodayView: View {
             await loadExerciseCatalog()
 
             try? await Task.sleep(for: .milliseconds(180))
-            withAnimation(ForgeMotion.regenerate) {
-                isRegenerating = false
-                regenSpin = false
-            }
         }
     }
 
@@ -403,8 +403,18 @@ struct TodayView: View {
     }
 
     private func performAnimatedWorkoutRefresh(_ kind: WorkoutRefreshKind) {
-        guard !isRegenerating, !environment.isWorkoutGenerationInFlight else { return }
+        guard !isRegenerating else { return }
+        if environment.isWorkoutGenerationInFlight {
+            feedback.play(.warning)
+            return
+        }
         Task { @MainActor in
+            defer {
+                withAnimation(ForgeMotion.regenerate) {
+                    isRegenerating = false
+                    regenSpin = false
+                }
+            }
             withAnimation(ForgeMotion.regenerate) {
                 isRegenerating = true
                 regenSpin = true
@@ -416,18 +426,17 @@ struct TodayView: View {
             if await refreshResult {
                 feedback.play(feedbackKind(for: kind))
                 await loadExerciseCatalog()
-            } else if environment.paywallFeature == nil, environment.lastGenerationFailure == nil {
-                feedback.play(.warning)
+            } else if environment.paywallFeature == nil {
+                if environment.lastGenerationFailure != nil {
+                    showGenerationFailureAlert = true
+                } else {
+                    feedback.play(.warning)
+                }
             }
             await loadCompletedSession()
             await loadActiveSession()
 
             try? await Task.sleep(for: .milliseconds(180))
-
-            withAnimation(ForgeMotion.regenerate) {
-                isRegenerating = false
-                regenSpin = false
-            }
         }
     }
 

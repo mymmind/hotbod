@@ -1012,11 +1012,14 @@ struct WorkoutValidationResult: Codable {
 
 enum GenerationFailure: Error, Equatable {
     case insufficientExercises(available: Int, blockedByInjury: Int, blockedByEquipment: Int)
+    case planValidationFailed(summary: String)
 
     var userMessage: String {
         switch self {
         case let .insufficientExercises(available, _, _):
             "Your equipment and injury settings leave only \(available) exercises — add equipment or review limitations."
+        case let .planValidationFailed(summary):
+            summary
         }
     }
 }
