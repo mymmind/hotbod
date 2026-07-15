@@ -31,7 +31,8 @@
             "LaunchUITests/testTrainTabOpens",
             "TodayWorkoutUITests/testTodayShowsWorkoutHero",
             "ProteinTrackerUITests/testProteinTabShowsDailyHero",
-            "CoachUITests/testCoachTabShowsSuggestions"
+            "CoachUITests/testCoachTabShowsSuggestions",
+            "WorkoutSessionUITests/testSessionShowsCompleteSetButton"
           ]
         }
       ]

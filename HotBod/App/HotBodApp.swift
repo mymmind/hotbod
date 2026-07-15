@@ -13,11 +13,15 @@ struct HotBodApp: App {
                 .environment(router)
                 .environment(\.forgeFeedback, environment.feedbackService)
                 .onChange(of: scenePhase) { _, phase in
-                    // UI test exemption: resume revalidation is disabled under -UITesting because
-                    // it races with deterministic bootstrap/fixture seeding. Covered by integration
-                    // tests in IntegrationFlowTests (handleAppBecameActive day-rollover path).
-                    guard phase == .active, !UITestConfiguration.isUITesting else { return }
-                    Task { await environment.handleAppBecameActive() }
+                    switch phase {
+                    case .active:
+                        guard !UITestConfiguration.isUITesting else { return }
+                        Task { await environment.handleAppBecameActive() }
+                    case .background:
+                        Task { await environment.flushPendingWorkoutSessionSave() }
+                    default:
+                        break
+                    }
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
                     guard !UITestConfiguration.isUITesting else { return }

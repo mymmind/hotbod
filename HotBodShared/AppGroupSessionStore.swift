@@ -44,23 +44,55 @@ enum WatchSessionCommand: String, Codable {
 }
 
 struct WatchPendingCommand: Codable, Equatable {
+    let sequence: UInt64
     let action: WatchSessionCommand
     let issuedAt: Date
 }
 
 enum AppGroupSessionStore {
+    private static let lock = NSLock()
+    private static nonisolated(unsafe) var commandSequence: UInt64 = 0
+    private static nonisolated(unsafe) var testingContainerURL: URL?
+
+    static func configureForTesting(containerURL: URL) {
+        lock.lock()
+        defer { lock.unlock() }
+        testingContainerURL = containerURL
+        try? FileManager.default.createDirectory(at: containerURL, withIntermediateDirectories: true)
+    }
+
+    static func resetTestingConfiguration() {
+        lock.lock()
+        defer { lock.unlock() }
+        testingContainerURL = nil
+        commandSequence = 0
+    }
+
+    private static func resolvedContainerURL() -> URL? {
+        if let testingContainerURL {
+            return testingContainerURL
+        }
+        return FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: WatchAppGroup.identifier)
+    }
+
     static func containerURL() -> URL? {
-        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: WatchAppGroup.identifier)
+        lock.lock()
+        defer { lock.unlock() }
+        return resolvedContainerURL()
     }
 
     static func writeSnapshot(_ snapshot: WatchSessionSnapshot) {
-        guard let url = containerURL()?.appendingPathComponent(WatchAppGroup.sessionSnapshotFile) else { return }
+        lock.lock()
+        defer { lock.unlock() }
+        guard let url = resolvedContainerURL()?.appendingPathComponent(WatchAppGroup.sessionSnapshotFile) else { return }
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         try? data.write(to: url, options: .atomic)
     }
 
     static func readSnapshot() -> WatchSessionSnapshot {
-        guard let url = containerURL()?.appendingPathComponent(WatchAppGroup.sessionSnapshotFile),
+        lock.lock()
+        defer { lock.unlock() }
+        guard let url = resolvedContainerURL()?.appendingPathComponent(WatchAppGroup.sessionSnapshotFile),
               let data = try? Data(contentsOf: url),
               let snapshot = try? JSONDecoder().decode(WatchSessionSnapshot.self, from: data) else {
             return .empty
@@ -68,14 +100,28 @@ enum AppGroupSessionStore {
         return snapshot
     }
 
-    static func writePendingCommand(_ command: WatchPendingCommand) {
-        guard let url = containerURL()?.appendingPathComponent(WatchAppGroup.pendingCommandFile) else { return }
+    private static func writePendingCommand(_ command: WatchPendingCommand) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let url = resolvedContainerURL()?.appendingPathComponent(WatchAppGroup.pendingCommandFile) else { return }
         guard let data = try? JSONEncoder().encode(command) else { return }
         try? data.write(to: url, options: .atomic)
     }
 
+    static func issuePendingCommand(_ action: WatchSessionCommand) {
+        lock.lock()
+        commandSequence &+= 1
+        let sequence = commandSequence
+        lock.unlock()
+        writePendingCommand(
+            WatchPendingCommand(sequence: sequence, action: action, issuedAt: Date())
+        )
+    }
+
     static func consumePendingCommand() -> WatchPendingCommand? {
-        guard let url = containerURL()?.appendingPathComponent(WatchAppGroup.pendingCommandFile),
+        lock.lock()
+        defer { lock.unlock() }
+        guard let url = resolvedContainerURL()?.appendingPathComponent(WatchAppGroup.pendingCommandFile),
               let data = try? Data(contentsOf: url),
               let command = try? JSONDecoder().decode(WatchPendingCommand.self, from: data) else {
             return nil
@@ -85,13 +131,17 @@ enum AppGroupSessionStore {
     }
 
     static func clearSnapshot() {
-        guard let url = containerURL()?.appendingPathComponent(WatchAppGroup.sessionSnapshotFile) else { return }
+        lock.lock()
+        defer { lock.unlock() }
+        guard let url = resolvedContainerURL()?.appendingPathComponent(WatchAppGroup.sessionSnapshotFile) else { return }
         try? FileManager.default.removeItem(at: url)
     }
 
     static func clearAll() {
-        clearSnapshot()
-        guard let url = containerURL()?.appendingPathComponent(WatchAppGroup.pendingCommandFile) else { return }
-        try? FileManager.default.removeItem(at: url)
+        lock.lock()
+        defer { lock.unlock() }
+        guard let base = resolvedContainerURL() else { return }
+        try? FileManager.default.removeItem(at: base.appendingPathComponent(WatchAppGroup.sessionSnapshotFile))
+        try? FileManager.default.removeItem(at: base.appendingPathComponent(WatchAppGroup.pendingCommandFile))
     }
 }

@@ -22,8 +22,9 @@ enum ForgeFeedbackEvent: Equatable {
     case workoutRegenerate
 }
 
+@MainActor
 @Observable
-final class ForgeFeedbackService: @unchecked Sendable {
+final class ForgeFeedbackService {
     var hapticsEnabled: Bool {
         didSet { ForgeFeedbackPreferences.hapticsEnabled = hapticsEnabled }
     }
@@ -151,13 +152,17 @@ final class ForgeFeedbackService: @unchecked Sendable {
     }
 }
 
+private struct ForgeFeedbackServiceKey: EnvironmentKey {
+    static var defaultValue: ForgeFeedbackService {
+        MainActor.assumeIsolated {
+            ForgeFeedbackService()
+        }
+    }
+}
+
 extension EnvironmentValues {
     var forgeFeedback: ForgeFeedbackService {
         get { self[ForgeFeedbackServiceKey.self] }
         set { self[ForgeFeedbackServiceKey.self] = newValue }
     }
-}
-
-private struct ForgeFeedbackServiceKey: EnvironmentKey {
-    static let defaultValue = ForgeFeedbackService()
 }

@@ -43,8 +43,13 @@ actor SupabaseCloudSyncService: CloudSyncService {
             .execute()
             .value
 
-        if let pref = prefs.first, let workout = pref.todayWorkoutJson {
-            try await local.workout.saveTodayWorkout(workout)
+        if let pref = prefs.first, let remoteWorkout = pref.todayWorkoutJson {
+            let localWorkout = try? await local.workout.fetchTodayWorkout()
+            if let localWorkout, localWorkout.createdAt >= remoteWorkout.createdAt {
+                // Keep the newer local plan — foreground pulls must not undo a fresh regenerate.
+            } else {
+                try await local.workout.saveTodayWorkout(remoteWorkout)
+            }
         }
         if let pref = prefs.first, let state = pref.programStateJson {
             try await local.programState.saveState(state)
@@ -86,7 +91,7 @@ actor SupabaseCloudSyncService: CloudSyncService {
         for session in sessions where session.status == .completed {
             try await pushSession(session)
         }
-        let start = Calendar.current.date(byAdding: .day, value: -30, to: Date())!
+        let start = Calendar.current.daysAgo(30)
         let entries = try await local.nutrition.fetchEntries(from: start, to: Date())
         for entry in entries {
             try await pushProteinEntry(entry)

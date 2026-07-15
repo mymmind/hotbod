@@ -21,12 +21,8 @@ extension AppEnvironment {
         try? await exerciseRepository.fetch(id: id)
     }
 
-    func updateExerciseFavorite(id: String, isFavorite: Bool) async throws {
-        try await exerciseRepository.updateFavorite(id: id, isFavorite: isFavorite)
-    }
-
-    func updateExerciseAvoided(id: String, isAvoided: Bool) async throws {
-        try await exerciseRepository.updateAvoided(id: id, isAvoided: isAvoided)
+    func fetchSubstitutionGroups() async -> [ExerciseSubstitutionGroup] {
+        (try? await exerciseRepository.fetchSubstitutionGroups()) ?? []
     }
 
     func updateExercisePreference(id: String, preference: ExercisePreference) async throws {

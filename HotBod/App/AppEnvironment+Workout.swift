@@ -4,11 +4,12 @@ extension AppEnvironment {
     @discardableResult
     func regenerateTodayWorkout(profile: UserProfile, options: WorkoutGenerationOptions = WorkoutGenerationOptions()) async -> Bool {
         let onRestDay = !TrainingSchedule.isTrainingDay(profile: profile)
+        let requiresPro = SubscriptionConfig.unrestrictedAccess ? false : !onRestDay
         return await regenerateTodayWorkout(
             profile: profile,
             options: options,
             allowsUnscheduledDay: onRestDay && todayWorkout != nil,
-            requiresProAccess: !onRestDay
+            requiresProAccess: requiresPro
         )
     }
 
@@ -99,6 +100,7 @@ extension AppEnvironment {
             || TrainingSchedule.isTrainingDay(profile: profile)
             || todayWorkout != nil else { return false }
         guard !isTodayWorkoutCompleted else { return false }
+        cancelWorkoutGenerationIfNeeded()
         guard reserveWorkoutGeneration() else { return false }
         defer { releaseWorkoutGenerationReservation() }
 
@@ -114,31 +116,15 @@ extension AppEnvironment {
 
         let splitFocus = TrainingSchedule.currentSplitFocus(state: programState, split: profile.preferredSplit)
         var effectiveOptions = options
-        if effectiveOptions.excludeExerciseIds.isEmpty,
-           let current = todayWorkout,
-           TrainingSchedule.isTrainingDay(profile: profile) {
+        if effectiveOptions.excludeExerciseIds.isEmpty, let current = todayWorkout {
             effectiveOptions.excludeExerciseIds = current.exercises.map(\.exerciseId)
             effectiveOptions.preferVariation = true
         }
 
-        if await persistRegeneratedWorkout(
+        if await persistRegeneratedWorkoutWithFallback(
             profile: profile,
             splitDayFocus: splitFocus,
             options: effectiveOptions
-        ) {
-            if requiresProAccess, !isPro { await recordRegenerationUsage() }
-            return true
-        }
-
-        guard !effectiveOptions.excludeExerciseIds.isEmpty else { return false }
-
-        var fallbackOptions = options
-        fallbackOptions.excludeExerciseIds = []
-        fallbackOptions.preferVariation = true
-        if await persistRegeneratedWorkout(
-            profile: profile,
-            splitDayFocus: splitFocus,
-            options: fallbackOptions
         ) {
             if requiresProAccess, !isPro { await recordRegenerationUsage() }
             return true
@@ -166,26 +152,14 @@ extension AppEnvironment {
             effectiveOptions.preferVariation = true
         }
 
-        if await persistRegeneratedWorkout(
+        if await persistRegeneratedWorkoutWithFallback(
             profile: profile,
             splitDayFocus: splitFocus,
             options: effectiveOptions
         ) {
             return await clearTodayCompletionMarkers()
         }
-
-        // If excluding the previous exercises was too strict, retry without exclusions.
-        guard !effectiveOptions.excludeExerciseIds.isEmpty else { return false }
-        var fallbackOptions = options
-        fallbackOptions.excludeExerciseIds = []
-        fallbackOptions.preferVariation = true
-        guard await persistRegeneratedWorkout(
-            profile: profile,
-            splitDayFocus: splitFocus,
-            options: fallbackOptions
-        ) else { return false }
-
-        return await clearTodayCompletionMarkers()
+        return false
     }
 
     @discardableResult
@@ -209,25 +183,45 @@ extension AppEnvironment {
             options.excludeExerciseIds = current.exercises.map(\.exerciseId)
         }
 
-        if await persistRegeneratedWorkout(
+        if await persistRegeneratedWorkoutWithFallback(
             profile: profile,
             splitDayFocus: splitFocus,
             options: options
         ) {
             return await applySplitFocusChange(proposedState, clearCompletion: wasCompleted)
         }
+        return false
+    }
 
-        guard !options.excludeExerciseIds.isEmpty else { return false }
+    private func persistRegeneratedWorkoutWithFallback(
+        profile: UserProfile,
+        splitDayFocus: SplitDayFocus?,
+        options: WorkoutGenerationOptions
+    ) async -> Bool {
+        var effectiveOptions = options
+        if effectiveOptions.excludeExerciseIds.isEmpty, let current = todayWorkout {
+            effectiveOptions.excludeExerciseIds = current.exercises.map(\.exerciseId)
+            effectiveOptions.preferVariation = true
+        }
 
-        var fallbackOptions = WorkoutGenerationOptions()
-        fallbackOptions.preferVariation = true
-        guard await persistRegeneratedWorkout(
+        if await persistRegeneratedWorkout(
             profile: profile,
-            splitDayFocus: splitFocus,
-            options: fallbackOptions
-        ) else { return false }
+            splitDayFocus: splitDayFocus,
+            options: effectiveOptions
+        ) {
+            return true
+        }
 
-        return await applySplitFocusChange(proposedState, clearCompletion: wasCompleted)
+        guard !effectiveOptions.excludeExerciseIds.isEmpty else { return false }
+
+        var fallbackOptions = options
+        fallbackOptions.excludeExerciseIds = []
+        fallbackOptions.preferVariation = true
+        return await persistRegeneratedWorkout(
+            profile: profile,
+            splitDayFocus: splitDayFocus,
+            options: fallbackOptions
+        )
     }
 
     @discardableResult

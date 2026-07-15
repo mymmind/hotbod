@@ -2,6 +2,7 @@ import XCTest
 @testable import HotBod
 
 @MainActor
+// swiftlint:disable:next type_body_length
 final class IntegrationFlowTests: XCTestCase {
   // MARK: - Cold start → first workout
 
@@ -188,7 +189,10 @@ final class IntegrationFlowTests: XCTestCase {
     env.programState = state
     try await env.programStateRepository.saveState(state)
 
-    guard let profile = env.userProfile else { return }
+    guard let profile = env.userProfile else {
+      XCTFail("Expected seeded profile")
+      return
+    }
     let regenerated = await env.regenerateTodayWorkout(profile: profile)
     XCTAssertFalse(regenerated)
   }
@@ -203,7 +207,10 @@ final class IntegrationFlowTests: XCTestCase {
     state.todayCompletedSessionId = UUID()
     env.programState = state
 
-    guard let profile = env.userProfile else { return }
+    guard let profile = env.userProfile else {
+      XCTFail("Expected seeded profile")
+      return
+    }
     let restarted = await env.restartTodayWorkout(profile: profile)
     XCTAssertTrue(restarted)
     XCTAssertFalse(env.isTodayWorkoutCompleted)
@@ -313,7 +320,10 @@ final class IntegrationFlowTests: XCTestCase {
     await env.bootstrap()
     let original = env.todayWorkout
 
-    guard var profile = env.userProfile else { return }
+    guard var profile = env.userProfile else {
+      XCTFail("Expected seeded profile")
+      return
+    }
     profile.availableEquipment = [.dumbbell]
     let updated = await env.updateUserProfile(profile, refreshWorkout: true)
 
@@ -359,7 +369,10 @@ final class IntegrationFlowTests: XCTestCase {
     )
     try await repos.exerciseStats.saveStats([deloadStats])
 
-    guard let profile = env.userProfile else { return }
+    guard let profile = env.userProfile else {
+      XCTFail("Expected seeded profile")
+      return
+    }
     let input = await env.makeWorkoutGenerationInput(profile: profile, splitDayFocus: .push)
     let workout = try await env.workoutGenerationService.generate(input: input)
 

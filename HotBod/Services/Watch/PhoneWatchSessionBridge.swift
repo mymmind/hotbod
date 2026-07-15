@@ -2,6 +2,8 @@ import Foundation
 
 @MainActor
 enum PhoneWatchSessionBridge {
+    private static var lastConsumedWatchCommandSequence: UInt64 = 0
+
     static func publish(
         session: WorkoutSession?,
         exerciseIndex: Int,
@@ -38,7 +40,10 @@ enum PhoneWatchSessionBridge {
     }
 
     static func consumeWatchCommand() -> WatchPendingCommand? {
-        AppGroupSessionStore.consumePendingCommand()
+        guard let command = AppGroupSessionStore.consumePendingCommand() else { return nil }
+        guard command.sequence > lastConsumedWatchCommandSequence else { return nil }
+        lastConsumedWatchCommandSequence = command.sequence
+        return command
     }
 }
 

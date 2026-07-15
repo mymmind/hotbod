@@ -8,10 +8,6 @@ extension View {
     func forgePRFlash(isActive: Bool) -> some View {
         modifier(ForgePRFlashModifier(isActive: isActive))
     }
-
-    func forgeFeedbackTrigger<V: Equatable>(_ event: ForgeFeedbackEvent, value: V) -> some View {
-        modifier(ForgeFeedbackTriggerModifier(event: event, value: value))
-    }
 }
 
 private struct ForgeSetCompleteFlashModifier: ViewModifier {
@@ -44,19 +40,6 @@ private struct ForgePRFlashModifier: ViewModifier {
                 }
             }
             .animation(ForgeMotion.standard, value: isActive)
-    }
-}
-
-private struct ForgeFeedbackTriggerModifier<V: Equatable>: ViewModifier {
-    @Environment(\.forgeFeedback) private var feedback
-    let event: ForgeFeedbackEvent
-    let value: V
-
-    func body(content: Content) -> some View {
-        content
-            .onChange(of: value) { _, _ in
-                feedback.play(event)
-            }
     }
 }
 

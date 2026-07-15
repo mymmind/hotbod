@@ -52,6 +52,8 @@ final class AppEnvironment {
     var onboardingViewModel = OnboardingViewModel()
 
     var sessionSaveTask: Task<Void, Never>?
+    var pendingSessionSave: WorkoutSession?
+    var sessionSaveGeneration: UInt = 0
     var workoutGenerationToken: UInt = 0
     var isWorkoutGenerationActive = false
     var isReservingWorkoutGeneration = false
@@ -117,7 +119,6 @@ final class AppEnvironment {
         self.programStateRepository = programStateRepository
         self.coachRepository = coachRepository
         self.workoutGenerationService = workoutGenerationService
-            ?? RulesWorkoutGenerationService(exerciseRepository: exerciseRepository)
         let auth = authService ?? BackendServices.makeAuthService()
         self.authService = auth
         self.aiWorkoutService = aiWorkoutService ?? BackendServices.makeAIWorkoutService(auth: auth, exerciseRepository: exerciseRepository)

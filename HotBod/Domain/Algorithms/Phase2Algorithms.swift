@@ -157,7 +157,7 @@ enum ProteinComplianceCalculator {
     static func dailyTotals(entries: [ProteinEntry], days: Int = 7, goalGrams: Double) -> [(day: String, grams: Double, hitGoal: Bool)] {
         let calendar = Calendar.current
         return (0..<days).reversed().map { offset in
-            let date = calendar.date(byAdding: .day, value: -offset, to: Date())!
+            let date = calendar.daysAgo(offset)
             let dayEntries = entries.filter { calendar.isDate($0.date, inSameDayAs: date) }
             let grams = dayEntries.reduce(0) { $0 + $1.proteinGrams }
             return (date.formatted(.dateTime.weekday(.abbreviated)), grams, grams >= goalGrams * 0.9)

@@ -10,7 +10,7 @@ enum PersistenceHelper {
             return testingOverrideURL
         }
         guard let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            fatalError("Application support directory unavailable")
+            return FileManager.default.temporaryDirectory
         }
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url

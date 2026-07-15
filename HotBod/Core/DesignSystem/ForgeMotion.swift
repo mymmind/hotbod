@@ -76,10 +76,6 @@ extension View {
     func forgeValidationShake<V: Equatable>(value: V) -> some View {
         modifier(ForgeValidationShakeModifier(value: value))
     }
-
-    func forgeSuccessHaptic<V: Equatable>(value: V) -> some View {
-        modifier(ForgeSuccessHapticModifier(value: value))
-    }
 }
 
 // MARK: - Reduce-motion-aware modifiers
@@ -147,19 +143,6 @@ private struct ForgeValidationShakeModifier<V: Equatable>: ViewModifier {
             content
         } else {
             content.changeEffect(.shake(rate: .fast), value: value)
-        }
-    }
-}
-
-private struct ForgeSuccessHapticModifier<V: Equatable>: ViewModifier {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    let value: V
-
-    func body(content: Content) -> some View {
-        if reduceMotion {
-            content
-        } else {
-            content.changeEffect(.feedback(hapticNotification: .success), value: value)
         }
     }
 }

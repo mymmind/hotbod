@@ -17,6 +17,7 @@ extension AppEnvironment {
         isReservingWorkoutGeneration = false
         sessionSaveTask?.cancel()
         sessionSaveTask = nil
+        pendingSessionSave = nil
 
         try await exerciseRepository.resetUserPreferences()
         try await exerciseRepository.resetCustomExercises()

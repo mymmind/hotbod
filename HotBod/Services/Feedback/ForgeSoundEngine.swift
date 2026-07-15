@@ -1,6 +1,7 @@
 import AVFoundation
 
-final class ForgeSoundEngine: @unchecked Sendable {
+@MainActor
+final class ForgeSoundEngine {
     private var engine: AVAudioEngine?
     private var playerNode: AVAudioPlayerNode?
     private var isConfigured = false

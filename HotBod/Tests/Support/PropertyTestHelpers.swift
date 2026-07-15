@@ -9,33 +9,6 @@ enum PropertyTestHelpers {
     }
     return 50
   }
-
-  static func cartesianProduct<A, B>(_ first: [A], _ second: [B]) -> [(A, B)] {
-    first.flatMap { left in second.map { (left, $0) } }
-  }
-
-  static func cartesianProduct<A, B, C>(_ first: [A], _ second: [B], _ third: [C]) -> [(A, B, C)] {
-    first.flatMap { left in
-      second.flatMap { middle in
-        third.map { (left, middle, $0) }
-      }
-    }
-  }
-
-  static func assertEventually(
-    timeout: TimeInterval = 2.0,
-    pollIntervalNanoseconds: UInt64 = 50_000_000,
-    file: StaticString = #filePath,
-    line: UInt = #line,
-    _ condition: @escaping () async -> Bool
-  ) async {
-    let deadline = Date().addingTimeInterval(timeout)
-    while Date() < deadline {
-      if await condition() { return }
-      try? await Task.sleep(nanoseconds: pollIntervalNanoseconds)
-    }
-    XCTFail("Condition not met within \(timeout)s", file: file, line: line)
-  }
 }
 
 extension WorkoutGenerationInput {

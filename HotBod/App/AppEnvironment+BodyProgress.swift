@@ -9,11 +9,6 @@ extension AppEnvironment {
         return all.filter { $0.userId == filterId }
     }
 
-    func deleteBodyPhoto(id: UUID) async throws {
-        try await bodyProgressRepository.deletePhoto(id: id)
-        bumpBodyPhotoRevision()
-    }
-
     func bodyPhotosDirectory() -> URL {
         if let local = bodyProgressRepository as? LocalBodyProgressRepository {
             return local.photosDirectory

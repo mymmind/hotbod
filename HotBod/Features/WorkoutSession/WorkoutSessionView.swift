@@ -276,8 +276,13 @@ struct WorkoutSessionView: View {
             syncWatchSnapshot()
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active {
+            switch phase {
+            case .active:
                 restoreRestTimerIfNeeded()
+            case .background:
+                Task { await environment.flushPendingWorkoutSessionSave() }
+            default:
+                break
             }
         }
         .sheet(isPresented: $showExerciseInfo) {
@@ -1185,7 +1190,7 @@ struct WorkoutSessionView: View {
             let all = await environment.fetchAllExercises()
             exerciseMap = ExerciseCatalog.indexedById(all)
             allExercises = all
-            substitutionGroups = (try? await environment.exerciseRepository.fetchSubstitutionGroups()) ?? []
+            substitutionGroups = await environment.fetchSubstitutionGroups()
             swapResolver = await environment.loadExerciseSwapResolver(usedExerciseIds: used)
             let stats = await environment.fetchExerciseStats()
             exerciseStatsById = Dictionary(uniqueKeysWithValues: stats.map { ($0.exerciseId, $0) })

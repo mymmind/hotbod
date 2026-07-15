@@ -8,7 +8,6 @@ enum ForgeColors {
 
     static let backgroundPrimary = adaptive(hexLight: 0xFFFFFF, hexDark: 0x121212)
     static let surface = adaptive(hexLight: 0xFFFFFF, hexDark: 0x1C1C1E)
-    static let surfaceElevated = adaptive(hexLight: 0xFFFFFF, hexDark: 0x2C2C2E)
     static let surfaceInverse = adaptive(hexLight: 0x000000, hexDark: 0xF2F2F7)
 
     static let textPrimary = adaptive(hexLight: 0x000000, hexDark: 0xFFFFFF)
@@ -26,7 +25,6 @@ enum ForgeColors {
     static let accentGreen = adaptive(hexLight: 0x00B86B, hexDark: 0x34C759)
     static let accentAmber = adaptive(hexLight: 0xFF9E00, hexDark: 0xFFB340)
     static let destructive = adaptive(hexLight: 0xDB2626, hexDark: 0xFF453A)
-    static let success = accentGreen
 
     // MARK: - Legacy aliases (migrate to semantic names over time)
 

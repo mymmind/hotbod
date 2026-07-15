@@ -1,5 +1,4 @@
 import SwiftUI
-import Pow
 
 struct MetricCard: View {
     let label: String

@@ -22,10 +22,12 @@ final class ForgeSubscriptionService {
 
     init(grantProForTesting: Bool = UITestConfiguration.shouldGrantPro) {
         self.grantProForTesting = grantProForTesting
-        if grantProForTesting {
+        if grantProForTesting || SubscriptionConfig.unrestrictedAccess {
             isPro = true
         }
-        transactionUpdatesTask = Task { await listenForTransactions() }
+        transactionUpdatesTask = Task { [weak self] in
+            await self?.listenForTransactions()
+        }
     }
 
     deinit {
@@ -38,7 +40,7 @@ final class ForgeSubscriptionService {
     }
 
     func refreshEntitlements() async {
-        if grantProForTesting || UITestConfiguration.shouldGrantPro {
+        if grantProForTesting || UITestConfiguration.shouldGrantPro || SubscriptionConfig.unrestrictedAccess {
             isPro = true
             return
         }

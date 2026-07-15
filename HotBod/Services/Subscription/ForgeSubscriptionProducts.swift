@@ -7,6 +7,15 @@ enum ForgeSubscriptionProducts {
     static let all: [String] = [monthly, annual]
 }
 
+/// Toggle before release to re-enable StoreKit gates and free-tier limits.
+enum SubscriptionConfig {
+#if DEBUG
+    static let unrestrictedAccess = true
+#else
+    static let unrestrictedAccess = false
+#endif
+}
+
 enum FreeTierLimits {
     static let weeklyRegenerations = 3
 }

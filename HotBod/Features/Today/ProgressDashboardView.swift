@@ -387,7 +387,7 @@ final class ProgressDashboardViewModel {
         )
 
         // Calculate workout frequency (this week)
-        let weekStart = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
+        let weekStart = Calendar.current.daysAgo(7)
         let thisWeekWorkouts = summaries.filter { $0.completedAt > weekStart }
         workoutFrequency = thisWeekWorkouts.count
 
@@ -486,7 +486,7 @@ final class ProgressDashboardViewModel {
         }
 
         // Volume insight
-        let weekStart = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
+        let weekStart = Calendar.current.daysAgo(7)
         let thisWeekVolume = summaries.filter { $0.completedAt > weekStart }.reduce(0) { $0 + $1.totalSets }
         if thisWeekVolume > 0 {
             generatedInsights.append("\(thisWeekVolume) sets completed this week")

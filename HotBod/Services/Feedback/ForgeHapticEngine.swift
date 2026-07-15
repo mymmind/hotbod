@@ -7,7 +7,8 @@ struct HapticPulseEvent {
     let sharpness: Float
 }
 
-final class ForgeHapticEngine: @unchecked Sendable {
+@MainActor
+final class ForgeHapticEngine {
     private var supportsCoreHaptics: Bool
     private var engine: CHHapticEngine?
 

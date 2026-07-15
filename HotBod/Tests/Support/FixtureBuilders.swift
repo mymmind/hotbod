@@ -1,18 +1,6 @@
 import Foundation
 @testable import HotBod
 
-extension FixtureBuilders {
-  static let legacyDeloadStatsJSON = """
-  {
-    "exerciseId": "squat",
-    "preferredRepRangeMin": 5,
-    "preferredRepRangeMax": 8,
-    "recentSets": [],
-    "isInDeloadWeek": true
-  }
-  """
-}
-
 enum FixtureBuilders {
   static func makeWorkoutSession(
     exerciseId: String = "bench_press",

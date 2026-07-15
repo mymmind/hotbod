@@ -50,17 +50,13 @@ struct WatchWorkoutView: View {
 
                 if snapshot.totalSets > 0 {
                     Button("Complete Set") {
-                        AppGroupSessionStore.writePendingCommand(
-                            WatchPendingCommand(action: .completeSet, issuedAt: Date())
-                        )
+                        AppGroupSessionStore.issuePendingCommand(.completeSet)
                     }
                     .buttonStyle(.borderedProminent)
 
                     if snapshot.isResting {
                         Button("Skip Rest") {
-                            AppGroupSessionStore.writePendingCommand(
-                                WatchPendingCommand(action: .skipRest, issuedAt: Date())
-                            )
+                            AppGroupSessionStore.issuePendingCommand(.skipRest)
                         }
                     }
                 }

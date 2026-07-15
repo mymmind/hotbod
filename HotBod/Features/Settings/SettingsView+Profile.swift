@@ -68,9 +68,11 @@ extension SettingsView {
         SettingsComponents.section(title: "App", subtitle: "About HotBod") {
             SettingsComponents.valueRow(
                 label: "Plan",
-                value: environment.isPro ? "Pro" : "Free (\(environment.remainingFreeRegenerations) regen left)"
+                value: SubscriptionConfig.unrestrictedAccess
+                    ? "Full access (dev)"
+                    : (environment.isPro ? "Pro" : "Free (\(environment.remainingFreeRegenerations) regen left)")
             )
-            if !environment.isPro {
+            if !SubscriptionConfig.unrestrictedAccess, !environment.isPro {
                 SettingsComponents.divider
                 SettingsComponents.actionRow(title: "Upgrade to Pro") {
                     environment.presentPaywall(for: .unlimitedGeneration)

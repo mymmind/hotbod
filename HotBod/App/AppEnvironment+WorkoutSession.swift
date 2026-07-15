@@ -103,12 +103,27 @@ extension AppEnvironment {
 
     func scheduleWorkoutSessionSave(_ session: WorkoutSession) {
         sessionSaveTask?.cancel()
+        pendingSessionSave = session
+        sessionSaveGeneration &+= 1
+        let generation = sessionSaveGeneration
         let snapshot = session
         sessionSaveTask = Task {
             try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled else { return }
+            guard generation == sessionSaveGeneration else { return }
             try? await workoutRepository.saveSession(snapshot)
+            if generation == sessionSaveGeneration, pendingSessionSave?.id == snapshot.id {
+                pendingSessionSave = nil
+            }
         }
+    }
+
+    func flushPendingWorkoutSessionSave() async {
+        sessionSaveTask?.cancel()
+        sessionSaveTask = nil
+        guard let session = pendingSessionSave else { return }
+        pendingSessionSave = nil
+        try? await workoutRepository.saveSession(session)
     }
 
     func syncTodayWorkoutExerciseSwap(
@@ -135,6 +150,9 @@ extension AppEnvironment {
 
     func saveWorkoutSessionImmediately(_ session: WorkoutSession) async throws {
         sessionSaveTask?.cancel()
+        sessionSaveTask = nil
+        pendingSessionSave = nil
+        sessionSaveGeneration &+= 1
         try await workoutRepository.saveSession(session)
     }
 

@@ -121,10 +121,17 @@ final class LocalExerciseRepositoryCustomTests: XCTestCase {
 }
 
 final class AppGroupSessionStoreTests: XCTestCase {
+    override func tearDown() {
+        AppGroupSessionStore.resetTestingConfiguration()
+        super.tearDown()
+    }
+
     func testWriteAndReadSnapshot() throws {
-        guard AppGroupSessionStore.containerURL() != nil else {
-            throw XCTSkip("App Group container unavailable in this test environment.")
-        }
+        let temp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("hotbod-app-group-tests-\(UUID().uuidString)", isDirectory: true)
+        AppGroupSessionStore.configureForTesting(containerURL: temp)
+        defer { try? FileManager.default.removeItem(at: temp) }
+
         let snapshot = WatchSessionSnapshot(
             sessionId: UUID(),
             title: "Push Day",

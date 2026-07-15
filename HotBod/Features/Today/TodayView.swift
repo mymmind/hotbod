@@ -395,59 +395,39 @@ struct TodayView: View {
         }
     }
 
-    private enum WorkoutRefreshKind {
-        case regenerate
-        case switchSplit
-        case trainAnyway
-        case readiness
-    }
-
-    private func performAnimatedWorkoutRefresh(_ kind: WorkoutRefreshKind) {
-        guard !isRegenerating else { return }
-        if environment.isWorkoutGenerationInFlight {
-            feedback.play(.warning)
-            return
-        }
-        Task { @MainActor in
-            defer {
+    private func performAnimatedWorkoutRefresh(_ kind: WorkoutHeroRefreshKind) {
+        WorkoutHeroRefreshRunner.performAnimatedRefresh(
+            kind: kind,
+            environment: environment,
+            feedback: feedback,
+            isRegenerating: { isRegenerating },
+            beginRegenerating: {
+                withAnimation(ForgeMotion.regenerate) {
+                    isRegenerating = true
+                    regenSpin = true
+                }
+            },
+            endRegenerating: {
                 withAnimation(ForgeMotion.regenerate) {
                     isRegenerating = false
                     regenSpin = false
                 }
-            }
-            withAnimation(ForgeMotion.regenerate) {
-                isRegenerating = true
-                regenSpin = true
-            }
-
-            async let refreshResult = performWorkoutRefresh(kind)
-            try? await Task.sleep(for: ForgeMotion.regenerateMinimum)
-
-            if await refreshResult {
-                feedback.play(feedbackKind(for: kind))
+            },
+            refresh: performWorkoutRefresh,
+            reload: {
                 await loadExerciseCatalog()
-            } else if environment.paywallFeature == nil {
-                if environment.lastGenerationFailure != nil {
-                    showGenerationFailureAlert = true
-                } else {
-                    feedback.play(.warning)
-                }
-            }
-            await loadCompletedSession()
-            await loadActiveSession()
-
-            try? await Task.sleep(for: .milliseconds(180))
-        }
+                await loadCompletedSession()
+                await loadActiveSession()
+            },
+            onGenerationFailure: { showGenerationFailureAlert = true }
+        )
     }
 
     @MainActor
-    private func performWorkoutRefresh(_ kind: WorkoutRefreshKind) async -> Bool {
+    private func performWorkoutRefresh(_ kind: WorkoutHeroRefreshKind) async -> Bool {
         switch kind {
         case .regenerate:
             guard let profile = environment.userProfile else { return false }
-            if environment.isRestDay {
-                return await environment.generateTodayWorkoutOnRestDay(profile: profile)
-            }
             return await environment.regenerateTodayWorkout(profile: profile)
         case .switchSplit:
             return await environment.switchTodaySplitFocus()
@@ -457,13 +437,6 @@ struct TodayView: View {
         case .readiness:
             guard let profile = environment.userProfile else { return false }
             return await environment.refreshTodayWorkoutForReadinessChange(profile: profile)
-        }
-    }
-
-    private func feedbackKind(for kind: WorkoutRefreshKind) -> ForgeFeedbackEvent {
-        switch kind {
-        case .regenerate: .workoutRegenerate
-        case .switchSplit, .trainAnyway, .readiness: .success
         }
     }
 
@@ -869,30 +842,4 @@ struct EmptyStateView: View {
     TodayView()
         .environment(AppEnvironment())
         .environment(AppRouter())
-}
-
-private struct ForgeHeroRegeneratingOverlay: View {
-    let isSpinning: Bool
-
-    var body: some View {
-        ZStack {
-            ForgeColors.surfaceInverse.opacity(0.82)
-
-            VStack(spacing: 16) {
-                Image(systemName: "arrow.triangle.2.circlepath")
-                    .font(.system(size: ForgeIcons.lg + 4, weight: .semibold))
-                    .foregroundStyle(ForgeColors.accent)
-                    .rotationEffect(.degrees(isSpinning ? 360 : 0))
-                    .animation(
-                        isSpinning ? .linear(duration: 0.9).repeatForever(autoreverses: false) : .default,
-                        value: isSpinning
-                    )
-
-                Text("Building new session...")
-                    .font(ForgeTypography.caption)
-                    .tracking(3)
-                    .foregroundStyle(ForgeColors.surface.opacity(0.92))
-            }
-        }
-    }
 }

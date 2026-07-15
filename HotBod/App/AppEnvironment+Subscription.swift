@@ -1,10 +1,10 @@
 import Foundation
 
 extension AppEnvironment {
-    var isPro: Bool { subscriptionService.isPro }
+    var isPro: Bool { SubscriptionConfig.unrestrictedAccess || subscriptionService.isPro }
 
     func canAccess(_ feature: ProFeature) -> Bool {
-        if isPro { return true }
+        if SubscriptionConfig.unrestrictedAccess || isPro { return true }
         switch feature {
         case .unlimitedGeneration:
             refreshRegenerationWeekIfNeeded()
@@ -15,15 +15,13 @@ extension AppEnvironment {
     }
 
     var remainingFreeRegenerations: Int {
-        max(0, FreeTierLimits.weeklyRegenerations - programState.weeklyRegenerationCount)
+        if SubscriptionConfig.unrestrictedAccess { return FreeTierLimits.weeklyRegenerations }
+        return max(0, FreeTierLimits.weeklyRegenerations - programState.weeklyRegenerationCount)
     }
 
     func presentPaywall(for feature: ProFeature) {
+        guard !SubscriptionConfig.unrestrictedAccess else { return }
         paywallFeature = feature
-    }
-
-    func dismissPaywall() {
-        paywallFeature = nil
     }
 
     func refreshRegenerationWeekIfNeeded(now: Date = Date()) {
@@ -50,6 +48,7 @@ extension AppEnvironment {
     }
 
     func recordRegenerationUsage() async {
+        guard !SubscriptionConfig.unrestrictedAccess else { return }
         refreshRegenerationWeekIfNeeded()
         programState.weeklyRegenerationCount += 1
         try? await programStateRepository.saveState(programState)
