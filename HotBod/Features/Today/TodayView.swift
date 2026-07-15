@@ -63,13 +63,11 @@ struct TodayView: View {
             .navigationDestination(isPresented: $showCoach) {
                 CoachView(presentation: .navigationPush)
             }
+            .onChange(of: environment.calendarDayRevision) { _, _ in
+                Task { await refreshDayScopedContent() }
+            }
             .task {
-                await loadProtein()
-                await loadWorkoutStreak()
-                await loadExerciseCatalog()
-                await environment.refreshHealthReadiness()
-                await loadCompletedSession()
-                await loadActiveSession()
+                await refreshDayScopedContent()
             }
             .onAppear {
                 contentAppeared = false
@@ -706,6 +704,15 @@ struct TodayView: View {
         let summary = await environment.proteinSummary()
         proteinToday = summary.todayGrams
         proteinStreak = summary.streakDays
+    }
+
+    private func refreshDayScopedContent() async {
+        await loadProtein()
+        await loadWorkoutStreak()
+        await loadExerciseCatalog()
+        await environment.refreshHealthReadiness()
+        await loadCompletedSession()
+        await loadActiveSession()
     }
 
     private func loadWorkoutStreak() async {

@@ -86,7 +86,9 @@ extension AppEnvironment {
     ) async -> Bool {
         guard allowsUnscheduledDay || TrainingSchedule.isTrainingDay(profile: profile) else { return false }
         guard !isTodayWorkoutCompleted else { return false }
-        guard !isWorkoutGenerationInFlight else { return false }
+        guard reserveWorkoutGeneration() else { return false }
+        defer { releaseWorkoutGenerationReservation() }
+
         if requiresProAccess {
             guard canAccess(.unlimitedGeneration) else {
                 presentPaywall(for: .unlimitedGeneration)
@@ -134,7 +136,8 @@ extension AppEnvironment {
     @discardableResult
     func restartTodayWorkout(profile: UserProfile, options: WorkoutGenerationOptions = WorkoutGenerationOptions()) async -> Bool {
         guard TrainingSchedule.isTrainingDay(profile: profile) else { return false }
-        guard !isWorkoutGenerationInFlight else { return false }
+        guard reserveWorkoutGeneration() else { return false }
+        defer { releaseWorkoutGenerationReservation() }
 
         await cancelActiveWorkoutIfNeeded()
         await applyRecoveryDecay()
@@ -174,7 +177,8 @@ extension AppEnvironment {
     func switchTodaySplitFocus() async -> Bool {
         guard let profile = userProfile,
               TrainingSchedule.isTrainingDay(profile: profile) else { return false }
-        guard !isWorkoutGenerationInFlight else { return false }
+        guard reserveWorkoutGeneration() else { return false }
+        defer { releaseWorkoutGenerationReservation() }
 
         await cancelActiveWorkoutIfNeeded()
         await applyRecoveryDecay()
@@ -266,9 +270,11 @@ extension AppEnvironment {
     }
 
     func normalizeProgramStateForToday(profile: UserProfile) async {
+        let before = programState
         var state = programState
         TrainingSchedule.clearStaleCompletion(state: &state)
         TrainingSchedule.clearLegacyUpcomingWorkout(state: &state)
+        guard state != before else { return }
 
         programState = state
         try? await programStateRepository.saveState(state)
@@ -394,5 +400,16 @@ extension AppEnvironment {
     func cancelActiveWorkoutIfNeeded() async {
         guard let session = await fetchActiveWorkoutSession() else { return }
         await cancelWorkoutSession(session)
+    }
+
+    @discardableResult
+    func reserveWorkoutGeneration() -> Bool {
+        guard !isWorkoutGenerationInFlight else { return false }
+        isReservingWorkoutGeneration = true
+        return true
+    }
+
+    func releaseWorkoutGenerationReservation() {
+        isReservingWorkoutGeneration = false
     }
 }

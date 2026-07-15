@@ -54,9 +54,16 @@ final class AppEnvironment {
     var sessionSaveTask: Task<Void, Never>?
     var workoutGenerationTask: Task<GeneratedWorkout?, Never>?
     var workoutGenerationToken: UInt = 0
+    var isReservingWorkoutGeneration = false
+    var isStartingWorkoutSession = false
+    private(set) var isBootstrapping = false
+    var hasCompletedBootstrap = false
+    var calendarDayRevision = 0
+    var dayScopedRefreshInProgress = false
+    var dayScopedRefreshTask: Task<Void, Never>?
 
     var isWorkoutGenerationInFlight: Bool {
-        workoutGenerationTask != nil
+        workoutGenerationTask != nil || isReservingWorkoutGeneration
     }
 
     var syncStores: SyncLocalStores {
@@ -121,6 +128,12 @@ final class AppEnvironment {
     }
 
     func bootstrap() async {
+        isBootstrapping = true
+        defer {
+            isBootstrapping = false
+            hasCompletedBootstrap = true
+        }
+
         if UITestConfiguration.isUITesting, UITestConfiguration.shouldSkipOnboarding {
             let profile = UITestConfiguration.defaultOnboardedProfile()
             try? await userProfileRepository.saveProfile(profile)
@@ -163,30 +176,36 @@ final class AppEnvironment {
 
         await repairPersistedCatalogReferences()
         await applyRecoveryDecay()
-        refreshRegenerationWeekIfNeeded()
+        await persistRegenerationWeekRefreshIfNeeded()
         await subscriptionService.bootstrap()
 
-        if hasCompletedOnboarding, let profile = userProfile {
-            await normalizeProgramStateForToday(profile: profile)
-            let now = Date()
-            let calendar = Calendar.current
-            if TrainingSchedule.isTrainingDay(profile: profile) {
-                if todayWorkout == nil, !isTodayWorkoutCompleted {
-                    await ensureTodayWorkoutOnLaunch(profile: profile)
-                } else if let workout = todayWorkout,
-                          await shouldRegenerateStaleTodayWorkout(workout, now: now, calendar: calendar),
-                          !isTodayWorkoutCompleted {
-                    await ensureTodayWorkoutOnLaunch(profile: profile)
-                }
-            } else if !TrainingSchedule.isTrainingDay(profile: profile),
-                      let workout = todayWorkout,
-                      await shouldRegenerateStaleTodayWorkout(workout, now: now, calendar: calendar) {
-                await clearTodayWorkout()
+        await revalidateTodayPlanForCurrentDay()
+    }
+
+    /// Re-validates today's plan for the current calendar day: clears stale completion
+    /// markers and regenerates (or clears) a plan generated on a previous day. Called
+    /// from bootstrap and on foreground resume — bootstrap alone is not enough because
+    /// iOS usually resumes the app from background instead of relaunching it.
+    func revalidateTodayPlanForCurrentDay() async {
+        guard hasCompletedOnboarding, let profile = userProfile else { return }
+        await normalizeProgramStateForToday(profile: profile)
+        let now = Date()
+        let calendar = Calendar.current
+        if TrainingSchedule.isTrainingDay(profile: profile) {
+            if todayWorkout == nil, !isTodayWorkoutCompleted {
+                await ensureTodayWorkoutOnLaunch(profile: profile)
+            } else if let workout = todayWorkout,
+                      await shouldRegenerateStaleTodayWorkout(workout, now: now, calendar: calendar),
+                      !isTodayWorkoutCompleted {
+                await ensureTodayWorkoutOnLaunch(profile: profile)
             }
+        } else if let workout = todayWorkout,
+                  await shouldRegenerateStaleTodayWorkout(workout, now: now, calendar: calendar) {
+            await clearTodayWorkout()
         }
     }
 
-    private func mergeDecayReferenceAfterCloudPull(local: Date?) async {
+    func mergeDecayReferenceAfterCloudPull(local: Date?) async {
         guard let local else { return }
         let cloud = programState.lastRecoveryDecayAppliedAt
         let merged = [local, cloud].compactMap { $0 }.max()
@@ -210,8 +229,11 @@ final class AppEnvironment {
         now: Date = Date(),
         calendar: Calendar = .current
     ) async -> Bool {
-        let hasActiveSession = await fetchActiveWorkoutSession() != nil
-        let hasCompletedSetsToday = await hasCompletedSetsLoggedToday(now: now, calendar: calendar)
+        let sessions = (try? await workoutRepository.fetchSessions()) ?? []
+        let hasActiveSession = activeWorkoutSession(in: sessions) != nil || isStartingWorkoutSession
+        let hasCompletedSetsToday = sessions.contains {
+            sessionHasCompletedSetsToday($0, now: now, calendar: calendar)
+        }
         return WorkoutStaleness.shouldRegenerate(
             workoutCreatedAt: workout.createdAt,
             hasActiveSession: hasActiveSession,
@@ -219,6 +241,11 @@ final class AppEnvironment {
             now: now,
             calendar: calendar
         )
+    }
+
+    func activeWorkoutSession(in sessions: [WorkoutSession]) -> WorkoutSession? {
+        guard let id = programState.activeSessionId else { return nil }
+        return sessions.first { $0.id == id && $0.status == .inProgress }
     }
 
     func hasCompletedSetsLoggedToday(now: Date = Date(), calendar: Calendar = .current) async -> Bool {

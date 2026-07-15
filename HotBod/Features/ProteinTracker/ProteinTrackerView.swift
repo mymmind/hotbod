@@ -49,6 +49,9 @@ struct ProteinTrackerView: View {
             .forgeScreenNavigationHidden()
             .sheet(isPresented: $showCustom) { customEntrySheet }
             .task { await load() }
+            .onChange(of: environment.calendarDayRevision) { _, _ in
+                Task { await load() }
+            }
         }
     }
 

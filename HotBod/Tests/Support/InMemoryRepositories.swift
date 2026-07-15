@@ -245,3 +245,97 @@ actor InMemoryCoachRepository: CoachRepository {
     }
   }
 }
+
+final class CountingCloudSyncService: CloudSyncService, @unchecked Sendable {
+  private let noOp = NoOpCloudSyncService()
+  private(set) var pullCount = 0
+  var pullDelayNanoseconds: UInt64 = 50_000_000
+
+  var isAvailable: Bool { true }
+
+  func pullAll(local: SyncLocalStores) async throws {
+    pullCount += 1
+    try await Task.sleep(nanoseconds: pullDelayNanoseconds)
+    try await noOp.pullAll(local: local)
+  }
+
+  func pushAll(local: SyncLocalStores) async throws { try await noOp.pushAll(local: local) }
+  func pushProfile(_ profile: UserProfile) async throws { try await noOp.pushProfile(profile) }
+  func pushTodayWorkout(_ workout: GeneratedWorkout) async throws { try await noOp.pushTodayWorkout(workout) }
+  func clearTodayWorkout() async throws { try await noOp.clearTodayWorkout() }
+  func pushSession(_ session: WorkoutSession) async throws { try await noOp.pushSession(session) }
+  func pushProteinEntry(_ entry: ProteinEntry) async throws { try await noOp.pushProteinEntry(entry) }
+  func pushPhoto(_ photo: BodyProgressPhoto, fileData: Data?) async throws {
+    try await noOp.pushPhoto(photo, fileData: fileData)
+  }
+  func pushRecoveryStates(_ states: [MuscleRecoveryState]) async throws {
+    try await noOp.pushRecoveryStates(states)
+  }
+  func pushExerciseStats(_ stats: [UserExerciseStats]) async throws {
+    try await noOp.pushExerciseStats(stats)
+  }
+  func pushProgramState(_ state: TrainingProgramState) async throws {
+    try await noOp.pushProgramState(state)
+  }
+  func fetchPhotoBackupEnabled() async throws -> Bool { try await noOp.fetchPhotoBackupEnabled() }
+  func setPhotoBackupEnabled(_ enabled: Bool) async throws { try await noOp.setPhotoBackupEnabled(enabled) }
+}
+
+final class ProgramStatePullCloudSyncService: CloudSyncService, @unchecked Sendable {
+  private let noOp = NoOpCloudSyncService()
+  private let pulledProgramState: TrainingProgramState
+
+  init(pulledProgramState: TrainingProgramState) {
+    self.pulledProgramState = pulledProgramState
+  }
+
+  var isAvailable: Bool { true }
+
+  func pullAll(local: SyncLocalStores) async throws {
+    try await local.programState.saveState(pulledProgramState)
+  }
+
+  func pushAll(local: SyncLocalStores) async throws { try await noOp.pushAll(local: local) }
+  func pushProfile(_ profile: UserProfile) async throws { try await noOp.pushProfile(profile) }
+  func pushTodayWorkout(_ workout: GeneratedWorkout) async throws { try await noOp.pushTodayWorkout(workout) }
+  func clearTodayWorkout() async throws { try await noOp.clearTodayWorkout() }
+  func pushSession(_ session: WorkoutSession) async throws { try await noOp.pushSession(session) }
+  func pushProteinEntry(_ entry: ProteinEntry) async throws { try await noOp.pushProteinEntry(entry) }
+  func pushPhoto(_ photo: BodyProgressPhoto, fileData: Data?) async throws {
+    try await noOp.pushPhoto(photo, fileData: fileData)
+  }
+  func pushRecoveryStates(_ states: [MuscleRecoveryState]) async throws {
+    try await noOp.pushRecoveryStates(states)
+  }
+  func pushExerciseStats(_ stats: [UserExerciseStats]) async throws {
+    try await noOp.pushExerciseStats(stats)
+  }
+  func pushProgramState(_ state: TrainingProgramState) async throws {
+    try await noOp.pushProgramState(state)
+  }
+  func fetchPhotoBackupEnabled() async throws -> Bool { try await noOp.fetchPhotoBackupEnabled() }
+  func setPhotoBackupEnabled(_ enabled: Bool) async throws { try await noOp.setPhotoBackupEnabled(enabled) }
+}
+
+actor FailingSaveWorkoutRepository: WorkoutRepository {
+  private let wrapped: InMemoryWorkoutRepository
+  var shouldFailSaveSession = true
+
+  init(wrapped: InMemoryWorkoutRepository) {
+    self.wrapped = wrapped
+  }
+
+  func fetchSessions() async throws -> [WorkoutSession] { try await wrapped.fetchSessions() }
+  func saveSession(_ session: WorkoutSession) async throws {
+    if shouldFailSaveSession {
+      throw NSError(domain: "test", code: 1)
+    }
+    try await wrapped.saveSession(session)
+  }
+  func fetchTodayWorkout() async throws -> GeneratedWorkout? { try await wrapped.fetchTodayWorkout() }
+  func saveTodayWorkout(_ workout: GeneratedWorkout) async throws { try await wrapped.saveTodayWorkout(workout) }
+  func clearTodayWorkout() async throws { try await wrapped.clearTodayWorkout() }
+  func fetchSessionSummaries() async throws -> [WorkoutSessionSummary] {
+    try await wrapped.fetchSessionSummaries()
+  }
+}

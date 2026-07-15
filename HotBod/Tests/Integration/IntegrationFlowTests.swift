@@ -39,6 +39,36 @@ final class IntegrationFlowTests: XCTestCase {
     XCTAssertNil(env.todayWorkout)
   }
 
+  func testHandleAppBecameActiveRegeneratesStaleWorkoutAfterBootstrap() async throws {
+    let calendar = Calendar.current
+    let yesterday = calendar.date(byAdding: .day, value: -1, to: Date())!
+    let staleWorkout = FixtureBuilders.makeGeneratedWorkout(createdAt: yesterday)
+    let freshWorkout = FixtureBuilders.makeGeneratedWorkout()
+    let generator = FixedMockWorkoutGenerationService(workout: freshWorkout)
+    var repos = TestRepositories.withCatalog()
+    try await repos.workout.saveTodayWorkout(staleWorkout)
+
+    let env = AppEnvironment.makeForTests(repos: repos, workoutGenerationService: generator)
+    var profile = UserProfile.empty()
+    profile.preferredTrainingDays = [TrainingSchedule.weekday(), .wednesday]
+    try await env.seedOnboardedProfile(profile)
+    await env.bootstrap()
+
+    env.todayWorkout = staleWorkout
+    try await repos.workout.saveTodayWorkout(staleWorkout)
+    var state = env.programState
+    state.todayCompletedOn = TrainingSchedule.startOfDay(yesterday)
+    state.todayCompletedSessionId = UUID()
+    env.programState = state
+    try await repos.programState.saveState(state)
+
+    await env.handleAppBecameActive()
+
+    XCTAssertEqual(env.todayWorkout?.id, freshWorkout.id)
+    XCTAssertNil(env.programState.todayCompletedOn)
+    XCTAssertGreaterThan(env.calendarDayRevision, 0)
+  }
+
   // MARK: - Start → log sets → complete
 
   func testStartLogSetsAndCompleteSessionFlow() async throws {

@@ -38,6 +38,16 @@ extension AppEnvironment {
         }
     }
 
+    func persistRegenerationWeekRefreshIfNeeded(now: Date = Date()) async {
+        let before = programState
+        refreshRegenerationWeekIfNeeded(now: now)
+        guard programState != before else { return }
+        try? await programStateRepository.saveState(programState)
+        if isSignedIn {
+            try? await cloudSyncService.pushProgramState(programState)
+        }
+    }
+
     func recordRegenerationUsage() async {
         refreshRegenerationWeekIfNeeded()
         programState.weeklyRegenerationCount += 1

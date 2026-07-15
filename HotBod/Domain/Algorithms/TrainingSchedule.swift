@@ -260,13 +260,14 @@ enum TrainingSchedule {
     }
 
     static func clearStaleCompletion(state: inout TrainingProgramState, date: Date = Date(), calendar: Calendar = .current) {
+        let todayStart = startOfDay(date, calendar: calendar)
         if let completedOn = state.todayCompletedOn,
-           !calendar.isDate(completedOn, inSameDayAs: date) {
+           startOfDay(completedOn, calendar: calendar) < todayStart {
             state.todayCompletedSessionId = nil
             state.todayCompletedOn = nil
         }
         if let advancedOn = state.todayRotationAdvancedOn,
-           !calendar.isDate(advancedOn, inSameDayAs: date) {
+           startOfDay(advancedOn, calendar: calendar) < todayStart {
             state.todayRotationAdvancedOn = nil
         }
     }

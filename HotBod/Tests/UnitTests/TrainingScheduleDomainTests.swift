@@ -109,6 +109,16 @@ final class TrainingScheduleTests: XCTestCase {
         XCTAssertNil(state.todayRotationAdvancedOn)
     }
 
+    func testClearStaleCompletionKeepsSameDayMarkerAfterTimezoneShift() {
+        var state = TrainingProgramState()
+        let today = TrainingSchedule.startOfDay(Date())
+        state.todayCompletedOn = today
+        state.todayCompletedSessionId = UUID()
+        TrainingSchedule.clearStaleCompletion(state: &state, date: today)
+        XCTAssertEqual(state.todayCompletedOn, today)
+        XCTAssertNotNil(state.todayCompletedSessionId)
+    }
+
     func testRotationAlreadyAdvancedToday() {
         var state = TrainingProgramState()
         let today = TrainingSchedule.startOfDay(Date())

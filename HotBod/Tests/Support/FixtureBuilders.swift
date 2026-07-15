@@ -36,7 +36,10 @@ enum FixtureBuilders {
     )
   }
 
-  static func makeGeneratedWorkout(exerciseId: String = "bench_press") -> GeneratedWorkout {
+  static func makeGeneratedWorkout(
+    exerciseId: String = "bench_press",
+    createdAt: Date = Date()
+  ) -> GeneratedWorkout {
     GeneratedWorkout(
       id: UUID(),
       title: "Test Workout",
@@ -52,7 +55,7 @@ enum FixtureBuilders {
       rationale: "Test",
       safetyNotes: [],
       generatedBy: .rulesEngine,
-      createdAt: Date()
+      createdAt: createdAt
     )
   }
 
@@ -123,7 +126,8 @@ extension AppEnvironment {
     workoutGenerationService: (any WorkoutGenerationService)? = nil,
     aiWorkoutService: (any AIWorkoutService)? = nil,
     foodSearchService: (any FoodSearchService)? = nil,
-    authService: (any AuthService)? = nil
+    authService: (any AuthService)? = nil,
+    cloudSyncService: (any CloudSyncService)? = nil
   ) -> AppEnvironment {
     AppEnvironment(
       workoutRepository: repos.workout,
@@ -145,7 +149,7 @@ extension AppEnvironment {
       healthKitWorkoutExportService: MockHealthKitWorkoutExportService(),
       stravaIntegrationService: NoOpStravaIntegrationService(),
       authService: authService ?? NoOpAuthService(),
-      cloudSyncService: NoOpCloudSyncService(),
+      cloudSyncService: cloudSyncService ?? NoOpCloudSyncService(),
       feedbackService: ForgeFeedbackService(),
       subscriptionService: ForgeSubscriptionService(grantProForTesting: true)
     )

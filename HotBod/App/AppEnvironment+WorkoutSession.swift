@@ -6,9 +6,9 @@ extension AppEnvironment {
     }
 
     func fetchActiveWorkoutSession() async -> WorkoutSession? {
-        guard let id = programState.activeSessionId else { return nil }
+        guard programState.activeSessionId != nil else { return nil }
         let sessions = (try? await workoutRepository.fetchSessions()) ?? []
-        guard let session = sessions.first(where: { $0.id == id && $0.status == .inProgress }) else {
+        guard let session = activeWorkoutSession(in: sessions) else {
             await clearActiveWorkoutSession()
             return nil
         }
@@ -46,6 +46,9 @@ extension AppEnvironment {
             return existing
         }
 
+        isStartingWorkoutSession = true
+        defer { isStartingWorkoutSession = false }
+
         let splitFocus = workout.splitDayFocus
             ?? TrainingSchedule.currentSplitFocus(state: programState, split: profile.preferredSplit)
 
@@ -67,7 +70,11 @@ extension AppEnvironment {
             status: .inProgress,
             splitDayFocus: splitFocus
         )
-        try? await workoutRepository.saveSession(session)
+        do {
+            try await workoutRepository.saveSession(session)
+        } catch {
+            return nil
+        }
         await setActiveWorkoutSession(session)
         return session
     }

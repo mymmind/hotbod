@@ -174,6 +174,7 @@
 		BD7C72D2C0EA1A28E01474F9 /* AppGroupSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7E33C44F9DD9666FD5972A /* AppGroupSessionStore.swift */; };
 		C4125FA1275D950F7B925105 /* SettingsView+Integrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AE2EFE93F25B14B6FEEF125 /* SettingsView+Integrations.swift */; };
 		C594CA7D43641C5203967691 /* AppEnvironment+Auth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ADBDA74ABD42902929AF02D /* AppEnvironment+Auth.swift */; };
+		F1A2B3C4D5E6F78901234567 /* AppEnvironment+Lifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6789012345678 /* AppEnvironment+Lifecycle.swift */; };
 		C5BEFE0C1EA109A63C0DC9EA /* Pow in Frameworks */ = {isa = PBXBuildFile; productRef = 9A9EF7B0A2585514C005D4A2 /* Pow */; };
 		C687CA47FB9DCF9944C62510 /* WorkoutFeedbackDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 172871DCEF17C3631DC6E42F /* WorkoutFeedbackDomainTests.swift */; };
 		C6B5494F8A2D78D15B1F2C4B /* GenerationConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A62DD43877B01569476B0E2 /* GenerationConstants.swift */; };
@@ -368,6 +369,7 @@
 		991CC0A705F345652C23CB9B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		992E76051847810CAB042063 /* ExerciseDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseDetailView.swift; sourceTree = "<group>"; };
 		9ADBDA74ABD42902929AF02D /* AppEnvironment+Auth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppEnvironment+Auth.swift"; sourceTree = "<group>"; };
+		A1B2C3D4E5F6789012345678 /* AppEnvironment+Lifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppEnvironment+Lifecycle.swift"; sourceTree = "<group>"; };
 		9C85EC33D4FB65D2E8D1E237 /* WorkoutGenerationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutGenerationService.swift; sourceTree = "<group>"; };
 		9C893A267C1E03740A65C2BE /* BodyProgressPhoto+Timeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BodyProgressPhoto+Timeline.swift"; sourceTree = "<group>"; };
 		A01C3807E7861035E628DBA3 /* LaunchRouteResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchRouteResolver.swift; sourceTree = "<group>"; };
@@ -859,6 +861,7 @@
 				3C55F29846904FB740F6CD03 /* AppEnvironment.swift */,
 				122A716A65A50547C94509DD /* AppEnvironment+Account.swift */,
 				9ADBDA74ABD42902929AF02D /* AppEnvironment+Auth.swift */,
+				A1B2C3D4E5F6789012345678 /* AppEnvironment+Lifecycle.swift */,
 				A7D2FB17189E5DA7EA8C0437 /* AppEnvironment+BodyProgress.swift */,
 				FF4A4ACB1B34314F1804CD28 /* AppEnvironment+Coach.swift */,
 				21BDC05A2CF7953BCE10FE77 /* AppEnvironment+Integrations.swift */,
@@ -1292,6 +1295,7 @@
 				A521363794EA0FFF742F8A35 /* AppConfig.swift in Sources */,
 				F72912DF2DBE256B94E873BA /* AppEnvironment+Account.swift in Sources */,
 				C594CA7D43641C5203967691 /* AppEnvironment+Auth.swift in Sources */,
+				F1A2B3C4D5E6F78901234567 /* AppEnvironment+Lifecycle.swift in Sources */,
 				FEAC950D49387FF85E118B55 /* AppEnvironment+BodyProgress.swift in Sources */,
 				044F9464644DC5893061F0DB /* AppEnvironment+Coach.swift in Sources */,
 				8340D8E1B9D7D51FC6D7F778 /* AppEnvironment+Integrations.swift in Sources */,

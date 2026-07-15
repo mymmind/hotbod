@@ -4,6 +4,7 @@ import SwiftUI
 struct HotBodApp: App {
     @State private var environment = HotBodApp.makeEnvironment()
     @State private var router = AppRouter(initialRoute: LaunchRouteResolver.initialRoute())
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
@@ -11,6 +12,17 @@ struct HotBodApp: App {
                 .environment(environment)
                 .environment(router)
                 .environment(\.forgeFeedback, environment.feedbackService)
+                .onChange(of: scenePhase) { _, phase in
+                    // UI test exemption: resume revalidation is disabled under -UITesting because
+                    // it races with deterministic bootstrap/fixture seeding. Covered by integration
+                    // tests in IntegrationFlowTests (handleAppBecameActive day-rollover path).
+                    guard phase == .active, !UITestConfiguration.isUITesting else { return }
+                    Task { await environment.handleAppBecameActive() }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
+                    guard !UITestConfiguration.isUITesting else { return }
+                    Task { await environment.handleCalendarDayChangedWhileActive() }
+                }
                 .task {
                     UITestConfiguration.applyLaunchConfiguration()
                     if UITestConfiguration.shouldResetState {

@@ -344,11 +344,144 @@ final class AppEnvironmentWorkoutGenerationTests: XCTestCase {
 }
 
 @MainActor
+final class AppEnvironmentDayRolloverTests: XCTestCase {
+    func testRegression_revalidateOnResumeRegeneratesStaleWorkoutFromYesterday() async throws {
+        let calendar = Calendar.current
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: Date())!
+        let staleWorkout = FixtureBuilders.makeGeneratedWorkout(createdAt: yesterday)
+        let freshWorkout = FixtureBuilders.makeGeneratedWorkout()
+        let generator = FixedMockWorkoutGenerationService(workout: freshWorkout)
+        var repos = TestRepositories.empty()
+        try await repos.workout.saveTodayWorkout(staleWorkout)
+
+        let env = AppEnvironment.makeForTests(repos: repos, workoutGenerationService: generator)
+        var profile = UserProfile.empty()
+        profile.preferredTrainingDays = [TrainingSchedule.weekday(), .wednesday]
+        try await env.seedOnboardedProfile(profile)
+        env.todayWorkout = staleWorkout
+
+        var state = TrainingProgramState()
+        state.todayCompletedSessionId = UUID()
+        state.todayCompletedOn = TrainingSchedule.startOfDay(yesterday)
+        state.todayRotationAdvancedOn = TrainingSchedule.startOfDay(yesterday)
+        env.programState = state
+
+        await env.revalidateTodayPlanForCurrentDay()
+
+        XCTAssertEqual(env.todayWorkout?.id, freshWorkout.id, "stale workout should be regenerated on day rollover")
+        XCTAssertNil(env.programState.todayCompletedOn, "yesterday's completion marker should be cleared")
+        XCTAssertNil(env.programState.todayRotationAdvancedOn, "yesterday's rotation marker should be cleared")
+    }
+}
+
+@MainActor
+final class AppEnvironmentLifecycleTests: XCTestCase {
+    func testConcurrentRefreshDayScopedStateCoalescesCloudPull() async throws {
+        let cloud = CountingCloudSyncService()
+        let env = AppEnvironment.makeForTests(cloudSyncService: cloud)
+        try await env.seedOnboardedProfile()
+        env.isSignedIn = true
+        env.hasCompletedBootstrap = true
+
+        async let first: Void = env.refreshDayScopedState(pullCloudFirst: true)
+        async let second: Void = env.refreshDayScopedState(pullCloudFirst: true)
+        _ = await (first, second)
+
+        XCTAssertEqual(cloud.pullCount, 1)
+    }
+
+    func testRefreshDayScopedStateMergesNewerLocalDecayAfterCloudPull() async throws {
+        let older = Calendar.current.date(byAdding: .day, value: -3, to: Date())!
+        let newer = Date()
+        var cloudState = TrainingProgramState()
+        cloudState.lastRecoveryDecayAppliedAt = older
+
+        let repos = TestRepositories.empty()
+        let cloud = ProgramStatePullCloudSyncService(pulledProgramState: cloudState)
+        let env = AppEnvironment.makeForTests(repos: repos, cloudSyncService: cloud)
+        try await env.seedOnboardedProfile()
+        env.isSignedIn = true
+        env.hasCompletedBootstrap = true
+        env.programState.lastRecoveryDecayAppliedAt = newer
+
+        await env.refreshDayScopedState(pullCloudFirst: true)
+
+        XCTAssertNotEqual(env.programState.lastRecoveryDecayAppliedAt, older)
+        XCTAssertGreaterThanOrEqual(env.programState.lastRecoveryDecayAppliedAt ?? .distantPast, newer)
+    }
+
+    func testMergeDecayReferenceAfterCloudPullKeepsNewerLocalTimestamp() async throws {
+        let older = Calendar.current.date(byAdding: .day, value: -3, to: Date())!
+        let newer = Date()
+        let repos = TestRepositories.empty()
+        let env = AppEnvironment.makeForTests(repos: repos)
+        try await env.seedOnboardedProfile()
+
+        var cloudState = TrainingProgramState()
+        cloudState.lastRecoveryDecayAppliedAt = older
+        try await repos.programState.saveState(cloudState)
+        env.programState.lastRecoveryDecayAppliedAt = newer
+
+        await env.mergeDecayReferenceAfterCloudPull(local: newer)
+
+        XCTAssertEqual(env.programState.lastRecoveryDecayAppliedAt, newer)
+    }
+
+    func testShouldRegenerateStaleWorkoutBlockedWhileStartingSession() async throws {
+        let env = AppEnvironment.makeForTests()
+        try await env.seedOnboardedProfile()
+        env.isStartingWorkoutSession = true
+
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        let staleWorkout = FixtureBuilders.makeGeneratedWorkout(createdAt: yesterday)
+
+        let shouldRegenerate = await env.shouldRegenerateStaleTodayWorkout(staleWorkout)
+        XCTAssertFalse(shouldRegenerate)
+    }
+}
+
+@MainActor
 final class AppEnvironmentWorkoutSessionTests: XCTestCase {
     private let exercises = [
         makeTestExercise(id: "bench_press"),
         makeTestExercise(id: "dumbbell_press")
     ]
+
+    func testResumeOrStartWorkoutSetsActiveSessionAfterPersistingSession() async throws {
+        let repos = TestRepositories.empty(exercises: exercises)
+        let env = AppEnvironment.makeForTests(repos: repos)
+        try await env.seedOnboardedProfile()
+        let workout = FixtureBuilders.makeGeneratedWorkout()
+
+        let session = await env.resumeOrStartWorkout(from: workout)
+        XCTAssertNotNil(session)
+        XCTAssertEqual(env.programState.activeSessionId, session?.id)
+
+        let persisted = try await repos.workout.fetchSessions()
+        XCTAssertEqual(persisted.count, 1)
+        XCTAssertEqual(persisted.first?.id, session?.id)
+    }
+
+    func testResumeOrStartWorkoutDoesNotSetActiveSessionWhenSaveFails() async throws {
+        let repos = TestRepositories.empty(exercises: exercises)
+        let failingRepo = FailingSaveWorkoutRepository(wrapped: repos.workout)
+        let env = AppEnvironment(
+            workoutRepository: failingRepo,
+            exerciseRepository: repos.exercise,
+            nutritionRepository: repos.nutrition,
+            bodyProgressRepository: repos.bodyProgress,
+            userProfileRepository: repos.userProfile,
+            recoveryRepository: repos.recovery,
+            exerciseStatsRepository: repos.exerciseStats,
+            programStateRepository: repos.programState,
+            coachRepository: repos.coach,
+            subscriptionService: ForgeSubscriptionService(grantProForTesting: true)
+        )
+        try await env.seedOnboardedProfile()
+        let session = await env.resumeOrStartWorkout(from: FixtureBuilders.makeGeneratedWorkout())
+        XCTAssertNil(session)
+        XCTAssertNil(env.programState.activeSessionId)
+    }
 
     func testResumeOrStartWorkoutCreatesSession() async throws {
         let repos = TestRepositories.empty(exercises: exercises)

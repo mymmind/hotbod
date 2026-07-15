@@ -29,6 +29,7 @@ struct WorkoutPreviewView: View {
     @State private var hasActiveSession = false
     @State private var showAddExercise = false
     @State private var libraryExercises: [Exercise] = []
+    @State private var hasLocalPlanEdits = false
 
     private let contentPadding = ForgeSpacing.s5
 
@@ -351,14 +352,16 @@ struct WorkoutPreviewView: View {
     }
 
     private func persistWorkout() {
+        hasLocalPlanEdits = true
         environment.todayWorkout = workout
         Task { try? await environment.saveTodayWorkout(workout) }
     }
 
     private func startSession() {
         Task {
+            let plan = workoutPlanForStart()
             guard await WorkoutStartFlow.begin(
-                from: workout,
+                from: plan,
                 isResume: hasActiveSession,
                 environment: environment,
                 router: router
@@ -366,8 +369,27 @@ struct WorkoutPreviewView: View {
         }
     }
 
+    private func workoutPlanForStart() -> GeneratedWorkout {
+        syncWorkoutFromEnvironment()
+        if let latest = environment.todayWorkout,
+           Calendar.current.isDate(latest.createdAt, inSameDayAs: Date()) {
+            return latest
+        }
+        return workout
+    }
+
     private func syncWorkoutFromEnvironment() {
-        guard let latest = environment.todayWorkout, latest.id == workout.id else { return }
+        guard let latest = environment.todayWorkout else { return }
+        let calendar = Calendar.current
+        guard calendar.isDate(latest.createdAt, inSameDayAs: Date()) else { return }
+
+        let localIsStale = !calendar.isDate(workout.createdAt, inSameDayAs: Date())
+        let planReplaced = latest.id != workout.id
+        guard localIsStale || planReplaced || (latest.id == workout.id && !hasLocalPlanEdits) else { return }
+
+        if planReplaced {
+            hasLocalPlanEdits = false
+        }
         workout = latest
         orderedExercises = WorkoutPlanEditor.sortedExercises(latest.exercises)
     }
