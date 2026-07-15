@@ -121,12 +121,14 @@ final class AppEnvironment {
         self.workoutGenerationService = workoutGenerationService
         let auth = authService ?? BackendServices.makeAuthService()
         self.authService = auth
-        self.aiWorkoutService = aiWorkoutService ?? BackendServices.makeAIWorkoutService(auth: auth, exerciseRepository: exerciseRepository)
+        self.aiWorkoutService = aiWorkoutService
+            ?? BackendServices.makeAIWorkoutService(auth: auth, exerciseRepository: exerciseRepository)
         self.foodSearchService = foodSearchService ?? BackendServices.makeFoodSearchService()
         self.exerciseMediaProvider = exerciseMediaProvider
         self.bodyPhotoAnalyzer = bodyPhotoAnalyzer
         self.healthKitReadinessService = healthKitReadinessService ?? HealthKitReadinessServiceFactory.makeDefault()
-        self.healthKitWorkoutExportService = healthKitWorkoutExportService ?? HealthKitWorkoutExportServiceFactory.makeDefault()
+        self.healthKitWorkoutExportService = healthKitWorkoutExportService
+            ?? HealthKitWorkoutExportServiceFactory.makeDefault()
         self.stravaIntegrationService = stravaIntegrationService ?? StravaIntegrationServiceFactory.makeDefault()
         self.cloudSyncService = cloudSyncService ?? BackendServices.makeCloudSyncService(auth: auth)
         self.feedbackService = feedbackService

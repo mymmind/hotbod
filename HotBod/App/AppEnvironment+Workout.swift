@@ -2,7 +2,10 @@ import Foundation
 
 extension AppEnvironment {
     @discardableResult
-    func regenerateTodayWorkout(profile: UserProfile, options: WorkoutGenerationOptions = WorkoutGenerationOptions()) async -> Bool {
+    func regenerateTodayWorkout(
+        profile: UserProfile,
+        options: WorkoutGenerationOptions = WorkoutGenerationOptions()
+    ) async -> Bool {
         let onRestDay = !TrainingSchedule.isTrainingDay(profile: profile)
         let requiresPro = SubscriptionConfig.unrestrictedAccess ? false : !onRestDay
         return await regenerateTodayWorkout(
@@ -135,7 +138,10 @@ extension AppEnvironment {
     /// Clears "today completed" state and generates a fresh plan for the same day.
     /// Useful for "restart training" / "redo session" UX.
     @discardableResult
-    func restartTodayWorkout(profile: UserProfile, options: WorkoutGenerationOptions = WorkoutGenerationOptions()) async -> Bool {
+    func restartTodayWorkout(
+        profile: UserProfile,
+        options: WorkoutGenerationOptions = WorkoutGenerationOptions()
+    ) async -> Bool {
         guard TrainingSchedule.isTrainingDay(profile: profile) else { return false }
         guard reserveWorkoutGeneration() else { return false }
         defer { releaseWorkoutGenerationReservation() }
@@ -259,7 +265,11 @@ extension AppEnvironment {
         splitDayFocus: SplitDayFocus?,
         options: WorkoutGenerationOptions
     ) async -> Bool {
-        guard let workout = await generateWorkout(profile: profile, splitDayFocus: splitDayFocus, options: options) else {
+        guard let workout = await generateWorkout(
+            profile: profile,
+            splitDayFocus: splitDayFocus,
+            options: options
+        ) else {
             return false
         }
         guard !Task.isCancelled else { return false }

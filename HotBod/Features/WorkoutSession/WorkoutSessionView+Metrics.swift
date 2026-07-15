@@ -1,5 +1,11 @@
-// swiftlint:disable large_tuple
 import SwiftUI
+
+struct ExerciseCompleteSummary {
+    let setsCompleted: Int
+    let volumeKg: Double
+    let bestSetDescription: String?
+    let averageRPE: Double?
+}
 
 extension WorkoutSessionView {
     func metricLabel(for meta: Exercise) -> String {
@@ -34,12 +40,20 @@ extension WorkoutSessionView {
         let weightSemantics = meta.resolvedWeightDisplaySemantics
 
         if prescription == .time, let seconds = planned.targetDurationSeconds {
-            let weightPart = weightSuffix(planned: planned, showWeightInput: showWeightInput, semantics: weightSemantics)
+            let weightPart = weightSuffix(
+                planned: planned,
+                showWeightInput: showWeightInput,
+                semantics: weightSemantics
+            )
             return "\(seconds)s hold\(weightPart)"
         }
         if prescription == .distance || prescription == .distanceOrTime,
            let meters = planned.targetDistanceMeters {
-            let weightPart = weightSuffix(planned: planned, showWeightInput: showWeightInput, semantics: weightSemantics)
+            let weightPart = weightSuffix(
+                planned: planned,
+                showWeightInput: showWeightInput,
+                semantics: weightSemantics
+            )
             return "\(Int(meters))m\(weightPart)"
         }
 
@@ -58,10 +72,10 @@ extension WorkoutSessionView {
 
         if let wKg = planned.targetWeightKg {
             let unit = weightSemantics == .perHand ? "kg each" : "kg"
-            let w = "\(Int(wKg))\(unit) × "
-            if planned.isWarmup { return "Warm-up · \(w)\(range)" }
-            if planned.isCooldown { return "Cooldown · \(w)\(range)" }
-            return "\(w)\(range)"
+            let weightPrefix = "\(Int(wKg))\(unit) × "
+            if planned.isWarmup { return "Warm-up · \(weightPrefix)\(range)" }
+            if planned.isCooldown { return "Cooldown · \(weightPrefix)\(range)" }
+            return "\(weightPrefix)\(range)"
         }
 
         if planned.isWarmup { return "Warm-up · Load · \(range)" }
@@ -79,6 +93,14 @@ extension WorkoutSessionView {
         return " · \(Int(wKg))\(unit)"
     }
 
+    func setLabelColor(isDone: Bool, isActive: Bool, planned: PlannedSet) -> Color {
+        if planned.isWarmup {
+            return isDone ? ForgeColors.textSecondary : ForgeColors.textPrimary
+        }
+        if isDone { return ForgeColors.accentGreen }
+        return isActive ? ForgeColors.textPrimary : ForgeColors.textSecondary
+    }
+
     func clearMetricTexts() {
         weightTexts = [:]
         repsTexts = [:]
@@ -86,12 +108,7 @@ extension WorkoutSessionView {
         distanceTexts = [:]
     }
 
-    func exerciseCompleteSummary(for exercise: WorkoutExercise, meta: Exercise) -> (
-        setsCompleted: Int,
-        volumeKg: Double,
-        bestSetDescription: String?,
-        averageRPE: Double?
-    ) {
+    func exerciseCompleteSummary(for exercise: WorkoutExercise, meta: Exercise) -> ExerciseCompleteSummary {
         let working = exercise.completedSets.filter { !$0.isWarmup && !$0.isCooldown }
         let volume = working.reduce(0.0) { partial, set in
             partial + (set.weightKg ?? 0) * Double(max(set.reps, 1))
@@ -113,11 +130,11 @@ extension WorkoutSessionView {
         } else {
             bestDescription = nil
         }
-        return (
-            working.count,
-            volume,
-            bestDescription,
-            EffortFeedbackMapping.averageEffectiveRPE(from: working)
+        return ExerciseCompleteSummary(
+            setsCompleted: working.count,
+            volumeKg: volume,
+            bestSetDescription: bestDescription,
+            averageRPE: EffortFeedbackMapping.averageEffectiveRPE(from: working)
         )
     }
 }

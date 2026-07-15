@@ -138,7 +138,7 @@ struct ProteinTrackerView: View {
         }
     }
 
-    private var dailyTotals: [(day: String, grams: Double, hitGoal: Bool)] {
+    private var dailyTotals: [ProteinComplianceCalculator.DailyProteinTotal] {
         ProteinComplianceCalculator.dailyTotals(entries: weekEntries, days: 7, goalGrams: goal)
     }
 

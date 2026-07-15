@@ -60,10 +60,6 @@ actor LocalExerciseRepository: ExerciseRepository {
         exercises.first { $0.id == id }
     }
 
-    func search(query: String, filters: ExerciseFilters) async throws -> [Exercise] {
-        ExerciseFilter.apply(exercises: exercises, query: query, filters: filters)
-    }
-
     func fetchSubstitutionGroups() async throws -> [ExerciseSubstitutionGroup] {
         substitutionGroups
     }
@@ -74,21 +70,6 @@ actor LocalExerciseRepository: ExerciseRepository {
 
     func substitutionGroup(for exerciseId: String) async throws -> ExerciseSubstitutionGroup? {
         ExerciseCatalog.substitutionGroup(for: exerciseId, exercises: exercises, groups: substitutionGroups)
-    }
-
-    func substitutes(
-        for exerciseId: String,
-        availableEquipment: [Equipment],
-        injuries: [BodyLimitation],
-        excludeIds: Set<String> = []
-    ) async throws -> [Exercise] {
-        ExerciseCatalog.substitutes(
-            for: exerciseId,
-            from: exercises,
-            availableEquipment: availableEquipment,
-            injuries: injuries,
-            excludeIds: excludeIds
-        )
     }
 
     func updatePreference(id: String, preference: ExercisePreference) async throws {
@@ -425,11 +406,11 @@ enum ExerciseFilter {
             result = result.filter { $0.difficulty == difficulty }
         }
         if !query.isEmpty {
-            let q = query.lowercased()
+            let queryLowercased = query.lowercased()
             result = result.filter {
-                $0.name.lowercased().contains(q) ||
-                $0.primaryMuscles.contains { $0.rawValue.contains(q) } ||
-                $0.equipment.contains { $0.rawValue.contains(q) }
+                $0.name.lowercased().contains(queryLowercased) ||
+                $0.primaryMuscles.contains { $0.rawValue.contains(queryLowercased) } ||
+                $0.equipment.contains { $0.rawValue.contains(queryLowercased) }
             }
         }
         return result.sorted { $0.name < $1.name }
@@ -465,7 +446,13 @@ struct MockFoodSearchService: FoodSearchService, Sendable {
     }
 
     func getFoodDetails(id: String) async throws -> FoodNutritionDetails {
-        FoodNutritionDetails(id: id, name: id.replacingOccurrences(of: "_", with: " ").capitalized, proteinGrams: 25, calories: 120, servingSize: "100g")
+        FoodNutritionDetails(
+            id: id,
+            name: id.replacingOccurrences(of: "_", with: " ").capitalized,
+            proteinGrams: 25,
+            calories: 120,
+            servingSize: "100g"
+        )
     }
 }
 
