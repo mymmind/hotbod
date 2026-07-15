@@ -363,6 +363,9 @@ struct TrainView: View {
         switch kind {
         case .regenerate:
             guard let profile = environment.userProfile else { return false }
+            if environment.isRestDay {
+                return await environment.generateTodayWorkoutOnRestDay(profile: profile)
+            }
             return await environment.regenerateTodayWorkout(profile: profile)
         case .switchSplit:
             return await environment.switchTodaySplitFocus()

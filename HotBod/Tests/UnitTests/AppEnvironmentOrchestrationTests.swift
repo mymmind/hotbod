@@ -531,6 +531,67 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
         XCTAssertNotNil(env.todayWorkout)
         XCTAssertFalse(env.todayWorkout?.exercises.isEmpty ?? true)
     }
+
+    func testRulesEngineRegenerateAfterTrainAnywayOnRestDay() async throws {
+        let today = TrainingSchedule.weekday()
+        var profile = UserProfile.empty()
+        profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(4))
+        profile.trainingDaysPerWeek = profile.preferredTrainingDays.count
+
+        let env = AppEnvironment.makeForTests(repos: TestRepositories.withCatalog())
+        try await env.seedOnboardedProfile(profile)
+        await env.bootstrap()
+
+        let trained = await env.generateTodayWorkoutOnRestDay(profile: profile)
+        XCTAssertTrue(trained)
+        let originalId = try XCTUnwrap(env.todayWorkout?.id)
+        let originalExerciseIds = try XCTUnwrap(env.todayWorkout?.exercises.map(\.exerciseId))
+
+        let regenerated = await env.regenerateTodayWorkout(profile: profile)
+        if !regenerated {
+            XCTFail(
+                "regenerate after train anyway failed: failure=\(String(describing: env.lastGenerationFailure)) " +
+                "validation=\(String(describing: env.lastValidation)) paywall=\(String(describing: env.paywallFeature))"
+            )
+        }
+        XCTAssertTrue(regenerated)
+        XCTAssertNotEqual(env.todayWorkout?.id, originalId)
+        XCTAssertNotEqual(env.todayWorkout?.exercises.map(\.exerciseId), originalExerciseIds)
+    }
+
+    func testRegression_restDayRegenerateWorksWhenFreeQuotaExhausted() async throws {
+        let today = TrainingSchedule.weekday()
+        var profile = UserProfile.empty()
+        profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(4))
+        profile.trainingDaysPerWeek = profile.preferredTrainingDays.count
+
+        let repos = TestRepositories.withCatalog()
+        let env = AppEnvironment(
+            workoutRepository: repos.workout,
+            exerciseRepository: repos.exercise,
+            nutritionRepository: repos.nutrition,
+            bodyProgressRepository: repos.bodyProgress,
+            userProfileRepository: repos.userProfile,
+            recoveryRepository: repos.recovery,
+            exerciseStatsRepository: repos.exerciseStats,
+            programStateRepository: repos.programState,
+            coachRepository: repos.coach,
+            workoutGenerationService: RulesWorkoutGenerationService(exerciseRepository: repos.exercise),
+            subscriptionService: ForgeSubscriptionService(grantProForTesting: false)
+        )
+        try await env.seedOnboardedProfile(profile)
+        env.programState.weeklyRegenerationCount = FreeTierLimits.weeklyRegenerations
+        await env.bootstrap()
+
+        let first = await env.generateTodayWorkoutOnRestDay(profile: profile)
+        XCTAssertTrue(first)
+        let originalId = try XCTUnwrap(env.todayWorkout?.id)
+
+        let second = await env.generateTodayWorkoutOnRestDay(profile: profile)
+        XCTAssertTrue(second)
+        XCTAssertNotEqual(env.todayWorkout?.id, originalId)
+        XCTAssertNil(env.paywallFeature)
+    }
 }
 
 @MainActor

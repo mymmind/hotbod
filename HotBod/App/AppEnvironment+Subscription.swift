@@ -7,6 +7,7 @@ extension AppEnvironment {
         if isPro { return true }
         switch feature {
         case .unlimitedGeneration:
+            refreshRegenerationWeekIfNeeded()
             return remainingFreeRegenerations > 0
         case .coachWorkoutApply, .bodyPhotoHistory, .workoutExport:
             return false

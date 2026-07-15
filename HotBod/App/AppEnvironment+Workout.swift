@@ -3,7 +3,13 @@ import Foundation
 extension AppEnvironment {
     @discardableResult
     func regenerateTodayWorkout(profile: UserProfile, options: WorkoutGenerationOptions = WorkoutGenerationOptions()) async -> Bool {
-        await regenerateTodayWorkout(profile: profile, options: options, allowsUnscheduledDay: false, requiresProAccess: true)
+        let onRestDay = !TrainingSchedule.isTrainingDay(profile: profile)
+        return await regenerateTodayWorkout(
+            profile: profile,
+            options: options,
+            allowsUnscheduledDay: onRestDay && todayWorkout != nil,
+            requiresProAccess: !onRestDay
+        )
     }
 
     /// Initial plan creation on launch/onboarding — does not consume free regeneration quota.
@@ -64,12 +70,11 @@ extension AppEnvironment {
         profile: UserProfile,
         options: WorkoutGenerationOptions = WorkoutGenerationOptions()
     ) async -> Bool {
-        let requiresProAccess = todayWorkout != nil
-        return await regenerateTodayWorkout(
+        await regenerateTodayWorkout(
             profile: profile,
             options: options,
             allowsUnscheduledDay: true,
-            requiresProAccess: requiresProAccess
+            requiresProAccess: false
         )
     }
 
@@ -109,7 +114,9 @@ extension AppEnvironment {
 
         let splitFocus = TrainingSchedule.currentSplitFocus(state: programState, split: profile.preferredSplit)
         var effectiveOptions = options
-        if effectiveOptions.excludeExerciseIds.isEmpty, let current = todayWorkout {
+        if effectiveOptions.excludeExerciseIds.isEmpty,
+           let current = todayWorkout,
+           TrainingSchedule.isTrainingDay(profile: profile) {
             effectiveOptions.excludeExerciseIds = current.exercises.map(\.exerciseId)
             effectiveOptions.preferVariation = true
         }
