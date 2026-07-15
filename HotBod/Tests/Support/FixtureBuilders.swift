@@ -118,15 +118,17 @@ extension AppEnvironment {
     cloudSyncService: (any CloudSyncService)? = nil
   ) -> AppEnvironment {
     AppEnvironment(
-      workoutRepository: repos.workout,
-      exerciseRepository: repos.exercise,
-      nutritionRepository: repos.nutrition,
-      bodyProgressRepository: repos.bodyProgress,
-      userProfileRepository: repos.userProfile,
-      recoveryRepository: repos.recovery,
-      exerciseStatsRepository: repos.exerciseStats,
-      programStateRepository: repos.programState,
-      coachRepository: repos.coach,
+      repositories: AppEnvironmentRepositories(
+        workout: repos.workout,
+        exercise: repos.exercise,
+        nutrition: repos.nutrition,
+        bodyProgress: repos.bodyProgress,
+        userProfile: repos.userProfile,
+        recovery: repos.recovery,
+        exerciseStats: repos.exerciseStats,
+        programState: repos.programState,
+        coach: repos.coach
+      ),
       workoutGenerationService: workoutGenerationService ?? RulesWorkoutGenerationService(
         exerciseRepository: repos.exercise
       ),

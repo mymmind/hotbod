@@ -141,6 +141,7 @@
 		A76FC068F1A4E7504A4C9A96 /* SupabaseClientProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7D69DEB53824B04E2BBF7C0 /* SupabaseClientProvider.swift */; };
 		A7CBC20FBED79E9F1E1ACAF7 /* SettingsView+Account.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A6FBC8B9448EF2DDCD804F6 /* SettingsView+Account.swift */; };
 		A8E887CC338DF0B70DBB3ACA /* BodyProgressUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D01DDDEE2F9226D4DE3D3D5B /* BodyProgressUITests.swift */; };
+		A9190603FD2F4678389103A7 /* AppEnvironmentRepositories.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7DA68A38AD3825021E07259 /* AppEnvironmentRepositories.swift */; };
 		A93BE8FC51F98FCD61F948B8 /* SettingsView+SessionStructure.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45719676AAE0BA4CA2E5D28E /* SettingsView+SessionStructure.swift */; };
 		A9DBFECAF946D5A9403B7AEE /* ExerciseCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90FCC5370E053FD4555EF8BA /* ExerciseCatalog.swift */; };
 		AA5A0FBCDF191E464AC94739 /* RepositoryDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47E97FF16DA04E22F3230FA8 /* RepositoryDomainTests.swift */; };
@@ -400,6 +401,7 @@
 		B4BE3BB0CA701FC903DAB8C3 /* ExercisePrescriptionOverrides.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExercisePrescriptionOverrides.swift; sourceTree = "<group>"; };
 		B611C06B7ACC941B77E31986 /* OnboardingViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViews.swift; sourceTree = "<group>"; };
 		B6DF563EE21C6C7534E57280 /* CoachOfflineWorkoutProposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachOfflineWorkoutProposer.swift; sourceTree = "<group>"; };
+		B7DA68A38AD3825021E07259 /* AppEnvironmentRepositories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironmentRepositories.swift; sourceTree = "<group>"; };
 		B80452AB0F594165C597BEC3 /* ForgeButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgeButton.swift; sourceTree = "<group>"; };
 		BEEB2CCD0B8C0ACEE41F9301 /* deadlift_demo.mp4 */ = {isa = PBXFileReference; path = deadlift_demo.mp4; sourceTree = "<group>"; };
 		C027017511EEF5AF0C633125 /* OnboardingProfileEditingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingProfileEditingTests.swift; sourceTree = "<group>"; };
@@ -870,6 +872,7 @@
 				AB6C390DA206A8CB0A1B8E2A /* AppEnvironment+Subscription.swift */,
 				22F8DDB73A26BDBC37BA0A92 /* AppEnvironment+Workout.swift */,
 				1DC215A93630DB6E858B984C /* AppEnvironment+WorkoutSession.swift */,
+				B7DA68A38AD3825021E07259 /* AppEnvironmentRepositories.swift */,
 				FF0E5B83BE028F196FF0AD24 /* AppRouter.swift */,
 				7AC04E5934DC5BC283EDFA5E /* FoodAPIConfig.swift */,
 				D4F099FCEE31C86DCF6F46BB /* GeminiConfig.swift */,
@@ -1302,6 +1305,7 @@
 				E6E0D12C604A2756F0E24D21 /* AppEnvironment+Workout.swift in Sources */,
 				7C82922820A3D26045986CFB /* AppEnvironment+WorkoutSession.swift in Sources */,
 				197A54D64C129DA9A4710C4F /* AppEnvironment.swift in Sources */,
+				A9190603FD2F4678389103A7 /* AppEnvironmentRepositories.swift in Sources */,
 				B3772CA92370239BB183BDF3 /* AppGroupSessionStore.swift in Sources */,
 				5C6C192F93C96DE174B56EE4 /* AppRouter.swift in Sources */,
 				CE8B07E27E9DA5E16AB7D40F /* BackendServices.swift in Sources */,

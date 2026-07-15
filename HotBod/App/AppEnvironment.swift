@@ -9,15 +9,7 @@ final class AppEnvironment {
     // validation gate every apply. Safe modifyWorkout proposals auto-apply; generateWorkout and
     // failed validation keep the manual Apply flow. HealthKit sleep/resting HR inform readiness hints.
 
-    let workoutRepository: any WorkoutRepository
-    let exerciseRepository: any ExerciseRepository
-    let nutritionRepository: any NutritionRepository
-    let bodyProgressRepository: any BodyProgressRepository
-    let userProfileRepository: any UserProfileRepository
-    let recoveryRepository: any RecoveryRepository
-    let exerciseStatsRepository: any ExerciseStatsRepository
-    let programStateRepository: any ProgramStateRepository
-    let coachRepository: any CoachRepository
+    private let repositories: AppEnvironmentRepositories
     let workoutGenerationService: any WorkoutGenerationService
     let aiWorkoutService: any AIWorkoutService
     let foodSearchService: any FoodSearchService
@@ -73,20 +65,45 @@ final class AppEnvironment {
     }
 
     var syncStores: SyncLocalStores {
-        SyncLocalStores(
-            userProfile: userProfileRepository,
-            workout: workoutRepository,
-            exercise: exerciseRepository,
-            nutrition: nutritionRepository,
-            bodyProgress: bodyProgressRepository,
-            recovery: recoveryRepository,
-            exerciseStats: exerciseStatsRepository,
-            coach: coachRepository,
-            programState: programStateRepository
-        )
+        repositories.syncStores
     }
 
     init(
+        repositories: AppEnvironmentRepositories = AppEnvironmentRepositories(),
+        workoutGenerationService: any WorkoutGenerationService = RulesWorkoutGenerationService(),
+        aiWorkoutService: (any AIWorkoutService)? = nil,
+        foodSearchService: (any FoodSearchService)? = nil,
+        exerciseMediaProvider: any ExerciseMediaProvider = LocalExerciseMediaProvider(),
+        bodyPhotoAnalyzer: any BodyPhotoAnalyzer = VisionBodyPhotoAnalyzer(),
+        healthKitReadinessService: (any HealthKitReadinessService)? = nil,
+        healthKitWorkoutExportService: (any HealthKitWorkoutExportService)? = nil,
+        stravaIntegrationService: (any StravaIntegrationService)? = nil,
+        authService: (any AuthService)? = nil,
+        cloudSyncService: (any CloudSyncService)? = nil,
+        feedbackService: ForgeFeedbackService = ForgeFeedbackService(),
+        subscriptionService: ForgeSubscriptionService = ForgeSubscriptionService()
+    ) {
+        self.repositories = repositories
+        self.workoutGenerationService = workoutGenerationService
+            ?? RulesWorkoutGenerationService(exerciseRepository: repositories.exercise)
+        let auth = authService ?? BackendServices.makeAuthService()
+        self.authService = auth
+        self.aiWorkoutService = aiWorkoutService ?? BackendServices.makeAIWorkoutService(
+            auth: auth,
+            exerciseRepository: repositories.exercise
+        )
+        self.foodSearchService = foodSearchService ?? BackendServices.makeFoodSearchService()
+        self.exerciseMediaProvider = exerciseMediaProvider
+        self.bodyPhotoAnalyzer = bodyPhotoAnalyzer
+        self.healthKitReadinessService = healthKitReadinessService ?? HealthKitReadinessServiceFactory.makeDefault()
+        self.healthKitWorkoutExportService = healthKitWorkoutExportService ?? HealthKitWorkoutExportServiceFactory.makeDefault()
+        self.stravaIntegrationService = stravaIntegrationService ?? StravaIntegrationServiceFactory.makeDefault()
+        self.cloudSyncService = cloudSyncService ?? BackendServices.makeCloudSyncService(auth: auth)
+        self.feedbackService = feedbackService
+        self.subscriptionService = subscriptionService
+    }
+
+    convenience init(
         workoutRepository: any WorkoutRepository = LocalWorkoutRepository(),
         exerciseRepository: any ExerciseRepository = LocalExerciseRepository(),
         nutritionRepository: any NutritionRepository = LocalNutritionRepository(),
@@ -109,30 +126,31 @@ final class AppEnvironment {
         feedbackService: ForgeFeedbackService = ForgeFeedbackService(),
         subscriptionService: ForgeSubscriptionService = ForgeSubscriptionService()
     ) {
-        self.workoutRepository = workoutRepository
-        self.exerciseRepository = exerciseRepository
-        self.nutritionRepository = nutritionRepository
-        self.bodyProgressRepository = bodyProgressRepository
-        self.userProfileRepository = userProfileRepository
-        self.recoveryRepository = recoveryRepository
-        self.exerciseStatsRepository = exerciseStatsRepository
-        self.programStateRepository = programStateRepository
-        self.coachRepository = coachRepository
-        self.workoutGenerationService = workoutGenerationService
-        let auth = authService ?? BackendServices.makeAuthService()
-        self.authService = auth
-        self.aiWorkoutService = aiWorkoutService
-            ?? BackendServices.makeAIWorkoutService(auth: auth, exerciseRepository: exerciseRepository)
-        self.foodSearchService = foodSearchService ?? BackendServices.makeFoodSearchService()
-        self.exerciseMediaProvider = exerciseMediaProvider
-        self.bodyPhotoAnalyzer = bodyPhotoAnalyzer
-        self.healthKitReadinessService = healthKitReadinessService ?? HealthKitReadinessServiceFactory.makeDefault()
-        self.healthKitWorkoutExportService = healthKitWorkoutExportService
-            ?? HealthKitWorkoutExportServiceFactory.makeDefault()
-        self.stravaIntegrationService = stravaIntegrationService ?? StravaIntegrationServiceFactory.makeDefault()
-        self.cloudSyncService = cloudSyncService ?? BackendServices.makeCloudSyncService(auth: auth)
-        self.feedbackService = feedbackService
-        self.subscriptionService = subscriptionService
+        self.init(
+            repositories: AppEnvironmentRepositories(
+                workout: workoutRepository,
+                exercise: exerciseRepository,
+                nutrition: nutritionRepository,
+                bodyProgress: bodyProgressRepository,
+                userProfile: userProfileRepository,
+                recovery: recoveryRepository,
+                exerciseStats: exerciseStatsRepository,
+                programState: programStateRepository,
+                coach: coachRepository
+            ),
+            workoutGenerationService: workoutGenerationService,
+            aiWorkoutService: aiWorkoutService,
+            foodSearchService: foodSearchService,
+            exerciseMediaProvider: exerciseMediaProvider,
+            bodyPhotoAnalyzer: bodyPhotoAnalyzer,
+            healthKitReadinessService: healthKitReadinessService,
+            healthKitWorkoutExportService: healthKitWorkoutExportService,
+            stravaIntegrationService: stravaIntegrationService,
+            authService: authService,
+            cloudSyncService: cloudSyncService,
+            feedbackService: feedbackService,
+            subscriptionService: subscriptionService
+        )
     }
 
     func bootstrap() async {
@@ -324,4 +342,18 @@ final class AppEnvironment {
         guard isSignedIn else { return }
         try? await action()
     }
+}
+
+// MARK: - Repository access (App layer + tests only)
+
+extension AppEnvironment {
+    var workoutRepository: any WorkoutRepository { repositories.workout }
+    var exerciseRepository: any ExerciseRepository { repositories.exercise }
+    var nutritionRepository: any NutritionRepository { repositories.nutrition }
+    var bodyProgressRepository: any BodyProgressRepository { repositories.bodyProgress }
+    var userProfileRepository: any UserProfileRepository { repositories.userProfile }
+    var recoveryRepository: any RecoveryRepository { repositories.recovery }
+    var exerciseStatsRepository: any ExerciseStatsRepository { repositories.exerciseStats }
+    var programStateRepository: any ProgramStateRepository { repositories.programState }
+    var coachRepository: any CoachRepository { repositories.coach }
 }
