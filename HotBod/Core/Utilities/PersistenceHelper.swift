@@ -39,7 +39,10 @@ enum PersistenceHelper {
         lock.lock()
         defer { lock.unlock() }
         let url = resolvedAppSupportURL()
-        guard let contents = try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil) else { return }
+        guard let contents = try? FileManager.default.contentsOfDirectory(
+            at: url,
+            includingPropertiesForKeys: nil
+        ) else { return }
         for item in contents {
             try? FileManager.default.removeItem(at: item)
         }

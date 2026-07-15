@@ -24,29 +24,9 @@ actor StubExerciseRepository: ExerciseRepository {
         try await fetchAll().first { $0.id == id }
     }
 
-    func search(query: String, filters: ExerciseFilters) async throws -> [Exercise] {
-        let all = try await fetchAll()
-        return ExerciseFilter.apply(exercises: all, query: query, filters: filters)
-    }
-
     func fetchSubstitutionGroups() async throws -> [ExerciseSubstitutionGroup] { [] }
     func fetchExercises(inGroup groupId: String) async throws -> [Exercise] { [] }
     func substitutionGroup(for exerciseId: String) async throws -> ExerciseSubstitutionGroup? { nil }
-
-    func substitutes(
-        for exerciseId: String,
-        availableEquipment: [Equipment],
-        injuries: [BodyLimitation],
-        excludeIds: Set<String>
-    ) async throws -> [Exercise] {
-        ExerciseSubstitution.candidates(
-            for: exerciseId,
-            from: try await fetchAll(),
-            availableEquipment: availableEquipment,
-            injuries: injuries,
-            excludeIds: excludeIds
-        )
-    }
 
     func updateFavorite(id: String, isFavorite: Bool) async throws {
         let current = preferences[id] ?? .neutral

@@ -131,6 +131,12 @@ enum ExerciseSwapReplanner {
 }
 
 enum ProteinComplianceCalculator {
+    struct DailyProteinTotal: Hashable {
+        let day: String
+        let grams: Double
+        let hitGoal: Bool
+    }
+
     static func summary(entries: [ProteinEntry], goalGrams: Double, asOf date: Date = Date()) -> ProteinSummary {
         let calendar = Calendar.current
         let todayStart = calendar.startOfDay(for: date)
@@ -154,13 +160,21 @@ enum ProteinComplianceCalculator {
         return ProteinSummary(todayGrams: todayGrams, goalGrams: goalGrams, streakDays: streak)
     }
 
-    static func dailyTotals(entries: [ProteinEntry], days: Int = 7, goalGrams: Double) -> [(day: String, grams: Double, hitGoal: Bool)] {
+    static func dailyTotals(
+        entries: [ProteinEntry],
+        days: Int = 7,
+        goalGrams: Double
+    ) -> [DailyProteinTotal] {
         let calendar = Calendar.current
         return (0..<days).reversed().map { offset in
             let date = calendar.daysAgo(offset)
             let dayEntries = entries.filter { calendar.isDate($0.date, inSameDayAs: date) }
             let grams = dayEntries.reduce(0) { $0 + $1.proteinGrams }
-            return (date.formatted(.dateTime.weekday(.abbreviated)), grams, grams >= goalGrams * 0.9)
+            return DailyProteinTotal(
+                day: date.formatted(.dateTime.weekday(.abbreviated)),
+                grams: grams,
+                hitGoal: grams >= goalGrams * 0.9
+            )
         }
     }
 
@@ -191,15 +205,23 @@ enum StrengthHistory {
         guard let stat = stats.first(where: { $0.exerciseId == exerciseId }) else { return [] }
         return stat.recentSets.compactMap { set in
             guard let weight = set.weightKg, set.reps > 0 else { return nil }
-            return DataPoint(date: set.completedAt, e1rm: ProgressiveOverload.estimateOneRepMax(weight: weight, reps: set.reps))
+            return DataPoint(
+                date: set.completedAt,
+                e1rm: ProgressiveOverload.estimateOneRepMax(weight: weight, reps: set.reps)
+            )
         }
     }
 
-    static func topLifts(stats: [UserExerciseStats], exercises: [Exercise], limit: Int = 3) -> [(exercise: Exercise, e1rm: Double)] {
+    static func topLifts(
+        stats: [UserExerciseStats],
+        exercises: [Exercise],
+        limit: Int = 3
+    ) -> [(exercise: Exercise, e1rm: Double)] {
         let exerciseMap = ExerciseCatalog.indexedById(exercises)
         return stats
             .compactMap { stat -> (Exercise, Double)? in
-                guard let e1rm = stat.estimatedOneRepMax, let exercise = exerciseMap[stat.exerciseId] else { return nil }
+                guard let e1rm = stat.estimatedOneRepMax,
+                      let exercise = exerciseMap[stat.exerciseId] else { return nil }
                 return (exercise, e1rm)
             }
             .sorted { $0.1 > $1.1 }
@@ -286,7 +308,10 @@ enum DeloadDetector {
     ) -> DeloadAnalysis {
         if !stats.isInDeloadSuppressionWindow(at: now) {
             let currentWindowSets = VolumeTracker.rollingSetCount(from: stats.recentSets, endingAt: now)
-            let previousWindowSets = VolumeTracker.rollingSetCountInPreviousWindow(from: stats.recentSets, endingAt: now)
+            let previousWindowSets = VolumeTracker.rollingSetCountInPreviousWindow(
+                from: stats.recentSets,
+                endingAt: now
+            )
             if previousWindowSets >= GenerationConstants.Deload.minPreviousWindowSets {
                 if currentWindowSets < GenerationConstants.Deload.minCurrentWindowSetsForDrop {
                     return DeloadAnalysis(
@@ -300,7 +325,8 @@ enum DeloadDetector {
                 if volumeDrop > GenerationConstants.Deload.volumeDropThreshold {
                     return DeloadAnalysis(
                         isDeloadRecommended: true,
-                        reason: "Volume dropped \(Int(volumeDrop * 100))% over the trailing 7-day window — deload in progress",
+                        reason: "Volume dropped \(Int(volumeDrop * 100))% over the "
+                            + "trailing 7-day window — deload in progress",
                         severity: .severe,
                         suggestsReturningFromBreak: false
                     )
@@ -396,7 +422,9 @@ enum VolumeCapCalculator {
         targetRepsMax: Int
     ) -> Int {
         let avgReps = (targetRepsMin + targetRepsMax) / 2
-        let recentAvgVolume = stats.weeklyVolume.isEmpty ? 0 : stats.weeklyVolume.reduce(0, +) / stats.weeklyVolume.count
+        let recentAvgVolume = stats.weeklyVolume.isEmpty
+            ? 0
+            : stats.weeklyVolume.reduce(0, +) / stats.weeklyVolume.count
 
         // If recent volume is low, gradually increase
         if recentAvgVolume < 50 {

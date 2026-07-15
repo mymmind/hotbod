@@ -14,16 +14,9 @@ protocol WorkoutRepository: Sendable {
 protocol ExerciseRepository: Sendable {
     func fetchAll() async throws -> [Exercise]
     func fetch(id: String) async throws -> Exercise?
-    func search(query: String, filters: ExerciseFilters) async throws -> [Exercise]
     func fetchSubstitutionGroups() async throws -> [ExerciseSubstitutionGroup]
     func fetchExercises(inGroup groupId: String) async throws -> [Exercise]
     func substitutionGroup(for exerciseId: String) async throws -> ExerciseSubstitutionGroup?
-    func substitutes(
-        for exerciseId: String,
-        availableEquipment: [Equipment],
-        injuries: [BodyLimitation],
-        excludeIds: Set<String>
-    ) async throws -> [Exercise]
     func updateFavorite(id: String, isFavorite: Bool) async throws
     func updateAvoided(id: String, isAvoided: Bool) async throws
     func updatePreference(id: String, preference: ExercisePreference) async throws

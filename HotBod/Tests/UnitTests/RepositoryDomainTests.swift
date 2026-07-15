@@ -589,7 +589,9 @@ final class LocalExerciseRepositoryPreferenceTests: XCTestCase {
             let exerciseId = try await repo.fetchAll().first!.id
             try await repo.updatePreference(id: exerciseId, preference: .excluded)
 
-            let filtered = try await repo.search(
+            let all = try await repo.fetchAll()
+            let filtered = ExerciseFilter.apply(
+                exercises: all,
                 query: "",
                 filters: ExerciseFilters(excludeAvoided: true)
             )

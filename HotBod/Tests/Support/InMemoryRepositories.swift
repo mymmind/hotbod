@@ -72,26 +72,9 @@ actor InMemoryExerciseRepository: ExerciseRepository {
 
   func fetchAll() async throws -> [Exercise] { exercises }
   func fetch(id: String) async throws -> Exercise? { exercises.first { $0.id == id } }
-  func search(query: String, filters: ExerciseFilters) async throws -> [Exercise] {
-    ExerciseFilter.apply(exercises: exercises, query: query, filters: filters)
-  }
   func fetchSubstitutionGroups() async throws -> [ExerciseSubstitutionGroup] { [] }
   func fetchExercises(inGroup groupId: String) async throws -> [Exercise] { [] }
   func substitutionGroup(for exerciseId: String) async throws -> ExerciseSubstitutionGroup? { nil }
-  func substitutes(
-    for exerciseId: String,
-    availableEquipment: [Equipment],
-    injuries: [BodyLimitation],
-    excludeIds: Set<String>
-  ) async throws -> [Exercise] {
-    ExerciseSubstitution.candidates(
-      for: exerciseId,
-      from: exercises,
-      availableEquipment: availableEquipment,
-      injuries: injuries,
-      excludeIds: excludeIds
-    )
-  }
   func updateFavorite(id: String, isFavorite: Bool) async throws {
     guard let index = exercises.firstIndex(where: { $0.id == id }) else { return }
     exercises[index].preference = isFavorite ? .favorite : (exercises[index].preference == .favorite ? .neutral : exercises[index].preference)

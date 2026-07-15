@@ -3,9 +3,9 @@ import SwiftUI
 struct MetricCard: View {
     let label: String
     let value: String
-    var detail: String? = nil
+    var detail: String?
     var inverted: Bool = false
-    var accent: Color? = nil
+    var accent: Color?
     var animateValue: Bool = true
 
     var body: some View {

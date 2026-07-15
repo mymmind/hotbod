@@ -365,7 +365,9 @@ struct WorkoutSessionView: View {
                     sessionTextAction("Add Exercise", identifier: "session.addExercise") { showAddExercise = true }
                 }
                 sessionTextAction("Skip", identifier: "session.skipExercise") { skipExercise() }
-                sessionTextAction("Swap", identifier: "session.swapExercise") { presentSwapSheet(for: currentExerciseIndex) }
+                sessionTextAction("Swap", identifier: "session.swapExercise") {
+                    presentSwapSheet(for: currentExerciseIndex)
+                }
                 if canGroupWithNext(exercise: exercise) {
                     sessionTextAction("Group", identifier: "session.groupWithNext") { groupWithNextExercise() }
                 }
@@ -449,7 +451,6 @@ struct WorkoutSessionView: View {
         guard !exercise.wasSkipped else { return false }
         return exercise.completedSets.isEmpty || index == currentExerciseIndex
     }
-
 
     @ViewBuilder
     private func swapSheetContent(for target: SessionSwapTarget) -> some View {
@@ -665,11 +666,7 @@ struct WorkoutSessionView: View {
         HStack(spacing: ForgeSpacing.s3) {
             Text(setLabel(planned: planned, index: index, warmupsAtStart: warmupsAtStart))
                 .font(ForgeTypography.metric)
-                .foregroundStyle(
-                    planned.isWarmup
-                        ? (isDone ? ForgeColors.textSecondary : ForgeColors.textPrimary)
-                        : (isDone ? ForgeColors.accentGreen : (isActive ? ForgeColors.textPrimary : ForgeColors.textSecondary))
-                )
+                .foregroundStyle(setLabelColor(isDone: isDone, isActive: isActive, planned: planned))
                 .frame(width: 28, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -910,7 +907,8 @@ struct WorkoutSessionView: View {
         distanceMeters: Double? = nil
     ) {
         guard let exerciseIdx = session.exercises.firstIndex(where: { $0.id == exerciseId }),
-              let completedIdx = session.exercises[exerciseIdx].completedSets.firstIndex(where: { $0.setIndex == setIndex })
+              let completedIdx = session.exercises[exerciseIdx].completedSets
+                .firstIndex(where: { $0.setIndex == setIndex })
         else { return }
 
         if let weightKg {
@@ -982,7 +980,11 @@ struct WorkoutSessionView: View {
         pendingRpeBySetId.removeValue(forKey: planned.id)
         environment.scheduleWorkoutSessionSave(session)
 
-        let isPR = isPersonalRecord(exerciseId: exercise.exerciseId, completed: completed, showWeightInput: showWeightInput)
+        let isPR = isPersonalRecord(
+            exerciseId: exercise.exerciseId,
+            completed: completed,
+            showWeightInput: showWeightInput
+        )
         flashCompletedSet(planned.id, isPR: isPR)
         feedback.play(isPR ? .personalRecord : .setComplete)
 
@@ -1058,7 +1060,8 @@ struct WorkoutSessionView: View {
     }
 
     private func skipExercise() {
-        guard let idx = session.exercises.indices.contains(currentExerciseIndex) ? currentExerciseIndex : nil else { return }
+        guard session.exercises.indices.contains(currentExerciseIndex) else { return }
+        let idx = currentExerciseIndex
         session.exercises[idx].wasSkipped = true
         clearPersistedRestState()
         environment.scheduleWorkoutSessionSave(session)
@@ -1077,7 +1080,8 @@ struct WorkoutSessionView: View {
         if let exerciseIdx = rirPromptExerciseIndex,
            let setIndex = rirPromptSetIndex,
            session.exercises.indices.contains(exerciseIdx),
-           let completedIdx = session.exercises[exerciseIdx].completedSets.firstIndex(where: { $0.setIndex == setIndex }) {
+           let completedIdx = session.exercises[exerciseIdx].completedSets
+            .firstIndex(where: { $0.setIndex == setIndex }) {
             session.exercises[exerciseIdx].completedSets[completedIdx].rir = rir
             session.exercises[exerciseIdx].completedSets[completedIdx].rpe = EffortFeedbackMapping.rpe(fromRIR: rir)
             session.exercises[exerciseIdx].completedSets[completedIdx].isFailure = rir == 0
@@ -1141,7 +1145,6 @@ struct WorkoutSessionView: View {
             finishWorkout()
         }
     }
-
 
     private var uitestCompletionView: some View {
         VStack(spacing: ForgeSpacing.s6) {

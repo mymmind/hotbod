@@ -164,7 +164,11 @@ extension AppEnvironment {
             return (ex, we.completedSets)
         }
         var states = recoveryStates
-        states = RecoveryCalculator.applyWorkoutFatigue(states: states, exercises: allExercises, completedSets: completed)
+        states = RecoveryCalculator.applyWorkoutFatigue(
+            states: states,
+            exercises: allExercises,
+            completedSets: completed
+        )
         recoveryStates = states
         try? await recoveryRepository.saveRecoveryStates(states)
 
@@ -190,8 +194,8 @@ extension AppEnvironment {
             if let name = map[we.exerciseId]?.name, let next = updated.suggestedNextWeightKg {
                 notes.append("\(name): try \(Int(next))kg next session.")
             }
-            if let i = stats.firstIndex(where: { $0.exerciseId == we.exerciseId }) {
-                stats[i] = updated
+            if let statIndex = stats.firstIndex(where: { $0.exerciseId == we.exerciseId }) {
+                stats[statIndex] = updated
             } else {
                 stats.append(updated)
             }

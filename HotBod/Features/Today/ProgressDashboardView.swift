@@ -57,7 +57,8 @@ struct ProgressDashboardView: View {
         if viewModel.isLoading {
             return "Loading your trends..."
         }
-        return "\(viewModel.workoutFrequency) sessions this week · \(Int(viewModel.proteinCompliancePercent))% protein compliance"
+        let compliance = Int(viewModel.proteinCompliancePercent)
+        return "\(viewModel.workoutFrequency) sessions this week · \(compliance)% protein compliance"
     }
 
     private var complianceCard: some View {
@@ -98,7 +99,11 @@ struct ProgressDashboardView: View {
 
     private var e1rmTrendCard: some View {
         ForgeCard {
-            ForgeSectionHeader(title: "E1RM Trend", subtitle: "Last 12 weeks · \(viewModel.selectedLiftForChart.name)", accent: ForgeColors.accent)
+            ForgeSectionHeader(
+                title: "E1RM Trend",
+                subtitle: "Last 12 weeks · \(viewModel.selectedLiftForChart.name)",
+                accent: ForgeColors.accent
+            )
             if !viewModel.e1rmChartData.isEmpty {
                 Chart(viewModel.e1rmChartData) { point in
                     LineMark(x: .value("Week", point.weekLabel), y: .value("E1RM", point.e1rm))
@@ -341,6 +346,14 @@ struct ProgressDashboardView: View {
 
 // MARK: - View Model
 
+struct TopLiftProgress: Identifiable {
+    let exercise: Exercise
+    let e1rm: Double
+    let changePercent: Double?
+
+    var id: String { exercise.id }
+}
+
 @Observable
 @MainActor
 final class ProgressDashboardViewModel {
@@ -352,7 +365,7 @@ final class ProgressDashboardViewModel {
     var e1rmPeakValue: Double = 0
     var volumeChartData: [VolumeChartPoint] = []
     var avgSetsPerWeek: Double = 0
-    var topLifts: [(exercise: Exercise, e1rm: Double, changePercent: Double?)] = []
+    var topLifts: [TopLiftProgress] = []
     var muscleStrengthScores: [StrengthHistory.MuscleStrengthScore] = []
     var recoveryByMuscle: [MuscleRecoveryState] = []
     var bodyPhotos: [BodyProgressPhoto] = []
@@ -407,8 +420,10 @@ final class ProgressDashboardViewModel {
         topLifts = StrengthHistory.topLifts(stats: stats, exercises: exercises).map { exercise, e1rm in
             let previousAverage = stats.first(where: { $0.exerciseId == exercise.id })?
                 .recentSets.dropLast().map { $0.weightKg ?? 0 }.average() ?? 0
-            let changePercent = previousAverage > 0 ? ((e1rm - previousAverage) / previousAverage) * 100 : nil
-            return (exercise: exercise, e1rm: e1rm, changePercent: changePercent)
+            let changePercent = previousAverage > 0
+                ? ((e1rm - previousAverage) / previousAverage) * 100
+                : nil
+            return TopLiftProgress(exercise: exercise, e1rm: e1rm, changePercent: changePercent)
         }
 
         let bodyweightKg = environment.userProfile?.weightKg ?? 0
@@ -481,7 +496,10 @@ final class ProgressDashboardViewModel {
            let lastWeight = topLift.lastWeightKg {
             let gain = e1rm - lastWeight
             if gain > 0 {
-                generatedInsights.append("\(exercise.name) E1RM at \(String(format: "%.1f", e1rm)) kg (+\(String(format: "%.1f", gain)) kg)")
+                generatedInsights.append(
+                    "\(exercise.name) E1RM at \(String(format: "%.1f", e1rm)) kg "
+                        + "(+\(String(format: "%.1f", gain)) kg)"
+                )
             }
         }
 
