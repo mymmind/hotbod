@@ -3,7 +3,8 @@ options:
   bundleIdPrefix: com.hotbod
   deploymentTarget:
     iOS: "17.0"
-  xcodeVersion: "15.0"
+  # Xcode 16+ embeds watch apps in PlugIns/ (not Watch/). Matches local Xcode 26.x.
+  xcodeVersion: "16.0"
   createIntermediateGroups: true
 settings:
   base:
@@ -62,6 +63,13 @@ targets:
         product: Supabase
       - package: Pow
         product: Pow
+      # Embeds HotBodWatch in HotBod.app/PlugIns/ (Xcode 16+). Requires watchOS SDK
+      # to compile the watch target. A watchOS Simulator runtime is only needed to
+      # run the watch app in Simulator — not for xcodebuild CI/archive builds.
+      - target: HotBodWatch
+        embed: true
+        copy:
+          destination: plugins
     preBuildScripts:
       - name: SwiftLint
         basedOnDependencyAnalysis: false
