@@ -158,7 +158,9 @@ final class IntegrationFlowTests: XCTestCase {
 
   func testRegenerateProducesFreshValidatedWorkout() async throws {
     let env = makeEnvironment()
-    try await env.seedOnboardedProfile()
+    var profile = UserProfile.empty()
+    profile.preferredTrainingDays = [TrainingSchedule.weekday(), .monday, .tuesday, .thursday, .friday]
+    try await env.seedOnboardedProfile(profile)
     await env.bootstrap()
 
     guard let profile = env.userProfile else {

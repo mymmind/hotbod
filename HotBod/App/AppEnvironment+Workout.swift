@@ -86,8 +86,7 @@ extension AppEnvironment {
     ) async -> Bool {
         guard allowsUnscheduledDay || TrainingSchedule.isTrainingDay(profile: profile) else { return false }
         guard !isTodayWorkoutCompleted else { return false }
-        guard reserveWorkoutGeneration() else { return false }
-        defer { releaseWorkoutGenerationReservation() }
+        guard workoutGenerationTask == nil, !isReservingWorkoutGeneration else { return false }
 
         if requiresProAccess {
             guard canAccess(.unlimitedGeneration) else {
@@ -106,7 +105,7 @@ extension AppEnvironment {
             effectiveOptions.preferVariation = true
         }
 
-        if await persistRegeneratedWorkout(
+        if await persistRegeneratedWorkoutIfAvailable(
             profile: profile,
             splitDayFocus: splitFocus,
             options: effectiveOptions
@@ -120,7 +119,7 @@ extension AppEnvironment {
         var fallbackOptions = options
         fallbackOptions.excludeExerciseIds = []
         fallbackOptions.preferVariation = true
-        if await persistRegeneratedWorkout(
+        if await persistRegeneratedWorkoutIfAvailable(
             profile: profile,
             splitDayFocus: splitFocus,
             options: fallbackOptions
@@ -136,8 +135,7 @@ extension AppEnvironment {
     @discardableResult
     func restartTodayWorkout(profile: UserProfile, options: WorkoutGenerationOptions = WorkoutGenerationOptions()) async -> Bool {
         guard TrainingSchedule.isTrainingDay(profile: profile) else { return false }
-        guard reserveWorkoutGeneration() else { return false }
-        defer { releaseWorkoutGenerationReservation() }
+        guard workoutGenerationTask == nil, !isReservingWorkoutGeneration else { return false }
 
         await cancelActiveWorkoutIfNeeded()
         await applyRecoveryDecay()
@@ -151,7 +149,7 @@ extension AppEnvironment {
             effectiveOptions.preferVariation = true
         }
 
-        if await persistRegeneratedWorkout(
+        if await persistRegeneratedWorkoutIfAvailable(
             profile: profile,
             splitDayFocus: splitFocus,
             options: effectiveOptions
@@ -164,7 +162,7 @@ extension AppEnvironment {
         var fallbackOptions = options
         fallbackOptions.excludeExerciseIds = []
         fallbackOptions.preferVariation = true
-        guard await persistRegeneratedWorkout(
+        guard await persistRegeneratedWorkoutIfAvailable(
             profile: profile,
             splitDayFocus: splitFocus,
             options: fallbackOptions
@@ -177,8 +175,7 @@ extension AppEnvironment {
     func switchTodaySplitFocus() async -> Bool {
         guard let profile = userProfile,
               TrainingSchedule.isTrainingDay(profile: profile) else { return false }
-        guard reserveWorkoutGeneration() else { return false }
-        defer { releaseWorkoutGenerationReservation() }
+        guard workoutGenerationTask == nil, !isReservingWorkoutGeneration else { return false }
 
         await cancelActiveWorkoutIfNeeded()
         await applyRecoveryDecay()
@@ -194,7 +191,7 @@ extension AppEnvironment {
             options.excludeExerciseIds = current.exercises.map(\.exerciseId)
         }
 
-        if await persistRegeneratedWorkout(
+        if await persistRegeneratedWorkoutIfAvailable(
             profile: profile,
             splitDayFocus: splitFocus,
             options: options
@@ -206,7 +203,7 @@ extension AppEnvironment {
 
         var fallbackOptions = WorkoutGenerationOptions()
         fallbackOptions.preferVariation = true
-        guard await persistRegeneratedWorkout(
+        guard await persistRegeneratedWorkoutIfAvailable(
             profile: profile,
             splitDayFocus: splitFocus,
             options: fallbackOptions
@@ -261,6 +258,20 @@ extension AppEnvironment {
             try? await cloudSyncService.pushTodayWorkout(workout)
         }
         return true
+    }
+
+    private func persistRegeneratedWorkoutIfAvailable(
+        profile: UserProfile,
+        splitDayFocus: SplitDayFocus?,
+        options: WorkoutGenerationOptions
+    ) async -> Bool {
+        guard reserveWorkoutGeneration() else { return false }
+        defer { releaseWorkoutGenerationReservation() }
+        return await persistRegeneratedWorkout(
+            profile: profile,
+            splitDayFocus: splitDayFocus,
+            options: options
+        )
     }
 
     func fetchTodayCompletedSession() async -> WorkoutSession? {
@@ -382,11 +393,12 @@ extension AppEnvironment {
         }
 
         workoutGenerationTask = task
-        let result = await task.value
-        if token == workoutGenerationToken {
-            workoutGenerationTask = nil
+        defer {
+            if token == workoutGenerationToken {
+                workoutGenerationTask = nil
+            }
         }
-        return result
+        return await task.value
     }
 
     func saveTodayWorkout(_ workout: GeneratedWorkout) async throws {
@@ -404,7 +416,7 @@ extension AppEnvironment {
 
     @discardableResult
     func reserveWorkoutGeneration() -> Bool {
-        guard !isWorkoutGenerationInFlight else { return false }
+        guard workoutGenerationTask == nil, !isReservingWorkoutGeneration else { return false }
         isReservingWorkoutGeneration = true
         return true
     }

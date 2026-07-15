@@ -63,7 +63,11 @@ final class AppEnvironment {
     var dayScopedRefreshTask: Task<Void, Never>?
 
     var isWorkoutGenerationInFlight: Bool {
-        workoutGenerationTask != nil || isReservingWorkoutGeneration
+        workoutGenerationTask != nil
+    }
+
+    var isWorkoutGenerationReserved: Bool {
+        isReservingWorkoutGeneration
     }
 
     var syncStores: SyncLocalStores {
@@ -189,17 +193,22 @@ final class AppEnvironment {
     func revalidateTodayPlanForCurrentDay() async {
         guard hasCompletedOnboarding, let profile = userProfile else { return }
         await normalizeProgramStateForToday(profile: profile)
+        let generationBlocked = isWorkoutGenerationInFlight
+            || isWorkoutGenerationReserved
+            || isStartingWorkoutSession
         let now = Date()
         let calendar = Calendar.current
         if TrainingSchedule.isTrainingDay(profile: profile) {
-            if todayWorkout == nil, !isTodayWorkoutCompleted {
+            if todayWorkout == nil, !isTodayWorkoutCompleted, !generationBlocked {
                 await ensureTodayWorkoutOnLaunch(profile: profile)
             } else if let workout = todayWorkout,
+                      !generationBlocked,
                       await shouldRegenerateStaleTodayWorkout(workout, now: now, calendar: calendar),
                       !isTodayWorkoutCompleted {
                 await ensureTodayWorkoutOnLaunch(profile: profile)
             }
         } else if let workout = todayWorkout,
+                  !generationBlocked,
                   await shouldRegenerateStaleTodayWorkout(workout, now: now, calendar: calendar) {
             await clearTodayWorkout()
         }

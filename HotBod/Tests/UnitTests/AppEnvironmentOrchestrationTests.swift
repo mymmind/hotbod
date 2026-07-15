@@ -438,6 +438,31 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
         let shouldRegenerate = await env.shouldRegenerateStaleTodayWorkout(staleWorkout)
         XCTAssertFalse(shouldRegenerate)
     }
+
+    func testRegression_regenerateUIButtonNotBlockedByGenerationReservation() async throws {
+        let env = AppEnvironment.makeForTests(repos: TestRepositories.withCatalog())
+        try await env.seedOnboardedProfile()
+        await env.bootstrap()
+
+        env.isReservingWorkoutGeneration = true
+        XCTAssertFalse(env.isWorkoutGenerationInFlight)
+    }
+
+    func testBootstrapAndRegenerateOnTrainingDay() async throws {
+        var profile = UserProfile.empty()
+        profile.preferredTrainingDays = [TrainingSchedule.weekday()]
+        let fresh = FixtureBuilders.makeGeneratedWorkout()
+        let env = AppEnvironment.makeForTests(
+            repos: TestRepositories.withCatalog(),
+            workoutGenerationService: FixedMockWorkoutGenerationService(workout: fresh)
+        )
+        try await env.seedOnboardedProfile(profile)
+        await env.bootstrap()
+
+        XCTAssertNotNil(env.todayWorkout)
+        let regenerated = await env.regenerateTodayWorkout(profile: profile)
+        XCTAssertTrue(regenerated)
+    }
 }
 
 @MainActor

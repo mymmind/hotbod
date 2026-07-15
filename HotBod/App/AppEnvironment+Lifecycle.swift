@@ -22,13 +22,16 @@ extension AppEnvironment {
         }
 
         dayScopedRefreshInProgress = true
+        defer {
+            dayScopedRefreshInProgress = false
+            dayScopedRefreshTask = nil
+        }
+
         let task = Task { @MainActor in
             await performDayScopedRefresh(pullCloudFirst: pullCloudFirst)
         }
         dayScopedRefreshTask = task
         await task.value
-        dayScopedRefreshInProgress = false
-        dayScopedRefreshTask = nil
     }
 
     private func performDayScopedRefresh(pullCloudFirst: Bool) async {
