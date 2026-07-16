@@ -52,6 +52,12 @@ final class ExerciseMetadataResolverTests: XCTestCase {
         XCTAssertEqual(WeightDisplaySemantics.total.compactLoadUnit, "kg")
     }
 
+    func testCompactLoadUnitFormatsPerArmTargetFragment() {
+        let semantics = WeightDisplaySemantics.perHand
+        let fragment = "\(Int(10.0))\(semantics.compactLoadUnit) × "
+        XCTAssertEqual(fragment, "10kg per arm × ")
+    }
+
     func testPerHandSettingsWeightLabelIsKgPerArm() {
         XCTAssertEqual(WeightDisplaySemantics.perHand.settingsWeightLabel, "kg per arm")
         XCTAssertEqual(WeightDisplaySemantics.total.settingsWeightLabel, "kg")

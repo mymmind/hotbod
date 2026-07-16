@@ -71,7 +71,7 @@ extension WorkoutSessionView {
         }
 
         if let wKg = planned.targetWeightKg {
-            let unit = weightSemantics == .perHand ? "kg each" : "kg"
+            let unit = weightSemantics.compactLoadUnit
             let weightPrefix = "\(Int(wKg))\(unit) × "
             if planned.isWarmup { return "Warm-up · \(weightPrefix)\(range)" }
             if planned.isCooldown { return "Cooldown · \(weightPrefix)\(range)" }
@@ -89,7 +89,7 @@ extension WorkoutSessionView {
         semantics: WeightDisplaySemantics
     ) -> String {
         guard showWeightInput, let wKg = planned.targetWeightKg else { return "" }
-        let unit = semantics == .perHand ? "kg each" : "kg"
+        let unit = semantics.compactLoadUnit
         return " · \(Int(wKg))\(unit)"
     }
 
@@ -123,7 +123,7 @@ extension WorkoutSessionView {
             } else if let distance = best.distanceMeters {
                 bestDescription = "\(Int(distance))m"
             } else if let weight = best.weightKg {
-                bestDescription = "\(Int(weight))kg × \(best.reps)"
+                bestDescription = "\(Int(weight))\(meta.resolvedWeightDisplaySemantics.compactLoadUnit) × \(best.reps)"
             } else {
                 bestDescription = "\(best.reps) reps"
             }
