@@ -1,10 +1,5 @@
 import SwiftUI
 
-enum PendingPostSetAction: Equatable {
-    case rest(seconds: Int, advanceAfter: Bool)
-    case exerciseComplete
-}
-
 extension WorkoutSessionView {
     func endRestTimer(skipped: Bool) {
         let endKind = restTimerKind
