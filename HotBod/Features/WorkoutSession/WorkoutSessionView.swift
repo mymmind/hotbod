@@ -233,12 +233,14 @@ struct WorkoutSessionView: View {
             sessionActionBar(exercise: exercise, meta: meta)
 
             if isResting {
-                ForgeRestTimerBar(
-                    secondsRemaining: restSecondsRemaining,
-                    totalSeconds: max(restTotalSeconds, 1),
-                    onAddTime: { addRestTime() },
-                    onSkip: { endRestTimer(skipped: true) }
-                )
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    ForgeRestTimerBar(
+                        secondsRemaining: restSecondsRemaining(at: context.date),
+                        totalSeconds: max(restTotalSeconds, 1),
+                        onAddTime: { addRestTime() },
+                        onSkip: { endRestTimer(skipped: true) }
+                    )
+                }
                 .transition(ForgeMotion.slideUp)
             }
 

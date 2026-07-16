@@ -233,9 +233,46 @@ final class WorkoutGenerationFeedbackTests: XCTestCase {
 
 final class RestTimerPersistenceTests: XCTestCase {
     func testRegression_restTimerSurvivesBackground() {
-        let end = Date().addingTimeInterval(45)
-        let remainingAfterBackground = max(0, Int(ceil(end.timeIntervalSince(Date().addingTimeInterval(20)))))
-        XCTAssertEqual(remainingAfterBackground, 25)
+        let end = Date(timeIntervalSince1970: 1_000_045)
+        let afterBackground = Date(timeIntervalSince1970: 1_000_020)
+        XCTAssertEqual(
+            WorkoutSessionCalculator.restSecondsRemaining(until: end, at: afterBackground),
+            25
+        )
+    }
+
+    /// Display must recompute from wall-clock each second (TimelineView / tick),
+    /// not only when `@State` mutates — otherwise the bar freezes until foreground resume.
+    func testRegression_restTimerDisplayTracksWallClock() {
+        let end = Date(timeIntervalSince1970: 1_000_090)
+        XCTAssertEqual(
+            WorkoutSessionCalculator.restSecondsRemaining(
+                until: end,
+                at: Date(timeIntervalSince1970: 1_000_000)
+            ),
+            90
+        )
+        XCTAssertEqual(
+            WorkoutSessionCalculator.restSecondsRemaining(
+                until: end,
+                at: Date(timeIntervalSince1970: 1_000_001)
+            ),
+            89
+        )
+        XCTAssertEqual(
+            WorkoutSessionCalculator.restSecondsRemaining(
+                until: end,
+                at: Date(timeIntervalSince1970: 1_000_089.2)
+            ),
+            1
+        )
+        XCTAssertEqual(
+            WorkoutSessionCalculator.restSecondsRemaining(
+                until: end,
+                at: Date(timeIntervalSince1970: 1_000_090)
+            ),
+            0
+        )
     }
 }
 

@@ -655,5 +655,10 @@ enum WorkoutSessionCalculator {
         let remainder = seconds % 60
         return String(format: "%d:%02d", minutes, remainder)
     }
+
+    /// Wall-clock remaining rest. UI must re-evaluate this each second (e.g. `TimelineView`).
+    static func restSecondsRemaining(until end: Date, at now: Date = Date()) -> Int {
+        max(0, Int(ceil(end.timeIntervalSince(now))))
+    }
 }
 

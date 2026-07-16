@@ -122,8 +122,12 @@ extension WorkoutSessionView {
     }
 
     var restSecondsRemaining: Int {
+        restSecondsRemaining(at: Date())
+    }
+
+    func restSecondsRemaining(at date: Date) -> Int {
         guard let end = restEndDate else { return 0 }
-        return max(0, Int(ceil(end.timeIntervalSince(Date()))))
+        return WorkoutSessionCalculator.restSecondsRemaining(until: end, at: date)
     }
 
     func executePostSetAction(_ action: PendingPostSetAction) {
