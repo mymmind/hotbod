@@ -17,3 +17,6 @@ build/
 xcodebuild-output.txt
 swiftlint-output.txt
 build-settings-snapshot.txt
+
+# Git worktrees (local isolation)
+.worktrees/
