@@ -121,25 +121,12 @@ extension WorkoutSessionView {
         feedback.play(isPR ? .personalRecord : .setComplete)
 
         let allSetsDone = session.exercises[idx].completedSets.count >= session.exercises[idx].plannedSets.count
-        let postAction: PendingPostSetAction
-        if allSetsDone {
-            let transitionRest = ExerciseGroupPlanner.restBeforeAdvancing(from: idx, exercises: session.exercises)
-            if transitionRest > 0 {
-                postAction = .rest(seconds: transitionRest, advanceAfter: true)
-            } else {
-                postAction = .exerciseComplete
-            }
-        } else {
-            let restSeconds: Int
-            if planned.isWarmup {
-                restSeconds = GenerationConstants.Warmup.restSeconds
-            } else if planned.isCooldown {
-                restSeconds = GenerationConstants.Cooldown.restSeconds
-            } else {
-                restSeconds = session.exercises[idx].restSeconds
-            }
-            postAction = .rest(seconds: restSeconds, advanceAfter: false)
-        }
+        let postAction = PostSetActionPlanner.action(
+            allSetsDone: allSetsDone,
+            isWarmup: planned.isWarmup,
+            isCooldown: planned.isCooldown,
+            exerciseRestSeconds: session.exercises[idx].restSeconds
+        )
 
         if needsRIRPrompt {
             rirPromptExerciseIndex = idx

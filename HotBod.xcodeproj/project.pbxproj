@@ -14,6 +14,7 @@
 		0518582D58067AF87627D5C4 /* WorkoutSessionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48660EBCE0C26B05BB17A394 /* WorkoutSessionUITests.swift */; };
 		0549D0D4824AB067F78A3D14 /* USDAFoodSearchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EAA6CBD6294BAD074D46B94 /* USDAFoodSearchService.swift */; };
 		05C174671004F162DBF8D0BF /* ForgeMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701C8AB3B6F5D6CD75189A37 /* ForgeMotion.swift */; };
+		0617301269382CC57760D185 /* PostSetActionPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49235F6A74C62C94E9C66D3F /* PostSetActionPlanner.swift */; };
 		0B6C317AA0EB317E23B0073D /* CoreFinisherPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7B0A609493C1C0DFF1DC98E /* CoreFinisherPlanner.swift */; };
 		0B99A0ADBB2FB56DB50B0F1D /* TodayWorkoutUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10E967443299F79693587CB0 /* TodayWorkoutUITests.swift */; };
 		0C7D02D57925535191028B91 /* WorkoutSessionHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04CE2EF7888A57AD1AAAAB58 /* WorkoutSessionHeaderView.swift */; };
@@ -222,6 +223,7 @@
 		F0E956BEEF1A3E5C9AD09036 /* WorkoutGenerationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C85EC33D4FB65D2E8D1E237 /* WorkoutGenerationService.swift */; };
 		F28F65E6F3FAC9DFCDAE90D4 /* CoachSafetyPropertyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 347255710E36AD87F59F7E67 /* CoachSafetyPropertyTests.swift */; };
 		F3ED84E0965DAF164F66617F /* WorkoutStartCountdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD61BFA8A6A8D4233D37191 /* WorkoutStartCountdown.swift */; };
+		F429619D5D0382CEA0572A03 /* PostSetActionPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6751FFF4C16DEB7BCAA3714 /* PostSetActionPlannerTests.swift */; };
 		F4370005911725A4F9A8B3AB /* ExerciseDemoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 988EB8E6D411CE5B752A4440 /* ExerciseDemoPlayerView.swift */; };
 		F667B4439DDC421E94C9FEC4 /* BodyPhotoDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB1DF9354C90972341F78A1C /* BodyPhotoDomainTests.swift */; };
 		F72912DF2DBE256B94E873BA /* AppEnvironment+Account.swift in Sources */ = {isa = PBXBuildFile; fileRef = 122A716A65A50547C94509DD /* AppEnvironment+Account.swift */; };
@@ -340,6 +342,7 @@
 		47E97FF16DA04E22F3230FA8 /* RepositoryDomainTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryDomainTests.swift; sourceTree = "<group>"; };
 		47F98C557E3F8F2D463D7772 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		48660EBCE0C26B05BB17A394 /* WorkoutSessionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSessionUITests.swift; sourceTree = "<group>"; };
+		49235F6A74C62C94E9C66D3F /* PostSetActionPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostSetActionPlanner.swift; sourceTree = "<group>"; };
 		49B9F0E39F47F63D0CA2B33A /* ExerciseGroupPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseGroupPlannerTests.swift; sourceTree = "<group>"; };
 		49CB91285627F56A6AAE0F58 /* WorkoutPreviewViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutPreviewViews.swift; sourceTree = "<group>"; };
 		4B17727FD0F7A1FE271C8D25 /* Phase2Algorithms.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Phase2Algorithms.swift; sourceTree = "<group>"; };
@@ -486,6 +489,7 @@
 		F48E4C6753F2AE94FD608607 /* PropertyTestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PropertyTestHelpers.swift; sourceTree = "<group>"; };
 		F4A0119641CEFAC6F550CD0C /* PersistenceTestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceTestHelpers.swift; sourceTree = "<group>"; };
 		F55EC3E2DE87BD8FC53061B3 /* SettingsDraftEditing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsDraftEditing.swift; sourceTree = "<group>"; };
+		F6751FFF4C16DEB7BCAA3714 /* PostSetActionPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostSetActionPlannerTests.swift; sourceTree = "<group>"; };
 		F7354E2278AC6E7C0132E520 /* ExerciseCompleteInterstitial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseCompleteInterstitial.swift; sourceTree = "<group>"; };
 		F8B3D96FCCC673D93F7ED4BD /* SupabaseCloudSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseCloudSyncService.swift; sourceTree = "<group>"; };
 		F9C3D7B226622D232B63C481 /* SettingsView+Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsView+Profile.swift"; sourceTree = "<group>"; };
@@ -820,6 +824,7 @@
 				3A62DD43877B01569476B0E2 /* GenerationConstants.swift */,
 				0E0F5C77050501D0C2C545A5 /* MaxEffortPlanner.swift */,
 				4B17727FD0F7A1FE271C8D25 /* Phase2Algorithms.swift */,
+				49235F6A74C62C94E9C66D3F /* PostSetActionPlanner.swift */,
 				5A0B81BF2A1210A831762B4E /* RestTimerFeedbackPlanner.swift */,
 				A21CC6DF27C54FE6517B0EC6 /* SessionExercisePlanner.swift */,
 				258B455C05672709EAD44BAD /* SessionStructurePlanner.swift */,
@@ -937,6 +942,7 @@
 				67D9C9D0FD13286A0220F18D /* P2ParityFeatureTests.swift */,
 				2A05BDCC6B9A250A63D9C065 /* P3ParityFeatureTests.swift */,
 				3B8F1113071F16F825F749A5 /* Phase2AlgorithmsTests.swift */,
+				F6751FFF4C16DEB7BCAA3714 /* PostSetActionPlannerTests.swift */,
 				D8825A3F7DDEB9D5DCA567DC /* ProgressiveOverloadDomainTests.swift */,
 				569E64F2A09045B746E664CA /* ProteinDomainTests.swift */,
 				B2BDA5E670A1986391578271 /* RecoveryDomainTests.swift */,
@@ -1302,6 +1308,7 @@
 				59C06829B5FB77D4651E637F /* P3ParityFeatureTests.swift in Sources */,
 				52B4483242F079EC45CAFC42 /* PersistenceTestHelpers.swift in Sources */,
 				CD714A74BCF9CEDA7699C92F /* Phase2AlgorithmsTests.swift in Sources */,
+				F429619D5D0382CEA0572A03 /* PostSetActionPlannerTests.swift in Sources */,
 				124276C862A50D622580C536 /* ProgressiveOverloadDomainTests.swift in Sources */,
 				40ABEFEC4B949EDC4F77E02A /* ProgressiveOverloadPropertyTests.swift in Sources */,
 				55ABDEC1B271BB1BB8B07CC0 /* PropertyTestHelpers.swift in Sources */,
@@ -1425,6 +1432,7 @@
 				B40B454710354B26848189B2 /* WorkoutSessionMetricDrafts.swift in Sources */,
 				64BA55FDC84429DFC9374E33 /* PhoneWatchSessionBridge.swift in Sources */,
 				8D6D62D4EFD29F429901F6EA /* PlistSecrets.swift in Sources */,
+				0617301269382CC57760D185 /* PostSetActionPlanner.swift in Sources */,
 				E5835BFFFD03E54C8E16D6B0 /* ProfileScheduleEditing.swift in Sources */,
 				93E0BC09522B89553E37FB49 /* ProgressDashboardView.swift in Sources */,
 				7202E3CB1021F4A9033CFE80 /* ProteinTrackerView.swift in Sources */,

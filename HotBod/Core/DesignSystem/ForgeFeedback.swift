@@ -88,6 +88,7 @@ struct ForgeRestTimerBar: View {
                 .font(ForgeTypography.label)
             Button("Skip", action: onSkip)
                 .font(ForgeTypography.label.weight(.semibold))
+                .accessibilityIdentifier("session.rest.skip")
         }
         .padding(.horizontal, ForgeSpacing.s4)
         .padding(.vertical, ForgeSpacing.s3)

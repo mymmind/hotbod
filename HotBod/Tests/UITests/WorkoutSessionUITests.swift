@@ -115,4 +115,35 @@ final class WorkoutSessionUITests: BaseUITestCase {
     tapSessionAction("session.exitWorkout")
     XCTAssertTrue(waitForMainShell(timeout: 15) || waitForTabBar(timeout: 15))
   }
+
+  func testRegression_exerciseCompleteIsFullScreen() {
+    XCTAssertTrue(session.waitForSession())
+
+    var sawExerciseComplete = false
+    for _ in 0..<24 {
+      session.dismissTransientPromptsIfNeeded()
+
+      if session.exerciseComplete.waitForExistence(timeout: 1) {
+        sawExerciseComplete = true
+        break
+      }
+
+      if session.completeSetButton.waitForExistence(timeout: 2) {
+        if session.completeSetButton.isHittable {
+          session.completeSetButton.tap()
+        } else {
+          session.completeSetButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
+        session.dismissTransientPromptsIfNeeded()
+        continue
+      }
+
+      session.dismissTransientPromptsIfNeeded()
+    }
+
+    XCTAssertTrue(sawExerciseComplete, "Expected Exercise Complete after finishing an exercise")
+    XCTAssertTrue(session.exerciseComplete.waitForExistence(timeout: 2))
+    XCTAssertTrue(session.exerciseCompleteContinue.waitForExistence(timeout: 2))
+    XCTAssertFalse(session.completeSetButton.exists, "Active session Complete Set must not remain visible")
+  }
 }

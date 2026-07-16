@@ -104,6 +104,23 @@ struct WorkoutSessionView: View {
                 }
                 .transition(ForgeMotion.rise)
                 .id("completion")
+            } else if showExerciseComplete,
+                      let exercise = currentExercise,
+                      let meta = exerciseMap[exercise.exerciseId] {
+                let summary = exerciseCompleteSummary(for: exercise, meta: meta)
+                ExerciseCompleteInterstitial(
+                    exerciseName: meta.name,
+                    setsCompleted: summary.setsCompleted,
+                    volumeKg: summary.volumeKg,
+                    bestSetDescription: summary.bestSetDescription,
+                    averageRPE: summary.averageRPE,
+                    onContinue: {
+                        showExerciseComplete = false
+                        advanceExercise()
+                    }
+                )
+                .transition(ForgeMotion.rise)
+                .id("exerciseComplete")
             } else if let exercise = currentExercise, let meta = exerciseMap[exercise.exerciseId] {
                 sessionContent(exercise: exercise, meta: meta)
                     .transition(UITestConfiguration.isUITesting ? .identity : ForgeMotion.appear)
@@ -115,6 +132,7 @@ struct WorkoutSessionView: View {
             }
         }
         .animation(UITestConfiguration.isUITesting ? nil : ForgeMotion.standard, value: showCompletion)
+        .animation(UITestConfiguration.isUITesting ? nil : ForgeMotion.standard, value: showExerciseComplete)
         .animation(UITestConfiguration.isUITesting ? nil : ForgeMotion.exercise, value: currentExerciseIndex)
         .overlay(alignment: .top) {
             if showCompletion {
@@ -242,22 +260,6 @@ struct WorkoutSessionView: View {
                     )
                 }
                 .transition(ForgeMotion.slideUp)
-            }
-
-            if showExerciseComplete, let exercise = currentExercise, let meta = exerciseMap[exercise.exerciseId] {
-                let summary = exerciseCompleteSummary(for: exercise, meta: meta)
-                ExerciseCompleteInterstitial(
-                    exerciseName: meta.name,
-                    setsCompleted: summary.setsCompleted,
-                    volumeKg: summary.volumeKg,
-                    bestSetDescription: summary.bestSetDescription,
-                    averageRPE: summary.averageRPE,
-                    onContinue: {
-                        showExerciseComplete = false
-                        advanceExercise()
-                    }
-                )
-                .transition(ForgeMotion.rise)
             }
         }
         .animation(UITestConfiguration.isUITesting ? nil : ForgeMotion.exercise, value: currentExerciseIndex)
