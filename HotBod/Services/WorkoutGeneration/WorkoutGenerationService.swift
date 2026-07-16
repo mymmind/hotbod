@@ -273,6 +273,7 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
     // MARK: - Session mode
 
     private func shouldUseRecoveryMode(input: WorkoutGenerationInput) -> Bool {
+        if input.forceRecoverySession { return true }
         if input.readiness?.soreness == .severe { return true }
         return GenerationConstants.Recovery.averageRecovery(in: input.muscleRecovery)
             < GenerationConstants.Recovery.recoverySessionAvgThreshold

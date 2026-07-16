@@ -356,7 +356,8 @@ extension AppEnvironment {
                 sleepScore: healthReadiness.sleepScore,
                 soreness: soreness ?? sorenessLevel
             ),
-            splitDayFocus: splitDayFocus
+            splitDayFocus: splitDayFocus,
+            forceRecoverySession: options.forceRecoverySession
         )
     }
 

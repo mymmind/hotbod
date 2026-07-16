@@ -5,6 +5,7 @@ struct WorkoutGenerationOptions: Hashable {
     var soreness: SorenessLevel?
     var excludeExerciseIds: [String] = []
     var preferVariation: Bool = false
+    var forceRecoverySession: Bool = false
 }
 
 enum ExerciseSubstitution {
