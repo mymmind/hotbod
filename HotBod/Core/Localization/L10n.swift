@@ -13,5 +13,20 @@ enum L10n {
 
     enum Workout {
         static let completeTitle = String(localized: "workout.complete.title")
+
+        static let weightHardBlockTitle = String(localized: "workout.weightSanity.hard.title")
+        static let weightHardBlockMessage = String(localized: "workout.weightSanity.hard.message")
+        static let weightSoftWarningTitle = String(localized: "workout.weightSanity.soft.title")
+        static let weightSanityEdit = String(localized: "workout.weightSanity.edit")
+        static let weightSanitySaveAnyway = String(localized: "workout.weightSanity.saveAnyway")
+
+        static func weightSoftWarningMessage(enteredKg: String, baselineKg: String) -> String {
+            String(
+                format: String(localized: "workout.weightSanity.soft.message"),
+                locale: .current,
+                enteredKg,
+                baselineKg
+            )
+        }
     }
 }
