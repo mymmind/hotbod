@@ -72,49 +72,61 @@ final class ExerciseMetadataResolverTests: XCTestCase {
             pattern: .antiRotation,
             equipment: [.bodyweight]
         )
+        // Validator requires minStandardExercises; pad with valid rep-based lifts so the
+        // assertion isolates timed-prescription handling (0/0 reps must not fail).
+        let fillers = (1...3).map { index in
+            makeTestExercise(
+                id: "filler_\(index)",
+                primaryMuscles: [.chest],
+                pattern: .horizontalPush,
+                equipment: [.dumbbell]
+            )
+        }
+        let catalog = [plank] + fillers
+        var planned: [PlannedExercise] = [
+            PlannedExercise(
+                exerciseId: plank.id,
+                orderIndex: 0,
+                targetSets: [
+                    PlannedSet(
+                        targetRepsMin: 0,
+                        targetRepsMax: 0,
+                        targetDurationSeconds: 45
+                    )
+                ]
+            )
+        ]
+        for (offset, exercise) in fillers.enumerated() {
+            planned.append(
+                PlannedExercise(
+                    exerciseId: exercise.id,
+                    orderIndex: offset + 1,
+                    targetSets: [PlannedSet(targetRepsMin: 8, targetRepsMax: 10, targetWeightKg: 20)]
+                )
+            )
+        }
         let workout = GeneratedWorkout(
             id: UUID(),
             title: "Core",
             estimatedDurationMinutes: 30,
             focus: [.abs],
-            exercises: [
-                PlannedExercise(
-                    exerciseId: plank.id,
-                    orderIndex: 0,
-                    targetSets: [
-                        PlannedSet(
-                            targetRepsMin: 0,
-                            targetRepsMax: 0,
-                            targetDurationSeconds: 45
-                        )
-                    ]
-                )
-            ],
+            exercises: planned,
             rationale: "",
             safetyNotes: [],
             generatedBy: .rulesEngine,
             createdAt: Date()
         )
-        let profile = UserProfile.empty()
-        let input = WorkoutGenerationInput(
-            userProfile: profile,
-            goal: profile.goal,
-            experienceLevel: profile.experienceLevel,
-            availableEquipment: profile.availableEquipment,
-            targetDurationMinutes: 30,
-            preferredMuscleGroups: [],
-            avoidedMuscleGroups: [],
-            injuries: [],
-            recentWorkouts: [],
-            muscleRecovery: [:],
-            exerciseStats: [],
-            userPreferences: WorkoutPreferences(),
-            readiness: nil,
-            splitDayFocus: nil
-        )
+        let input = FixtureBuilders.makeValidationInput()
 
-        let result = WorkoutValidator.validate(workout: workout, input: input, exercises: [plank])
-        XCTAssertTrue(result.isValid, "Timed holds should validate on duration, not rep counts")
+        let result = WorkoutValidator.validate(workout: workout, input: input, exercises: catalog)
+        XCTAssertFalse(
+            result.errors.contains { $0.contains("Invalid rep range") },
+            "Timed holds should not be judged by rep counts"
+        )
+        XCTAssertTrue(
+            result.isValid,
+            "Timed holds should validate on duration, not rep counts. errors: \(result.errors)"
+        )
     }
 }
 
