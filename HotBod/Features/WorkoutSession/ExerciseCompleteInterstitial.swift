@@ -9,29 +9,36 @@ struct ExerciseCompleteInterstitial: View {
     let onContinue: () -> Void
 
     var body: some View {
-        VStack(spacing: ForgeSpacing.s5) {
-            Text("EXERCISE COMPLETE")
-                .font(ForgeTypography.label)
-                .tracking(ForgeTracking.eyebrowWide)
-                .foregroundStyle(ForgeColors.accentGreen)
+        VStack(spacing: 0) {
+            Spacer(minLength: ForgeSpacing.s6)
 
-            Text(exerciseName)
-                .font(ForgeTypography.display)
-                .foregroundStyle(ForgeColors.textPrimary)
-                .multilineTextAlignment(.center)
+            VStack(spacing: ForgeSpacing.s5) {
+                Text("EXERCISE COMPLETE")
+                    .font(ForgeTypography.label)
+                    .tracking(ForgeTracking.eyebrowWide)
+                    .foregroundStyle(ForgeColors.accentGreen)
 
-            ForgeCard {
-                VStack(alignment: .leading, spacing: ForgeSpacing.s3) {
-                    statRow(label: "Sets logged", value: "\(setsCompleted)")
-                    statRow(label: "Volume", value: "\(Int(volumeKg))kg")
-                    if let bestSetDescription {
-                        statRow(label: "Best set", value: bestSetDescription)
-                    }
-                    if let averageRPE {
-                        statRow(label: "Avg effort", value: String(format: "RPE %.1f", averageRPE))
+                Text(exerciseName)
+                    .font(ForgeTypography.display)
+                    .foregroundStyle(ForgeColors.textPrimary)
+                    .multilineTextAlignment(.center)
+
+                ForgeCard {
+                    VStack(alignment: .leading, spacing: ForgeSpacing.s3) {
+                        statRow(label: "Sets logged", value: "\(setsCompleted)")
+                        statRow(label: "Volume", value: "\(Int(volumeKg))kg")
+                        if let bestSetDescription {
+                            statRow(label: "Best set", value: bestSetDescription)
+                        }
+                        if let averageRPE {
+                            statRow(label: "Avg effort", value: String(format: "RPE %.1f", averageRPE))
+                        }
                     }
                 }
             }
+            .padding(.horizontal, ForgeSpacing.s5)
+
+            Spacer(minLength: ForgeSpacing.s6)
 
             ForgeButton(
                 title: "Next Exercise",
@@ -39,10 +46,11 @@ struct ExerciseCompleteInterstitial: View {
                 accessibilityIdentifier: "session.exerciseComplete.continue",
                 action: onContinue
             )
+            .padding(.horizontal, ForgeSpacing.s5)
+            .padding(.bottom, ForgeSpacing.s6)
         }
-        .padding(ForgeSpacing.s5)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(ForgeColors.background.opacity(0.98))
+        .background(ForgeColors.background)
         .accessibilityIdentifier("session.exerciseComplete")
     }
 
