@@ -324,9 +324,30 @@ extension WorkoutSessionView {
             },
             set: { newValue in
                 weightTexts[planned.id] = newValue
-                guard completed != nil else { return }
-                let weight = showWeightInput ? Double(newValue) : nil
-                updateCompletedSet(exerciseId: exerciseId, setIndex: setIndex, weightKg: weight)
+                guard completed != nil, showWeightInput else { return }
+                guard let weight = Double(newValue) else { return }
+
+                let exerciseIdString = session.exercises.first(where: { $0.id == exerciseId })?.exerciseId
+                let last = exerciseIdString.flatMap { exerciseStatsById[$0]?.lastWeightKg }
+                let outcome = LoggedWeightSanity.evaluate(
+                    proposedKg: weight,
+                    lastWeightKg: last,
+                    plannedWeightKg: planned.targetWeightKg
+                )
+                switch outcome {
+                case .ok:
+                    updateCompletedSet(exerciseId: exerciseId, setIndex: setIndex, weightKg: weight)
+                case .softWarning, .hardBlock:
+                    presentWeightSanity(
+                        outcome: outcome,
+                        enteredKg: weight,
+                        commit: .editWeight(
+                            exerciseId: exerciseId,
+                            setIndex: setIndex,
+                            weightKg: weight
+                        )
+                    )
+                }
             }
         )
     }
