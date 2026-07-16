@@ -42,6 +42,21 @@ final class EffortFeedbackMappingTests: XCTestCase {
 }
 
 final class ExerciseMetadataResolverTests: XCTestCase {
+    func testPerHandSessionWeightLabelIsKgPerArm() {
+        XCTAssertEqual(WeightDisplaySemantics.perHand.sessionWeightLabel, "KG / ARM")
+        XCTAssertEqual(WeightDisplaySemantics.total.sessionWeightLabel, "KG")
+    }
+
+    func testPerHandCompactLoadUnitIsKgPerArm() {
+        XCTAssertEqual(WeightDisplaySemantics.perHand.compactLoadUnit, "kg per arm")
+        XCTAssertEqual(WeightDisplaySemantics.total.compactLoadUnit, "kg")
+    }
+
+    func testPerHandSettingsWeightLabelIsKgPerArm() {
+        XCTAssertEqual(WeightDisplaySemantics.perHand.settingsWeightLabel, "kg per arm")
+        XCTAssertEqual(WeightDisplaySemantics.total.settingsWeightLabel, "kg")
+    }
+
     func testFarmersCarryUsesPerHandAndDistanceOrTime() {
         let exercise = makeTestExercise(
             id: "farmers_carry",
