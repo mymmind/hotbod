@@ -1012,15 +1012,40 @@ struct WorkoutValidationResult: Codable {
 
 enum GenerationFailure: Error, Equatable {
     case insufficientExercises(available: Int, blockedByInjury: Int, blockedByEquipment: Int)
-    case planValidationFailed(summary: String)
+    case planValidationFailed(summary: String, allowsRecoveryOverride: Bool = false)
 
     var userMessage: String {
         switch self {
         case let .insufficientExercises(available, _, _):
             "Your equipment and injury settings leave only \(available) exercises — add equipment or review limitations."
-        case let .planValidationFailed(summary):
+        case let .planValidationFailed(summary, _):
             summary
         }
+    }
+
+    var allowsRecoveryOverride: Bool {
+        switch self {
+        case let .planValidationFailed(_, allowsRecoveryOverride):
+            allowsRecoveryOverride
+        case .insufficientExercises:
+            false
+        }
+    }
+
+    static func isCriticalFatigueError(_ message: String) -> Bool {
+        message.contains("Critical fatigue") || message.contains("critically fatigued")
+    }
+
+    static func allowsRecoveryOverride(errors: [String]) -> Bool {
+        guard !errors.isEmpty else { return false }
+        return errors.allSatisfy(isCriticalFatigueError)
+    }
+
+    static func planValidationFailed(errors: [String]) -> GenerationFailure {
+        .planValidationFailed(
+            summary: errors.first ?? "Generated workout did not pass safety checks.",
+            allowsRecoveryOverride: allowsRecoveryOverride(errors: errors)
+        )
     }
 }
 
