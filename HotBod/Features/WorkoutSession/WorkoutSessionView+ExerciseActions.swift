@@ -255,7 +255,6 @@ extension WorkoutSessionView {
         withAnimation(ForgeMotion.exercise) {
             currentExerciseIndex = index
             furthestExerciseIndex = max(furthestExerciseIndex, index)
-            clearMetricTexts()
             showExerciseComplete = false
         }
         environment.scheduleWorkoutSessionSave(session)
@@ -269,7 +268,6 @@ extension WorkoutSessionView {
             withAnimation(ForgeMotion.exercise) {
                 currentExerciseIndex += 1
                 furthestExerciseIndex = max(furthestExerciseIndex, currentExerciseIndex)
-                clearMetricTexts()
             }
         } else {
             finishWorkout()

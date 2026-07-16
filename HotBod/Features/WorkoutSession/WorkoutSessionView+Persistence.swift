@@ -1,7 +1,21 @@
 import SwiftUI
 
 extension WorkoutSessionView {
+    /// Flushes in-progress weight/reps/duration/distance drafts onto incomplete planned sets
+    /// so they survive pause, backgrounding, and resume.
+    func persistMetricDrafts() {
+        session = WorkoutSessionMetricDrafts.applying(
+            to: session,
+            weightTexts: weightTexts,
+            repsTexts: repsTexts,
+            durationTexts: durationTexts,
+            distanceTexts: distanceTexts
+        )
+        environment.scheduleWorkoutSessionSave(session)
+    }
+
     func persistWorkoutCompletion() async {
+        persistMetricDrafts()
         try? await environment.saveWorkoutSessionImmediately(session)
         progressionNotes = await environment.applyWorkoutSessionCompletion(session)
         let sessions = await environment.fetchWorkoutSessions()

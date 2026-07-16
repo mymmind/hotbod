@@ -282,6 +282,7 @@ struct WorkoutSessionView: View {
             case .active:
                 restoreRestTimerIfNeeded()
             case .background:
+                persistMetricDrafts()
                 Task { await environment.flushPendingWorkoutSessionSave() }
             default:
                 break
@@ -407,6 +408,7 @@ struct WorkoutSessionView: View {
             return
         } else {
             Task {
+                persistMetricDrafts()
                 await environment.pauseWorkoutSession(session)
                 router.dismissToMain()
             }

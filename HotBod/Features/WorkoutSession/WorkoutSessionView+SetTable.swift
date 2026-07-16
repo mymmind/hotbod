@@ -318,8 +318,8 @@ extension WorkoutSessionView {
         Binding(
             get: {
                 weightTexts[planned.id]
-                    ?? completed?.weightKg.map { String(format: "%.1f", $0) }
-                    ?? planned.targetWeightKg.map { String(format: "%.0f", $0) }
+                    ?? completed?.weightKg.map(WorkoutSessionMetricDrafts.formatWeightKg)
+                    ?? planned.targetWeightKg.map(WorkoutSessionMetricDrafts.formatWeightKg)
                     ?? ""
             },
             set: { newValue in
