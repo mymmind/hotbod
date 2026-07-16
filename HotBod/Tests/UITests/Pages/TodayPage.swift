@@ -54,6 +54,55 @@ struct WorkoutSessionPage {
   var finishWorkoutButton: XCUIElement { app.buttons["session.finishWorkout"] }
   var workoutMenuButton: XCUIElement { app.buttons["session.workoutMenu"] }
 
+  var exerciseComplete: XCUIElement {
+    app.descendants(matching: .any)["session.exerciseComplete"]
+  }
+
+  var exerciseCompleteContinue: XCUIElement {
+    let byId = app.buttons["session.exerciseComplete.continue"]
+    if byId.exists { return byId }
+    return app.buttons["Next Exercise"]
+  }
+
+  var restSkipButton: XCUIElement {
+    app.buttons["session.rest.skip"]
+  }
+
+  var rirSkipButton: XCUIElement {
+    let byId = app.buttons["workout.rir.skip"]
+    if byId.exists { return byId }
+    return app.descendants(matching: .any)["workout.rir.skip"]
+  }
+
+  /// Dismisses RIR/rest overlays and the Health Access sheet that can block session taps in Simulator.
+  func dismissTransientPromptsIfNeeded() {
+    dismissHealthAccessIfNeeded()
+
+    // Slightly longer waits: RIR/rest sheets can lag behind Complete Set on Simulator.
+    if rirSkipButton.waitForExistence(timeout: 2) {
+      rirSkipButton.tap()
+    }
+    if restSkipButton.waitForExistence(timeout: 2) {
+      restSkipButton.tap()
+    }
+  }
+
+  private func dismissHealthAccessIfNeeded() {
+    // Health Access is a system sheet (separate process) that blocks Complete Set taps.
+    let candidates: [XCUIElement] = [
+      app.buttons["UIA.Health.AuthSheet.CancelButton"],
+      app.buttons["Don’t Allow"], // curly apostrophe from Health UI
+      XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        .buttons["UIA.Health.AuthSheet.CancelButton"],
+      XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        .buttons["Don’t Allow"]
+    ]
+    for button in candidates where button.exists {
+      button.tap()
+      return
+    }
+  }
+
   func waitForSession(timeout: TimeInterval = 10) -> Bool {
     if completeSetButton.waitForExistence(timeout: timeout) { return true }
     if app.otherElements["uitest.session.ready"].waitForExistence(timeout: 3) {

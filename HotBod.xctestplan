@@ -32,7 +32,8 @@
             "TodayWorkoutUITests/testTodayShowsWorkoutHero",
             "TodayWorkoutUITests/testRegression_trainAnywayReplacesRestHeroWithPlan",
             "ProteinTrackerUITests/testProteinTabShowsDailyHero",
-            "CoachUITests/testCoachTabShowsSuggestions"
+            "CoachUITests/testCoachTabShowsSuggestions",
+            "WorkoutSessionUITests/testRegression_exerciseCompleteIsFullScreen"
           ]
         }
       ]
