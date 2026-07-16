@@ -356,7 +356,8 @@ extension AppEnvironment {
                 sleepScore: healthReadiness.sleepScore,
                 soreness: soreness ?? sorenessLevel
             ),
-            splitDayFocus: splitDayFocus
+            splitDayFocus: splitDayFocus,
+            forceRecoverySession: options.forceRecoverySession
         )
     }
 
@@ -390,9 +391,7 @@ extension AppEnvironment {
             let validation = workoutGenerationService.validate(workout: workout, input: input)
             lastValidation = validation
             guard validation.isValid else {
-                lastGenerationFailure = .planValidationFailed(
-                    summary: validation.errors.first ?? "Generated workout did not pass safety checks."
-                )
+                lastGenerationFailure = .planValidationFailed(errors: validation.errors)
                 return nil
             }
             return workout
@@ -406,6 +405,27 @@ extension AppEnvironment {
             lastValidation = nil
             return nil
         }
+    }
+
+    /// User override after a critical-fatigue-only generation failure: build and save a recovery session.
+    /// Does not require Pro or consume free regeneration quota (same semantics as rest-day generation).
+    @discardableResult
+    func generateLighterWorkoutAfterFatigue(profile: UserProfile) async -> Bool {
+        var options = WorkoutGenerationOptions()
+        options.forceRecoverySession = true
+
+        if TrainingSchedule.isTodayWorkoutCompleted(state: programState) {
+            return await restartTodayWorkout(profile: profile, options: options)
+        }
+        if isRestDay {
+            return await generateTodayWorkoutOnRestDay(profile: profile, options: options)
+        }
+        return await regenerateTodayWorkout(
+            profile: profile,
+            options: options,
+            allowsUnscheduledDay: false,
+            requiresProAccess: false
+        )
     }
 
     func saveTodayWorkout(_ workout: GeneratedWorkout) async throws {

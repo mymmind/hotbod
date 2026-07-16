@@ -784,6 +784,26 @@ final class FatigueAwareValidationTests: XCTestCase {
         let result = WorkoutValidator.validate(workout: workout, input: input, exercises: catalog)
         XCTAssertTrue(result.warnings.contains(where: { $0.contains("High intensity") }))
     }
+
+    func testCriticalFatigueOnlyErrorsAllowRecoveryOverride() {
+        let errors = [
+            "Critical fatigue detected (10% recovery). Recommend lighter session or rest day.",
+            "Chest critically fatigued (<15% recovery). Bench Press not recommended."
+        ]
+        XCTAssertTrue(GenerationFailure.allowsRecoveryOverride(errors: errors))
+    }
+
+    func testMixedValidationErrorsDoNotAllowRecoveryOverride() {
+        let errors = [
+            "Critical fatigue detected (10% recovery). Recommend lighter session or rest day.",
+            "Projected weekly volume (120 sets) exceeds safe threshold (100). Consider deload."
+        ]
+        XCTAssertFalse(GenerationFailure.allowsRecoveryOverride(errors: errors))
+    }
+
+    func testEmptyErrorsDoNotAllowRecoveryOverride() {
+        XCTAssertFalse(GenerationFailure.allowsRecoveryOverride(errors: []))
+    }
 }
 
 final class WorkoutGenerationAlgorithmsTests: XCTestCase {

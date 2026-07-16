@@ -75,7 +75,8 @@ extension WorkoutGenerationInput {
       exerciseStats: exerciseStats ?? self.exerciseStats,
       userPreferences: userPreferences,
       readiness: readiness,
-      splitDayFocus: splitDayFocus ?? self.splitDayFocus
+      splitDayFocus: splitDayFocus ?? self.splitDayFocus,
+      forceRecoverySession: forceRecoverySession
     )
   }
 }

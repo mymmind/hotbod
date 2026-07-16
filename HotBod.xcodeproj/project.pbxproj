@@ -230,6 +230,7 @@
 		F667B4439DDC421E94C9FEC4 /* BodyPhotoDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB1DF9354C90972341F78A1C /* BodyPhotoDomainTests.swift */; };
 		F72912DF2DBE256B94E873BA /* AppEnvironment+Account.swift in Sources */ = {isa = PBXBuildFile; fileRef = 122A716A65A50547C94509DD /* AppEnvironment+Account.swift */; };
 		F8E530B55BB6C2A196F97C94 /* ForgeElevation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69A6919D44AF5EC636C36253 /* ForgeElevation.swift */; };
+		F8EAC0630836E7C0E74285EC /* ForceRecoverySessionGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A4B3817B9ADD791B519812 /* ForceRecoverySessionGenerationTests.swift */; };
 		F9B148E6C7492202AF3BA748 /* AddExerciseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E6FEE1E6ED011D28473B18A /* AddExerciseSheet.swift */; };
 		FC4131D73DDD4C19A1DB6A94 /* CoachAIResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = A781D9E564697E7C093A6EB4 /* CoachAIResult.swift */; };
 		FEAC950D49387FF85E118B55 /* AppEnvironment+BodyProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D2FB17189E5DA7EA8C0437 /* AppEnvironment+BodyProgress.swift */; };
@@ -410,6 +411,7 @@
 		9C893A267C1E03740A65C2BE /* BodyProgressPhoto+Timeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BodyProgressPhoto+Timeline.swift"; sourceTree = "<group>"; };
 		A01C3807E7861035E628DBA3 /* LaunchRouteResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchRouteResolver.swift; sourceTree = "<group>"; };
 		A069504316F8AA890CBE165B /* ForgeHapticEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgeHapticEngine.swift; sourceTree = "<group>"; };
+		A0A4B3817B9ADD791B519812 /* ForceRecoverySessionGenerationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForceRecoverySessionGenerationTests.swift; sourceTree = "<group>"; };
 		A17CE1A1A6B7F356C7933B06 /* TrainingScheduleDomainTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingScheduleDomainTests.swift; sourceTree = "<group>"; };
 		A21CC6DF27C54FE6517B0EC6 /* SessionExercisePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionExercisePlanner.swift; sourceTree = "<group>"; };
 		A2543E23E22FD888A46CC227 /* WorkoutCompletionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCompletionView.swift; sourceTree = "<group>"; };
@@ -940,6 +942,7 @@
 				4C158096167D088ED9C4E366 /* CoachDomainTests.swift */,
 				D3964EE52538DC02B5ED8348 /* ExerciseDomainTests.swift */,
 				49B9F0E39F47F63D0CA2B33A /* ExerciseGroupPlannerTests.swift */,
+				A0A4B3817B9ADD791B519812 /* ForceRecoverySessionGenerationTests.swift */,
 				DB49B76F182221AA46E83A92 /* HardeningDomainTests.swift */,
 				8E35A972A34C727F630E0EF2 /* LaunchRouteResolverTests.swift */,
 				A257082329840730B4414CEB /* LoggedWeightSanityTests.swift */,
@@ -1301,6 +1304,7 @@
 				A09CA8A1FFE150B5A38E8753 /* ExerciseDomainTests.swift in Sources */,
 				AFE5CDB84E824DC34999D586 /* ExerciseGroupPlannerTests.swift in Sources */,
 				BBD8B19FDA95305C1EACDDA6 /* FixtureBuilders.swift in Sources */,
+				F8EAC0630836E7C0E74285EC /* ForceRecoverySessionGenerationTests.swift in Sources */,
 				AB46D2F0E6CFC67092C96D6C /* GenerationValidationPropertyTests.swift in Sources */,
 				7ABFADDA6FA976B445FBCC55 /* HardeningDomainTests.swift in Sources */,
 				A2498415A229419675F798A1 /* InMemoryRepositories.swift in Sources */,

@@ -604,6 +604,39 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
         XCTAssertNotEqual(env.todayWorkout?.id, originalId)
         XCTAssertNil(env.paywallFeature)
     }
+
+    // UI-test exemption: Rest / Train lighter alert UI is covered by domain classification
+    // (`allowsRecoveryOverride`) + this orchestration regression and does not have a dedicated UI test yet.
+    func testRegression_criticalFatigueTrainLighterSavesRecoveryWorkout() async throws {
+        var profile = UserProfile.empty()
+        profile.preferredTrainingDays = [TrainingSchedule.weekday(), .monday, .tuesday, .thursday, .friday]
+        profile.availableEquipment = Equipment.allCases
+        let env = AppEnvironment.makeForTests(repos: TestRepositories.withCatalog())
+        try await env.seedOnboardedProfile(profile)
+        await env.bootstrap()
+
+        var states = RecoveryCalculator.defaultStates()
+        for index in states.indices { states[index].recoveryPercentage = 90 }
+        if let chestIndex = states.firstIndex(where: { $0.muscleGroup == .chest }) {
+            states[chestIndex].recoveryPercentage = 10
+        }
+        env.recoveryStates = states
+        try await env.recoveryRepository.saveRecoveryStates(states)
+
+        // Regenerate may avoid chest; seed overridable failure so Train lighter still exercises the path.
+        if await env.regenerateTodayWorkout(profile: profile) {
+            env.lastGenerationFailure = .planValidationFailed(errors: [
+                "Critical fatigue detected (10% recovery). Recommend lighter session or rest day."
+            ])
+        } else {
+            XCTAssertTrue(env.lastGenerationFailure?.allowsRecoveryOverride ?? false)
+        }
+
+        let lighter = await env.generateLighterWorkoutAfterFatigue(profile: profile)
+        XCTAssertTrue(lighter, "Train lighter should persist a recovery workout")
+        XCTAssertEqual(env.todayWorkout?.sessionMode, .recovery)
+        XCTAssertNil(env.lastGenerationFailure)
+    }
 }
 
 @MainActor

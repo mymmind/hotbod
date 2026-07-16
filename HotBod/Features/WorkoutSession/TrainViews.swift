@@ -96,9 +96,27 @@ struct TrainView: View {
                 "Can't Build Workout",
                 isPresented: $showGenerationFailureAlert,
                 presenting: environment.lastGenerationFailure
-            ) { _ in
-                Button("OK", role: .cancel) {
-                    environment.lastGenerationFailure = nil
+            ) { failure in
+                if failure.allowsRecoveryOverride {
+                    Button("Rest", role: .cancel) {
+                        environment.lastGenerationFailure = nil
+                    }
+                    Button("Train lighter") {
+                        guard let profile = environment.userProfile else {
+                            environment.lastGenerationFailure = nil
+                            return
+                        }
+                        Task { @MainActor in
+                            _ = await environment.generateLighterWorkoutAfterFatigue(profile: profile)
+                            await loadActiveSession()
+                            await loadCompletedSession()
+                            await loadSessions()
+                        }
+                    }
+                } else {
+                    Button("OK", role: .cancel) {
+                        environment.lastGenerationFailure = nil
+                    }
                 }
             } message: { failure in
                 Text(failure.userMessage)

@@ -986,6 +986,60 @@ struct WorkoutGenerationInput: Codable {
     let userPreferences: WorkoutPreferences
     let readiness: ReadinessInput?
     let splitDayFocus: SplitDayFocus?
+    let forceRecoverySession: Bool
+
+    init(
+        userProfile: UserProfile,
+        goal: TrainingGoal,
+        experienceLevel: ExperienceLevel,
+        availableEquipment: [Equipment],
+        targetDurationMinutes: Int,
+        preferredMuscleGroups: [MuscleGroup],
+        avoidedMuscleGroups: [MuscleGroup],
+        injuries: [BodyLimitation],
+        recentWorkouts: [WorkoutSessionSummary],
+        muscleRecovery: [MuscleGroup: Double],
+        exerciseStats: [UserExerciseStats],
+        userPreferences: WorkoutPreferences,
+        readiness: ReadinessInput?,
+        splitDayFocus: SplitDayFocus?,
+        forceRecoverySession: Bool = false
+    ) {
+        self.userProfile = userProfile
+        self.goal = goal
+        self.experienceLevel = experienceLevel
+        self.availableEquipment = availableEquipment
+        self.targetDurationMinutes = targetDurationMinutes
+        self.preferredMuscleGroups = preferredMuscleGroups
+        self.avoidedMuscleGroups = avoidedMuscleGroups
+        self.injuries = injuries
+        self.recentWorkouts = recentWorkouts
+        self.muscleRecovery = muscleRecovery
+        self.exerciseStats = exerciseStats
+        self.userPreferences = userPreferences
+        self.readiness = readiness
+        self.splitDayFocus = splitDayFocus
+        self.forceRecoverySession = forceRecoverySession
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        userProfile = try container.decode(UserProfile.self, forKey: .userProfile)
+        goal = try container.decode(TrainingGoal.self, forKey: .goal)
+        experienceLevel = try container.decode(ExperienceLevel.self, forKey: .experienceLevel)
+        availableEquipment = try container.decode([Equipment].self, forKey: .availableEquipment)
+        targetDurationMinutes = try container.decode(Int.self, forKey: .targetDurationMinutes)
+        preferredMuscleGroups = try container.decode([MuscleGroup].self, forKey: .preferredMuscleGroups)
+        avoidedMuscleGroups = try container.decode([MuscleGroup].self, forKey: .avoidedMuscleGroups)
+        injuries = try container.decode([BodyLimitation].self, forKey: .injuries)
+        recentWorkouts = try container.decode([WorkoutSessionSummary].self, forKey: .recentWorkouts)
+        muscleRecovery = try container.decode([MuscleGroup: Double].self, forKey: .muscleRecovery)
+        exerciseStats = try container.decode([UserExerciseStats].self, forKey: .exerciseStats)
+        userPreferences = try container.decode(WorkoutPreferences.self, forKey: .userPreferences)
+        readiness = try container.decodeIfPresent(ReadinessInput.self, forKey: .readiness)
+        splitDayFocus = try container.decodeIfPresent(SplitDayFocus.self, forKey: .splitDayFocus)
+        forceRecoverySession = try container.decodeIfPresent(Bool.self, forKey: .forceRecoverySession) ?? false
+    }
 }
 
 struct WorkoutValidationResult: Codable {
@@ -1012,15 +1066,40 @@ struct WorkoutValidationResult: Codable {
 
 enum GenerationFailure: Error, Equatable {
     case insufficientExercises(available: Int, blockedByInjury: Int, blockedByEquipment: Int)
-    case planValidationFailed(summary: String)
+    case planValidationFailed(summary: String, allowsRecoveryOverride: Bool = false)
 
     var userMessage: String {
         switch self {
         case let .insufficientExercises(available, _, _):
             "Your equipment and injury settings leave only \(available) exercises — add equipment or review limitations."
-        case let .planValidationFailed(summary):
+        case let .planValidationFailed(summary, _):
             summary
         }
+    }
+
+    var allowsRecoveryOverride: Bool {
+        switch self {
+        case let .planValidationFailed(_, allowsRecoveryOverride):
+            allowsRecoveryOverride
+        case .insufficientExercises:
+            false
+        }
+    }
+
+    static func isCriticalFatigueError(_ message: String) -> Bool {
+        message.contains("Critical fatigue") || message.contains("critically fatigued")
+    }
+
+    static func allowsRecoveryOverride(errors: [String]) -> Bool {
+        guard !errors.isEmpty else { return false }
+        return errors.allSatisfy(isCriticalFatigueError)
+    }
+
+    static func planValidationFailed(errors: [String]) -> GenerationFailure {
+        .planValidationFailed(
+            summary: errors.first ?? "Generated workout did not pass safety checks.",
+            allowsRecoveryOverride: allowsRecoveryOverride(errors: errors)
+        )
     }
 }
 
