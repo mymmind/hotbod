@@ -73,7 +73,7 @@ struct WorkoutSessionView: View {
                 if case .softWarning = weightSanityOutcome { return true }
                 return false
             },
-            set: { if !$0 { clearWeightSanityPrompt(commit: false) } }
+            set: { if !$0 { clearWeightSanityPrompt() } }
         )
     }
 
@@ -83,7 +83,7 @@ struct WorkoutSessionView: View {
                 if case .hardBlock = weightSanityOutcome { return true }
                 return false
             },
-            set: { if !$0 { clearWeightSanityPrompt(commit: false) } }
+            set: { if !$0 { clearWeightSanityPrompt() } }
         )
     }
 
@@ -219,7 +219,7 @@ struct WorkoutSessionView: View {
                 confirmWeightSanitySaveAnyway()
             }
             Button(L10n.Workout.weightSanityEdit, role: .cancel) {
-                clearWeightSanityPrompt(commit: false)
+                clearWeightSanityPrompt()
             }
         } message: {
             Text(
@@ -234,7 +234,7 @@ struct WorkoutSessionView: View {
             isPresented: showWeightHardBlock
         ) {
             Button(L10n.Workout.weightSanityEdit, role: .cancel) {
-                clearWeightSanityPrompt(commit: false)
+                clearWeightSanityPrompt()
             }
         } message: {
             Text(L10n.Workout.weightHardBlockMessage)

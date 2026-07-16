@@ -94,11 +94,9 @@ extension WorkoutSessionView {
         weightSanityOutcome = outcome
     }
 
-    func clearWeightSanityPrompt(commit: Bool) {
-        if !commit {
-            pendingWeightSanityCommit = nil
-            pendingCompleteSetRequest = nil
-        }
+    func clearWeightSanityPrompt() {
+        pendingWeightSanityCommit = nil
+        pendingCompleteSetRequest = nil
         weightSanityOutcome = nil
     }
 
