@@ -605,6 +605,8 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
         XCTAssertNil(env.paywallFeature)
     }
 
+    // UI-test exemption: Rest / Train lighter alert UI is covered by domain classification
+    // (`allowsRecoveryOverride`) + this orchestration regression and does not have a dedicated UI test yet.
     func testRegression_criticalFatigueTrainLighterSavesRecoveryWorkout() async throws {
         var profile = UserProfile.empty()
         profile.preferredTrainingDays = [TrainingSchedule.weekday(), .monday, .tuesday, .thursday, .friday]

@@ -408,6 +408,7 @@ extension AppEnvironment {
     }
 
     /// User override after a critical-fatigue-only generation failure: build and save a recovery session.
+    /// Does not require Pro or consume free regeneration quota (same semantics as rest-day generation).
     @discardableResult
     func generateLighterWorkoutAfterFatigue(profile: UserProfile) async -> Bool {
         var options = WorkoutGenerationOptions()
@@ -419,7 +420,12 @@ extension AppEnvironment {
         if isRestDay {
             return await generateTodayWorkoutOnRestDay(profile: profile, options: options)
         }
-        return await regenerateTodayWorkout(profile: profile, options: options)
+        return await regenerateTodayWorkout(
+            profile: profile,
+            options: options,
+            allowsUnscheduledDay: false,
+            requiresProAccess: false
+        )
     }
 
     func saveTodayWorkout(_ workout: GeneratedWorkout) async throws {
