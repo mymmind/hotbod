@@ -391,9 +391,7 @@ extension AppEnvironment {
             let validation = workoutGenerationService.validate(workout: workout, input: input)
             lastValidation = validation
             guard validation.isValid else {
-                lastGenerationFailure = .planValidationFailed(
-                    summary: validation.errors.first ?? "Generated workout did not pass safety checks."
-                )
+                lastGenerationFailure = .planValidationFailed(errors: validation.errors)
                 return nil
             }
             return workout
@@ -407,6 +405,21 @@ extension AppEnvironment {
             lastValidation = nil
             return nil
         }
+    }
+
+    /// User override after a critical-fatigue-only generation failure: build and save a recovery session.
+    @discardableResult
+    func generateLighterWorkoutAfterFatigue(profile: UserProfile) async -> Bool {
+        var options = WorkoutGenerationOptions()
+        options.forceRecoverySession = true
+
+        if TrainingSchedule.isTodayWorkoutCompleted(state: programState) {
+            return await restartTodayWorkout(profile: profile, options: options)
+        }
+        if isRestDay {
+            return await generateTodayWorkoutOnRestDay(profile: profile, options: options)
+        }
+        return await regenerateTodayWorkout(profile: profile, options: options)
     }
 
     func saveTodayWorkout(_ workout: GeneratedWorkout) async throws {
