@@ -498,6 +498,72 @@
         }
       }
     },
+    "workout.weightSanity.edit" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit"
+          }
+        }
+      }
+    },
+    "workout.weightSanity.hard.message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That load is beyond a sane maximum (400 kg). Fix the weight before logging."
+          }
+        }
+      }
+    },
+    "workout.weightSanity.hard.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Weight"
+          }
+        }
+      }
+    },
+    "workout.weightSanity.saveAnyway" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save Anyway"
+          }
+        }
+      }
+    },
+    "workout.weightSanity.soft.message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ kg is far above your usual %@ kg. Edit or save anyway?"
+          }
+        }
+      }
+    },
+    "workout.weightSanity.soft.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unusual Weight"
+          }
+        }
+      }
+    },
     "Workouts" : {
 
     },
