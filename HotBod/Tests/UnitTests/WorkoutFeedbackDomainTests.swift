@@ -69,6 +69,72 @@ final class ExerciseMetadataResolverTests: XCTestCase {
         XCTAssertEqual(ExerciseMetadataResolver.resolvedPrescriptionType(for: exercise), .distanceOrTime)
     }
 
+    func testRegression_inclineDumbbellPressUsesPerHand() {
+        let exercise = makeTestExercise(
+            id: "incline_dumbbell_press",
+            primaryMuscles: [.chest],
+            pattern: .horizontalPush,
+            equipment: [.dumbbell, .bench]
+        )
+        XCTAssertEqual(
+            ExerciseMetadataResolver.resolvedWeightDisplaySemantics(for: exercise),
+            .perHand
+        )
+    }
+
+    func testSeatedDumbbellPressUsesPerHand() {
+        let exercise = makeTestExercise(
+            id: "seated_dumbbell_press",
+            primaryMuscles: [.shoulders],
+            pattern: .verticalPush,
+            equipment: [.dumbbell, .bench]
+        )
+        XCTAssertEqual(
+            ExerciseMetadataResolver.resolvedWeightDisplaySemantics(for: exercise),
+            .perHand
+        )
+    }
+
+    func testGobletSquatUsesTotalDespiteDumbbellEquipment() {
+        let exercise = makeTestExercise(
+            id: "goblet_squat",
+            primaryMuscles: [.quads],
+            pattern: .squat,
+            equipment: [.dumbbell, .kettlebell]
+        )
+        XCTAssertEqual(
+            ExerciseMetadataResolver.resolvedWeightDisplaySemantics(for: exercise),
+            .total
+        )
+    }
+
+    func testBarbellHorizontalPushUsesTotal() {
+        let exercise = makeTestExercise(
+            id: "bench_press",
+            primaryMuscles: [.chest],
+            pattern: .horizontalPush,
+            equipment: [.barbell, .bench]
+        )
+        XCTAssertEqual(
+            ExerciseMetadataResolver.resolvedWeightDisplaySemantics(for: exercise),
+            .total
+        )
+    }
+
+    func testExplicitWeightDisplaySemanticsWinsOverHeuristic() {
+        var exercise = makeTestExercise(
+            id: "custom_db_press",
+            primaryMuscles: [.chest],
+            pattern: .horizontalPush,
+            equipment: [.dumbbell]
+        )
+        exercise.weightDisplaySemantics = .total
+        XCTAssertEqual(
+            ExerciseMetadataResolver.resolvedWeightDisplaySemantics(for: exercise),
+            .total
+        )
+    }
+
     func testPlankUsesTimedPrescription() {
         let exercise = makeTestExercise(
             id: "plank",
