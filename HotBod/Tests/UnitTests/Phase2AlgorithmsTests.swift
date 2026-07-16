@@ -399,8 +399,46 @@ final class WorkoutPreviewSetFormatterTests: XCTestCase {
         )
 
         XCTAssertEqual(
-            WorkoutPreviewSetFormatter.loadLabel(for: set, loadMode: exercise.resolvedLoadTrackingMode),
+            WorkoutPreviewSetFormatter.loadLabel(
+                for: set,
+                loadMode: exercise.resolvedLoadTrackingMode,
+                semantics: exercise.resolvedWeightDisplaySemantics
+            ),
             "82kg"
+        )
+    }
+
+    func testLoadLabelUsesPerArmUnitForDumbbellPress() {
+        let set = PlannedSet(targetRepsMin: 8, targetRepsMax: 10, targetWeightKg: 15)
+        let exercise = makeStubExercise(
+            id: "incline_dumbbell_press",
+            muscles: [.chest],
+            pattern: .horizontalPush,
+            equipment: [.dumbbell, .bench]
+        )
+
+        XCTAssertEqual(
+            WorkoutPreviewSetFormatter.loadLabel(
+                for: set,
+                loadMode: exercise.resolvedLoadTrackingMode,
+                semantics: exercise.resolvedWeightDisplaySemantics
+            ),
+            "15kg per arm"
+        )
+    }
+
+    func testSummaryLineUsesPerArmUnitForWarmup() {
+        let set = PlannedSet(targetRepsMin: 5, targetRepsMax: 8, targetWeightKg: 10, isWarmup: true)
+        let exercise = makeStubExercise(
+            id: "incline_dumbbell_press",
+            muscles: [.chest],
+            pattern: .horizontalPush,
+            equipment: [.dumbbell, .bench]
+        )
+
+        XCTAssertEqual(
+            WorkoutPreviewSetFormatter.summaryLine(for: set, exercise: exercise),
+            "Warm-up · 10kg per arm × 5–8"
         )
     }
 

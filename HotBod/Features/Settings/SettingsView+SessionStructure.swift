@@ -57,8 +57,12 @@ extension SettingsView {
             }
         )
 
+        let maxLabel = equipment == .dumbbell
+            ? "dumbbell (\(WeightDisplaySemantics.perHand.settingsWeightLabel))"
+            : "\(equipment.displayName.lowercased()) (kg)"
+
         VStack(alignment: .leading, spacing: 8) {
-            Text("Max \(equipment == .dumbbell ? "dumbbell (kg each)" : "\(equipment.displayName.lowercased()) (kg)")")
+            Text("Max \(maxLabel)")
                 .font(ForgeTypography.body)
             TextField("No limit", text: binding)
                 .keyboardType(.decimalPad)
