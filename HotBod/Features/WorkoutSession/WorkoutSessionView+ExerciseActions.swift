@@ -79,11 +79,106 @@ extension WorkoutSessionView {
         swapTarget = nil
     }
 
+    func presentWeightSanity(
+        outcome: LoggedWeightSanity.Outcome,
+        enteredKg: Double,
+        commit: PendingWeightSanityCommit,
+        completeRequest: PendingCompleteSetRequest? = nil
+    ) {
+        weightSanityEnteredKg = enteredKg
+        if case .softWarning(let baseline) = outcome {
+            weightSanityBaselineKg = baseline
+        }
+        pendingWeightSanityCommit = commit
+        pendingCompleteSetRequest = completeRequest
+        weightSanityOutcome = outcome
+    }
+
+    func clearWeightSanityPrompt(commit: Bool) {
+        if !commit {
+            pendingWeightSanityCommit = nil
+            pendingCompleteSetRequest = nil
+        }
+        weightSanityOutcome = nil
+    }
+
+    func confirmWeightSanitySaveAnyway() {
+        let commit = pendingWeightSanityCommit
+        let request = pendingCompleteSetRequest
+        weightSanityOutcome = nil
+        pendingWeightSanityCommit = nil
+        pendingCompleteSetRequest = nil
+
+        guard let commit else { return }
+        switch commit {
+        case .completeSet:
+            guard let request,
+                  let exercise = session.exercises.first(where: { $0.id == request.exerciseId }),
+                  let meta = exerciseMap[exercise.exerciseId]
+            else { return }
+            commitCurrentSet(
+                exercise: exercise,
+                meta: meta,
+                showWeightInput: request.showWeightInput,
+                bypassSanity: true
+            )
+        case .editWeight(let exerciseId, let setIndex, let weightKg):
+            updateCompletedSet(exerciseId: exerciseId, setIndex: setIndex, weightKg: weightKg)
+        }
+    }
+
     func completeCurrentSet(
         exercise: WorkoutExercise,
         meta: Exercise,
         showWeightInput: Bool
     ) {
+        dismissKeyboard()
+        guard let idx = session.exercises.firstIndex(where: { $0.id == exercise.id }) else { return }
+        let setIndex = session.exercises[idx].completedSets.count
+        guard setIndex < session.exercises[idx].plannedSets.count else { return }
+        let planned = session.exercises[idx].plannedSets[setIndex]
+
+        if showWeightInput {
+            let proposed = Double(weightTexts[planned.id] ?? "") ?? planned.targetWeightKg
+            if let proposed {
+                let outcome = LoggedWeightSanity.evaluate(
+                    proposedKg: proposed,
+                    lastWeightKg: exerciseStatsById[exercise.exerciseId]?.lastWeightKg,
+                    plannedWeightKg: planned.targetWeightKg
+                )
+                switch outcome {
+                case .ok:
+                    break
+                case .softWarning, .hardBlock:
+                    presentWeightSanity(
+                        outcome: outcome,
+                        enteredKg: proposed,
+                        commit: .completeSet,
+                        completeRequest: PendingCompleteSetRequest(
+                            exerciseId: exercise.id,
+                            showWeightInput: showWeightInput
+                        )
+                    )
+                    return
+                }
+            }
+        }
+
+        commitCurrentSet(
+            exercise: exercise,
+            meta: meta,
+            showWeightInput: showWeightInput,
+            bypassSanity: false
+        )
+    }
+
+    func commitCurrentSet(
+        exercise: WorkoutExercise,
+        meta: Exercise,
+        showWeightInput: Bool,
+        bypassSanity: Bool
+    ) {
+        _ = bypassSanity
         dismissKeyboard()
         guard let idx = session.exercises.firstIndex(where: { $0.id == exercise.id }) else { return }
         let setIndex = session.exercises[idx].completedSets.count

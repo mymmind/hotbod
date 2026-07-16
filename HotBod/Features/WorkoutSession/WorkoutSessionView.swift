@@ -6,6 +6,16 @@ struct SessionSwapTarget: Identifiable {
     var id: Int { index }
 }
 
+enum PendingWeightSanityCommit: Equatable {
+    case completeSet
+    case editWeight(exerciseId: UUID, setIndex: Int, weightKg: Double)
+}
+
+struct PendingCompleteSetRequest: Equatable {
+    let exerciseId: UUID
+    let showWeightInput: Bool
+}
+
 // swiftlint:disable:next type_body_length
 struct WorkoutSessionView: View {
     @Environment(AppEnvironment.self) var environment
@@ -51,6 +61,31 @@ struct WorkoutSessionView: View {
     @State private var showExerciseInfo = false
     @State private var showAddExercise = false
     @State var sessionResourcesLoaded = false
+    @State var weightSanityOutcome: LoggedWeightSanity.Outcome?
+    @State var pendingWeightSanityCommit: PendingWeightSanityCommit?
+    @State var pendingCompleteSetRequest: PendingCompleteSetRequest?
+    @State var weightSanityEnteredKg: Double = 0
+    @State var weightSanityBaselineKg: Double = 0
+
+    private var showWeightSoftWarning: Binding<Bool> {
+        Binding(
+            get: {
+                if case .softWarning = weightSanityOutcome { return true }
+                return false
+            },
+            set: { if !$0 { clearWeightSanityPrompt(commit: false) } }
+        )
+    }
+
+    private var showWeightHardBlock: Binding<Bool> {
+        Binding(
+            get: {
+                if case .hardBlock = weightSanityOutcome { return true }
+                return false
+            },
+            set: { if !$0 { clearWeightSanityPrompt(commit: false) } }
+        )
+    }
 
     init(session: WorkoutSession) {
         _session = State(initialValue: session)
@@ -174,6 +209,35 @@ struct WorkoutSessionView: View {
             Button("Keep Training", role: .cancel) {}
         } message: {
             Text("This discards the session. Logged sets will not count toward today.")
+        }
+        .confirmationDialog(
+            L10n.Workout.weightSoftWarningTitle,
+            isPresented: showWeightSoftWarning,
+            titleVisibility: .visible
+        ) {
+            Button(L10n.Workout.weightSanitySaveAnyway) {
+                confirmWeightSanitySaveAnyway()
+            }
+            Button(L10n.Workout.weightSanityEdit, role: .cancel) {
+                clearWeightSanityPrompt(commit: false)
+            }
+        } message: {
+            Text(
+                L10n.Workout.weightSoftWarningMessage(
+                    enteredKg: WorkoutSessionMetricDrafts.formatWeightKg(weightSanityEnteredKg),
+                    baselineKg: WorkoutSessionMetricDrafts.formatWeightKg(weightSanityBaselineKg)
+                )
+            )
+        }
+        .alert(
+            L10n.Workout.weightHardBlockTitle,
+            isPresented: showWeightHardBlock
+        ) {
+            Button(L10n.Workout.weightSanityEdit, role: .cancel) {
+                clearWeightSanityPrompt(commit: false)
+            }
+        } message: {
+            Text(L10n.Workout.weightHardBlockMessage)
         }
     }
 
