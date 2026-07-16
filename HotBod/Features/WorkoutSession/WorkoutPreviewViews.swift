@@ -598,7 +598,13 @@ struct WorkoutPreviewExerciseDetailSheet: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             if loadMode != .none {
-                Text(WorkoutPreviewSetFormatter.loadLabel(for: set, loadMode: loadMode))
+                Text(
+                    WorkoutPreviewSetFormatter.loadLabel(
+                        for: set,
+                        loadMode: loadMode,
+                        semantics: exercise?.resolvedWeightDisplaySemantics ?? .total
+                    )
+                )
                     .font(ForgeTypography.metric)
                     .frame(width: 64, alignment: .trailing)
             }
@@ -647,18 +653,23 @@ enum WorkoutPreviewSetFormatter {
         return "\(set.targetRepsMin)–\(set.targetRepsMax)"
     }
 
-    static func loadLabel(for set: PlannedSet, loadMode: LoadTrackingMode) -> String {
+    static func loadLabel(
+        for set: PlannedSet,
+        loadMode: LoadTrackingMode,
+        semantics: WeightDisplaySemantics = .total
+    ) -> String {
         guard loadMode != .none else { return "BW" }
         if let weight = set.targetWeightKg {
-            return "\(Int(weight.rounded()))kg"
+            return "\(Int(weight.rounded()))\(semantics.compactLoadUnit)"
         }
         return loadMode == .optional ? "—" : "BW"
     }
 
     static func summaryLine(for set: PlannedSet, exercise: Exercise?) -> String {
         let loadMode = exercise?.resolvedLoadTrackingMode ?? .supported
+        let semantics = exercise?.resolvedWeightDisplaySemantics ?? .total
         let reps = repsLabel(for: set)
-        let load = loadLabel(for: set, loadMode: loadMode)
+        let load = loadLabel(for: set, loadMode: loadMode, semantics: semantics)
         if loadMode == .none {
             return set.isWarmup ? "Warm-up · \(reps) reps" : "\(reps) reps"
         }

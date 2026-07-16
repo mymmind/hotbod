@@ -16,6 +16,10 @@ enum ExerciseMetadataResolver {
         "single_leg_rdl"
     ]
 
+    private static let totalWeightExerciseIds: Set<String> = [
+        "goblet_squat"
+    ]
+
     private static let timeExerciseIds: Set<String> = [
         "plank",
         "side_plank",
@@ -36,12 +40,16 @@ enum ExerciseMetadataResolver {
         if let explicit = exercise.weightDisplaySemantics {
             return explicit
         }
+        if totalWeightExerciseIds.contains(exercise.id) {
+            return .total
+        }
         if perHandExerciseIds.contains(exercise.id) {
             return .perHand
         }
         if exercise.equipment.contains(.dumbbell) || exercise.equipment.contains(.kettlebell) {
             switch exercise.movementPattern {
-            case .lunge, .carry, .isolation:
+            case .horizontalPush, .verticalPush, .horizontalPull, .verticalPull,
+                 .lunge, .carry, .isolation:
                 return .perHand
             default:
                 break

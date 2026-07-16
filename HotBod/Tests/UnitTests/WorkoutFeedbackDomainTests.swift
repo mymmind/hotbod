@@ -42,6 +42,27 @@ final class EffortFeedbackMappingTests: XCTestCase {
 }
 
 final class ExerciseMetadataResolverTests: XCTestCase {
+    func testPerHandSessionWeightLabelIsKgPerArm() {
+        XCTAssertEqual(WeightDisplaySemantics.perHand.sessionWeightLabel, "KG / ARM")
+        XCTAssertEqual(WeightDisplaySemantics.total.sessionWeightLabel, "KG")
+    }
+
+    func testPerHandCompactLoadUnitIsKgPerArm() {
+        XCTAssertEqual(WeightDisplaySemantics.perHand.compactLoadUnit, "kg per arm")
+        XCTAssertEqual(WeightDisplaySemantics.total.compactLoadUnit, "kg")
+    }
+
+    func testCompactLoadUnitFormatsPerArmTargetFragment() {
+        let semantics = WeightDisplaySemantics.perHand
+        let fragment = "\(Int(10.0))\(semantics.compactLoadUnit) × "
+        XCTAssertEqual(fragment, "10kg per arm × ")
+    }
+
+    func testPerHandSettingsWeightLabelIsKgPerArm() {
+        XCTAssertEqual(WeightDisplaySemantics.perHand.settingsWeightLabel, "kg per arm")
+        XCTAssertEqual(WeightDisplaySemantics.total.settingsWeightLabel, "kg")
+    }
+
     func testFarmersCarryUsesPerHandAndDistanceOrTime() {
         let exercise = makeTestExercise(
             id: "farmers_carry",
@@ -52,6 +73,72 @@ final class ExerciseMetadataResolverTests: XCTestCase {
 
         XCTAssertEqual(ExerciseMetadataResolver.resolvedWeightDisplaySemantics(for: exercise), .perHand)
         XCTAssertEqual(ExerciseMetadataResolver.resolvedPrescriptionType(for: exercise), .distanceOrTime)
+    }
+
+    func testRegression_inclineDumbbellPressUsesPerHand() {
+        let exercise = makeTestExercise(
+            id: "incline_dumbbell_press",
+            primaryMuscles: [.chest],
+            pattern: .horizontalPush,
+            equipment: [.dumbbell, .bench]
+        )
+        XCTAssertEqual(
+            ExerciseMetadataResolver.resolvedWeightDisplaySemantics(for: exercise),
+            .perHand
+        )
+    }
+
+    func testSeatedDumbbellPressUsesPerHand() {
+        let exercise = makeTestExercise(
+            id: "seated_dumbbell_press",
+            primaryMuscles: [.shoulders],
+            pattern: .verticalPush,
+            equipment: [.dumbbell, .bench]
+        )
+        XCTAssertEqual(
+            ExerciseMetadataResolver.resolvedWeightDisplaySemantics(for: exercise),
+            .perHand
+        )
+    }
+
+    func testGobletSquatUsesTotalDespiteDumbbellEquipment() {
+        let exercise = makeTestExercise(
+            id: "goblet_squat",
+            primaryMuscles: [.quads],
+            pattern: .squat,
+            equipment: [.dumbbell, .kettlebell]
+        )
+        XCTAssertEqual(
+            ExerciseMetadataResolver.resolvedWeightDisplaySemantics(for: exercise),
+            .total
+        )
+    }
+
+    func testBarbellHorizontalPushUsesTotal() {
+        let exercise = makeTestExercise(
+            id: "bench_press",
+            primaryMuscles: [.chest],
+            pattern: .horizontalPush,
+            equipment: [.barbell, .bench]
+        )
+        XCTAssertEqual(
+            ExerciseMetadataResolver.resolvedWeightDisplaySemantics(for: exercise),
+            .total
+        )
+    }
+
+    func testExplicitWeightDisplaySemanticsWinsOverHeuristic() {
+        var exercise = makeTestExercise(
+            id: "custom_db_press",
+            primaryMuscles: [.chest],
+            pattern: .horizontalPush,
+            equipment: [.dumbbell]
+        )
+        exercise.weightDisplaySemantics = .total
+        XCTAssertEqual(
+            ExerciseMetadataResolver.resolvedWeightDisplaySemantics(for: exercise),
+            .total
+        )
     }
 
     func testPlankUsesTimedPrescription() {
@@ -72,49 +159,61 @@ final class ExerciseMetadataResolverTests: XCTestCase {
             pattern: .antiRotation,
             equipment: [.bodyweight]
         )
+        // Validator requires minStandardExercises; pad with valid rep-based lifts so the
+        // assertion isolates timed-prescription handling (0/0 reps must not fail).
+        let fillers = (1...3).map { index in
+            makeTestExercise(
+                id: "filler_\(index)",
+                primaryMuscles: [.chest],
+                pattern: .horizontalPush,
+                equipment: [.dumbbell]
+            )
+        }
+        let catalog = [plank] + fillers
+        var planned: [PlannedExercise] = [
+            PlannedExercise(
+                exerciseId: plank.id,
+                orderIndex: 0,
+                targetSets: [
+                    PlannedSet(
+                        targetRepsMin: 0,
+                        targetRepsMax: 0,
+                        targetDurationSeconds: 45
+                    )
+                ]
+            )
+        ]
+        for (offset, exercise) in fillers.enumerated() {
+            planned.append(
+                PlannedExercise(
+                    exerciseId: exercise.id,
+                    orderIndex: offset + 1,
+                    targetSets: [PlannedSet(targetRepsMin: 8, targetRepsMax: 10, targetWeightKg: 20)]
+                )
+            )
+        }
         let workout = GeneratedWorkout(
             id: UUID(),
             title: "Core",
             estimatedDurationMinutes: 30,
             focus: [.abs],
-            exercises: [
-                PlannedExercise(
-                    exerciseId: plank.id,
-                    orderIndex: 0,
-                    targetSets: [
-                        PlannedSet(
-                            targetRepsMin: 0,
-                            targetRepsMax: 0,
-                            targetDurationSeconds: 45
-                        )
-                    ]
-                )
-            ],
+            exercises: planned,
             rationale: "",
             safetyNotes: [],
             generatedBy: .rulesEngine,
             createdAt: Date()
         )
-        let profile = UserProfile.empty()
-        let input = WorkoutGenerationInput(
-            userProfile: profile,
-            goal: profile.goal,
-            experienceLevel: profile.experienceLevel,
-            availableEquipment: profile.availableEquipment,
-            targetDurationMinutes: 30,
-            preferredMuscleGroups: [],
-            avoidedMuscleGroups: [],
-            injuries: [],
-            recentWorkouts: [],
-            muscleRecovery: [:],
-            exerciseStats: [],
-            userPreferences: WorkoutPreferences(),
-            readiness: nil,
-            splitDayFocus: nil
-        )
+        let input = FixtureBuilders.makeValidationInput()
 
-        let result = WorkoutValidator.validate(workout: workout, input: input, exercises: [plank])
-        XCTAssertTrue(result.isValid, "Timed holds should validate on duration, not rep counts")
+        let result = WorkoutValidator.validate(workout: workout, input: input, exercises: catalog)
+        XCTAssertFalse(
+            result.errors.contains { $0.contains("Invalid rep range") },
+            "Timed holds should not be judged by rep counts"
+        )
+        XCTAssertTrue(
+            result.isValid,
+            "Timed holds should validate on duration, not rep counts. errors: \(result.errors)"
+        )
     }
 }
 

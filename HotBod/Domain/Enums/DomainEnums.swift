@@ -176,20 +176,28 @@ enum Equipment: String, Codable, CaseIterable, Identifiable, Hashable {
 enum WeightDisplaySemantics: String, Codable, CaseIterable, Hashable {
     /// Total load (barbell, machine stack, etc.).
     case total
-    /// Weight per dumbbell / kettlebell / hand.
+    /// Weight per dumbbell / kettlebell / hand (displayed as per arm).
     case perHand
 
     var sessionWeightLabel: String {
         switch self {
         case .total: "KG"
-        case .perHand: "KG EACH"
+        case .perHand: "KG / ARM"
+        }
+    }
+
+    /// Compact unit for TARGET lines, preview loads, and best-set copy.
+    var compactLoadUnit: String {
+        switch self {
+        case .total: "kg"
+        case .perHand: "kg per arm"
         }
     }
 
     var settingsWeightLabel: String {
         switch self {
         case .total: "kg"
-        case .perHand: "kg per dumbbell"
+        case .perHand: "kg per arm"
         }
     }
 }
