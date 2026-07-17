@@ -50,4 +50,31 @@ enum WorkoutSessionMetricDrafts {
         }
         return String(format: "%.1f", kg)
     }
+
+    /// Resolves the string shown in a set weight field.
+    /// - Non-empty drafts win (including in-progress sanity-warning edits).
+    /// - Blank drafts must not block completed/planned fallbacks.
+    /// - Completed values outrank planned targets so a finished set cannot
+    ///   visually revert when another set is edited.
+    static func displayedWeightText(
+        draft: String?,
+        completedKg: Double?,
+        plannedKg: Double?
+    ) -> String {
+        if let draft, !draft.isEmpty { return draft }
+        if let completedKg { return formatWeightKg(completedKg) }
+        if let plannedKg { return formatWeightKg(plannedKg) }
+        return ""
+    }
+
+    /// Resolves the string shown in a set reps field.
+    static func displayedRepsText(
+        draft: String?,
+        completedReps: Int?,
+        plannedRepsMin: Int
+    ) -> String {
+        if let draft, !draft.isEmpty { return draft }
+        if let completedReps { return String(completedReps) }
+        return String(plannedRepsMin)
+    }
 }

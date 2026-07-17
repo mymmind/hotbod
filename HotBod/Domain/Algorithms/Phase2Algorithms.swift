@@ -70,6 +70,9 @@ enum WorkoutPlanEditor {
 
 enum ExerciseSwapReplanner {
     /// Rebuilds planned sets for a substitute while preserving set structure from the original slot.
+    /// Also adapts reps / duration / distance to the substitute's `PrescriptionType`
+    /// (mirrors `SessionExercisePlanner.plannedSet`) so swaps like sled push → farmer's carry
+    /// get a distance target instead of keeping stale rep fields.
     static func replannedSets(
         preservingStructureFrom existing: [PlannedSet],
         for substitute: Exercise,
@@ -80,11 +83,14 @@ enum ExerciseSwapReplanner {
     ) -> [PlannedSet] {
         guard substitute.resolvedLoadTrackingMode != .none else {
             return existing.map { set in
-                PlannedSet(
-                    targetRepsMin: set.targetRepsMin,
-                    targetRepsMax: set.targetRepsMax,
+                let targets = prescriptionTargets(for: substitute, from: set)
+                return PlannedSet(
+                    targetRepsMin: targets.repsMin,
+                    targetRepsMax: targets.repsMax,
                     targetWeightKg: nil,
                     rpeTarget: set.rpeTarget,
+                    targetDurationSeconds: targets.durationSeconds,
+                    targetDistanceMeters: targets.distanceMeters,
                     isWarmup: set.isWarmup,
                     isMaxEffort: set.isMaxEffort,
                     isCooldown: set.isCooldown
@@ -118,14 +124,51 @@ enum ExerciseSwapReplanner {
                 )
             }
 
+            let targets = prescriptionTargets(for: substitute, from: set)
             return PlannedSet(
-                targetRepsMin: set.targetRepsMin,
-                targetRepsMax: set.targetRepsMax,
+                targetRepsMin: targets.repsMin,
+                targetRepsMax: targets.repsMax,
                 targetWeightKg: weight,
                 rpeTarget: set.rpeTarget,
+                targetDurationSeconds: targets.durationSeconds,
+                targetDistanceMeters: targets.distanceMeters,
                 isWarmup: set.isWarmup,
                 isMaxEffort: set.isMaxEffort,
                 isCooldown: set.isCooldown
+            )
+        }
+    }
+
+    private struct PrescriptionTargets {
+        let repsMin: Int
+        let repsMax: Int
+        let durationSeconds: Int?
+        let distanceMeters: Double?
+    }
+
+    /// Maps an existing set onto the substitute's prescription mode.
+    /// Prefer a prior distance/duration when still valid; otherwise use catalog defaults.
+    private static func prescriptionTargets(
+        for substitute: Exercise,
+        from existing: PlannedSet
+    ) -> PrescriptionTargets {
+        switch substitute.resolvedPrescriptionType {
+        case .time:
+            let seconds = (existing.targetDurationSeconds ?? 0) > 0
+                ? existing.targetDurationSeconds
+                : ExerciseMetadataResolver.defaultDurationSeconds(for: substitute)
+            return PrescriptionTargets(repsMin: 0, repsMax: 0, durationSeconds: seconds, distanceMeters: nil)
+        case .distance, .distanceOrTime:
+            let meters = (existing.targetDistanceMeters ?? 0) > 0
+                ? existing.targetDistanceMeters
+                : ExerciseMetadataResolver.defaultDistanceMeters(for: substitute)
+            return PrescriptionTargets(repsMin: 0, repsMax: 0, durationSeconds: nil, distanceMeters: meters)
+        case .reps:
+            return PrescriptionTargets(
+                repsMin: existing.targetRepsMin,
+                repsMax: existing.targetRepsMax,
+                durationSeconds: nil,
+                distanceMeters: nil
             )
         }
     }

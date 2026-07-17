@@ -5,6 +5,57 @@ struct ExerciseCompleteSummary {
     let volumeKg: Double
     let bestSetDescription: String?
     let averageRPE: Double?
+
+    /// Builds the Exercise Complete interstitial stats from working sets only.
+    static func make(
+        completedSets: [CompletedSet],
+        weightSemantics: WeightDisplaySemantics
+    ) -> ExerciseCompleteSummary {
+        let working = completedSets.filter { !$0.isWarmup && !$0.isCooldown }
+        let volume = working.reduce(0.0) { partial, set in
+            partial + WorkoutSessionCalculator.volumeContribution(for: set)
+        }
+        let best = working.max { lhs, rhs in
+            setScore(lhs) < setScore(rhs)
+        }
+        return ExerciseCompleteSummary(
+            setsCompleted: working.count,
+            volumeKg: volume,
+            bestSetDescription: best.map { bestSetDescription(for: $0, weightSemantics: weightSemantics) },
+            averageRPE: EffortFeedbackMapping.averageEffectiveRPE(from: working)
+        )
+    }
+
+    private static func setScore(_ set: CompletedSet) -> Double {
+        WorkoutSessionCalculator.volumeContribution(for: set)
+    }
+
+    private static func bestSetDescription(
+        for set: CompletedSet,
+        weightSemantics: WeightDisplaySemantics
+    ) -> String {
+        let loadPrefix: String? = set.weightKg.map { weight in
+            "\(Int(weight))\(weightSemantics.compactLoadUnit)"
+        }
+
+        if let duration = set.durationSeconds, duration > 0 {
+            if let loadPrefix {
+                return "\(loadPrefix) × \(duration)s"
+            }
+            return "\(duration)s"
+        }
+        if let distance = set.distanceMeters, distance > 0 {
+            let meters = Int(distance)
+            if let loadPrefix {
+                return "\(loadPrefix) × \(meters)m"
+            }
+            return "\(meters)m"
+        }
+        if let loadPrefix {
+            return "\(loadPrefix) × \(set.reps)"
+        }
+        return "\(set.reps) reps"
+    }
 }
 
 extension WorkoutSessionView {
@@ -109,32 +160,9 @@ extension WorkoutSessionView {
     }
 
     func exerciseCompleteSummary(for exercise: WorkoutExercise, meta: Exercise) -> ExerciseCompleteSummary {
-        let working = exercise.completedSets.filter { !$0.isWarmup && !$0.isCooldown }
-        let volume = working.reduce(0.0) { partial, set in
-            partial + (set.weightKg ?? 0) * Double(max(set.reps, 1))
-        }
-        let best = working.max { lhs, rhs in
-            (lhs.weightKg ?? 0) * Double(lhs.reps) < (rhs.weightKg ?? 0) * Double(rhs.reps)
-        }
-        let bestDescription: String?
-        if let best {
-            if let duration = best.durationSeconds {
-                bestDescription = "\(duration)s"
-            } else if let distance = best.distanceMeters {
-                bestDescription = "\(Int(distance))m"
-            } else if let weight = best.weightKg {
-                bestDescription = "\(Int(weight))\(meta.resolvedWeightDisplaySemantics.compactLoadUnit) × \(best.reps)"
-            } else {
-                bestDescription = "\(best.reps) reps"
-            }
-        } else {
-            bestDescription = nil
-        }
-        return ExerciseCompleteSummary(
-            setsCompleted: working.count,
-            volumeKg: volume,
-            bestSetDescription: bestDescription,
-            averageRPE: EffortFeedbackMapping.averageEffectiveRPE(from: working)
+        ExerciseCompleteSummary.make(
+            completedSets: exercise.completedSets,
+            weightSemantics: meta.resolvedWeightDisplaySemantics
         )
     }
 }

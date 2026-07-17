@@ -13,8 +13,7 @@ struct ForgeSetMetricField: View {
             if selectAllOnFocus {
                 SelectAllMetricTextField(
                     text: $text,
-                    keyboardType: keyboardType,
-                    isActive: isActive
+                    keyboardType: keyboardType
                 )
             } else {
                 TextField("—", text: $text)
@@ -41,7 +40,6 @@ struct ForgeSetMetricField: View {
 private struct SelectAllMetricTextField: UIViewRepresentable {
     @Binding var text: String
     let keyboardType: UIKeyboardType
-    let isActive: Bool
 
     func makeUIView(context: Context) -> UITextField {
         let field = UITextField()
@@ -51,44 +49,53 @@ private struct SelectAllMetricTextField: UIViewRepresentable {
         field.keyboardType = keyboardType
         field.borderStyle = .none
         field.backgroundColor = .clear
+        field.addTarget(
+            context.coordinator,
+            action: #selector(Coordinator.editingChanged(_:)),
+            for: .editingChanged
+        )
         return field
     }
 
     func updateUIView(_ uiView: UITextField, context: Context) {
-        if uiView.text != text {
-            uiView.text = text
-        }
+        // Keep the coordinator's binding current — makeCoordinator runs once.
+        context.coordinator.binding = $text
         uiView.keyboardType = keyboardType
+
+        // While this field is first responder, UIKit owns the text. Pushing the
+        // binding back in mid-keystroke (or during select-all) causes lost edits
+        // and cross-set resets when sibling rows re-render.
+        guard !uiView.isFirstResponder else { return }
+        guard uiView.text != text else { return }
+
+        context.coordinator.isProgrammaticUpdate = true
+        uiView.text = text
+        context.coordinator.isProgrammaticUpdate = false
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(text: $text)
+        Coordinator(binding: $text)
     }
 
     final class Coordinator: NSObject, UITextFieldDelegate {
-        @Binding var text: String
+        var binding: Binding<String>
+        var isProgrammaticUpdate = false
 
-        init(text: Binding<String>) {
-            _text = text
+        init(binding: Binding<String>) {
+            self.binding = binding
         }
 
         func textFieldDidBeginEditing(_ textField: UITextField) {
             textField.selectAll(nil)
         }
 
-        func textFieldDidChangeSelection(_ textField: UITextField) {
-            text = textField.text ?? ""
+        func textFieldDidEndEditing(_ textField: UITextField) {
+            binding.wrappedValue = textField.text ?? ""
         }
 
-        func textField(
-            _ textField: UITextField,
-            shouldChangeCharactersIn range: NSRange,
-            replacementString string: String
-        ) -> Bool {
-            if let current = textField.text as NSString? {
-                text = current.replacingCharacters(in: range, with: string)
-            }
-            return true
+        @objc func editingChanged(_ textField: UITextField) {
+            guard !isProgrammaticUpdate else { return }
+            binding.wrappedValue = textField.text ?? ""
         }
     }
 }

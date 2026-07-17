@@ -44,7 +44,10 @@ extension AppEnvironment {
                 PlannedExercise(
                     exerciseId: "bench_press",
                     orderIndex: 0,
-                    targetSets: [PlannedSet(targetRepsMin: 8, targetRepsMax: 10, targetWeightKg: 60)],
+                    targetSets: [
+                        PlannedSet(targetRepsMin: 8, targetRepsMax: 10, targetWeightKg: 60),
+                        PlannedSet(targetRepsMin: 8, targetRepsMax: 10, targetWeightKg: 60)
+                    ],
                     restSeconds: 90
                 ),
                 PlannedExercise(
