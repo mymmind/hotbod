@@ -104,6 +104,7 @@ struct RootView: View {
         }
         .animation(UITestConfiguration.isUITesting ? nil : ForgeMotion.standard, value: router.route)
         .tint(ForgeColors.accent)
+        .preferredColorScheme(.dark)
         .overlay {
             if router.workoutStartCountdownSession != nil {
                 WorkoutStartCountdownView {
