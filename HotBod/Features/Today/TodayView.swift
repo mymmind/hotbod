@@ -238,7 +238,6 @@ struct TodayView: View {
             eyebrow: "Rest Day",
             title: "Recovery",
             footerLine: restDayFooterLine,
-            inverted: true,
             ambientGlow: true,
             accent: ForgeColors.accentGreen,
             primaryAction: (
@@ -285,7 +284,6 @@ struct TodayView: View {
             completed: completed,
             completionMetrics: completed ? completionMetricData(session) : [],
             footerLine: completed ? completedFooterLine : nil,
-            inverted: !completed,
             ambientGlow: !completed,
             statPills: completed ? [] : workoutStatPills(for: workout, activeSession: activeSession),
             titleAccessory: canToggleSplitFocus ? ForgeHeroTitleAccessory(

@@ -46,7 +46,6 @@ struct WorkoutCompletionView: View {
                         (label: "Sets", value: "\(WorkoutSessionCalculator.completedSetCount(session: session))"),
                         (label: "Duration", value: "\(duration) min")
                     ],
-                    inverted: true,
                     fullBleedTop: false
                 )
 

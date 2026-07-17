@@ -24,7 +24,6 @@ struct ForgeHeroCard: View {
     var completionMetrics: [(label: String, value: String)] = []
     var footerLine: String? = nil
     var progress: Double? = nil
-    var inverted: Bool = true
     var fullBleedTop: Bool = false
     var ambientGlow: Bool = false
     var statPills: [String] = []
@@ -89,13 +88,13 @@ struct ForgeHeroCard: View {
             if !statPills.isEmpty {
                 HStack(spacing: 8) {
                     ForEach(statPills, id: \.self) { pill in
-                        ForgePill(label: pill, inverted: inverted)
+                        ForgePill(label: pill)
                     }
                 }
             }
 
             if let progress {
-                ForgeProgressBar(progress: progress, inverted: inverted, fill: accent)
+                ForgeProgressBar(progress: progress, fill: accent)
             }
 
             if !completionMetrics.isEmpty {
@@ -124,7 +123,7 @@ struct ForgeHeroCard: View {
             if let footerLine {
                 Text(footerLine)
                     .font(ForgeTypography.caption)
-                    .foregroundStyle(inverted ? secondaryForeground.opacity(0.65) : ForgeColors.muted)
+                    .foregroundStyle(ForgeColors.muted)
             }
 
             actionButtons
@@ -135,11 +134,11 @@ struct ForgeHeroCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .safeAreaPadding(.top, fullBleedTop ? 4 : 0)
         .background {
-            let fill = inverted ? ForgeColors.surfaceInverse : ForgeColors.surface
+            let fill = ForgeColors.surface
             ZStack {
-                if ambientGlow && inverted && !completed {
+                if ambientGlow && !completed {
                     RadialGradient(
-                        colors: [accent.opacity(0.45), .clear],
+                        colors: [accent.opacity(0.35), .clear],
                         center: .topTrailing,
                         startRadius: 8,
                         endRadius: 220
@@ -155,16 +154,16 @@ struct ForgeHeroCard: View {
     }
 
     private var eyebrowColor: Color {
-        if completed { return secondaryForeground }
-        return inverted ? accent : ForgeColors.muted
+        if completed { return ForgeColors.muted }
+        return accent
     }
 
     private var primaryForeground: Color {
-        inverted ? ForgeColors.surface : ForgeColors.foreground
+        ForgeColors.foreground
     }
 
     private var secondaryForeground: Color {
-        inverted ? ForgeColors.surface : ForgeColors.muted
+        ForgeColors.muted
     }
 
     @ViewBuilder
@@ -197,7 +196,7 @@ struct ForgeHeroCard: View {
         if let primaryAction {
             ForgeButton(
                 title: primaryAction.title,
-                style: inverted && !completed ? .accent : (inverted ? .inverse : .primary),
+                style: completed ? .secondary : .accent,
                 accessibilityIdentifier: primaryAccessibilityIdentifier,
                 action: primaryAction.action
             )
@@ -207,7 +206,7 @@ struct ForgeHeroCard: View {
                 ForEach(Array(secondaryActions.enumerated()), id: \.offset) { _, action in
                     ForgeButton(
                         title: action.title,
-                        style: inverted ? .inverse : .secondary,
+                        style: .secondary,
                         isLoading: loadingSecondaryTitle?.caseInsensitiveCompare(action.title) == .orderedSame,
                         accessibilityIdentifier: secondaryAccessibilityIdentifiers[action.title],
                         action: action.action
