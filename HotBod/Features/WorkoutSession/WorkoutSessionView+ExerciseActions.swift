@@ -266,8 +266,8 @@ extension WorkoutSessionView {
 
     func addSet(exercise: WorkoutExercise) {
         guard let idx = session.exercises.firstIndex(where: { $0.id == exercise.id }) else { return }
-        let last = session.exercises[idx].plannedSets.last ?? PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
-        session.exercises[idx].plannedSets.append(last)
+        let added = SessionSetEditor.additionalSet(copying: session.exercises[idx].plannedSets.last)
+        session.exercises[idx].plannedSets.append(added)
         environment.scheduleWorkoutSessionSave(session)
     }
 
