@@ -36,8 +36,8 @@ final class BodyProgressUITests: BaseUITestCase {
     XCTAssertTrue(addPhoto.waitForExistence(timeout: 5))
     tapElement(addPhoto)
 
-    XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 5))
-    XCTAssertTrue(app.buttons["Choose from Library"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["bodyPhoto.takePhoto"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.buttons["bodyPhoto.chooseLibrary"].waitForExistence(timeout: 2))
   }
 
   // MARK: - Helpers

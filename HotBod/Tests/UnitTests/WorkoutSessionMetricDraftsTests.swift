@@ -93,6 +93,41 @@ final class WorkoutSessionMetricDraftsTests: XCTestCase {
         XCTAssertEqual(WorkoutSessionMetricDrafts.formatWeightKg(60), "60")
     }
 
+    func testRegression_durationAndDistanceDraftsIgnoreBlankDraft() {
+        XCTAssertEqual(
+            WorkoutSessionMetricDrafts.displayedDurationText(
+                draft: "",
+                completedSeconds: 45,
+                plannedSeconds: 30
+            ),
+            "45"
+        )
+        XCTAssertEqual(
+            WorkoutSessionMetricDrafts.displayedDistanceText(
+                draft: "",
+                completedMeters: 40,
+                plannedMeters: 20
+            ),
+            "40"
+        )
+        XCTAssertEqual(
+            WorkoutSessionMetricDrafts.displayedDurationText(
+                draft: "60",
+                completedSeconds: 45,
+                plannedSeconds: 30
+            ),
+            "60"
+        )
+        XCTAssertEqual(
+            WorkoutSessionMetricDrafts.displayedDistanceText(
+                draft: nil,
+                completedMeters: nil,
+                plannedMeters: 40
+            ),
+            "40"
+        )
+    }
+
     /// Editing set 2 must not make set 1 fall back to the planned default when
     /// set 1 already has a completed (or drafted) higher value.
     func testRegression_multiSetDisplayPersistence() {

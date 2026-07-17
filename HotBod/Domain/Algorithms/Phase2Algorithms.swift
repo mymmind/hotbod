@@ -79,11 +79,18 @@ enum ExerciseSwapReplanner {
         stats: UserExerciseStats?,
         bodyweightKg: Double,
         experience: ExperienceLevel,
-        weightCeilings: [Equipment: Double] = [:]
+        weightCeilings: [Equipment: Double] = [:],
+        goal: TrainingGoal = .buildMuscle
     ) -> [PlannedSet] {
         guard substitute.resolvedLoadTrackingMode != .none else {
             return existing.map { set in
-                let targets = prescriptionTargets(for: substitute, from: set)
+                let targets = prescriptionTargets(
+                    for: substitute,
+                    from: set,
+                    stats: stats,
+                    experience: experience,
+                    goal: goal
+                )
                 return PlannedSet(
                     targetRepsMin: targets.repsMin,
                     targetRepsMax: targets.repsMax,
@@ -107,11 +114,19 @@ enum ExerciseSwapReplanner {
             )
 
         return existing.map { set in
+            let targets = prescriptionTargets(
+                for: substitute,
+                from: set,
+                stats: stats,
+                experience: experience,
+                goal: goal
+            )
+
             let weight: Double?
             if set.isWarmup {
                 weight = WarmupSetPlanner.warmupSets(
                     workingWeight: workingWeight,
-                    workingRepsMin: set.targetRepsMin,
+                    workingRepsMin: targets.repsMin,
                     rpeTarget: set.rpeTarget
                 ).last?.targetWeightKg
             } else if set.isCooldown {
@@ -124,7 +139,6 @@ enum ExerciseSwapReplanner {
                 )
             }
 
-            let targets = prescriptionTargets(for: substitute, from: set)
             return PlannedSet(
                 targetRepsMin: targets.repsMin,
                 targetRepsMax: targets.repsMax,
@@ -147,10 +161,13 @@ enum ExerciseSwapReplanner {
     }
 
     /// Maps an existing set onto the substitute's prescription mode.
-    /// Prefer a prior distance/duration when still valid; otherwise use catalog defaults.
+    /// Prefer a prior distance/duration/reps when still valid; otherwise use catalog defaults.
     private static func prescriptionTargets(
         for substitute: Exercise,
-        from existing: PlannedSet
+        from existing: PlannedSet,
+        stats: UserExerciseStats?,
+        experience: ExperienceLevel,
+        goal: TrainingGoal
     ) -> PrescriptionTargets {
         switch substitute.resolvedPrescriptionType {
         case .time:
@@ -164,9 +181,17 @@ enum ExerciseSwapReplanner {
                 : ExerciseMetadataResolver.defaultDistanceMeters(for: substitute)
             return PrescriptionTargets(repsMin: 0, repsMax: 0, durationSeconds: nil, distanceMeters: meters)
         case .reps:
+            let fallback = ExercisePrescriptionOverrides.effectiveRepRange(
+                exerciseId: substitute.id,
+                stats: stats,
+                goal: goal,
+                experience: experience
+            )
+            let repsMin = existing.targetRepsMin > 0 ? existing.targetRepsMin : fallback.min
+            let repsMax = existing.targetRepsMax > 0 ? existing.targetRepsMax : max(fallback.max, repsMin)
             return PrescriptionTargets(
-                repsMin: existing.targetRepsMin,
-                repsMax: existing.targetRepsMax,
+                repsMin: repsMin,
+                repsMax: repsMax,
                 durationSeconds: nil,
                 distanceMeters: nil
             )

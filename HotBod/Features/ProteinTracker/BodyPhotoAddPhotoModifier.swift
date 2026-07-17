@@ -6,6 +6,7 @@ import UIKit
 struct BodyPhotoAddPhotoModifier: ViewModifier {
     @Binding var isPresented: Bool
     let onImageData: (Data) async -> Void
+    var onFailure: ((String) -> Void)?
 
     @State private var showLibraryPicker = false
     @State private var showCamera = false
@@ -34,8 +35,15 @@ struct BodyPhotoAddPhotoModifier: ViewModifier {
                 Task {
                     defer { pickerItem = nil }
                     guard let item else { return }
-                    guard let data = try? await item.loadTransferable(type: Data.self) else { return }
-                    await onImageData(data)
+                    do {
+                        guard let data = try await item.loadTransferable(type: Data.self) else {
+                            onFailure?("Could not load that photo. Try a different image.")
+                            return
+                        }
+                        await onImageData(data)
+                    } catch {
+                        onFailure?("Could not load that photo. Try a different image.")
+                    }
                 }
             }
             .fullScreenCover(isPresented: $showCamera) {
@@ -43,7 +51,10 @@ struct BodyPhotoAddPhotoModifier: ViewModifier {
                     onImage: { image in
                         showCamera = false
                         Task {
-                            guard let data = BodyPhotoImageProcessor.jpegData(from: image) else { return }
+                            guard let data = BodyPhotoImageProcessor.jpegData(from: image) else {
+                                onFailure?("Could not process that photo. Try again.")
+                                return
+                            }
                             await onImageData(data)
                         }
                     },
@@ -65,8 +76,15 @@ struct BodyPhotoAddPhotoModifier: ViewModifier {
 extension View {
     func bodyPhotoAddPhoto(
         isPresented: Binding<Bool>,
-        onImageData: @escaping (Data) async -> Void
+        onImageData: @escaping (Data) async -> Void,
+        onFailure: ((String) -> Void)? = nil
     ) -> some View {
-        modifier(BodyPhotoAddPhotoModifier(isPresented: isPresented, onImageData: onImageData))
+        modifier(
+            BodyPhotoAddPhotoModifier(
+                isPresented: isPresented,
+                onImageData: onImageData,
+                onFailure: onFailure
+            )
+        )
     }
 }

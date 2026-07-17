@@ -608,6 +608,17 @@ final class ExerciseCompleteSummaryTests: XCTestCase {
         XCTAssertEqual(summary.bestSetDescription, "80kg × 8")
         XCTAssertEqual(summary.volumeKg, 80 * 8 + 85 * 6, accuracy: 0.01)
     }
+
+    func testRegression_bestSetDescriptionRoundsFractionalLoad() {
+        let sets = [
+            CompletedSet(setIndex: 0, weightKg: 32.6, reps: 0, rpe: 8, distanceMeters: 40)
+        ]
+
+        let summary = ExerciseCompleteSummary.make(completedSets: sets, weightSemantics: .perHand)
+
+        // Int() truncates to 32; rounded display should show 33.
+        XCTAssertEqual(summary.bestSetDescription, "33kg per arm × 40m")
+    }
 }
 
 final class LocalExerciseRepositoryDedupTests: XCTestCase {

@@ -55,9 +55,15 @@ struct BodyProgressView: View {
         }
         .background(ForgeColors.background)
         .navigationTitle("Body Progress")
-        .bodyPhotoAddPhoto(isPresented: $showAddPhoto) { data in
-            await importPhotoData(data)
-        }
+        .bodyPhotoAddPhoto(
+            isPresented: $showAddPhoto,
+            onImageData: { data in
+                await importPhotoData(data)
+            },
+            onFailure: { message in
+                importError = message
+            }
+        )
         .confirmationDialog(
             "Delete this progress photo?",
             isPresented: $showDeleteConfirmation,

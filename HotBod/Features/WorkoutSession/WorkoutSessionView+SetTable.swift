@@ -363,11 +363,11 @@ extension WorkoutSessionView {
     ) -> Binding<String> {
         Binding(
             get: {
-                let draft = durationTexts[planned.id]
-                if let draft, !draft.isEmpty { return draft }
-                if let seconds = completed?.durationSeconds { return String(seconds) }
-                if let seconds = planned.targetDurationSeconds { return String(seconds) }
-                return ""
+                WorkoutSessionMetricDrafts.displayedDurationText(
+                    draft: durationTexts[planned.id],
+                    completedSeconds: completed?.durationSeconds,
+                    plannedSeconds: planned.targetDurationSeconds
+                )
             },
             set: { newValue in
                 var updated = durationTexts
@@ -387,15 +387,11 @@ extension WorkoutSessionView {
     ) -> Binding<String> {
         Binding(
             get: {
-                let draft = distanceTexts[planned.id]
-                if let draft, !draft.isEmpty { return draft }
-                if let meters = completed?.distanceMeters {
-                    return String(format: "%.0f", meters)
-                }
-                if let meters = planned.targetDistanceMeters {
-                    return String(format: "%.0f", meters)
-                }
-                return ""
+                WorkoutSessionMetricDrafts.displayedDistanceText(
+                    draft: distanceTexts[planned.id],
+                    completedMeters: completed?.distanceMeters,
+                    plannedMeters: planned.targetDistanceMeters
+                )
             },
             set: { newValue in
                 var updated = distanceTexts

@@ -582,9 +582,15 @@ struct OnboardingPhotoView: View {
             }
             .padding(24)
         }
-        .bodyPhotoAddPhoto(isPresented: $showAddPhoto) { data in
-            await importPhotoData(data)
-        }
+        .bodyPhotoAddPhoto(
+            isPresented: $showAddPhoto,
+            onImageData: { data in
+                await importPhotoData(data)
+            },
+            onFailure: { message in
+                importError = message
+            }
+        )
         .task { await loadExistingPhotos() }
     }
 

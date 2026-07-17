@@ -336,7 +336,8 @@ struct WorkoutPreviewView: View {
             stats: exerciseStatsById[substitute.id],
             bodyweightKg: bodyWeightKg,
             experience: experience,
-            weightCeilings: environment.userProfile?.maxAvailableWeightKg ?? [:]
+            weightCeilings: environment.userProfile?.maxAvailableWeightKg ?? [:],
+            goal: environment.userProfile?.goal ?? .buildMuscle
         )
         orderedExercises[idx] = PlannedExercise(
             id: planned.id,

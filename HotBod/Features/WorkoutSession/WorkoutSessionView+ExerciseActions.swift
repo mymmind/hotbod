@@ -42,13 +42,15 @@ extension WorkoutSessionView {
               let substitute = exerciseMap[newExerciseId] else { return }
         let existing = session.exercises[index]
         let experience = environment.userProfile?.experienceLevel ?? .intermediate
+        let goal = environment.userProfile?.goal ?? .buildMuscle
         let replannedSets = ExerciseSwapReplanner.replannedSets(
             preservingStructureFrom: existing.plannedSets,
             for: substitute,
             stats: exerciseStatsById[newExerciseId],
             bodyweightKg: bodyWeightKg,
             experience: experience,
-            weightCeilings: environment.userProfile?.maxAvailableWeightKg ?? [:]
+            weightCeilings: environment.userProfile?.maxAvailableWeightKg ?? [:],
+            goal: goal
         )
         session.exercises[index] = WorkoutExercise(
             id: existing.id,

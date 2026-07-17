@@ -428,6 +428,66 @@ final class ExerciseSwapReplannerTests: XCTestCase {
         )
         XCTAssertNil(replanned[0].targetDistanceMeters)
     }
+
+    func testRegression_replannedSetsFallbackRepsWhenSourceWasDistance() {
+        let bench = makeStubExercise(
+            id: "bench_press",
+            muscles: [.chest],
+            pattern: .horizontalPush,
+            equipment: [.barbell, .bench]
+        )
+        let existing = [
+            PlannedSet(
+                targetRepsMin: 0,
+                targetRepsMax: 0,
+                targetWeightKg: 32,
+                targetDistanceMeters: 40
+            )
+        ]
+
+        let replanned = ExerciseSwapReplanner.replannedSets(
+            preservingStructureFrom: existing,
+            for: bench,
+            stats: nil,
+            bodyweightKg: 80,
+            experience: .intermediate
+        )
+
+        // buildMuscle + intermediate → (8, 10); must not keep distance-set 0/0 reps.
+        XCTAssertEqual(replanned[0].targetRepsMin, 8)
+        XCTAssertEqual(replanned[0].targetRepsMax, 10)
+        XCTAssertNil(replanned[0].targetDistanceMeters)
+        XCTAssertNil(replanned[0].targetDurationSeconds)
+    }
+
+    func testRegression_replannedWarmupUsesFallbackRepsWhenSourceWasDistance() {
+        let pushUp = makeStubExercise(
+            id: "push_up",
+            muscles: [.chest],
+            pattern: .horizontalPush,
+            equipment: [.bodyweight]
+        )
+        let existing = [
+            PlannedSet(
+                targetRepsMin: 0,
+                targetRepsMax: 0,
+                targetDistanceMeters: 40,
+                isWarmup: true
+            )
+        ]
+
+        let replanned = ExerciseSwapReplanner.replannedSets(
+            preservingStructureFrom: existing,
+            for: pushUp,
+            stats: nil,
+            bodyweightKg: 80,
+            experience: .intermediate
+        )
+
+        XCTAssertTrue(replanned[0].isWarmup)
+        XCTAssertGreaterThan(replanned[0].targetRepsMin, 0)
+        XCTAssertGreaterThanOrEqual(replanned[0].targetRepsMax, replanned[0].targetRepsMin)
+    }
 }
 
 // MARK: - WorkoutPlanEditor

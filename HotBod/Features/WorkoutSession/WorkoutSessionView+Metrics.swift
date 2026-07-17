@@ -35,7 +35,7 @@ struct ExerciseCompleteSummary {
         weightSemantics: WeightDisplaySemantics
     ) -> String {
         let loadPrefix: String? = set.weightKg.map { weight in
-            "\(Int(weight))\(weightSemantics.compactLoadUnit)"
+            "\(Int(weight.rounded()))\(weightSemantics.compactLoadUnit)"
         }
 
         if let duration = set.durationSeconds, duration > 0 {

@@ -77,4 +77,28 @@ enum WorkoutSessionMetricDrafts {
         if let completedReps { return String(completedReps) }
         return String(plannedRepsMin)
     }
+
+    /// Resolves the string shown in a set duration field.
+    static func displayedDurationText(
+        draft: String?,
+        completedSeconds: Int?,
+        plannedSeconds: Int?
+    ) -> String {
+        if let draft, !draft.isEmpty { return draft }
+        if let completedSeconds { return String(completedSeconds) }
+        if let plannedSeconds { return String(plannedSeconds) }
+        return ""
+    }
+
+    /// Resolves the string shown in a set distance field.
+    static func displayedDistanceText(
+        draft: String?,
+        completedMeters: Double?,
+        plannedMeters: Double?
+    ) -> String {
+        if let draft, !draft.isEmpty { return draft }
+        if let completedMeters { return String(format: "%.0f", completedMeters) }
+        if let plannedMeters { return String(format: "%.0f", plannedMeters) }
+        return ""
+    }
 }

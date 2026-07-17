@@ -131,9 +131,16 @@ struct WorkoutCompletionView: View {
                 ShareSheet(items: [shareImage])
             }
         }
-        .bodyPhotoAddPhoto(isPresented: $showAddPhoto) { data in
-            await importProgressPhoto(data)
-        }
+        .bodyPhotoAddPhoto(
+            isPresented: $showAddPhoto,
+            onImageData: { data in
+                await importProgressPhoto(data)
+            },
+            onFailure: { message in
+                photoImportSucceeded = false
+                photoImportMessage = message
+            }
+        )
     }
 
     private func shareCompletedWorkout() {
