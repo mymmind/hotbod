@@ -93,6 +93,82 @@ final class WorkoutSessionMetricDraftsTests: XCTestCase {
         XCTAssertEqual(WorkoutSessionMetricDrafts.formatWeightKg(60), "60")
     }
 
+    /// Editing set 2 must not make set 1 fall back to the planned default when
+    /// set 1 already has a completed (or drafted) higher value.
+    func testRegression_multiSetDisplayPersistence() {
+        // Set 1 completed at the prepopulated higher load; draft map empty/cleared.
+        XCTAssertEqual(
+            WorkoutSessionMetricDrafts.displayedWeightText(
+                draft: nil,
+                completedKg: 82.5,
+                plannedKg: 80
+            ),
+            "82.5"
+        )
+        XCTAssertEqual(
+            WorkoutSessionMetricDrafts.displayedRepsText(
+                draft: nil,
+                completedReps: 10,
+                plannedRepsMin: 8
+            ),
+            "10"
+        )
+
+        // Blank draft must not wipe completed/planned values (?? does not skip "").
+        XCTAssertEqual(
+            WorkoutSessionMetricDrafts.displayedWeightText(
+                draft: "",
+                completedKg: 82.5,
+                plannedKg: 80
+            ),
+            "82.5"
+        )
+        XCTAssertEqual(
+            WorkoutSessionMetricDrafts.displayedRepsText(
+                draft: "",
+                completedReps: 10,
+                plannedRepsMin: 8
+            ),
+            "10"
+        )
+
+        // Active typed draft still wins (soft-warning edits before confirm).
+        XCTAssertEqual(
+            WorkoutSessionMetricDrafts.displayedWeightText(
+                draft: "90",
+                completedKg: 82.5,
+                plannedKg: 80
+            ),
+            "90"
+        )
+
+        // Incomplete set: draft wins, else planned prepopulation.
+        XCTAssertEqual(
+            WorkoutSessionMetricDrafts.displayedWeightText(
+                draft: "85",
+                completedKg: nil,
+                plannedKg: 80
+            ),
+            "85"
+        )
+        XCTAssertEqual(
+            WorkoutSessionMetricDrafts.displayedWeightText(
+                draft: nil,
+                completedKg: nil,
+                plannedKg: 80
+            ),
+            "80"
+        )
+        XCTAssertEqual(
+            WorkoutSessionMetricDrafts.displayedRepsText(
+                draft: nil,
+                completedReps: nil,
+                plannedRepsMin: 8
+            ),
+            "8"
+        )
+    }
+
     private func makeSession(plannedSets: [PlannedSet], completedCount: Int) -> WorkoutSession {
         let completed = (0..<completedCount).map { index in
             CompletedSet(setIndex: index, weightKg: 60, reps: 8)

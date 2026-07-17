@@ -207,6 +207,20 @@ extension WorkoutSessionView {
         )
         session.exercises[idx].completedSets.append(completed)
         pendingRpeBySetId.removeValue(forKey: planned.id)
+        // Completed values are source of truth — clear drafts so a later re-render
+        // cannot overwrite the logged set with a blank/stale draft or planned default.
+        var nextWeights = weightTexts
+        var nextReps = repsTexts
+        var nextDurations = durationTexts
+        var nextDistances = distanceTexts
+        nextWeights.removeValue(forKey: planned.id)
+        nextReps.removeValue(forKey: planned.id)
+        nextDurations.removeValue(forKey: planned.id)
+        nextDistances.removeValue(forKey: planned.id)
+        weightTexts = nextWeights
+        repsTexts = nextReps
+        durationTexts = nextDurations
+        distanceTexts = nextDistances
         environment.scheduleWorkoutSessionSave(session)
 
         let isPR = isPersonalRecord(exerciseId: exercise.exerciseId, completed: completed, showWeightInput: showWeightInput)

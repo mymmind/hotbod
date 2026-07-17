@@ -317,13 +317,16 @@ extension WorkoutSessionView {
     ) -> Binding<String> {
         Binding(
             get: {
-                weightTexts[planned.id]
-                    ?? completed?.weightKg.map(WorkoutSessionMetricDrafts.formatWeightKg)
-                    ?? planned.targetWeightKg.map(WorkoutSessionMetricDrafts.formatWeightKg)
-                    ?? ""
+                WorkoutSessionMetricDrafts.displayedWeightText(
+                    draft: weightTexts[planned.id],
+                    completedKg: completed?.weightKg,
+                    plannedKg: planned.targetWeightKg
+                )
             },
             set: { newValue in
-                weightTexts[planned.id] = newValue
+                var updated = weightTexts
+                updated[planned.id] = newValue
+                weightTexts = updated
                 guard completed != nil, showWeightInput else { return }
                 guard let weight = Double(newValue) else { return }
 
@@ -360,13 +363,16 @@ extension WorkoutSessionView {
     ) -> Binding<String> {
         Binding(
             get: {
-                durationTexts[planned.id]
-                    ?? completed?.durationSeconds.map(String.init)
-                    ?? planned.targetDurationSeconds.map(String.init)
-                    ?? ""
+                let draft = durationTexts[planned.id]
+                if let draft, !draft.isEmpty { return draft }
+                if let seconds = completed?.durationSeconds { return String(seconds) }
+                if let seconds = planned.targetDurationSeconds { return String(seconds) }
+                return ""
             },
             set: { newValue in
-                durationTexts[planned.id] = newValue
+                var updated = durationTexts
+                updated[planned.id] = newValue
+                durationTexts = updated
                 guard completed != nil, let seconds = Int(newValue) else { return }
                 updateCompletedSet(exerciseId: exerciseId, setIndex: setIndex, durationSeconds: seconds)
             }
@@ -381,13 +387,20 @@ extension WorkoutSessionView {
     ) -> Binding<String> {
         Binding(
             get: {
-                distanceTexts[planned.id]
-                    ?? completed?.distanceMeters.map { String(format: "%.0f", $0) }
-                    ?? planned.targetDistanceMeters.map { String(format: "%.0f", $0) }
-                    ?? ""
+                let draft = distanceTexts[planned.id]
+                if let draft, !draft.isEmpty { return draft }
+                if let meters = completed?.distanceMeters {
+                    return String(format: "%.0f", meters)
+                }
+                if let meters = planned.targetDistanceMeters {
+                    return String(format: "%.0f", meters)
+                }
+                return ""
             },
             set: { newValue in
-                distanceTexts[planned.id] = newValue
+                var updated = distanceTexts
+                updated[planned.id] = newValue
+                distanceTexts = updated
                 guard completed != nil, let meters = Double(newValue) else { return }
                 updateCompletedSet(exerciseId: exerciseId, setIndex: setIndex, distanceMeters: meters)
             }
@@ -401,9 +414,17 @@ extension WorkoutSessionView {
         completed: CompletedSet?
     ) -> Binding<String> {
         Binding(
-            get: { repsTexts[planned.id] ?? (completed.map { String($0.reps) } ?? String(planned.targetRepsMin)) },
+            get: {
+                WorkoutSessionMetricDrafts.displayedRepsText(
+                    draft: repsTexts[planned.id],
+                    completedReps: completed?.reps,
+                    plannedRepsMin: planned.targetRepsMin
+                )
+            },
             set: { newValue in
-                repsTexts[planned.id] = newValue
+                var updated = repsTexts
+                updated[planned.id] = newValue
+                repsTexts = updated
                 guard completed != nil, let reps = Int(newValue) else { return }
                 updateCompletedSet(exerciseId: exerciseId, setIndex: setIndex, reps: reps)
             }
