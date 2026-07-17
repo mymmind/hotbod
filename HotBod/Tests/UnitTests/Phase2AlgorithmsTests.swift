@@ -367,6 +367,67 @@ final class ExerciseSwapReplannerTests: XCTestCase {
 
         XCTAssertNil(replanned[0].targetWeightKg)
     }
+
+    func testRegression_replannedSetsApplyDistanceOrTimeTargetsForFarmersCarry() {
+        let carry = makeStubExercise(
+            id: "farmers_carry",
+            muscles: [.forearms],
+            pattern: .carry,
+            equipment: [.dumbbell]
+        )
+        let existing = [
+            PlannedSet(targetRepsMin: 8, targetRepsMax: 10, targetWeightKg: 80),
+            PlannedSet(targetRepsMin: 8, targetRepsMax: 10, targetWeightKg: 80)
+        ]
+
+        let replanned = ExerciseSwapReplanner.replannedSets(
+            preservingStructureFrom: existing,
+            for: carry,
+            stats: nil,
+            bodyweightKg: 80,
+            experience: .intermediate
+        )
+
+        XCTAssertEqual(replanned.count, 2)
+        for set in replanned {
+            XCTAssertEqual(set.targetRepsMin, 0)
+            XCTAssertEqual(set.targetRepsMax, 0)
+            XCTAssertEqual(
+                set.targetDistanceMeters,
+                ExerciseMetadataResolver.defaultDistanceMeters(for: carry)
+            )
+            XCTAssertNil(set.targetDurationSeconds)
+        }
+    }
+
+    func testRegression_replannedSetsApplyDurationTargetsForTimedExercise() {
+        var plank = makeStubExercise(
+            id: "plank",
+            muscles: [.abs],
+            pattern: .antiRotation,
+            equipment: [.bodyweight]
+        )
+        plank.loadTrackingMode = .optional
+        let existing = [
+            PlannedSet(targetRepsMin: 10, targetRepsMax: 12, targetWeightKg: 60)
+        ]
+
+        let replanned = ExerciseSwapReplanner.replannedSets(
+            preservingStructureFrom: existing,
+            for: plank,
+            stats: nil,
+            bodyweightKg: 80,
+            experience: .intermediate
+        )
+
+        XCTAssertEqual(replanned[0].targetRepsMin, 0)
+        XCTAssertEqual(replanned[0].targetRepsMax, 0)
+        XCTAssertEqual(
+            replanned[0].targetDurationSeconds,
+            ExerciseMetadataResolver.defaultDurationSeconds(for: plank)
+        )
+        XCTAssertNil(replanned[0].targetDistanceMeters)
+    }
 }
 
 // MARK: - WorkoutPlanEditor
