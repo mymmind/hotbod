@@ -344,7 +344,6 @@ extension WorkoutSessionView {
         guard session.exercises.indices.contains(index) else { return }
         guard index != currentExerciseIndex else { return }
         dismissKeyboard()
-        clearPersistedRestState()
         pendingPostSetAction = nil
         withAnimation(ForgeMotion.exercise) {
             currentExerciseIndex = index
@@ -352,6 +351,7 @@ extension WorkoutSessionView {
             showExerciseComplete = false
         }
         environment.scheduleWorkoutSessionSave(session)
+        syncWatchSnapshot()
     }
 
     func advanceExercise() {

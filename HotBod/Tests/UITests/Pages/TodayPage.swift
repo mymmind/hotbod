@@ -74,14 +74,19 @@ struct WorkoutSessionPage {
     return app.descendants(matching: .any)["workout.rir.skip"]
   }
 
-  /// Dismisses RIR/rest overlays and the Health Access sheet that can block session taps in Simulator.
-  func dismissTransientPromptsIfNeeded() {
+  /// Dismisses RIR (and Health Access) so rest can start, without skipping the rest timer.
+  func dismissRIRPromptIfNeeded() {
     dismissHealthAccessIfNeeded()
-
-    // Slightly longer waits: RIR/rest sheets can lag behind Complete Set on Simulator.
     if rirSkipButton.waitForExistence(timeout: 2) {
       rirSkipButton.tap()
     }
+  }
+
+  /// Dismisses RIR/rest overlays and the Health Access sheet that can block session taps in Simulator.
+  func dismissTransientPromptsIfNeeded() {
+    dismissRIRPromptIfNeeded()
+
+    // Slightly longer waits: RIR/rest sheets can lag behind Complete Set on Simulator.
     if restSkipButton.waitForExistence(timeout: 2) {
       restSkipButton.tap()
     }

@@ -116,6 +116,31 @@ final class WorkoutSessionUITests: BaseUITestCase {
     XCTAssertTrue(waitForMainShell(timeout: 15) || waitForTabBar(timeout: 15))
   }
 
+  func testRegression_restTimerSurvivesNextExerciseBrowse() {
+    XCTAssertTrue(session.waitForSession())
+    XCTAssertTrue(session.completeSetButton.waitForExistence(timeout: 8))
+    tapElement(session.completeSetButton)
+    session.dismissRIRPromptIfNeeded()
+
+    // Prefer an RIR choice if Skip isn't exposed yet (sheet animation).
+    if !session.restSkipButton.waitForExistence(timeout: 2),
+       app.buttons["workout.rir.2"].waitForExistence(timeout: 2) {
+      app.buttons["workout.rir.2"].tap()
+    }
+
+    XCTAssertTrue(
+      session.restSkipButton.waitForExistence(timeout: 8),
+      "Expected rest timer after the first set of a multi-set exercise"
+    )
+    XCTAssertTrue(session.nextExerciseButton.waitForExistence(timeout: 5))
+    tapElement(session.nextExerciseButton)
+
+    XCTAssertTrue(
+      session.restSkipButton.waitForExistence(timeout: 3),
+      "Browsing next exercise during rest must keep the rest timer visible"
+    )
+  }
+
   func testRegression_exerciseCompleteIsFullScreen() {
     XCTAssertTrue(session.waitForSession())
 
