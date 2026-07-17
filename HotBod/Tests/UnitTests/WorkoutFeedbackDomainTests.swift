@@ -570,6 +570,46 @@ final class WorkoutSessionCalculatorFeedbackTests: XCTestCase {
     }
 }
 
+final class ExerciseCompleteSummaryTests: XCTestCase {
+    func testRegression_farmersCarryTimedSetsShowDurationNotZeroReps() {
+        let sets = [
+            CompletedSet(setIndex: 0, weightKg: 32, reps: 0, rpe: 10, durationSeconds: 60),
+            CompletedSet(setIndex: 1, weightKg: 32, reps: 0, rpe: 10, durationSeconds: 60)
+        ]
+
+        let summary = ExerciseCompleteSummary.make(completedSets: sets, weightSemantics: .perHand)
+
+        XCTAssertEqual(summary.setsCompleted, 2)
+        XCTAssertEqual(summary.volumeKg, 64, accuracy: 0.01)
+        XCTAssertEqual(summary.bestSetDescription, "32kg per arm × 60s")
+        XCTAssertEqual(summary.averageRPE ?? -1, 10, accuracy: 0.01)
+    }
+
+    func testRegression_loadedDistanceSetKeepsWeightInBestSet() {
+        let sets = [
+            CompletedSet(setIndex: 0, weightKg: 32, reps: 0, rpe: 8, distanceMeters: 40)
+        ]
+
+        let summary = ExerciseCompleteSummary.make(completedSets: sets, weightSemantics: .perHand)
+
+        XCTAssertEqual(summary.bestSetDescription, "32kg per arm × 40m")
+        XCTAssertEqual(summary.volumeKg, 32 * 40 / 1000, accuracy: 0.01)
+    }
+
+    func testRepBasedBestSetUnchanged() {
+        let sets = [
+            CompletedSet(setIndex: 0, weightKg: 80, reps: 8, rpe: 8),
+            CompletedSet(setIndex: 1, weightKg: 85, reps: 6, rpe: 9)
+        ]
+
+        let summary = ExerciseCompleteSummary.make(completedSets: sets, weightSemantics: .total)
+
+        // Best set is highest volume contribution (80×8 = 640 > 85×6 = 510).
+        XCTAssertEqual(summary.bestSetDescription, "80kg × 8")
+        XCTAssertEqual(summary.volumeKg, 80 * 8 + 85 * 6, accuracy: 0.01)
+    }
+}
+
 final class LocalExerciseRepositoryDedupTests: XCTestCase {
     func testRegression_duplicateCustomIdsDoNotCrashGeneration() async throws {
         try await PersistenceTestHelpers.withIsolatedPersistence {
