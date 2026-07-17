@@ -30,6 +30,16 @@ final class BodyProgressUITests: BaseUITestCase {
     )
   }
 
+  func testAddPhotoShowsCameraAndLibraryActions() {
+    openBodyProgress()
+    let addPhoto = app.buttons["bodyProgress.addPhoto"]
+    XCTAssertTrue(addPhoto.waitForExistence(timeout: 5))
+    tapElement(addPhoto)
+
+    XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.buttons["Choose from Library"].waitForExistence(timeout: 2))
+  }
+
   // MARK: - Helpers
 
   private func openBodyProgress() {

@@ -24,6 +24,11 @@ extension AppEnvironment {
         bumpBodyPhotoRevision()
     }
 
+    func deleteBodyPhoto(id: UUID) async throws {
+        try await bodyProgressRepository.deletePhoto(id: id)
+        bumpBodyPhotoRevision()
+    }
+
     @discardableResult
     func importBodyPhoto(
         imageData: Data,

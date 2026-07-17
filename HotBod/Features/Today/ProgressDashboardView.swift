@@ -338,8 +338,7 @@ struct ProgressDashboardView: View {
     }
 
     private func loadImage(path: String) -> Image? {
-        guard BodyPhotoImageProcessor.fileExists(at: path),
-              let uiImage = UIImage(contentsOfFile: path) else { return nil }
+        guard let uiImage = BodyPhotoImageProcessor.loadUIImage(at: path) else { return nil }
         return Image(uiImage: uiImage)
     }
 }

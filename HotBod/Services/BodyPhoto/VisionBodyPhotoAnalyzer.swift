@@ -37,7 +37,7 @@ actor VisionBodyPhotoAnalyzer: BodyPhotoAnalyzer {
     private let fallback = MockBodyPhotoAnalyzer()
 
     func analyze(photo: BodyProgressPhoto, previous: BodyProgressPhoto?) async throws -> BodyPhotoAnalysis {
-        guard let image = UIImage(contentsOfFile: photo.localImagePath),
+        guard let image = BodyPhotoImageProcessor.loadUIImage(at: photo.localImagePath),
               let cgImage = image.cgImage else {
             return try await fallback.analyze(photo: photo, previous: previous)
         }

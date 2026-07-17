@@ -1,6 +1,5 @@
 import SwiftUI
 import UIKit
-import PhotosUI
 import Observation
 
 struct OnboardingContainerView: View {
@@ -524,8 +523,7 @@ struct OnboardingProteinView: View {
 struct OnboardingPhotoView: View {
     @Environment(AppEnvironment.self) private var environment
     @Bindable var viewModel: OnboardingViewModel
-    @State private var showPicker = false
-    @State private var pickerItem: PhotosPickerItem?
+    @State private var showAddPhoto = false
     @State private var selectedPose: BodyPhotoPoseType = .frontRelaxed
     @State private var importedPhotoPath: String?
     @State private var isImporting = false
@@ -547,7 +545,7 @@ struct OnboardingPhotoView: View {
                         .foregroundStyle(ForgeColors.destructive)
                 }
 
-                if let path = importedPhotoPath, let uiImage = UIImage(contentsOfFile: path) {
+                if let path = importedPhotoPath, let uiImage = BodyPhotoImageProcessor.loadUIImage(at: path) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("FIRST PHOTO SAVED")
                             .font(ForgeTypography.caption)
@@ -567,8 +565,7 @@ struct OnboardingPhotoView: View {
                     accessibilityIdentifier: "onboarding.photo.setup"
                 ) {
                     importError = nil
-                    viewModel.profile.photoTrackingEnabled = true
-                    showPicker = true
+                    showAddPhoto = true
                 }
                 ForgeButton(
                     title: "Skip For Now",
@@ -580,15 +577,13 @@ struct OnboardingPhotoView: View {
                         viewModel.profile.photoTrackingEnabled = true
                     } else {
                         viewModel.profile.photoTrackingEnabled = false
-                        pickerItem = nil
                     }
                 }
             }
             .padding(24)
         }
-        .photosPicker(isPresented: $showPicker, selection: $pickerItem, matching: .images)
-        .onChange(of: pickerItem) { _, item in
-            Task { await importPhoto(item) }
+        .bodyPhotoAddPhoto(isPresented: $showAddPhoto) { data in
+            await importPhotoData(data)
         }
         .task { await loadExistingPhotos() }
     }
@@ -613,20 +608,12 @@ struct OnboardingPhotoView: View {
         viewModel.profile.photoTrackingEnabled = true
     }
 
-    private func importPhoto(_ item: PhotosPickerItem?) async {
-        guard let item else { return }
+    private func importPhotoData(_ data: Data) async {
         isImporting = true
         importError = nil
-        defer {
-            isImporting = false
-            pickerItem = nil
-        }
+        defer { isImporting = false }
 
         do {
-            guard let data = try await item.loadTransferable(type: Data.self) else {
-                importError = "Could not load that photo. Try a different image."
-                return
-            }
             let photo = try await environment.importBodyPhoto(
                 imageData: data,
                 userId: viewModel.profile.id,

@@ -18,7 +18,12 @@ enum BodyPhotoImageProcessor {
     }
 
     static func fileExists(at path: String) -> Bool {
-        FileManager.default.fileExists(atPath: path)
+        FileManager.default.fileExists(atPath: BodyPhotoPathResolver.resolve(path).path)
+    }
+
+    static func loadUIImage(at localImagePath: String) -> UIImage? {
+        let url = BodyPhotoPathResolver.resolve(localImagePath)
+        return UIImage(contentsOfFile: url.path)
     }
 }
 

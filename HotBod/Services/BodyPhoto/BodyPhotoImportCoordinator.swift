@@ -19,7 +19,8 @@ actor BodyPhotoImportCoordinator {
 
         let dir = await environment.bodyPhotosDirectory()
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let fileURL = dir.appendingPathComponent("\(UUID().uuidString).jpg")
+        let filename = "\(UUID().uuidString).jpg"
+        let fileURL = dir.appendingPathComponent(filename)
         try jpeg.write(to: fileURL)
 
         do {
@@ -31,7 +32,7 @@ actor BodyPhotoImportCoordinator {
                 userId: userId,
                 date: Date(),
                 poseType: pose,
-                localImagePath: fileURL.path,
+                localImagePath: filename,
                 weightKg: weightKg
             )
             photo.analysis = try? await environment.bodyPhotoAnalyzer.analyze(photo: photo, previous: previous)

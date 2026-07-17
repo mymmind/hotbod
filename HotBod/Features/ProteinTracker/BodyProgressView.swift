@@ -1,16 +1,16 @@
 import SwiftUI
-import PhotosUI
 import UIKit
 
 struct BodyProgressView: View {
     @Environment(AppEnvironment.self) private var environment
     @State private var photos: [BodyProgressPhoto] = []
-    @State private var showPicker = false
+    @State private var showAddPhoto = false
     @State private var selectedPose: BodyPhotoPoseType = .frontRelaxed
-    @State private var pickerItem: PhotosPickerItem?
     @State private var activeComparison: BodyPhotoComparisonResult?
     @State private var isImporting = false
     @State private var importError: String?
+    @State private var photoPendingDelete: BodyProgressPhoto?
+    @State private var showDeleteConfirmation = false
 
     private var sortedPhotos: [BodyProgressPhoto] {
         BodyProgressPhoto.sortedByDateDescending(photos)
@@ -46,7 +46,7 @@ struct BodyProgressView: View {
                         return
                     }
                     importError = nil
-                    showPicker = true
+                    showAddPhoto = true
                 }
                 timelineSection
                 comparisonSection
@@ -55,9 +55,24 @@ struct BodyProgressView: View {
         }
         .background(ForgeColors.background)
         .navigationTitle("Body Progress")
-        .photosPicker(isPresented: $showPicker, selection: $pickerItem, matching: .images)
-        .onChange(of: pickerItem) { _, item in
-            Task { await importPhoto(item) }
+        .bodyPhotoAddPhoto(isPresented: $showAddPhoto) { data in
+            await importPhotoData(data)
+        }
+        .confirmationDialog(
+            "Delete this progress photo?",
+            isPresented: $showDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                if let photo = photoPendingDelete {
+                    Task { await deletePhoto(photo) }
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                photoPendingDelete = nil
+            }
+        } message: {
+            Text("This removes the photo from your device. This cannot be undone.")
         }
         .task(id: environment.bodyPhotoRevision) {
             await load()
@@ -122,23 +137,49 @@ struct BodyProgressView: View {
                 Text(emptyTimelineMessage)
                     .foregroundStyle(ForgeColors.muted)
             } else {
-                ForEach(sortedPhotos) { photo in
-                    HStack {
-                        if let image = loadImage(path: photo.localImagePath) {
-                            image.resizable().scaledToFill().frame(width: 48, height: 64).clipped()
-                        } else {
-                            Rectangle()
-                                .fill(ForgeColors.muted.opacity(0.25))
-                                .frame(width: 48, height: 64)
-                        }
-                        VStack(alignment: .leading) {
-                            Text(photo.poseType.displayName).font(ForgeTypography.heading)
-                            Text(photo.date.formatted(date: .abbreviated, time: .omitted))
-                                .font(ForgeTypography.caption).foregroundStyle(ForgeColors.muted)
-                        }
-                        Spacer()
+                List {
+                    ForEach(sortedPhotos) { photo in
+                        timelineRow(photo)
+                            .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button("Delete", role: .destructive) {
+                                    photoPendingDelete = photo
+                                    showDeleteConfirmation = true
+                                }
+                                .accessibilityIdentifier("bodyProgress.deletePhoto")
+                            }
                     }
                 }
+                .listStyle(.plain)
+                .scrollDisabled(true)
+                .frame(minHeight: CGFloat(sortedPhotos.count) * 76)
+            }
+        }
+    }
+
+    private func timelineRow(_ photo: BodyProgressPhoto) -> some View {
+        HStack {
+            if let image = loadImage(path: photo.localImagePath) {
+                image.resizable().scaledToFill().frame(width: 48, height: 64).clipped()
+            } else {
+                Rectangle()
+                    .fill(ForgeColors.muted.opacity(0.25))
+                    .frame(width: 48, height: 64)
+            }
+            VStack(alignment: .leading) {
+                Text(photo.poseType.displayName).font(ForgeTypography.heading)
+                Text(photo.date.formatted(date: .abbreviated, time: .omitted))
+                    .font(ForgeTypography.caption).foregroundStyle(ForgeColors.muted)
+            }
+            Spacer()
+        }
+        .contentShape(Rectangle())
+        .contextMenu {
+            Button("Delete", role: .destructive) {
+                photoPendingDelete = photo
+                showDeleteConfirmation = true
             }
         }
     }
@@ -236,13 +277,11 @@ struct BodyProgressView: View {
     }
 
     private func loadImage(path: String) -> Image? {
-        guard BodyPhotoImageProcessor.fileExists(at: path),
-              let uiImage = UIImage(contentsOfFile: path) else { return nil }
+        guard let uiImage = BodyPhotoImageProcessor.loadUIImage(at: path) else { return nil }
         return Image(uiImage: uiImage)
     }
 
-    private func importPhoto(_ item: PhotosPickerItem?) async {
-        guard let item else { return }
+    private func importPhotoData(_ data: Data) async {
         guard let userId = environment.userProfile?.id else {
             importError = "Complete onboarding before adding progress photos."
             return
@@ -250,16 +289,9 @@ struct BodyProgressView: View {
 
         isImporting = true
         importError = nil
-        defer {
-            isImporting = false
-            pickerItem = nil
-        }
+        defer { isImporting = false }
 
         do {
-            guard let data = try await item.loadTransferable(type: Data.self) else {
-                importError = "Could not read the selected photo."
-                return
-            }
             _ = try await environment.importBodyPhoto(
                 imageData: data,
                 userId: userId,
@@ -272,6 +304,19 @@ struct BodyProgressView: View {
             importError = "Could not import photo. Try a different image."
         } catch {
             importError = "Could not save photo. Try again."
+        }
+    }
+
+    private func deletePhoto(_ photo: BodyProgressPhoto) async {
+        defer { photoPendingDelete = nil }
+        do {
+            try await environment.deleteBodyPhoto(id: photo.id)
+            if activeComparison?.before.id == photo.id || activeComparison?.after.id == photo.id {
+                activeComparison = nil
+            }
+            await load()
+        } catch {
+            importError = "Could not delete photo. Try again."
         }
     }
 

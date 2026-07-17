@@ -51,6 +51,7 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "HotBod uses your photo library for progress photos."
+        INFOPLIST_KEY_NSCameraUsageDescription: "HotBod uses the camera to take progress photos."
         INFOPLIST_KEY_NSHealthShareUsageDescription: "HotBod reads sleep and resting heart rate to show optional recovery hints. Not used for medical diagnosis."
         INFOPLIST_KEY_NSHealthUpdateUsageDescription: "HotBod saves completed strength workouts to Apple Health when you enable export."
         GENERATE_INFOPLIST_FILE: YES

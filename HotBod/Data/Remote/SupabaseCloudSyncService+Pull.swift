@@ -111,7 +111,7 @@ extension SupabaseCloudSyncService {
 
             guard hasLocalFile || row.storagePath != nil else { continue }
 
-            let photo = row.toBodyProgressPhoto(localImagePath: fileURL.path)
+            let photo = row.toBodyProgressPhoto(localImagePath: BodyPhotoPathResolver.storagePath(for: fileURL))
             try await local.bodyProgress.savePhoto(photo)
         }
     }

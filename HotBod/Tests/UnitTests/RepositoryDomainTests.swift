@@ -379,7 +379,7 @@ final class LocalBodyProgressRepositoryTests: XCTestCase {
                 userId: UUID(),
                 date: Date(),
                 poseType: .sideRelaxed,
-                localImagePath: fileURL.path
+                localImagePath: "delete-me.jpg"
             )
             try await repo.savePhoto(photo)
             try await repo.deletePhoto(id: photo.id)
@@ -413,12 +413,59 @@ final class LocalBodyProgressRepositoryTests: XCTestCase {
                 pose: .frontRelaxed,
                 weightKg: 80
             )
-            XCTAssertTrue(FileManager.default.fileExists(atPath: photo.localImagePath))
+            XCTAssertFalse(photo.localImagePath.hasPrefix("/"), "Import should store a relative filename")
+            XCTAssertTrue(BodyPhotoImageProcessor.fileExists(at: photo.localImagePath))
             XCTAssertNotNil(photo.analysis)
 
             let fetched = await env.fetchBodyPhotos(forUserId: userId)
             XCTAssertEqual(fetched.count, 1)
             XCTAssertEqual(fetched.first?.poseType, .frontRelaxed)
+            XCTAssertEqual(fetched.first?.localImagePath, photo.localImagePath)
+        }
+    }
+
+    func testRegression_migrateAbsoluteBodyPhotoPathOnFetch() async throws {
+        try await PersistenceTestHelpers.withIsolatedPersistence {
+            let repo = LocalBodyProgressRepository()
+            let filename = "\(UUID().uuidString).jpg"
+            let absoluteURL = repo.photosDirectory.appendingPathComponent(filename)
+            try Data("jpeg".utf8).write(to: absoluteURL)
+            let photo = BodyProgressPhoto(
+                id: UUID(),
+                userId: UUID(),
+                date: Date(),
+                poseType: .frontRelaxed,
+                localImagePath: absoluteURL.path
+            )
+            // Bypass fetch migration by writing JSON directly through save without prior fetch migrate.
+            PersistenceHelper.save([photo], to: "body_photos.json")
+
+            let fetched = try await repo.fetchPhotos()
+            XCTAssertEqual(fetched.count, 1)
+            XCTAssertEqual(fetched.first?.localImagePath, filename)
+            XCTAssertTrue(BodyPhotoImageProcessor.fileExists(at: filename))
+        }
+    }
+
+    func testDeleteBodyPhotoViaAppEnvironment() async throws {
+        try await PersistenceTestHelpers.withIsolatedPersistenceOnMainActor {
+            let repo = LocalBodyProgressRepository()
+            let env = AppEnvironment(bodyProgressRepository: repo)
+            let filename = "\(UUID().uuidString).jpg"
+            let fileURL = repo.photosDirectory.appendingPathComponent(filename)
+            try Data("jpeg".utf8).write(to: fileURL)
+            let photo = BodyProgressPhoto(
+                id: UUID(),
+                userId: UUID(),
+                date: Date(),
+                poseType: .backRelaxed,
+                localImagePath: filename
+            )
+            try await repo.savePhoto(photo)
+            try await env.deleteBodyPhoto(id: photo.id)
+            let fetched = try await repo.fetchPhotos()
+            XCTAssertTrue(fetched.isEmpty)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: fileURL.path))
         }
     }
 

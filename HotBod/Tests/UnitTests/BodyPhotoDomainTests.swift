@@ -108,6 +108,35 @@ final class BodyProgressPhotoTimelineTests: XCTestCase {
         XCTAssertFalse(BodyPhotoImageProcessor.fileExists(at: "/tmp/definitely-missing-\(UUID().uuidString).jpg"))
     }
 
+    func testPathResolverPrefersRelativeFilenameUnderPhotosDirectory() async throws {
+        try await PersistenceTestHelpers.withIsolatedPersistence {
+            let filename = "\(UUID().uuidString).jpg"
+            let url = BodyPhotoPathResolver.photosDirectory.appendingPathComponent(filename)
+            try FileManager.default.createDirectory(
+                at: BodyPhotoPathResolver.photosDirectory,
+                withIntermediateDirectories: true
+            )
+            try Data("x".utf8).write(to: url)
+
+            let resolvedRelative = BodyPhotoPathResolver.resolve(filename)
+            XCTAssertEqual(resolvedRelative.lastPathComponent, filename)
+            XCTAssertTrue(FileManager.default.fileExists(atPath: resolvedRelative.path))
+
+            let resolvedAbsolute = BodyPhotoPathResolver.resolve(url.path)
+            XCTAssertEqual(resolvedAbsolute.path, url.path)
+
+            let photo = BodyProgressPhoto(
+                id: UUID(),
+                userId: UUID(),
+                date: Date(),
+                poseType: .frontRelaxed,
+                localImagePath: url.path
+            )
+            let migrated = BodyPhotoPathResolver.migratedPhoto(from: photo)
+            XCTAssertEqual(migrated?.localImagePath, filename)
+        }
+    }
+
     private func makePhoto(pose: BodyPhotoPoseType, date: Date) -> BodyProgressPhoto {
         BodyProgressPhoto(
             id: UUID(),

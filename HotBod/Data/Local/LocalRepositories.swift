@@ -94,13 +94,14 @@ actor LocalBodyProgressRepository: BodyProgressRepository {
     nonisolated let photosDirectory: URL
 
     init() {
-        let dir = PersistenceHelper.appSupportURL.appendingPathComponent("photos", isDirectory: true)
+        let dir = BodyPhotoPathResolver.photosDirectory
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         photosDirectory = dir
     }
 
     func fetchPhotos() async throws -> [BodyProgressPhoto] {
-        PersistenceHelper.load([BodyProgressPhoto].self, from: key) ?? []
+        let loaded = PersistenceHelper.load([BodyProgressPhoto].self, from: key) ?? []
+        return try await migrateAbsolutePathsIfNeeded(loaded)
     }
 
     func savePhoto(_ photo: BodyProgressPhoto) async throws {
@@ -116,12 +117,27 @@ actor LocalBodyProgressRepository: BodyProgressRepository {
     func deletePhoto(id: UUID) async throws {
         let photos = try await fetchPhotos()
         guard let photo = photos.first(where: { $0.id == id }) else { return }
-        if FileManager.default.fileExists(atPath: photo.localImagePath) {
-            try FileManager.default.removeItem(atPath: photo.localImagePath)
+        let fileURL = BodyPhotoPathResolver.resolve(photo.localImagePath)
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            try FileManager.default.removeItem(at: fileURL)
         }
         var remaining = photos
         remaining.removeAll { $0.id == id }
         PersistenceHelper.save(remaining, to: key)
+    }
+
+    private func migrateAbsolutePathsIfNeeded(_ photos: [BodyProgressPhoto]) async throws -> [BodyProgressPhoto] {
+        var changed = false
+        var migrated = photos
+        for index in migrated.indices {
+            guard let updated = BodyPhotoPathResolver.migratedPhoto(from: migrated[index]) else { continue }
+            migrated[index] = updated
+            changed = true
+        }
+        if changed {
+            PersistenceHelper.save(migrated, to: key)
+        }
+        return migrated
     }
 }
 

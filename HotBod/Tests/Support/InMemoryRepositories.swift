@@ -172,8 +172,9 @@ actor InMemoryBodyProgressRepository: BodyProgressRepository {
   }
   func deletePhoto(id: UUID) async throws {
     if let photo = photos.first(where: { $0.id == id }) {
-      if FileManager.default.fileExists(atPath: photo.localImagePath) {
-        try? FileManager.default.removeItem(atPath: photo.localImagePath)
+      let fileURL = BodyPhotoPathResolver.resolve(photo.localImagePath)
+      if FileManager.default.fileExists(atPath: fileURL.path) {
+        try? FileManager.default.removeItem(at: fileURL)
       }
     }
     photos.removeAll { $0.id == id }

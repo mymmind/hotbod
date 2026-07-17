@@ -1,5 +1,4 @@
 import SwiftUI
-import PhotosUI
 
 struct WorkoutCompletionView: View {
     @Environment(AppEnvironment.self) private var environment
@@ -11,10 +10,11 @@ struct WorkoutCompletionView: View {
 
     @State private var shareImage: UIImage?
     @State private var showShareSheet = false
-    @State private var showPhotoPicker = false
-    @State private var pickerItem: PhotosPickerItem?
+    @State private var showAddPhoto = false
+    @State private var selectedPose: BodyPhotoPoseType = .frontRelaxed
     @State private var isImportingPhoto = false
     @State private var photoImportMessage: String?
+    @State private var photoImportSucceeded = false
 
     private var volume: Double {
         WorkoutSessionCalculator.completedVolumeKg(session: session)
@@ -70,10 +70,25 @@ struct WorkoutCompletionView: View {
                     }
                 }
 
+                if environment.isPhotoTrackingEnabled {
+                    ForgeCard {
+                        ForgeSectionHeader(title: "Progress photo", subtitle: selectedPose.displayName)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack {
+                                ForEach(BodyPhotoPoseType.allCases) { pose in
+                                    SelectableChip(title: pose.displayName, isSelected: selectedPose == pose) {
+                                        selectedPose = pose
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if let photoImportMessage {
                     Text(photoImportMessage)
                         .font(ForgeTypography.caption)
-                        .foregroundStyle(ForgeColors.accentGreen)
+                        .foregroundStyle(photoImportSucceeded ? ForgeColors.accentGreen : ForgeColors.destructive)
                 }
 
                 VStack(spacing: ForgeSpacing.s3) {
@@ -92,7 +107,7 @@ struct WorkoutCompletionView: View {
                             isLoading: isImportingPhoto,
                             accessibilityIdentifier: "session.addProgressPhoto"
                         ) {
-                            showPhotoPicker = true
+                            showAddPhoto = true
                         }
                     }
 
@@ -111,15 +126,13 @@ struct WorkoutCompletionView: View {
         .background(ForgeColors.background)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("session.workoutComplete")
-        .accessibilityIdentifier("session.workoutComplete")
         .sheet(isPresented: $showShareSheet) {
             if let shareImage {
                 ShareSheet(items: [shareImage])
             }
         }
-        .photosPicker(isPresented: $showPhotoPicker, selection: $pickerItem, matching: .images)
-        .onChange(of: pickerItem) { _, item in
-            Task { await importProgressPhoto(item) }
+        .bodyPhotoAddPhoto(isPresented: $showAddPhoto) { data in
+            await importProgressPhoto(data)
         }
     }
 
@@ -141,23 +154,21 @@ struct WorkoutCompletionView: View {
         showShareSheet = shareImage != nil
     }
 
-    private func importProgressPhoto(_ item: PhotosPickerItem?) async {
-        guard let item,
-              let userId = environment.userProfile?.id else { return }
+    private func importProgressPhoto(_ data: Data) async {
+        guard let userId = environment.userProfile?.id else { return }
         isImportingPhoto = true
         defer { isImportingPhoto = false }
         do {
-            guard let data = try await item.loadTransferable(type: Data.self) else { return }
-            _ = try await BodyPhotoImportCoordinator.shared.importPhoto(
+            _ = try await environment.importBodyPhoto(
                 imageData: data,
                 userId: userId,
-                pose: .frontRelaxed,
-                weightKg: environment.userProfile?.weightKg,
-                environment: environment
+                pose: selectedPose,
+                weightKg: environment.userProfile?.weightKg
             )
+            photoImportSucceeded = true
             photoImportMessage = "Progress photo saved."
-            pickerItem = nil
         } catch {
+            photoImportSucceeded = false
             photoImportMessage = "Could not save photo."
         }
     }
