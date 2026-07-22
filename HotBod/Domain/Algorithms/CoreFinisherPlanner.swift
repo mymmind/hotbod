@@ -1,24 +1,35 @@
 import Foundation
 
+enum CoreRole: String, CaseIterable {
+    case flexion, antiExtension, antiRotation, lateral, lowerBack
+}
+
 enum CoreFinisherPlanner {
     static let allowlist: Set<String> = [
-        "plank",
-        "dead_bug",
-        "bird_dog",
-        "back_extension",
-        "russian_twist",
-        "side_plank",
-        "ab_wheel_rollout",
-        "crunch"
+        // existing
+        "plank", "dead_bug", "bird_dog", "side_plank", "russian_twist",
+        "ab_wheel_rollout", "hanging_leg_raise", "cable_crunch", "pallof_press",
+        // new (Task 5 catalog)
+        "crunch", "reverse_crunch", "lying_leg_raise", "hanging_knee_raise",
+        "bicycle_crunch", "back_extension"
     ]
 
-    private static let preferredFinisherIds = [
-        "plank",
-        "dead_bug",
-        "bird_dog",
-        "back_extension",
-        "russian_twist",
-        "side_plank"
+    private static let roleById: [String: CoreRole] = [
+        "crunch": .flexion,
+        "reverse_crunch": .flexion,
+        "lying_leg_raise": .flexion,
+        "hanging_knee_raise": .flexion,
+        "hanging_leg_raise": .flexion,
+        "cable_crunch": .flexion,
+        "ab_wheel_rollout": .antiExtension,
+        "plank": .antiExtension,
+        "dead_bug": .antiRotation,
+        "bird_dog": .antiRotation,
+        "pallof_press": .antiRotation,
+        "side_plank": .lateral,
+        "russian_twist": .lateral,
+        "bicycle_crunch": .lateral,
+        "back_extension": .lowerBack
     ]
 
     static func appendCoreFinisher(
@@ -26,82 +37,112 @@ enum CoreFinisherPlanner {
         exercises: [Exercise],
         availableEquipment: [Equipment],
         experience: ExperienceLevel,
-        splitDayFocus: SplitDayFocus = .fullBody,
-        exerciseStats: [UserExerciseStats] = []
+        splitDayFocus: SplitDayFocus?,
+        exerciseStats: [UserExerciseStats]
     ) {
-        _ = splitDayFocus
-        _ = exerciseStats
         guard !planned.isEmpty else { return }
 
         let existingIds = Set(planned.map(\.exerciseId))
         let candidates = exercises.filter { exercise in
+            guard allowlist.contains(exercise.id) else { return false }
             guard !existingIds.contains(exercise.id) else { return false }
-            guard EquipmentFilter.isExerciseAvailable(exercise, availableEquipment: availableEquipment) else { return false }
-            let targetsCore = exercise.primaryMuscles.contains(.abs)
-                || exercise.primaryMuscles.contains(.lowerBack)
-                || exercise.secondaryMuscles.contains(.abs)
-            return targetsCore && exercise.movementPattern != .cardio
+            guard exercise.movementPattern != .cardio else { return false }
+            return EquipmentFilter.isExerciseAvailable(exercise, availableEquipment: availableEquipment)
         }
+        guard let selected = selectFinisher(
+            from: candidates,
+            planned: planned,
+            splitDayFocus: splitDayFocus,
+            experience: experience,
+            exerciseStats: exerciseStats
+        ) else { return }
 
-        let ordered = candidates.sorted { lhs, rhs in
-            let lhsRank = preferredFinisherIds.firstIndex(of: lhs.id) ?? Int.max
-            let rhsRank = preferredFinisherIds.firstIndex(of: rhs.id) ?? Int.max
-            if lhsRank != rhsRank { return lhsRank < rhsRank }
-            return lhs.name < rhs.name
-        }
-
-        let count = experience == .beginner ? 1 : 2
-        for exercise in ordered.prefix(count) {
-            let finisher = buildFinisherExercise(exercise, orderIndex: planned.count)
-            planned.append(finisher)
-        }
-
+        planned.append(buildFinisherExercise(selected, orderIndex: planned.count, experience: experience, splitDayFocus: splitDayFocus))
         for index in planned.indices {
             planned[index].orderIndex = index
         }
     }
 
-    private static func buildFinisherExercise(_ exercise: Exercise, orderIndex: Int) -> PlannedExercise {
+    // Task 3 replaces this naive pick
+    private static func selectFinisher(
+        from candidates: [Exercise],
+        planned: [PlannedExercise],
+        splitDayFocus: SplitDayFocus?,
+        experience: ExperienceLevel,
+        exerciseStats: [UserExerciseStats]
+    ) -> Exercise? {
+        candidates.sorted { $0.id < $1.id }.first
+    }
+
+    private static func setCount(for experience: ExperienceLevel) -> Int {
+        switch experience {
+        case .beginner: 3
+        case .intermediate: 4
+        case .advanced: 5
+        }
+    }
+
+    private static func intensity(for experience: ExperienceLevel) -> IntensityTarget {
+        experience == .beginner ? .light : .moderate
+    }
+
+    private static func role(for exercise: Exercise) -> CoreRole {
+        if let mapped = roleById[exercise.id] { return mapped }
+        if exercise.primaryMuscles.contains(.lowerBack) { return .lowerBack }
+        if exercise.movementPattern == .rotation { return .lateral }
+        if exercise.movementPattern == .isolation { return .flexion }
+        return .antiRotation
+    }
+
+    private static func buildFinisherExercise(
+        _ exercise: Exercise,
+        orderIndex: Int,
+        experience: ExperienceLevel,
+        splitDayFocus: SplitDayFocus?
+    ) -> PlannedExercise {
+        let count = setCount(for: experience)
         let prescription = ExerciseMetadataResolver.resolvedPrescriptionType(for: exercise)
         let sets: [PlannedSet]
         switch prescription {
         case .time:
             let seconds = ExerciseMetadataResolver.defaultDurationSeconds(for: exercise)
-            sets = [
+            sets = (0..<count).map { _ in
                 PlannedSet(
                     targetRepsMin: 0,
                     targetRepsMax: 0,
                     rpeTarget: 7,
                     targetDurationSeconds: seconds
                 )
-            ]
+            }
         case .distance, .distanceOrTime:
             let meters = ExerciseMetadataResolver.defaultDistanceMeters(for: exercise)
-            sets = [
+            sets = (0..<count).map { _ in
                 PlannedSet(
                     targetRepsMin: 0,
                     targetRepsMax: 0,
                     rpeTarget: 7,
                     targetDistanceMeters: meters
                 )
-            ]
+            }
         case .reps:
-            sets = [
+            sets = (0..<count).map { _ in
                 PlannedSet(
-                    targetRepsMin: 12,
+                    targetRepsMin: 10,
                     targetRepsMax: 15,
                     rpeTarget: 7
                 )
-            ]
+            }
         }
 
+        let roleName = role(for: exercise).rawValue
+        let focusLabel = splitDayFocus?.displayName.lowercased() ?? "session"
         return PlannedExercise(
             exerciseId: exercise.id,
             orderIndex: orderIndex,
             targetSets: sets,
-            restSeconds: 45,
-            intensity: .light,
-            reason: "Core finisher — abs and spinal stability at session end."
+            restSeconds: 30,
+            intensity: intensity(for: experience),
+            reason: "Core finisher — \(roleName) for today’s \(focusLabel)."
         )
     }
 }

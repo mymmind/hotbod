@@ -188,7 +188,9 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                     to: &planned,
                     exercises: allExercises,
                     availableEquipment: input.availableEquipment,
-                    experience: input.experienceLevel
+                    experience: input.experienceLevel,
+                    splitDayFocus: input.splitDayFocus,
+                    exerciseStats: input.exerciseStats
                 )
             }
             if input.userProfile.includeCooldown {
