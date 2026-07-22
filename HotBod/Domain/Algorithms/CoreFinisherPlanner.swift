@@ -1,6 +1,17 @@
 import Foundation
 
 enum CoreFinisherPlanner {
+    static let allowlist: Set<String> = [
+        "plank",
+        "dead_bug",
+        "bird_dog",
+        "back_extension",
+        "russian_twist",
+        "side_plank",
+        "ab_wheel_rollout",
+        "crunch"
+    ]
+
     private static let preferredFinisherIds = [
         "plank",
         "dead_bug",
@@ -14,8 +25,12 @@ enum CoreFinisherPlanner {
         to planned: inout [PlannedExercise],
         exercises: [Exercise],
         availableEquipment: [Equipment],
-        experience: ExperienceLevel
+        experience: ExperienceLevel,
+        splitDayFocus: SplitDayFocus = .fullBody,
+        exerciseStats: [UserExerciseStats] = []
     ) {
+        _ = splitDayFocus
+        _ = exerciseStats
         guard !planned.isEmpty else { return }
 
         let existingIds = Set(planned.map(\.exerciseId))

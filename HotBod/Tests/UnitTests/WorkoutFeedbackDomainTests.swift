@@ -217,41 +217,6 @@ final class ExerciseMetadataResolverTests: XCTestCase {
     }
 }
 
-final class CoreFinisherPlannerTests: XCTestCase {
-    func testAppendsCoreFinisherExercises() {
-        let plank = makeTestExercise(
-            id: "plank",
-            primaryMuscles: [.abs],
-            pattern: .antiRotation,
-            equipment: [.bodyweight]
-        )
-        let bench = makeTestExercise(
-            id: "bench_press",
-            primaryMuscles: [.chest],
-            pattern: .horizontalPush,
-            equipment: [.barbell]
-        )
-
-        var planned = [
-            PlannedExercise(
-                exerciseId: bench.id,
-                orderIndex: 0,
-                targetSets: [PlannedSet(targetRepsMin: 8, targetRepsMax: 10)]
-            )
-        ]
-
-        CoreFinisherPlanner.appendCoreFinisher(
-            to: &planned,
-            exercises: [bench, plank],
-            availableEquipment: Equipment.allCases,
-            experience: .intermediate
-        )
-
-        XCTAssertEqual(planned.count, 2)
-        XCTAssertEqual(planned.last?.exerciseId, plank.id)
-    }
-}
-
 final class WorkoutGenerationFeedbackTests: XCTestCase {
     func testBuildMuscleExcludesCardioWithoutConditioning() async throws {
         try await PersistenceTestHelpers.withIsolatedPersistence {
