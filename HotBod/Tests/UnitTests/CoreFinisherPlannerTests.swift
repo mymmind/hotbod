@@ -229,6 +229,24 @@ final class CoreFinisherPlannerTests: XCTestCase {
         XCTAssertEqual(planned.last?.exerciseId, "ab_wheel_rollout")
     }
 
+    func testPullUpBarRaisesExcludedWithoutBar() {
+        let catalog = [
+            makeTestExercise(id: "bench_press"),
+            core("hanging_knee_raise", equipment: [.pullUpBar]),
+            core("crunch")
+        ]
+        var planned = benchPlanned()
+        CoreFinisherPlanner.appendCoreFinisher(
+            to: &planned,
+            exercises: catalog,
+            availableEquipment: [.bodyweight],
+            experience: .intermediate,
+            splitDayFocus: .pull,
+            exerciseStats: []
+        )
+        XCTAssertEqual(planned.last?.exerciseId, "crunch")
+    }
+
     func testNewCoreSeedsAreLoadableAndAllowlisted() throws {
         let catalog = ExerciseCatalogLoader.loadExercises()
         let ids = Set(catalog.map(\.id))

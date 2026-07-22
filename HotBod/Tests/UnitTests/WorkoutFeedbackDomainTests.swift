@@ -264,14 +264,11 @@ final class WorkoutGenerationFeedbackTests: XCTestCase {
             profile.cardioBlockPlacement = .none
 
             let workout = try await service.generate(input: makeGenerationInput(profile: profile, focus: .push))
-            let catalog = try await LocalExerciseRepository().fetchAll()
-            let map = ExerciseCatalog.indexedById(catalog)
-            let finishers = workout.exercises.filter {
-                let exercise = map[$0.exerciseId]
-                return exercise?.primaryMuscles.contains(.abs) == true
-                    || exercise?.primaryMuscles.contains(.lowerBack) == true
-            }
-            XCTAssertFalse(finishers.isEmpty)
+            let finishers = workout.exercises.filter { CoreFinisherPlanner.allowlist.contains($0.exerciseId) }
+            XCTAssertEqual(finishers.count, 1)
+            XCTAssertEqual(workout.exercises.last?.exerciseId, finishers.first?.exerciseId)
+            XCTAssertEqual(finishers.first?.restSeconds, 30)
+            XCTAssertEqual(finishers.first?.targetSets.count, 4)
         }
     }
 
