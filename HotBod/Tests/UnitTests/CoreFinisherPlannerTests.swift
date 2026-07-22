@@ -177,4 +177,55 @@ final class CoreFinisherPlannerTests: XCTestCase {
         )
         XCTAssertEqual(planned.last?.exerciseId, "plank")
     }
+
+    func testRecentlyLoggedFinisherIsDemoted() {
+        let catalog = [
+            makeTestExercise(id: "bench_press"),
+            core("ab_wheel_rollout", pattern: .antiRotation, difficulty: .intermediate),
+            core("plank", pattern: .antiRotation, difficulty: .beginner)
+        ]
+        let recent = UserExerciseStats(
+            exerciseId: "ab_wheel_rollout",
+            recentSets: [
+                CompletedSet(setIndex: 0, reps: 10, completedAt: Date())
+            ],
+            preferredRepRangeMin: 8,
+            preferredRepRangeMax: 12
+        )
+        var planned = benchPlanned()
+        CoreFinisherPlanner.appendCoreFinisher(
+            to: &planned,
+            exercises: catalog,
+            availableEquipment: [.bodyweight],
+            experience: .intermediate,
+            splitDayFocus: .push,
+            exerciseStats: [recent]
+        )
+        XCTAssertEqual(planned.last?.exerciseId, "plank")
+    }
+
+    func testRegression_plankNotAlwaysSelectedWhenFresherOptionsExist() {
+        let catalog = [
+            makeTestExercise(id: "bench_press"),
+            core("plank", pattern: .antiRotation),
+            core("dead_bug", pattern: .antiRotation),
+            core("ab_wheel_rollout", pattern: .antiRotation, difficulty: .intermediate)
+        ]
+        let stalePlank = UserExerciseStats(
+            exerciseId: "plank",
+            recentSets: [CompletedSet(setIndex: 0, reps: 0, durationSeconds: 45, completedAt: Date())],
+            preferredRepRangeMin: 1,
+            preferredRepRangeMax: 1
+        )
+        var planned = benchPlanned()
+        CoreFinisherPlanner.appendCoreFinisher(
+            to: &planned,
+            exercises: catalog,
+            availableEquipment: [.bodyweight],
+            experience: .intermediate,
+            splitDayFocus: .push,
+            exerciseStats: [stalePlank]
+        )
+        XCTAssertEqual(planned.last?.exerciseId, "ab_wheel_rollout")
+    }
 }
