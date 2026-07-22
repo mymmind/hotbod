@@ -228,4 +228,13 @@ final class CoreFinisherPlannerTests: XCTestCase {
         )
         XCTAssertEqual(planned.last?.exerciseId, "ab_wheel_rollout")
     }
+
+    func testNewCoreSeedsAreLoadableAndAllowlisted() throws {
+        let catalog = ExerciseCatalogLoader.loadExercises()
+        let ids = Set(catalog.map(\.id))
+        for id in ["crunch", "reverse_crunch", "lying_leg_raise", "hanging_knee_raise", "bicycle_crunch", "back_extension"] {
+            XCTAssertTrue(ids.contains(id), id)
+            XCTAssertTrue(CoreFinisherPlanner.allowlist.contains(id), id)
+        }
+    }
 }

@@ -313,7 +313,25 @@
         "hanging_leg_raise",
         "cable_crunch",
         "russian_twist",
-        "medicine_ball_slam"
+        "medicine_ball_slam",
+        "crunch",
+        "reverse_crunch",
+        "lying_leg_raise",
+        "hanging_knee_raise",
+        "bicycle_crunch"
+      ]
+    },
+    {
+      "id": "core_lower_back",
+      "name": "Lower Back Endurance",
+      "primaryMuscles": [
+        "lowerBack"
+      ],
+      "movementPattern": "hinge",
+      "description": "Controlled lower-back and posterior-chain endurance finishers.",
+      "exerciseIds": [
+        "back_extension",
+        "bird_dog"
       ]
     },
     {
@@ -1504,6 +1522,151 @@
         "Using momentum instead of abdominal control.",
         "Pulling on the neck or shoulders.",
         "Arching the lower back between reps."
+      ]
+    },
+    "crunch": {
+      "description": "A floor flexion pattern that shortens the abs through a controlled rib-to-pelvis crunch.",
+      "aliases": [
+        "Ab Crunch",
+        "Floor Crunch"
+      ],
+      "substitutionGroupId": "core_flexion_rotation",
+      "instructions": [
+        "Lie on your back with knees bent and feet flat.",
+        "Lightly support the head without pulling on the neck.",
+        "Crunch by bringing ribs toward pelvis while pressing the low back down.",
+        "Lower slowly until the abs lengthen without losing contact through the lumbar spine."
+      ],
+      "formCues": [
+        "Exhale as you crunch.",
+        "Move the ribs, not the chin.",
+        "Keep tempo controlled."
+      ],
+      "commonMistakes": [
+        "Yanking the neck.",
+        "Sitting all the way up into a sit-up.",
+        "Using momentum."
+      ]
+    },
+    "reverse_crunch": {
+      "description": "A floor flexion pattern that curls the pelvis toward the ribs to load the lower abs.",
+      "aliases": [
+        "Reverse Ab Crunch",
+        "Pelvic Curl"
+      ],
+      "substitutionGroupId": "core_flexion_rotation",
+      "instructions": [
+        "Lie on your back with hips and knees bent to about 90 degrees.",
+        "Press the low back lightly into the floor and brace your abs.",
+        "Curl the pelvis toward the ribs by lifting the hips, not by swinging the legs.",
+        "Lower under control until the abs stretch without arching the lumbar spine."
+      ],
+      "formCues": [
+        "Move the pelvis, not just the legs.",
+        "Exhale as the hips lift.",
+        "Keep the motion small and controlled."
+      ],
+      "commonMistakes": [
+        "Using momentum to swing the legs.",
+        "Arching the low back at the bottom.",
+        "Letting the hip flexors take over."
+      ]
+    },
+    "lying_leg_raise": {
+      "description": "A supine hip-flexion pattern that challenges the abs to keep the lumbar spine from arching.",
+      "aliases": [
+        "Supine Leg Raise",
+        "Floor Leg Raise"
+      ],
+      "substitutionGroupId": "core_flexion_rotation",
+      "instructions": [
+        "Lie flat on your back with legs extended and arms at your sides or under your hips.",
+        "Set a slight posterior pelvic tilt and press the low back toward the floor.",
+        "Raise straight legs by flexing at the hips until the abs reach their limit without the back lifting.",
+        "Lower slowly, stopping before the lumbar spine arches off the floor."
+      ],
+      "formCues": [
+        "Posterior pelvic tilt before each rep.",
+        "Move slowly through the eccentric.",
+        "Stop when the low back wants to peel up."
+      ],
+      "commonMistakes": [
+        "Swinging the legs for momentum.",
+        "Arching the lumbar spine at the bottom.",
+        "Using hip flexors without abdominal control."
+      ]
+    },
+    "hanging_knee_raise": {
+      "description": "A hanging flexion pattern that raises the knees toward the chest while demanding grip and anti-swing control.",
+      "aliases": [
+        "Hanging Knee Raises",
+        "Bar Knee Raise"
+      ],
+      "substitutionGroupId": "core_flexion_rotation",
+      "instructions": [
+        "Hang from a pull-up bar with shoulders active and a still body.",
+        "Brace your abs and slightly tuck the pelvis before lifting.",
+        "Raise bent knees toward the chest without swinging or kipping.",
+        "Lower to a controlled still hang before starting the next rep."
+      ],
+      "formCues": [
+        "Brace before you lift.",
+        "Minimize kip and swing.",
+        "Keep shoulders away from the ears."
+      ],
+      "commonMistakes": [
+        "Using momentum to swing the legs up.",
+        "Shrugging into the ears.",
+        "Letting the lower back arch at the bottom."
+      ]
+    },
+    "bicycle_crunch": {
+      "description": "An alternating rotation-and-flexion pattern that trains the abs and obliques through controlled trunk rotation.",
+      "aliases": [
+        "Bicycle Crunches",
+        "Cycling Crunch"
+      ],
+      "substitutionGroupId": "core_flexion_rotation",
+      "instructions": [
+        "Lie on your back with hands lightly supporting the head and legs lifted off the floor.",
+        "Bring one elbow toward the opposite knee while extending the other leg.",
+        "Rotate through the ribcage rather than pulling on the neck.",
+        "Alternate sides with a steady, controlled tempo."
+      ],
+      "formCues": [
+        "Rotate through the trunk.",
+        "Keep elbows wide — do not yank the head.",
+        "Extend the leg only as far as you can control."
+      ],
+      "commonMistakes": [
+        "Racing the tempo.",
+        "Pulling on the neck with the hands.",
+        "Letting the lower back arch as the leg extends."
+      ]
+    },
+    "back_extension": {
+      "description": "A posterior-chain endurance pattern that extends the torso through the glutes and lower back without hyperextension.",
+      "aliases": [
+        "Hyperextension",
+        "Back Extension Hold",
+        "Roman Chair Extension"
+      ],
+      "substitutionGroupId": "core_lower_back",
+      "instructions": [
+        "Set up on a back-extension bench or in a controlled floor cobra position.",
+        "Brace lightly through the abs and keep the neck neutral.",
+        "Extend the torso by squeezing the glutes and lower back to a long neutral spine.",
+        "Lower under control and stop before the lumbar spine hyperextends."
+      ],
+      "formCues": [
+        "Lead with the glutes.",
+        "Keep the abs lightly braced.",
+        "Stop at neutral — do not overarch."
+      ],
+      "commonMistakes": [
+        "Hyperextending the lumbar spine.",
+        "Using momentum to bounce at the top.",
+        "Cranking the neck upward."
       ]
     },
     "russian_twist": {
