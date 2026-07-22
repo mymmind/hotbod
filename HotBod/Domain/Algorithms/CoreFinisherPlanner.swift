@@ -71,7 +71,106 @@ enum CoreFinisherPlanner {
         experience: ExperienceLevel,
         exerciseStats: [UserExerciseStats]
     ) -> Exercise? {
-        candidates.sorted { $0.id < $1.id }.first
+        guard !candidates.isEmpty else { return nil }
+        let preferred = preferredRole(for: splitDayFocus, planned: planned, exerciseStats: exerciseStats)
+        let penalizeLowerBack = planned.contains { $0.exerciseId == "deadlift" || $0.exerciseId == "good_morning" }
+        let statsById = Dictionary(uniqueKeysWithValues: exerciseStats.map { ($0.exerciseId, $0) })
+
+        return candidates.sorted { lhs, rhs in
+            let ls = score(lhs, preferred: preferred, experience: experience, penalizeLowerBack: penalizeLowerBack, statsById: statsById)
+            let rs = score(rhs, preferred: preferred, experience: experience, penalizeLowerBack: penalizeLowerBack, statsById: statsById)
+            if ls != rs { return ls > rs }
+            return lhs.id < rhs.id
+        }.first
+    }
+
+    private static func preferredRole(
+        for focus: SplitDayFocus?,
+        planned: [PlannedExercise],
+        exerciseStats: [UserExerciseStats]
+    ) -> CoreRole {
+        switch focus {
+        case .push, .upper: return .antiExtension
+        case .pull: return .flexion
+        case .legs, .lower: return .antiRotation
+        case .fullBody, .none:
+            return leastRecentlyUsedRole(exerciseStats: exerciseStats)
+        }
+    }
+
+    private static func leastRecentlyUsedRole(exerciseStats: [UserExerciseStats]) -> CoreRole {
+        let now = Date()
+        var lastUsed: [CoreRole: Date] = [:]
+        for stats in exerciseStats {
+            guard allowlist.contains(stats.exerciseId),
+                  let role = roleById[stats.exerciseId],
+                  let latest = stats.recentSets.map(\.completedAt).max() else { continue }
+            if let existing = lastUsed[role] {
+                lastUsed[role] = max(existing, latest)
+            } else {
+                lastUsed[role] = latest
+            }
+        }
+        return CoreRole.allCases.min { lhs, rhs in
+            let l = lastUsed[lhs] ?? .distantPast
+            let r = lastUsed[rhs] ?? .distantPast
+            if l != r { return l < r }
+            return lhs.rawValue < rhs.rawValue
+        } ?? .antiRotation
+    }
+
+    private static func score(
+        _ exercise: Exercise,
+        preferred: CoreRole,
+        experience: ExperienceLevel,
+        penalizeLowerBack: Bool,
+        statsById: [String: UserExerciseStats]
+    ) -> Double {
+        var value = 0.0
+        let exerciseRole = role(for: exercise)
+        if exerciseRole == preferred { value += 100 }
+        else if compatible(preferred, exerciseRole) { value += 40 }
+
+        if penalizeLowerBack && exerciseRole == .lowerBack { value -= 80 }
+
+        switch (experience, exercise.difficulty) {
+        case (.beginner, .advanced): value -= 50
+        case (.beginner, .intermediate): value -= 15
+        case (.intermediate, .advanced): value -= 10
+        default: break
+        }
+
+        if let latest = statsById[exercise.id]?.recentSets.map(\.completedAt).max() {
+            let days = Date().timeIntervalSince(latest) / 86_400
+            if days < 3 { value -= 60 }
+            else if days < 7 { value -= 30 }
+        } else if let roleLast = roleLastUsed(exerciseRole, statsById: statsById) {
+            let days = Date().timeIntervalSince(roleLast) / 86_400
+            if days < 3 { value -= 25 }
+        }
+
+        // Stable tie-break: lexicographically smaller id wins when scores equal
+        // (handled by max + secondary compare)
+        value -= Double(exercise.id.utf8.count) * 0.0001
+        value -= Double(exercise.id.unicodeScalars.map(\.value).reduce(0, +)) * 0.0000001
+        return value
+    }
+
+    private static func compatible(_ preferred: CoreRole, _ other: CoreRole) -> Bool {
+        switch preferred {
+        case .antiExtension: return other == .antiRotation
+        case .flexion: return other == .lateral
+        case .antiRotation: return other == .lateral || other == .antiExtension
+        case .lateral: return other == .antiRotation
+        case .lowerBack: return other == .antiRotation
+        }
+    }
+
+    private static func roleLastUsed(_ role: CoreRole, statsById: [String: UserExerciseStats]) -> Date? {
+        roleById.compactMap { id, mapped -> Date? in
+            guard mapped == role, let stats = statsById[id] else { return nil }
+            return stats.recentSets.map(\.completedAt).max()
+        }.max()
     }
 
     private static func setCount(for experience: ExperienceLevel) -> Int {
