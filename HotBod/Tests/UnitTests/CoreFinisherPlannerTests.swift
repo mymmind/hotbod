@@ -95,6 +95,7 @@ final class CoreFinisherPlannerTests: XCTestCase {
     func testPushPrefersAntiExtension() {
         let catalog = [
             makeTestExercise(id: "bench_press"),
+            core("bicycle_crunch", muscles: [.obliques], pattern: .rotation),
             core("crunch"), // flexion
             core("ab_wheel_rollout", pattern: .antiRotation, difficulty: .intermediate),
             core("pallof_press", muscles: [.obliques], pattern: .antiRotation, equipment: [.cable])
@@ -109,6 +110,71 @@ final class CoreFinisherPlannerTests: XCTestCase {
             exerciseStats: []
         )
         XCTAssertEqual(planned.last?.exerciseId, "ab_wheel_rollout")
+    }
+
+    func testLegsFallsBackToLowerBackWithoutAntiRotation() {
+        let catalog = [
+            makeTestExercise(id: "squat", primaryMuscles: [.quads], pattern: .squat),
+            core("back_extension", muscles: [.lowerBack], pattern: .hinge, difficulty: .beginner),
+            core("crunch")
+        ]
+        var planned = [
+            PlannedExercise(
+                exerciseId: "squat",
+                orderIndex: 0,
+                targetSets: [PlannedSet(targetRepsMin: 8, targetRepsMax: 10)]
+            )
+        ]
+        CoreFinisherPlanner.appendCoreFinisher(
+            to: &planned,
+            exercises: catalog,
+            availableEquipment: [.bodyweight],
+            experience: .intermediate,
+            splitDayFocus: .legs,
+            exerciseStats: []
+        )
+        XCTAssertEqual(planned.last?.exerciseId, "back_extension")
+    }
+
+    func testFullBodyPrefersLeastRecentlyUsedRole() {
+        let daysAgo: (Int) -> Date = { Date().addingTimeInterval(-Double($0) * 86_400) }
+        let catalog = [
+            makeTestExercise(id: "bench_press"),
+            core("plank", pattern: .antiRotation),
+            core("crunch"),
+            core("dead_bug", pattern: .antiRotation),
+            core("bicycle_crunch", muscles: [.obliques], pattern: .rotation)
+        ]
+        let stats = [
+            UserExerciseStats(
+                exerciseId: "plank",
+                recentSets: [CompletedSet(setIndex: 0, reps: 0, durationSeconds: 45, completedAt: daysAgo(1))],
+                preferredRepRangeMin: 1,
+                preferredRepRangeMax: 1
+            ),
+            UserExerciseStats(
+                exerciseId: "crunch",
+                recentSets: [CompletedSet(setIndex: 0, reps: 12, completedAt: daysAgo(2))],
+                preferredRepRangeMin: 10,
+                preferredRepRangeMax: 15
+            ),
+            UserExerciseStats(
+                exerciseId: "dead_bug",
+                recentSets: [CompletedSet(setIndex: 0, reps: 10, completedAt: daysAgo(30))],
+                preferredRepRangeMin: 8,
+                preferredRepRangeMax: 12
+            )
+        ]
+        var planned = benchPlanned()
+        CoreFinisherPlanner.appendCoreFinisher(
+            to: &planned,
+            exercises: catalog,
+            availableEquipment: [.bodyweight],
+            experience: .intermediate,
+            splitDayFocus: .fullBody,
+            exerciseStats: stats
+        )
+        XCTAssertEqual(planned.last?.exerciseId, "bicycle_crunch")
     }
 
     func testPullPrefersFlexion() {

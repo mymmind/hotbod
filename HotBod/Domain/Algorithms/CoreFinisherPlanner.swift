@@ -9,7 +9,6 @@ enum CoreFinisherPlanner {
         // existing
         "plank", "dead_bug", "bird_dog", "side_plank", "russian_twist",
         "ab_wheel_rollout", "hanging_leg_raise", "cable_crunch", "pallof_press",
-        // new (Task 5 catalog)
         "crunch", "reverse_crunch", "lying_leg_raise", "hanging_knee_raise",
         "bicycle_crunch", "back_extension"
     ]
@@ -63,7 +62,6 @@ enum CoreFinisherPlanner {
         }
     }
 
-    // Task 3 replaces this naive pick
     private static func selectFinisher(
         from candidates: [Exercise],
         planned: [PlannedExercise],
@@ -72,9 +70,14 @@ enum CoreFinisherPlanner {
         exerciseStats: [UserExerciseStats]
     ) -> Exercise? {
         guard !candidates.isEmpty else { return nil }
-        let preferred = preferredRole(for: splitDayFocus, planned: planned, exerciseStats: exerciseStats)
+        let preferred = preferredRole(
+            for: splitDayFocus,
+            planned: planned,
+            exerciseStats: exerciseStats,
+            candidates: candidates
+        )
         let penalizeLowerBack = planned.contains { $0.exerciseId == "deadlift" || $0.exerciseId == "good_morning" }
-        let statsById = Dictionary(uniqueKeysWithValues: exerciseStats.map { ($0.exerciseId, $0) })
+        let statsById = statsById(from: exerciseStats)
 
         return candidates.sorted { lhs, rhs in
             let ls = score(lhs, preferred: preferred, experience: experience, penalizeLowerBack: penalizeLowerBack, statsById: statsById)
@@ -87,19 +90,34 @@ enum CoreFinisherPlanner {
     private static func preferredRole(
         for focus: SplitDayFocus?,
         planned: [PlannedExercise],
-        exerciseStats: [UserExerciseStats]
+        exerciseStats: [UserExerciseStats],
+        candidates: [Exercise]
     ) -> CoreRole {
         switch focus {
         case .push, .upper: return .antiExtension
         case .pull: return .flexion
-        case .legs, .lower: return .antiRotation
+        case .legs, .lower:
+            if candidates.contains(where: { role(for: $0) == .antiRotation }) {
+                return .antiRotation
+            }
+            if candidates.contains(where: { role(for: $0) == .lowerBack }) {
+                return .lowerBack
+            }
+            return .antiRotation
         case .fullBody, .none:
             return leastRecentlyUsedRole(exerciseStats: exerciseStats)
         }
     }
 
+    private static func statsById(from exerciseStats: [UserExerciseStats]) -> [String: UserExerciseStats] {
+        var result: [String: UserExerciseStats] = [:]
+        for stat in exerciseStats where result[stat.exerciseId] == nil {
+            result[stat.exerciseId] = stat
+        }
+        return result
+    }
+
     private static func leastRecentlyUsedRole(exerciseStats: [UserExerciseStats]) -> CoreRole {
-        let now = Date()
         var lastUsed: [CoreRole: Date] = [:]
         for stats in exerciseStats {
             guard allowlist.contains(stats.exerciseId),
@@ -149,11 +167,17 @@ enum CoreFinisherPlanner {
             if days < 3 { value -= 25 }
         }
 
-        // Stable tie-break: lexicographically smaller id wins when scores equal
-        // (handled by max + secondary compare)
-        value -= Double(exercise.id.utf8.count) * 0.0001
-        value -= Double(exercise.id.unicodeScalars.map(\.value).reduce(0, +)) * 0.0000001
         return value
+    }
+
+    private static func roleDisplayName(_ role: CoreRole) -> String {
+        switch role {
+        case .flexion: "flexion"
+        case .antiExtension: "anti-extension"
+        case .antiRotation: "anti-rotation"
+        case .lateral: "lateral"
+        case .lowerBack: "lower-back"
+        }
     }
 
     private static func compatible(_ preferred: CoreRole, _ other: CoreRole) -> Bool {
@@ -233,7 +257,7 @@ enum CoreFinisherPlanner {
             }
         }
 
-        let roleName = role(for: exercise).rawValue
+        let roleName = roleDisplayName(role(for: exercise))
         let focusLabel = splitDayFocus?.displayName.lowercased() ?? "session"
         return PlannedExercise(
             exerciseId: exercise.id,
