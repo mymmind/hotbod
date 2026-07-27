@@ -351,12 +351,18 @@ extension AppEnvironment {
             muscleRecovery: recovery,
             exerciseStats: stats,
             userPreferences: WorkoutPreferences(
-                avoidExerciseIds: options.excludeExerciseIds,
+                avoidExerciseIds: ProgressionPolicy.avoidExerciseIds(
+                    from: stats,
+                    additional: options.excludeExerciseIds
+                ),
                 favoriteExerciseIds: favoriteIds,
-                exerciseVariability: options.preferVariation ? .varied : profile.preferredExerciseVariability
+                exerciseVariability: options.preferVariation
+                    || stats.contains(where: \.preferVariation)
+                    ? .varied
+                    : profile.preferredExerciseVariability
             ),
             readiness: ReadinessInput(
-                sleepScore: healthReadiness.sleepScore,
+                sleepScore: GenerationConstants.Recovery.normalizeSleepScore(healthReadiness.sleepScore),
                 soreness: soreness ?? sorenessLevel
             ),
             splitDayFocus: splitDayFocus,

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ForgeProgressBar: View {
     let progress: Double
+    /// Legacy flag from light-mode inverted tracks. Ignored in dark-only.
     var inverted: Bool = false
     var fill: Color? = nil
     var height: CGFloat = 4
@@ -36,20 +37,20 @@ struct ForgeProgressBar: View {
     }
 
     private var trackColor: Color {
-        inverted ? ForgeColors.surface.opacity(0.25) : ForgeColors.border
+        ForgeColors.border
     }
 
     private var fillColor: Color {
         if let fill { return fill }
-        return inverted ? ForgeColors.surface : ForgeColors.foreground
+        return ForgeColors.foreground
     }
 }
 
 #Preview {
     VStack(spacing: 16) {
         ForgeProgressBar(progress: 0.72, fill: ForgeColors.accent)
-        ForgeProgressBar(progress: 0.45, inverted: true, fill: ForgeColors.accentBlue)
+        ForgeProgressBar(progress: 0.45, fill: ForgeColors.accentBlue)
     }
     .padding()
-    .background(ForgeColors.surfaceInverse)
+    .background(ForgeColors.background)
 }

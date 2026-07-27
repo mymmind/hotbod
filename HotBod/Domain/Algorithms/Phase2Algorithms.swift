@@ -403,6 +403,15 @@ enum DeloadDetector {
             }
         }
 
+        if consecutiveWeeks >= GenerationConstants.Deload.scheduledAfterHighVolumeWeeks {
+            return DeloadAnalysis(
+                isDeloadRecommended: true,
+                reason: "Scheduled volume wave — reduced-volume week after sustained high compliance",
+                severity: .moderate,
+                suggestsReturningFromBreak: false
+            )
+        }
+
         // Check for 3+ consecutive weeks of 15%+ volume increase
         if consecutiveWeeks >= 3 {
             let recentVolumes = Array(volumeHistory.suffix(3))

@@ -726,14 +726,6 @@ struct WorkoutSessionSummary: Identifiable, Codable, Hashable {
     var muscleGroups: [MuscleGroup]
 }
 
-struct MuscleRecoveryState: Codable, Hashable, Identifiable {
-    var muscleGroup: MuscleGroup
-    var recoveryPercentage: Double
-    var lastTrainedAt: Date?
-    var accumulatedFatigue: Double
-
-    var id: String { muscleGroup.rawValue }
-}
 
 struct UserExerciseStats: Identifiable, Codable, Hashable {
     let exerciseId: String
@@ -759,6 +751,8 @@ struct UserExerciseStats: Identifiable, Codable, Hashable {
     var isOrphaned: Bool = false
     var lastMaxEffortAt: Date?
     var sessionsSinceMaxEffort: Int = 0
+    /// Stall signal: next generate should bias away from this exercise.
+    var preferVariation: Bool = false
 
     var id: String { exerciseId }
 
@@ -788,7 +782,7 @@ struct UserExerciseStats: Identifiable, Codable, Hashable {
         case bestVolumeSet, recentSets, preferredRepRangeMin, preferredRepRangeMax
         case goalAtLastUpdate, deloadStartedAt, returningFromBreak
         case weeklyVolume, weeklyMaxSets, volumeTrend, consecutiveHighVolumeWeeks, isOrphaned
-        case lastMaxEffortAt, sessionsSinceMaxEffort
+        case lastMaxEffortAt, sessionsSinceMaxEffort, preferVariation
         case legacyIsInDeloadWeek = "isInDeloadWeek"
         case legacyLastDeloadDate = "lastDeloadDate"
     }
@@ -807,7 +801,8 @@ struct UserExerciseStats: Identifiable, Codable, Hashable {
         deloadStartedAt: Date? = nil,
         returningFromBreak: Bool = false,
         lastMaxEffortAt: Date? = nil,
-        sessionsSinceMaxEffort: Int = 0
+        sessionsSinceMaxEffort: Int = 0,
+        preferVariation: Bool = false
     ) {
         self.exerciseId = exerciseId
         self.lastWeightKg = lastWeightKg
@@ -823,6 +818,7 @@ struct UserExerciseStats: Identifiable, Codable, Hashable {
         self.returningFromBreak = returningFromBreak
         self.lastMaxEffortAt = lastMaxEffortAt
         self.sessionsSinceMaxEffort = sessionsSinceMaxEffort
+        self.preferVariation = preferVariation
     }
 
     init(from decoder: Decoder) throws {
@@ -850,6 +846,7 @@ struct UserExerciseStats: Identifiable, Codable, Hashable {
         isOrphaned = try container.decodeIfPresent(Bool.self, forKey: .isOrphaned) ?? false
         lastMaxEffortAt = try container.decodeIfPresent(Date.self, forKey: .lastMaxEffortAt)
         sessionsSinceMaxEffort = try container.decodeIfPresent(Int.self, forKey: .sessionsSinceMaxEffort) ?? 0
+        preferVariation = try container.decodeIfPresent(Bool.self, forKey: .preferVariation) ?? false
     }
 
     func encode(to encoder: Encoder) throws {
@@ -873,6 +870,7 @@ struct UserExerciseStats: Identifiable, Codable, Hashable {
         try container.encode(isOrphaned, forKey: .isOrphaned)
         try container.encodeIfPresent(lastMaxEffortAt, forKey: .lastMaxEffortAt)
         try container.encode(sessionsSinceMaxEffort, forKey: .sessionsSinceMaxEffort)
+        try container.encode(preferVariation, forKey: .preferVariation)
     }
 }
 

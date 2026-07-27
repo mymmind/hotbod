@@ -20,3 +20,5 @@ build-settings-snapshot.txt
 
 # Git worktrees (local isolation)
 .worktrees/
+
+sources/

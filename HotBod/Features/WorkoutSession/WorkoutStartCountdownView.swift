@@ -31,7 +31,7 @@ struct WorkoutStartCountdownView: View {
 
     var body: some View {
         ZStack {
-            ForgeColors.surfaceInverse
+            ForgeColors.background
                 .ignoresSafeArea()
 
             pulseRings
@@ -50,7 +50,7 @@ struct WorkoutStartCountdownView: View {
             }
             .padding(.horizontal, ForgeSpacing.s5)
 
-            ForgeColors.textOnInverse
+            ForgeColors.textPrimary
                 .opacity(flashOpacity)
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
@@ -72,7 +72,7 @@ struct WorkoutStartCountdownView: View {
         case .count(let value):
             Text("\(value)")
                 .font(.system(size: 168, weight: .black, design: .monospaced))
-                .foregroundStyle(ForgeColors.textOnInverse)
+                .foregroundStyle(ForgeColors.textPrimary)
                 .scaleEffect(numberScale)
                 .opacity(numberOpacity)
                 .forgeMetricPulse(value: tick)
@@ -81,7 +81,7 @@ struct WorkoutStartCountdownView: View {
             Text(message)
                 .font(ForgeTypography.display)
                 .multilineTextAlignment(.center)
-                .foregroundStyle(ForgeColors.textOnInverse)
+                .foregroundStyle(ForgeColors.textPrimary)
                 .scaleEffect(messageScale)
                 .opacity(messageOpacity)
                 .padding(.horizontal, ForgeSpacing.s3)

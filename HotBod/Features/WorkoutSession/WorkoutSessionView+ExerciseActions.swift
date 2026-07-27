@@ -172,6 +172,109 @@ extension WorkoutSessionView {
         )
     }
 
+    func handlePrimarySetAction(
+        target: CompleteSetTarget,
+        exercise: WorkoutExercise,
+        meta: Exercise,
+        showWeightInput: Bool
+    ) {
+        switch target {
+        case .completeActive:
+            completeCurrentSet(exercise: exercise, meta: meta, showWeightInput: showWeightInput)
+        case .updateCompleted(let setIndex):
+            updateCompletedSetFromDrafts(
+                exercise: exercise,
+                setIndex: setIndex,
+                showWeightInput: showWeightInput
+            )
+        case .updatePlanned(let setIndex):
+            updatePlannedSetFromDrafts(exercise: exercise, setIndex: setIndex)
+        case .none:
+            break
+        }
+    }
+
+    func updateCompletedSetFromDrafts(
+        exercise: WorkoutExercise,
+        setIndex: Int,
+        showWeightInput: Bool
+    ) {
+        dismissKeyboard()
+        guard let idx = session.exercises.firstIndex(where: { $0.id == exercise.id }),
+              session.exercises[idx].plannedSets.indices.contains(setIndex)
+        else { return }
+
+        let planned = session.exercises[idx].plannedSets[setIndex]
+        let weight: Double? = showWeightInput
+            ? (Double(weightTexts[planned.id] ?? "") ?? planned.targetWeightKg)
+            : nil
+        let reps = Int(repsTexts[planned.id] ?? "")
+        let durationSeconds = Int(durationTexts[planned.id] ?? "")
+        let distanceMeters = Double(distanceTexts[planned.id] ?? "")
+
+        if showWeightInput, let weight {
+            let outcome = LoggedWeightSanity.evaluate(
+                proposedKg: weight,
+                lastWeightKg: exerciseStatsById[exercise.exerciseId]?.lastWeightKg,
+                plannedWeightKg: planned.targetWeightKg
+            )
+            switch outcome {
+            case .ok:
+                break
+            case .softWarning, .hardBlock:
+                presentWeightSanity(
+                    outcome: outcome,
+                    enteredKg: weight,
+                    commit: .editWeight(
+                        exerciseId: exercise.id,
+                        setIndex: setIndex,
+                        weightKg: weight
+                    )
+                )
+                return
+            }
+        }
+
+        updateCompletedSet(
+            exerciseId: exercise.id,
+            setIndex: setIndex,
+            weightKg: weight,
+            reps: reps,
+            durationSeconds: durationSeconds,
+            distanceMeters: distanceMeters
+        )
+        focusedSetIndex = nil
+        stickySetIndex = nil
+        feedback.play(.buttonPress)
+    }
+
+    func updatePlannedSetFromDrafts(exercise: WorkoutExercise, setIndex: Int) {
+        dismissKeyboard()
+        guard let idx = session.exercises.firstIndex(where: { $0.id == exercise.id }) else { return }
+
+        WorkoutSessionMetricDrafts.applyDrafts(
+            toPlannedSetAt: setIndex,
+            in: &session.exercises[idx],
+            weightTexts: weightTexts,
+            repsTexts: repsTexts,
+            durationTexts: durationTexts,
+            distanceTexts: distanceTexts
+        )
+        environment.scheduleWorkoutSessionSave(session)
+        focusedSetIndex = nil
+        stickySetIndex = nil
+        feedback.play(.buttonPress)
+    }
+
+    func noteSetFieldFocus(setIndex: Int, focused: Bool) {
+        if focused {
+            focusedSetIndex = setIndex
+            stickySetIndex = setIndex
+        } else if focusedSetIndex == setIndex {
+            focusedSetIndex = nil
+        }
+    }
+
     func commitCurrentSet(
         exercise: WorkoutExercise,
         meta: Exercise,
@@ -209,6 +312,8 @@ extension WorkoutSessionView {
         )
         session.exercises[idx].completedSets.append(completed)
         pendingRpeBySetId.removeValue(forKey: planned.id)
+        focusedSetIndex = nil
+        stickySetIndex = nil
         // Completed values are source of truth — clear drafts so a later re-render
         // cannot overwrite the logged set with a blank/stale draft or planned default.
         var nextWeights = weightTexts
@@ -327,16 +432,17 @@ extension WorkoutSessionView {
 
     func appendExercise(_ exercise: Exercise) {
         let profile = environment.userProfile
+        let insertAt = max(0, min(currentExerciseIndex + 1, session.exercises.count))
         let newExercise = SessionExercisePlanner.makeWorkoutExercise(
             exercise: exercise,
-            orderIndex: session.exercises.count,
+            orderIndex: insertAt,
             experience: profile?.experienceLevel ?? .intermediate,
             goal: profile?.goal ?? .buildMuscle,
             bodyWeightKg: bodyWeightKg,
             stats: exerciseStatsById[exercise.id],
             weightCeilings: profile?.maxAvailableWeightKg ?? [:]
         )
-        session.exercises.append(newExercise)
+        SessionExercisePlanner.insert(newExercise, into: &session.exercises, afterIndex: currentExerciseIndex)
         exerciseMap[exercise.id] = exercise
         environment.scheduleWorkoutSessionSave(session)
         feedback.play(.exerciseSwap)
@@ -347,6 +453,8 @@ extension WorkoutSessionView {
         guard index != currentExerciseIndex else { return }
         dismissKeyboard()
         pendingPostSetAction = nil
+        focusedSetIndex = nil
+        stickySetIndex = nil
         withAnimation(ForgeMotion.exercise) {
             currentExerciseIndex = index
             furthestExerciseIndex = max(furthestExerciseIndex, index)

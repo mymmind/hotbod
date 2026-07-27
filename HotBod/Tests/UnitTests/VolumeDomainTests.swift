@@ -106,7 +106,10 @@ final class VolumeCapCalculatorTests: XCTestCase {
             return WorkoutValidator.validate(workout: workout, input: input, exercises: chestWorkoutExercises)
         }
 
-        XCTAssertFalse(validate(projectedSets: 101).isValid)
+        // Global set caps are soft guardrails; per-muscle landings own hard programming.
+        let overCap = validate(projectedSets: 101)
+        XCTAssertTrue(overCap.isValid)
+        XCTAssertTrue(overCap.warnings.contains(where: { $0.contains("Projected weekly volume") }))
         XCTAssertTrue(validate(projectedSets: 90).warnings.contains(where: { $0.contains("Weekly volume") }))
         XCTAssertTrue(validate(projectedSets: 80).warnings.isEmpty && validate(projectedSets: 80).errors.isEmpty)
     }

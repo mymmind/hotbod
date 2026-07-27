@@ -58,7 +58,7 @@ struct ForgeRestTimerBar: View {
         HStack(spacing: ForgeSpacing.s4) {
             ZStack {
                 Circle()
-                    .stroke(ForgeColors.surface.opacity(0.25), lineWidth: 3)
+                    .stroke(ForgeColors.border, lineWidth: 3)
                 Circle()
                     .trim(from: 0, to: progress)
                     .stroke(
@@ -92,7 +92,12 @@ struct ForgeRestTimerBar: View {
         }
         .padding(.horizontal, ForgeSpacing.s4)
         .padding(.vertical, ForgeSpacing.s3)
-        .background(ForgeColors.surfaceInverse)
-        .foregroundStyle(ForgeColors.textOnInverse)
+        .background(ForgeColors.surface)
+        .foregroundStyle(ForgeColors.textPrimary)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(ForgeColors.border)
+                .frame(height: ForgeBorder.hairline)
+        }
     }
 }

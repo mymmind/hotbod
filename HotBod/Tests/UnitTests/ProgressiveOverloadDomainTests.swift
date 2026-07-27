@@ -145,6 +145,93 @@ final class ProgressiveOverloadTests: XCTestCase {
         XCTAssertTrue(stats.returningFromBreak)
         XCTAssertFalse(stats.isInDeloadWeek)
     }
+
+    func testRegression_holdLoadIncreaseRepsBumpsPreferredRepMin() {
+        let sets = [
+            CompletedSet(setIndex: 0, weightKg: 100, reps: 8),
+            CompletedSet(setIndex: 1, weightKg: 100, reps: 8),
+            CompletedSet(setIndex: 2, weightKg: 100, reps: 8)
+        ]
+        let planned = [
+            PlannedSet(targetRepsMin: 8, targetRepsMax: 12),
+            PlannedSet(targetRepsMin: 8, targetRepsMax: 12),
+            PlannedSet(targetRepsMin: 8, targetRepsMax: 12)
+        ]
+        let stats = ProgressiveOverload.updateStats(
+            existing: nil,
+            exerciseId: "bench_press",
+            completedSets: sets,
+            plannedSets: planned,
+            goal: .buildMuscle
+        )
+        XCTAssertEqual(stats.suggestedNextWeightKg ?? -1, 100, accuracy: 0.1)
+        XCTAssertEqual(stats.preferredRepRangeMin, 9)
+        XCTAssertEqual(stats.preferredRepRangeMax, 12)
+        XCTAssertFalse(stats.preferVariation)
+    }
+
+    func testRegression_preferVariationSetsFlagOnStall() {
+        let now = Date()
+        let day: TimeInterval = 24 * 3600
+        var prior: [CompletedSet] = []
+        for session in 0..<3 {
+            let base = now.addingTimeInterval(-Double(3 - session) * day)
+            prior.append(CompletedSet(setIndex: 0, weightKg: 100, reps: 8, completedAt: base))
+            prior.append(CompletedSet(setIndex: 1, weightKg: 100, reps: 8, completedAt: base.addingTimeInterval(90)))
+        }
+        let existing = UserExerciseStats(
+            exerciseId: "bench_press",
+            recentSets: prior,
+            preferredRepRangeMin: 8,
+            preferredRepRangeMax: 10
+        )
+        let sets = [
+            CompletedSet(setIndex: 0, weightKg: 100, reps: 8, completedAt: now),
+            CompletedSet(setIndex: 1, weightKg: 100, reps: 8, completedAt: now.addingTimeInterval(90))
+        ]
+        let planned = [
+            PlannedSet(targetRepsMin: 8, targetRepsMax: 10),
+            PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
+        ]
+        let stats = ProgressiveOverload.updateStats(
+            existing: existing,
+            exerciseId: "bench_press",
+            completedSets: sets,
+            plannedSets: planned,
+            goal: .buildMuscle
+        )
+        XCTAssertTrue(stats.preferVariation)
+        XCTAssertEqual(stats.suggestedNextWeightKg ?? -1, 100, accuracy: 0.1)
+    }
+
+    func testRegression_recentSetsRetainFullRollingWeek() {
+        let now = Date()
+        let prior = (0..<20).map { index in
+            CompletedSet(
+                setIndex: index % 5,
+                weightKg: 80,
+                reps: 8,
+                completedAt: now.addingTimeInterval(-Double(index) * 6 * 3600)
+            )
+        }
+        let existing = UserExerciseStats(
+            exerciseId: "squat",
+            recentSets: prior,
+            preferredRepRangeMin: 5,
+            preferredRepRangeMax: 8
+        )
+        let sets = [CompletedSet(setIndex: 0, weightKg: 80, reps: 8, completedAt: now)]
+        let planned = [PlannedSet(targetRepsMin: 5, targetRepsMax: 8)]
+        let stats = ProgressiveOverload.updateStats(
+            existing: existing,
+            exerciseId: "squat",
+            completedSets: sets,
+            plannedSets: planned
+        )
+        XCTAssertGreaterThan(stats.recentSets.count, 12)
+        let weekCount = VolumeTracker.rollingSetCount(from: stats.recentSets, endingAt: now)
+        XCTAssertGreaterThan(weekCount, 12)
+    }
 }
 
 final class ProgressiveOverloadEnhancedTests: XCTestCase {

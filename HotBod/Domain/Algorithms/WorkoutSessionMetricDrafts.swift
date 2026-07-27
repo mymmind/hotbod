@@ -43,6 +43,35 @@ enum WorkoutSessionMetricDrafts {
         return updated
     }
 
+    /// Applies draft texts to a single planned set (for mid-workout "Update Set" on future rows).
+    static func applyDrafts(
+        toPlannedSetAt setIndex: Int,
+        in exercise: inout WorkoutExercise,
+        weightTexts: [UUID: String],
+        repsTexts: [UUID: String],
+        durationTexts: [UUID: String] = [:],
+        distanceTexts: [UUID: String] = [:]
+    ) {
+        guard exercise.plannedSets.indices.contains(setIndex) else { return }
+        let plannedId = exercise.plannedSets[setIndex].id
+
+        if let text = weightTexts[plannedId], let weight = Double(text) {
+            exercise.plannedSets[setIndex].targetWeightKg = weight
+        }
+        if let text = repsTexts[plannedId], let reps = Int(text) {
+            exercise.plannedSets[setIndex].targetRepsMin = reps
+            if exercise.plannedSets[setIndex].targetRepsMax < reps {
+                exercise.plannedSets[setIndex].targetRepsMax = reps
+            }
+        }
+        if let text = durationTexts[plannedId], let seconds = Int(text) {
+            exercise.plannedSets[setIndex].targetDurationSeconds = seconds
+        }
+        if let text = distanceTexts[plannedId], let meters = Double(text) {
+            exercise.plannedSets[setIndex].targetDistanceMeters = meters
+        }
+    }
+
     /// Formats weight for set-input display, preserving half-kilogram precision.
     static func formatWeightKg(_ kg: Double) -> String {
         if kg.rounded() == kg {

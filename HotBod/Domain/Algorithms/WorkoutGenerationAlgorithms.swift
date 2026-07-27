@@ -22,9 +22,16 @@ enum WorkoutGenerationAlgorithms {
         exercises.map { exercise in
             let primaryMatches = exercise.primaryMuscles.filter { targetMuscles.contains($0) }.count
             let secondaryMatches = exercise.secondaryMuscles.filter { targetMuscles.contains($0) }.count
-            let muscleScore = Double(primaryMatches) * GenerationConstants.Scoring.primaryMuscleWeight
+            let muscleScore: Double
+            if primaryMatches <= 1 {
+                muscleScore = Double(primaryMatches) * GenerationConstants.Scoring.primaryMuscleWeight
+            } else {
+                muscleScore = GenerationConstants.Scoring.primaryMuscleWeight
+                    + Double(primaryMatches - 1) * GenerationConstants.Scoring.additionalPrimaryMuscleWeight
+            }
             let secondaryScore = Double(secondaryMatches) * GenerationConstants.Scoring.secondaryMuscleWeight
-            let statBonus = stats.contains { $0.exerciseId == exercise.id }
+            let matchingStats = stats.first { $0.exerciseId == exercise.id }
+            let statBonus = matchingStats != nil
                 ? GenerationConstants.Scoring.historyBonus
                 : 0.0
             let favoriteBonus = favoriteIds.contains(exercise.id)
@@ -47,7 +54,17 @@ enum WorkoutGenerationAlgorithms {
                 case .advanced: recoveryBonus += GenerationConstants.RecoverySession.advancedDifficultyPenalty
                 }
             }
-            let score = muscleScore + secondaryScore + statBonus + favoriteBonus + lessPenalty + difficultyPenalty + recoveryBonus
+            var recentUsePenalty = 0.0
+            if let latest = matchingStats?.recentSets.map(\.completedAt).max() {
+                let days = Date().timeIntervalSince(latest) / 86_400
+                if days < 3 {
+                    recentUsePenalty = GenerationConstants.Scoring.recentUsePenaltyUnder3Days
+                } else if days < 7 {
+                    recentUsePenalty = GenerationConstants.Scoring.recentUsePenaltyUnder7Days
+                }
+            }
+            let score = muscleScore + secondaryScore + statBonus + favoriteBonus + lessPenalty
+                + difficultyPenalty + recoveryBonus - recentUsePenalty
             return (exercise, score)
         }
     }
@@ -106,7 +123,7 @@ enum WorkoutGenerationAlgorithms {
             guard let pick = ranked.first(where: { item in
                 !usedIds.contains(item.0.id) &&
                 item.0.primaryMuscles.contains(muscle) &&
-                !(usedPatterns.contains(item.0.movementPattern) && selected.count >= 2)
+                !blocksDuplicatePattern(item.0.movementPattern, used: usedPatterns, selectedCount: selected.count)
             }) else { continue }
             selected.append(pick)
             usedIds.insert(pick.0.id)
@@ -115,7 +132,9 @@ enum WorkoutGenerationAlgorithms {
 
         for item in ranked where selected.count < maxExercises {
             if usedIds.contains(item.0.id) { continue }
-            if usedPatterns.contains(item.0.movementPattern) && selected.count >= 2 { continue }
+            if blocksDuplicatePattern(item.0.movementPattern, used: usedPatterns, selectedCount: selected.count) {
+                continue
+            }
             if item.0.primaryMuscles.contains(where: { targetMuscles.contains($0) }) {
                 selected.append(item)
                 usedIds.insert(item.0.id)
@@ -141,6 +160,21 @@ enum WorkoutGenerationAlgorithms {
             scores: scores,
             uncoveredMuscles: uncovered
         )
+    }
+
+    /// Compound/pattern diversity from the second pick; isolation accessories may repeat.
+    private static func blocksDuplicatePattern(
+        _ pattern: MovementPattern,
+        used: Set<MovementPattern>,
+        selectedCount: Int
+    ) -> Bool {
+        guard selectedCount >= 1, used.contains(pattern) else { return false }
+        switch pattern {
+        case .isolation, .cardio, .mobility:
+            return false
+        default:
+            return true
+        }
     }
 
     static func uncoveredMuscleWarning(_ muscles: [MuscleGroup]) -> String? {
@@ -200,7 +234,8 @@ enum WorkoutGenerationAlgorithms {
         if isDeload { return GenerationConstants.Session.deloadRpeTarget }
         if experience == .beginner { return GenerationConstants.Session.beginnerRpeTarget }
         var rpe = GenerationConstants.Session.standardRpeTarget
-        if let sleepScore, sleepScore < GenerationConstants.Recovery.poorSleepScoreThreshold {
+        if let sleep = GenerationConstants.Recovery.normalizeSleepScore(sleepScore),
+           sleep < GenerationConstants.Recovery.poorSleepScoreThreshold {
             rpe = min(rpe, GenerationConstants.Session.poorSleepMaxRpe)
         }
         return rpe

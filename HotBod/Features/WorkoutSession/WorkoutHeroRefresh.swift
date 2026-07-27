@@ -12,7 +12,7 @@ struct ForgeHeroRegeneratingOverlay: View {
 
     var body: some View {
         ZStack {
-            ForgeColors.surfaceInverse.opacity(0.82)
+            ForgeColors.background.opacity(0.92)
 
             VStack(spacing: 16) {
                 Image(systemName: "arrow.triangle.2.circlepath")
@@ -27,7 +27,7 @@ struct ForgeHeroRegeneratingOverlay: View {
                 Text("Building new session...")
                     .font(ForgeTypography.caption)
                     .tracking(3)
-                    .foregroundStyle(ForgeColors.surface.opacity(0.92))
+                    .foregroundStyle(ForgeColors.textPrimary.opacity(0.92))
             }
         }
     }

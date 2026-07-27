@@ -191,7 +191,8 @@ extension WorkoutSessionView {
                         ),
                         width: ForgeSetTableLayout.weightFieldWidth,
                         isActive: isActive,
-                        selectAllOnFocus: true
+                        selectAllOnFocus: true,
+                        onFocusChange: { noteSetFieldFocus(setIndex: index, focused: $0) }
                     )
                 } else if !usesRepMetric(for: meta) {
                     Text("BW")
@@ -216,7 +217,8 @@ extension WorkoutSessionView {
                         ),
                         width: ForgeSetTableLayout.metricFieldWidth,
                         isActive: isActive,
-                        keyboardType: .numberPad
+                        keyboardType: .numberPad,
+                        onFocusChange: { noteSetFieldFocus(setIndex: index, focused: $0) }
                     )
                 }
 
@@ -232,7 +234,8 @@ extension WorkoutSessionView {
                         width: ForgeSetTableLayout.metricFieldWidth,
                         isActive: isActive,
                         keyboardType: .decimalPad,
-                        selectAllOnFocus: true
+                        selectAllOnFocus: true,
+                        onFocusChange: { noteSetFieldFocus(setIndex: index, focused: $0) }
                     )
                 }
 
@@ -247,7 +250,8 @@ extension WorkoutSessionView {
                         ),
                         width: ForgeSetTableLayout.repsFieldWidth,
                         isActive: isActive,
-                        keyboardType: .numberPad
+                        keyboardType: .numberPad,
+                        onFocusChange: { noteSetFieldFocus(setIndex: index, focused: $0) }
                     )
                 }
 

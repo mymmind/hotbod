@@ -68,7 +68,7 @@ func recoverySortKeyForTests(
     preferred: [MuscleGroup]
 ) -> Double {
     var recovery = input.muscleRecovery
-    if let sleep = input.readiness?.sleepScore {
+    if let sleep = GenerationConstants.Recovery.normalizeSleepScore(input.readiness?.sleepScore) {
         if sleep < GenerationConstants.Recovery.poorSleepScoreThreshold {
             recovery = recovery.mapValues { max(0, $0 - GenerationConstants.Recovery.poorSleepRecoveryPenalty) }
         } else if sleep < GenerationConstants.Recovery.suboptimalSleepScoreThreshold {

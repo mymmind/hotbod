@@ -1390,10 +1390,10 @@
     "id": "dips",
     "name": "Dips",
     "primaryMuscles": [
-      "triceps",
-      "chest"
+      "triceps"
     ],
     "secondaryMuscles": [
+      "chest",
       "shoulders"
     ],
     "equipment": [
@@ -2188,10 +2188,10 @@
     "id": "landmine_press",
     "name": "Landmine Press",
     "primaryMuscles": [
-      "shoulders",
-      "chest"
+      "shoulders"
     ],
     "secondaryMuscles": [
+      "chest",
       "triceps"
     ],
     "equipment": [

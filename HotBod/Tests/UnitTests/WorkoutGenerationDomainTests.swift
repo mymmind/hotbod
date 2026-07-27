@@ -314,92 +314,6 @@ final class InjuryBlocklistTests: XCTestCase {
     }
 }
 
-final class SleepScoreGenerationTests: XCTestCase {
-    func testPoorSleepRecoveryPenaltyAppliedToSortKey() {
-        let profile = UserProfile.empty()
-        let recovery: [MuscleGroup: Double] = [.back: 60, .shoulders: 60]
-        let input = WorkoutGenerationInput(
-            userProfile: profile,
-            goal: profile.goal,
-            experienceLevel: profile.experienceLevel,
-            availableEquipment: profile.availableEquipment,
-            targetDurationMinutes: 45,
-            preferredMuscleGroups: [.back],
-            avoidedMuscleGroups: [],
-            injuries: [],
-            recentWorkouts: [],
-            muscleRecovery: recovery,
-            exerciseStats: [],
-            userPreferences: WorkoutPreferences(),
-            readiness: ReadinessInput(sleepScore: 40, soreness: .none),
-            splitDayFocus: .upper
-        )
-        XCTAssertEqual(recoverySortKeyForTests(.back, input: input, preferred: [.back]), 65)
-        XCTAssertEqual(recoverySortKeyForTests(.shoulders, input: input, preferred: []), 50)
-    }
-
-    func testNilSleepScoreLeavesRecoveryUnchanged() {
-        let profile = UserProfile.empty()
-        let input = WorkoutGenerationInput(
-            userProfile: profile,
-            goal: profile.goal,
-            experienceLevel: profile.experienceLevel,
-            availableEquipment: profile.availableEquipment,
-            targetDurationMinutes: 45,
-            preferredMuscleGroups: [],
-            avoidedMuscleGroups: [],
-            injuries: [],
-            recentWorkouts: [],
-            muscleRecovery: [.back: 60],
-            exerciseStats: [],
-            userPreferences: WorkoutPreferences(),
-            readiness: ReadinessInput(sleepScore: nil, soreness: .none),
-            splitDayFocus: .upper
-        )
-        XCTAssertEqual(recoverySortKeyForTests(.back, input: input, preferred: []), 60)
-    }
-
-    func testPoorSleepCapsRpeAndReducesCompoundSets() async throws {
-        let service = RulesWorkoutGenerationService()
-        var profile = UserProfile.empty()
-        profile.experienceLevel = .intermediate
-        let input = WorkoutGenerationInput(
-            userProfile: profile,
-            goal: profile.goal,
-            experienceLevel: profile.experienceLevel,
-            availableEquipment: profile.availableEquipment,
-            targetDurationMinutes: 45,
-            preferredMuscleGroups: [],
-            avoidedMuscleGroups: [],
-            injuries: [],
-            recentWorkouts: [],
-            muscleRecovery: Dictionary(uniqueKeysWithValues: MuscleGroup.allCases.map { ($0, 80.0) }),
-            exerciseStats: [],
-            userPreferences: WorkoutPreferences(),
-            readiness: ReadinessInput(sleepScore: 40, soreness: .none),
-            splitDayFocus: .push
-        )
-        let workout = try await service.generate(input: input)
-        let exercises = try await LocalExerciseRepository().fetchAll()
-        let exerciseMap = Dictionary(uniqueKeysWithValues: exercises.map { ($0.id, $0) })
-
-        let compoundSets = workout.exercises.compactMap { planned -> Int? in
-            guard let exercise = exerciseMap[planned.exerciseId],
-                  exercise.resolvedMechanics == .compound else { return nil }
-            return planned.targetSets.filter { !$0.isWarmup }.count
-        }
-        if let firstCompoundCount = compoundSets.first {
-            XCTAssertLessThanOrEqual(firstCompoundCount, 3)
-        }
-
-        for planned in workout.exercises {
-            for set in planned.targetSets {
-                XCTAssertLessThanOrEqual(set.rpeTarget ?? 10, GenerationConstants.Session.poorSleepMaxRpe)
-            }
-        }
-    }
-}
-
 final class MusclePreferenceGenerationTests: XCTestCase {
     func testAvoidedChestExcludedOnPushDay() async throws {
         let service = RulesWorkoutGenerationService()
@@ -694,8 +608,9 @@ final class FatigueAwareValidationTests: XCTestCase {
         )
         
         let result = WorkoutValidator.validate(workout: workout, input: input, exercises: catalog)
-        XCTAssertFalse(result.isValid)
-        XCTAssertTrue(result.errors.contains(where: { $0.contains("Projected weekly volume") }))
+        // Global set caps are soft guardrails; workout remains valid with warnings.
+        XCTAssertTrue(result.isValid)
+        XCTAssertTrue(result.warnings.contains(where: { $0.contains("Projected weekly volume") }))
     }
 
     func testSeveresorenessReducesVolume() {
@@ -796,7 +711,7 @@ final class FatigueAwareValidationTests: XCTestCase {
     func testMixedValidationErrorsDoNotAllowRecoveryOverride() {
         let errors = [
             "Critical fatigue detected (10% recovery). Recommend lighter session or rest day.",
-            "Projected weekly volume (120 sets) exceeds safe threshold (100). Consider deload."
+            "Bench Press requires unavailable equipment."
         ]
         XCTAssertFalse(GenerationFailure.allowsRecoveryOverride(errors: errors))
     }

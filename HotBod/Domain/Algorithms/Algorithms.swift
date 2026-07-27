@@ -7,7 +7,9 @@ enum RecoveryCalculator {
                 muscleGroup: $0,
                 recoveryPercentage: GenerationConstants.Recovery.defaultMuscleRecovery,
                 lastTrainedAt: nil,
-                accumulatedFatigue: 0
+                accumulatedFatigue: 0,
+                fitness: 0,
+                fatigue: 0
             )
         }
     }
@@ -17,7 +19,7 @@ enum RecoveryCalculator {
         var byMuscle: [MuscleGroup: MuscleRecoveryState] = [:]
         for state in states {
             var normalized = state
-            normalized.recoveryPercentage = min(100, max(0, state.recoveryPercentage))
+            normalized.syncPreparedness()
             if let existing = byMuscle[normalized.muscleGroup] {
                 if normalized.recoveryPercentage < existing.recoveryPercentage {
                     byMuscle[normalized.muscleGroup] = normalized
@@ -32,7 +34,9 @@ enum RecoveryCalculator {
                 muscleGroup: muscle,
                 recoveryPercentage: GenerationConstants.Recovery.defaultMuscleRecovery,
                 lastTrainedAt: nil,
-                accumulatedFatigue: 0
+                accumulatedFatigue: 0,
+                fitness: 0,
+                fatigue: 0
             )
         }
 
@@ -52,7 +56,8 @@ enum RecoveryCalculator {
         lastDecayAppliedAt: Date? = nil,
         now: Date = Date()
     ) -> (states: [MuscleRecoveryState], lastDecayAppliedAt: Date) {
-        let rate = experienceLevel.recoveryRatePerHour
+        let fatigueRate = experienceLevel.recoveryRatePerHour
+        let fitnessRate = fatigueRate / GenerationConstants.Recovery.fitnessToFatigueDecayRatio
         let globalHours: Double
 
         if let lastDecay = lastDecayAppliedAt {
@@ -71,8 +76,9 @@ enum RecoveryCalculator {
             } else {
                 hours = globalHours
             }
-            updatedState.recoveryPercentage = min(100, state.recoveryPercentage + hours * rate)
-            updatedState.accumulatedFatigue = max(0, state.accumulatedFatigue - hours * 0.5)
+            updatedState.fatigue = max(0, state.fatigue - hours * fatigueRate)
+            updatedState.fitness = max(0, state.fitness - hours * fitnessRate)
+            updatedState.syncPreparedness()
             return updatedState
         }
 
@@ -90,8 +96,9 @@ enum RecoveryCalculator {
         )
 
         for item in completedSets {
-            let workingSets = item.sets.filter { !$0.isWarmup }
+            let workingSets = item.sets.filter { !$0.isWarmup && !$0.isCooldown }
             let intensityMultiplier = item.exercise.resolvedMechanics == .compound ? 1.2 : 0.8
+            let effortMultiplier = effortMultiplier(for: workingSets)
             let contributions = muscleContributions(for: item.exercise)
 
             for (muscle, contribution) in contributions {
@@ -99,16 +106,36 @@ enum RecoveryCalculator {
                     muscleGroup: muscle,
                     recoveryPercentage: GenerationConstants.Recovery.defaultMuscleRecovery,
                     lastTrainedAt: nil,
-                    accumulatedFatigue: 0
+                    accumulatedFatigue: 0,
+                    fitness: 0,
+                    fatigue: 0
                 )
-                let fatigue = Double(workingSets.count) * intensityMultiplier * contribution * 8
-                state.recoveryPercentage = max(0, state.recoveryPercentage - fatigue)
-                state.accumulatedFatigue += fatigue
+                let setCount = Double(workingSets.count)
+                let fatigueDelta = setCount
+                    * intensityMultiplier
+                    * contribution
+                    * effortMultiplier
+                    * GenerationConstants.Recovery.fatiguePerHardSet
+                let fitnessDelta = setCount
+                    * intensityMultiplier
+                    * contribution
+                    * GenerationConstants.Recovery.fitnessPerHardSet
+                state.fatigue += fatigueDelta
+                state.fitness += fitnessDelta
                 state.lastTrainedAt = Date()
+                state.syncPreparedness()
                 map[muscle] = state
             }
         }
         return MuscleGroup.allCases.compactMap { map[$0] }
+    }
+
+    static func effortMultiplier(for sets: [CompletedSet]) -> Double {
+        let rpes = sets.compactMap(\.rpe)
+        guard let average = rpes.isEmpty ? nil : rpes.reduce(0, +) / Double(rpes.count) else {
+            return 0.85
+        }
+        return min(1.2, max(0.6, average / 10.0))
     }
 
     static func muscleContributions(for exercise: Exercise) -> [MuscleGroup: Double] {
@@ -132,7 +159,25 @@ enum RecoveryCalculator {
             var updated = state
             let trained = recentlyTrainedMuscles.contains(state.muscleGroup)
             let penalty = level.scopedRecoveryPenalty(trained: trained)
-            updated.recoveryPercentage = max(0, state.recoveryPercentage - penalty)
+            updated.fatigue += penalty
+            updated.syncPreparedness()
+            return updated
+        }
+    }
+
+    /// Global readiness offset applied as fatigue when assembling generation input.
+    static func applyManualReadiness(
+        states: [MuscleRecoveryState],
+        manualReadiness: Double?
+    ) -> [MuscleRecoveryState] {
+        guard let manualReadiness else { return states }
+        let clamped = min(100, max(0, manualReadiness))
+        let deficit = max(0, 100 - clamped)
+        guard deficit > 0 else { return states }
+        return states.map { state in
+            var updated = state
+            updated.fatigue += deficit * 0.25
+            updated.syncPreparedness()
             return updated
         }
     }
@@ -262,6 +307,14 @@ enum ProgressiveOverload {
         EffortFeedbackMapping.averageEffectiveRPE(from: sets)
     }
 
+    /// Retains sets across the current + previous rolling week (capped) so weekly volume is accurate.
+    static func prunedRecentSets(_ sets: [CompletedSet], endingAt now: Date = Date()) -> [CompletedSet] {
+        let cutoff = now.addingTimeInterval(-GenerationConstants.Volume.recentSetsRetentionSeconds)
+        let inWindow = sets.filter { $0.completedAt >= cutoff }
+        let source = inWindow.isEmpty ? sets : inWindow
+        return Array(source.suffix(GenerationConstants.Volume.maxRecentSetsStored))
+    }
+
     static func rpeProgressionMultiplier(averageLoggedRPE: Double?) -> Double {
         guard let rpe = averageLoggedRPE else { return 1.0 }
         if rpe <= GenerationConstants.Progression.easyRPEThreshold {
@@ -301,8 +354,7 @@ enum ProgressiveOverload {
     static func nextWeight(
         current: Double,
         stats: UserExerciseStats,
-        volumeCap: Int,
-        setCountThisWeek: Int,
+        muscleVolumeCompletion: Double,
         bodyweight: Double,
         equipment: [Equipment] = []
     ) -> Double {
@@ -316,7 +368,7 @@ enum ProgressiveOverload {
             raw = current * GenerationConstants.Deload.reEntryWeightMultiplier
         } else if stats.volumeTrend == .decreasing {
             raw = current
-        } else if setCountThisWeek >= volumeCap {
+        } else if muscleVolumeCompletion >= GenerationConstants.Volume.overloadHoldCompletionFraction {
             raw = current * 0.95
         } else if stats.volumeTrend == .increasing {
             let increment = current < 20 ? current * 0.025 : GenerationConstants.Weight.barbellIncrementKg
@@ -326,6 +378,25 @@ enum ProgressiveOverload {
             raw = current + (increment * rpeMultiplier)
         }
         return GenerationConstants.Weight.roundToAvailable(raw, equipment: equipment)
+    }
+
+    /// Legacy overload gate kept for call sites that still pass program-wide caps.
+    static func nextWeight(
+        current: Double,
+        stats: UserExerciseStats,
+        volumeCap: Int,
+        setCountThisWeek: Int,
+        bodyweight: Double,
+        equipment: [Equipment] = []
+    ) -> Double {
+        let completion = volumeCap > 0 ? Double(setCountThisWeek) / Double(volumeCap) : 0
+        return nextWeight(
+            current: current,
+            stats: stats,
+            muscleVolumeCompletion: completion,
+            bodyweight: bodyweight,
+            equipment: equipment
+        )
     }
 
     static func estimateOneRepMax(weight: Double, reps: Int) -> Double {
@@ -366,7 +437,7 @@ enum ProgressiveOverload {
         }
 
         var recentSets = (existing?.recentSets ?? []) + working
-        recentSets = Array(recentSets.suffix(12))
+        recentSets = Self.prunedRecentSets(recentSets)
 
         var stats = UserExerciseStats(
             exerciseId: exerciseId,
@@ -377,7 +448,8 @@ enum ProgressiveOverload {
             bestVolumeSet: bestVolume,
             recentSets: recentSets,
             preferredRepRangeMin: workingPlanned.first?.targetRepsMin ?? existing?.preferredRepRangeMin ?? 8,
-            preferredRepRangeMax: workingPlanned.first?.targetRepsMax ?? existing?.preferredRepRangeMax ?? 12
+            preferredRepRangeMax: workingPlanned.first?.targetRepsMax ?? existing?.preferredRepRangeMax ?? 12,
+            preferVariation: existing?.preferVariation ?? false
         )
 
         if let existing {
@@ -429,32 +501,83 @@ enum ProgressiveOverload {
         }
 
         if let lastWeight = lastWeight {
-            let volumeCap = VolumeCapCalculator.adjustedWeeklySetCap(
-                experience: experienceLevel,
-                soreness: .none
+            applyProgressionPolicy(
+                to: &stats,
+                lastWeight: lastWeight,
+                workingSets: working,
+                hitTopOfRepRange: hitTop,
+                missedMinimumReps: missedMin,
+                goal: goal ?? .buildMuscle,
+                equipment: equipment,
+                weightCeilings: weightCeilings
             )
-            let avgRPE = averageLoggedRPE(from: working)
-            if hitTop || missedMin {
-                stats.suggestedNextWeightKg = nextWeight(
-                    currentWeight: lastWeight,
-                    completedAllSetsAtTopRange: hitTop,
-                    missedMinimumReps: missedMin,
-                    averageLoggedRPE: avgRPE,
-                    equipment: equipment
-                )
-            } else {
-                stats.suggestedNextWeightKg = nextWeight(
-                    current: lastWeight,
-                    stats: stats,
-                    volumeCap: volumeCap,
-                    setCountThisWeek: stats.weeklyMaxSets,
-                    bodyweight: bodyweightKg,
-                    equipment: equipment
-                )
-            }
         }
 
         return stats
+    }
+
+    private static func applyProgressionPolicy(
+        to stats: inout UserExerciseStats,
+        lastWeight: Double,
+        workingSets: [CompletedSet],
+        hitTopOfRepRange: Bool,
+        missedMinimumReps: Bool,
+        goal: TrainingGoal,
+        equipment: [Equipment],
+        weightCeilings: [Equipment: Double]
+    ) {
+        let avgRPE = averageLoggedRPE(from: workingSets)
+        let action = ProgressionPolicy.action(
+            goal: goal,
+            hitTopOfRepRange: hitTopOfRepRange,
+            missedMinimumReps: missedMinimumReps,
+            stalledSessions: ProgressionPolicy.stalledSessionCount(stats: stats)
+        )
+        switch action {
+        case .increaseLoad:
+            stats.preferVariation = false
+            stats.suggestedNextWeightKg = nextWeight(
+                currentWeight: lastWeight,
+                completedAllSetsAtTopRange: true,
+                missedMinimumReps: false,
+                averageLoggedRPE: avgRPE,
+                equipment: equipment
+            )
+        case .reduceLoad:
+            stats.suggestedNextWeightKg = nextWeight(
+                currentWeight: lastWeight,
+                completedAllSetsAtTopRange: false,
+                missedMinimumReps: true,
+                averageLoggedRPE: avgRPE,
+                equipment: equipment
+            )
+        case .hold:
+            stats.suggestedNextWeightKg = GenerationConstants.Weight.roundToAvailable(
+                lastWeight,
+                equipment: equipment
+            )
+        case .holdLoadIncreaseReps:
+            stats.suggestedNextWeightKg = GenerationConstants.Weight.roundToAvailable(
+                lastWeight,
+                equipment: equipment
+            )
+            if stats.preferredRepRangeMin < stats.preferredRepRangeMax {
+                stats.preferredRepRangeMin += 1
+            }
+        case .preferVariation:
+            stats.preferVariation = true
+            stats.suggestedNextWeightKg = GenerationConstants.Weight.roundToAvailable(
+                lastWeight,
+                equipment: equipment
+            )
+        }
+        if let suggested = stats.suggestedNextWeightKg {
+            stats.suggestedNextWeightKg = GenerationConstants.Weight.roundToAvailable(
+                suggested,
+                equipment: equipment,
+                ceilings: weightCeilings
+            )
+        }
     }
 
     static func suggestedStartWeight(
@@ -661,4 +784,3 @@ enum WorkoutSessionCalculator {
         max(0, Int(ceil(end.timeIntervalSince(now))))
     }
 }
-

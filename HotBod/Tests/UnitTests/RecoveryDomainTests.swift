@@ -77,4 +77,57 @@ final class RecoveryDecayTests: XCTestCase {
         let chest = decay.states.first { $0.muscleGroup == .chest }!
         XCTAssertGreaterThan(chest.recoveryPercentage, 40)
     }
+
+    func testRegression_legacyRecoveryPayloadPreservesPreparednessOnDecode() throws {
+        // Pre-fitness/fatigue JSON: recovery 40 + accumulatedFatigue 10 must not
+        // decode as preparedness ≈ 90 (fitness 0, fatigue 10).
+        let legacy = """
+        {"muscleGroup":"chest","recoveryPercentage":40,"accumulatedFatigue":10}
+        """.data(using: .utf8)!
+        let state = try JSONDecoder().decode(MuscleRecoveryState.self, from: legacy)
+        XCTAssertEqual(state.recoveryPercentage, 40, accuracy: 0.01)
+        XCTAssertEqual(state.fatigue, 60, accuracy: 0.01)
+        XCTAssertEqual(state.fitness, 0, accuracy: 0.01)
+    }
+
+    func testFitnessPersistsLongerThanFatigue() {
+        var states = RecoveryCalculator.defaultStates()
+        states[0] = MuscleRecoveryState(
+            muscleGroup: .back,
+            recoveryPercentage: 70,
+            lastTrainedAt: Date().addingTimeInterval(-24 * 3600),
+            accumulatedFatigue: 0,
+            fitness: 15,
+            fatigue: 45
+        )
+        let after = RecoveryCalculator.decayRecovery(
+            states: states,
+            experienceLevel: .intermediate,
+            lastDecayAppliedAt: Date().addingTimeInterval(-24 * 3600),
+            now: Date()
+        ).states.first { $0.muscleGroup == .back }!
+
+        let fatigueDrop = 45 - after.fatigue
+        let fitnessDrop = 15 - after.fitness
+        XCTAssertGreaterThan(fatigueDrop, fitnessDrop)
+        XCTAssertGreaterThan(after.recoveryPercentage, 70)
+    }
+
+    func testHigherRPEProducesMoreFatigue() {
+        let exercise = makeTestExercise(id: "row", primaryMuscles: [.back], pattern: .horizontalPull)
+        let easy = [CompletedSet(setIndex: 0, weightKg: 60, reps: 8, rpe: 6)]
+        let hard = [CompletedSet(setIndex: 0, weightKg: 60, reps: 8, rpe: 9.5)]
+        let easyState = RecoveryCalculator.applyWorkoutFatigue(
+            states: RecoveryCalculator.defaultStates(),
+            exercises: [exercise],
+            completedSets: [(exercise, easy)]
+        ).first { $0.muscleGroup == .back }!
+        let hardState = RecoveryCalculator.applyWorkoutFatigue(
+            states: RecoveryCalculator.defaultStates(),
+            exercises: [exercise],
+            completedSets: [(exercise, hard)]
+        ).first { $0.muscleGroup == .back }!
+        XCTAssertGreaterThan(hardState.fatigue, easyState.fatigue)
+        XCTAssertLessThan(hardState.recoveryPercentage, easyState.recoveryPercentage)
+    }
 }

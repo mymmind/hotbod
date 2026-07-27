@@ -7,17 +7,25 @@ struct ForgeSetMetricField: View {
     var isActive: Bool
     var keyboardType: UIKeyboardType = .decimalPad
     var selectAllOnFocus: Bool = false
+    var onFocusChange: ((Bool) -> Void)? = nil
+
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         Group {
             if selectAllOnFocus {
                 SelectAllMetricTextField(
                     text: $text,
-                    keyboardType: keyboardType
+                    keyboardType: keyboardType,
+                    onFocusChange: onFocusChange
                 )
             } else {
                 TextField("—", text: $text)
                     .keyboardType(keyboardType)
+                    .focused($isFocused)
+                    .onChange(of: isFocused) { _, focused in
+                        onFocusChange?(focused)
+                    }
             }
         }
         .font(ForgeTypography.metric)
@@ -40,6 +48,7 @@ struct ForgeSetMetricField: View {
 private struct SelectAllMetricTextField: UIViewRepresentable {
     @Binding var text: String
     let keyboardType: UIKeyboardType
+    var onFocusChange: ((Bool) -> Void)?
 
     func makeUIView(context: Context) -> UITextField {
         let field = UITextField()
@@ -60,6 +69,7 @@ private struct SelectAllMetricTextField: UIViewRepresentable {
     func updateUIView(_ uiView: UITextField, context: Context) {
         // Keep the coordinator's binding current — makeCoordinator runs once.
         context.coordinator.binding = $text
+        context.coordinator.onFocusChange = onFocusChange
         uiView.keyboardType = keyboardType
 
         // While this field is first responder, UIKit owns the text. Pushing the
@@ -74,23 +84,27 @@ private struct SelectAllMetricTextField: UIViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(binding: $text)
+        Coordinator(binding: $text, onFocusChange: onFocusChange)
     }
 
     final class Coordinator: NSObject, UITextFieldDelegate {
         var binding: Binding<String>
+        var onFocusChange: ((Bool) -> Void)?
         var isProgrammaticUpdate = false
 
-        init(binding: Binding<String>) {
+        init(binding: Binding<String>, onFocusChange: ((Bool) -> Void)?) {
             self.binding = binding
+            self.onFocusChange = onFocusChange
         }
 
         func textFieldDidBeginEditing(_ textField: UITextField) {
+            onFocusChange?(true)
             textField.selectAll(nil)
         }
 
         func textFieldDidEndEditing(_ textField: UITextField) {
             binding.wrappedValue = textField.text ?? ""
+            onFocusChange?(false)
         }
 
         @objc func editingChanged(_ textField: UITextField) {

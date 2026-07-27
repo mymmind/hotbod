@@ -7,14 +7,19 @@ This document describes how exercises enter the app and how daily workouts are b
 | Area | File |
 |------|------|
 | Rules engine | `HotBod/Services/WorkoutGeneration/WorkoutGenerationService.swift` |
+| Validator | `HotBod/Services/WorkoutGeneration/WorkoutValidator.swift` |
 | Orchestration | `HotBod/App/AppEnvironment.swift` |
 | Split / schedule | `HotBod/Domain/Algorithms/TrainingSchedule.swift` |
-| Recovery, volume, overload | `HotBod/Domain/Algorithms/Algorithms.swift` |
+| Recovery, overload | `HotBod/Domain/Algorithms/Algorithms.swift` |
+| Muscle volume landings | `HotBod/Domain/Algorithms/MuscleVolumePlanner.swift` |
+| Effort / progression | `HotBod/Domain/Algorithms/EffortPolicy.swift` |
 | Deload / volume caps | `HotBod/Domain/Algorithms/Phase2Algorithms.swift` |
+| Constants | `HotBod/Domain/Algorithms/GenerationConstants.swift` |
 | Exercise catalog & swaps | `HotBod/Domain/Algorithms/ExerciseCatalog.swift` |
 | Seed loading | `HotBod/Data/Local/ExerciseCatalogLoader.swift`, `LocalExerciseRepository.swift` |
 | AI coach (optional) | `HotBod/Services/AI/GeminiAIWorkoutService.swift`, `RemoteAIWorkoutService.swift` |
 | Server validation | `supabase/functions/_shared/validate.ts` |
+
 
 ---
 
@@ -273,56 +278,25 @@ let maxExercises = min(8, max(4, durationMinutes / 8))
 // 32 min → 4 exercises, 45 min → 5, 60 min → 7, 64+ min → 8
 ```
 
-**Scoring:**
+**Scoring** (see `WorkoutGenerationAlgorithms.scoreExercises`):
 
-```154:158:HotBod/Services/WorkoutGeneration/WorkoutGenerationService.swift
-        let scored = filtered.map { exercise -> (Exercise, Double) in
-            let muscleScore = Double(exercise.primaryMuscles.filter { targetMuscles.contains($0) }.count) * 10
-            let statBonus = stats.contains { $0.exerciseId == exercise.id } ? 2.0 : 0.0
-            let difficultyPenalty = exercise.difficulty == .advanced && experience == .beginner ? -5.0 : 0.0
-            return (exercise, muscleScore + statBonus + difficultyPenalty)
-        }.sorted { $0.1 > $1.1 }
-```
+- First matching primary muscle: `+10`
+- Each additional matching primary: `+4` (same as secondary — avoids dual-primary domination)
+- Each matching secondary: `+4`
+- History familiarity: `+2` if any `UserExerciseStats` exist
+- Favorite: `+3`; less-preferred: `-4`
+- Beginner + advanced exercise: `-5`
+- Recent use demotion: `-6` if last logged set < 3 days, `-3` if < 7 days
 
-**Variation shuffle** (regenerate / prefer variation):
+**Variation ranking** (regenerate / prefer variation / non-consistent variability):
 
-```161:165:HotBod/Services/WorkoutGeneration/WorkoutGenerationService.swift
-        if !avoidIds.isEmpty || preferVariation {
-            ranked.shuffle()
-            ranked.sort { $0.1 > $1.1 }
-        }
-```
-
-Ties among equal scores become random after shuffle — intentional variety, but can pick suboptimal exercises within the same score band.
+Scored exercises get small score jitter (`±1.5` × variability multiplier), then sort descending. Deterministic when a `variationSeed` is supplied.
 
 **Selection constraints:**
 
-```167:180:HotBod/Services/WorkoutGeneration/WorkoutGenerationService.swift
-        for (exercise, _) in ranked where selected.count < maxExercises {
-            if usedPatterns.contains(exercise.movementPattern) && selected.count >= 2 { continue }
-            if exercise.primaryMuscles.contains(where: { targetMuscles.contains($0) }) {
-                selected.append(exercise)
-                usedPatterns.insert(exercise.movementPattern)
-            }
-        }
-
-        if selected.count < 4 {
-            for (exercise, _) in ranked where !selected.contains(exercise) {
-                selected.append(exercise)
-                if selected.count >= 4 { break }
-            }
-        }
-```
-
-- After 2 exercises, duplicate **movement patterns** are skipped (diversity rule).
-- Must match at least one target primary muscle.
-- If still &lt; 4 exercises, backfill from ranked list **without** muscle/pattern constraints.
-
-**Critique notes:**
-- No explicit compound-before-isolation ordering.
-- No guarantee each target muscle gets coverage.
-- Secondary muscles are ignored in scoring.
-- `favoriteExerciseIds` on `WorkoutPreferences` is unused.
+- From the **second** pick onward, duplicate **compound** movement patterns are skipped (`selected.count >= 1`). Isolation/cardio/mobility accessories may repeat.
+- Must match at least one target primary muscle during coverage/fill.
+- If still under the minimum exercise count, backfill from ranked list without pattern constraints.
 
 ---
 
@@ -441,127 +415,69 @@ Assumes ~2 min per set (work time) + inter-set rest + 5 min buffer.
 
 Updated after each completed session via `ProgressiveOverload.updateStats` in `Algorithms.swift`.
 
-### Session-based weight suggestion (simple path)
+### Per-muscle weekly landings (primary)
 
-```197:209:HotBod/Domain/Algorithms/Algorithms.swift
-    static func nextWeight(
-        currentWeight: Double,
-        completedAllSetsAtTopRange: Bool,
-        missedMinimumReps: Bool
-    ) -> Double {
-        if completedAllSetsAtTopRange {
-            return currentWeight + 2.5
-        }
-        if missedMinimumReps {
-            return (currentWeight * 0.95 * 10).rounded() / 10
-        }
-        return currentWeight
-    }
-```
+`MuscleVolumePlanner` owns programming volume:
 
-### Trend-based weight suggestion (used at generation time)
+- Each working set credits **1.0** to primary muscles and **0.5** to secondary muscles.
+- Weekly landings (sets/muscle/week) by experience × goal (e.g. intermediate hypertrophy **14**, advanced **18**; strength lower).
+- Soft ceiling **24** sets/muscle/week; global experience caps (70/100/130) are **warnings only**.
+- Session set counts are allocated from remaining weekly budget per target muscle.
 
-```212:242:HotBod/Domain/Algorithms/Algorithms.swift
-    static func nextWeight(
-        current: Double,
-        stats: UserExerciseStats,
-        volumeCap: Int,
-        setCountThisWeek: Int,
-        bodyweight: Double
-    ) -> Double {
-        if stats.isInDeloadWeek { return current * 0.9 }
-        if stats.volumeTrend == .decreasing { return current }
-        if setCountThisWeek >= volumeCap { return current * 0.95 }
-        if stats.volumeTrend == .increasing {
-            let increment = current < 20 ? current * 0.025 : 2.5
-            return round((current + increment) * 2.0) / 2.0
-        }
-        let increment = current < 20 ? current * 0.05 : 5.0
-        return round((current + increment) * 2.0) / 2.0
-    }
-```
+### Overload gate
 
-### Weekly volume cap
+Generation-time `ProgressiveOverload.nextWeight` keys off **muscle weekly completion fraction** vs landing. At ≥100% completion, load is held/reduced (`×0.95`).
 
-```291:314:HotBod/Domain/Algorithms/Phase2Algorithms.swift
-enum VolumeCapCalculator {
-    static func baseWeeklySetCap(bodyweight: Double) -> Int {
-        max(20, Int(150.0 + (0.5 * bodyweight)))
-    }
+### Effort & progression policy
 
-    static func adjustedWeeklySetCap(bodyweight: Double, soreness: SorenessLevel) -> Int {
-        let baseCap = baseWeeklySetCap(bodyweight: bodyweight)
-        let reductionFactor: Double = {
-            switch soreness {
-            case .none: 1.0
-            case .mild: 0.9
-            case .moderate: 0.8
-            case .severe: 0.6
-            }
-        }()
-        return Int(Double(baseCap) * reductionFactor)
-    }
-}
-```
-
-For 80 kg: base cap = 190 sets/week (total across all exercises' set counts).
+- `EffortPolicy` sets role-aware RPE (hypertrophy ~8, strength compounds ~7.5, isolation finishers ~9, beginners/deload/poor sleep lower). Mid-session adds via `SessionExercisePlanner` use the same policy.
+- `ProgressionPolicy` on `updateStats`:
+  - hypertrophy double-progression: hold load and bump `preferredRepRangeMin` until top of range, then increase load
+  - strength: load-first (hold until top, then increase)
+  - stall (≥3 flat **sessions**, clustered by completion time) sets `UserExerciseStats.preferVariation`; next generate merges those IDs into avoid list and raises variability
+- `recentSets` retain up to 14 days / 64 sets so weekly hard-set counts are not truncated at 12.
 
 ### Deload detection
 
 `DeloadDetector` flags deload when:
-- Volume drops &gt; 30% week-over-week, OR
-- 3 consecutive weeks with &gt; 15% volume increases
+
+1. Volume drops >30% week-over-week after a productive prior window, OR
+2. **Scheduled volume wave** after **4** consecutive high-volume weeks, OR
+3. 3 consecutive weeks with >15% volume increases, OR
+4. Recent logged RPE averages ≥9.5
+
+Deload week = `now - deloadStartedAt < 7 days`. Effects: sets ×0.6, weight ×0.9, RPE target 6.
 
 ---
 
-## 6. Muscle recovery model
+## 6. Muscle recovery model (fitness–fatigue)
 
-### Passive recovery over time
+`MuscleRecoveryState` tracks:
 
-```10:23:HotBod/Domain/Algorithms/Algorithms.swift
-    static func decayRecovery(
-        states: [MuscleRecoveryState],
-        experienceLevel: ExperienceLevel,
-        hoursSinceReference: Double = 0
-    ) -> [MuscleRecoveryState] {
-        let rate = experienceLevel.recoveryRatePerHour
-        return states.map { state in
-            ...
-            updated.recoveryPercentage = min(100, state.recoveryPercentage + hours * rate)
-            ...
-        }
-    }
+- `fitness` — positive residual (decays ~**3×** slower than fatigue)
+- `fatigue` — residual fatigue load
+- `recoveryPercentage` (preparedness) = `clamp(100 + fitness - fatigue)` for UI/generation compatibility
+
+### Passive decay
+
+Fatigue decays at `experience.recoveryRatePerHour`; fitness at that rate ÷ 3.
+
+### Workout stimulus
+
+```
+fatigue += sets × mechanics × contribution × effort(RPE) × 6
+fitness += sets × mechanics × contribution × 2
 ```
 
-Recovery rates: beginner 2.2%/hr, intermediate 1.8%/hr, advanced 1.5%/hr.
+Compounds cost more than isolation; higher logged RPE increases fatigue. Low preparedness (<40%) soft-shrinks planned sets before validation.
 
-### Fatigue from completed work
+### Sleep score
 
-```26:47:HotBod/Domain/Algorithms/Algorithms.swift
-    static func applyWorkoutFatigue(
-        states: [MuscleRecoveryState],
-        exercises: [Exercise],
-        completedSets: [(exercise: Exercise, sets: [CompletedSet])]
-    ) -> [MuscleRecoveryState] {
-        ...
-            let intensityMultiplier = item.exercise.mechanics == .compound ? 1.2 : 0.8
-            let contributions = muscleContributions(for: item.exercise)
-            ...
-                let fatigue = Double(workingSets.count) * intensityMultiplier * contribution * 8
-                state.recoveryPercentage = max(0, state.recoveryPercentage - fatigue)
-```
+HealthKit emits **0…1**; generation thresholds use **0…100**. Normalization: `score <= 1 ? score * 100 : score` at input assembly and in consumers.
 
-Primary muscles contribute 1.0, secondary 0.4 per `muscleContributions`.
+### Soreness / manual readiness
 
-### Global soreness
-
-```61:67:HotBod/Domain/Algorithms/Algorithms.swift
-    static func applySoreness(states: [MuscleRecoveryState], level: SorenessLevel) -> [MuscleRecoveryState] {
-        ...
-            updated.recoveryPercentage = max(0, state.recoveryPercentage - level.recoveryPenalty)
-```
-
-Penalties: mild −5, moderate −15, severe −30 (percentage points).
+Soreness adds fatigue (scoped to recently trained muscles). Optional `manualReadiness` applies a global fatigue offset before generation.
 
 ---
 
@@ -573,26 +489,22 @@ Validation runs **after** generation. Hard errors block the workout (`isValid = 
 
 | Check | Threshold |
 |-------|-----------|
-| Exercise count | &lt; 4 |
-| Duplicate exercise IDs | any duplicate |
-| Unknown exercise ID | not in catalog |
-| Injury conflict | same pattern blocklist as generation |
-| Equipment | required gear not in profile |
-| Rep range | min &lt; 1, max &gt; 30, min &gt; max |
-| Per-muscle recovery | &lt; 15% for a targeted primary muscle |
-| Severe soreness | always errors |
-| Min recovery across all muscles | &lt; 15% |
-| Projected weekly volume | &gt; 180 sets |
+| Exercise count | < 4 (standard) / < 3 (recovery) |
+| Duplicate / unknown exercise IDs | any |
+| Injury / equipment conflict | blocklist + contraindications |
+| Rep / set / rest / weight bounds | see `GenerationConstants.Validation` |
+| Per-muscle recovery | < 15% for targeted primary (standard mode) |
+| Severe soreness / critical fatigue | errors in standard; warnings in recovery |
 
-### Soft warnings (workout still valid)
+### Soft warnings
 
-- Moderate/mild soreness
-- Low recovery (15–30%)
-- Weekly volume 150–180 sets
-- High intensity + low average recovery
+- Global weekly set guardrail / warning thresholds (no longer hard-fail)
+- Per-muscle landing soft ceiling / high volume
+- Moderate/mild soreness, low recovery (15–30%)
 - Duration exceeds target + 20 min
+- Large weight jumps
 
-**Critique note:** Validator can flag problems (e.g. severe soreness) that the generator **does not proactively avoid** — it still builds the workout and then rejects it at the `AppEnvironment` gate.
+Recovery override UX exists for critical-fatigue-only failures (`generateLighterWorkoutAfterFatigue`).
 
 ---
 
@@ -662,13 +574,13 @@ Use this section when reviewing the logic:
 | `avoidedMuscleGroups` | Populated from profile | Ensure warning copy remains clear when override path triggers |
 | `favoriteExerciseIds` | Applied in scoring bonus | Validate bonus weighting vs variation goals |
 | Injury mapping | Pattern rules cover all current `BodyLimitation` values + contraindication text checks | Continue moving toward structured per-exercise contraindications |
-| Sleep score | Applied as recovery/intensity penalty signal | Keep tuning thresholds as readiness data quality improves |
+| Sleep score | Normalized 0–1 → 0–100; poor sleep caps RPE/sets | Keep tuning thresholds as readiness data quality improves |
 | Default weights | Uses movement-pattern and bodyweight-aware `suggestedStartWeight` | Track edge cases for missing bodyweight/equipment data |
-| Exercise ordering | Score order only | No compound-first or pre-fatigue logic |
+| Exercise ordering | Compound-first after selection | Optional pre-fatigue remains open |
 | Muscle coverage | Best-effort scoring | May under-train some target muscles |
 | Variation shuffle | Random within score ties | Can feel arbitrary |
-| Validator vs generator | Generate then reject | Severe soreness / fatigue can produce nil workout with no fallback softening |
-| Weekly volume cap | 150 + 0.5×BW sets | Very high threshold; validator hard-errors at 180 projected |
+| Validator vs generator | Recovery mode + soft-shrink before validate | Critical fatigue still has recovery-override path |
+| Weekly volume | Per-muscle landings + soft global guardrail | Tune landings per population; keep soft ceiling |
 | PPL title | "Push Day Hypertrophy" even for strength goals | Naming mismatch |
 | `bodyPart` / `custom` / `adaptive` splits | `bodyPart -> push/pull/legs`, `custom -> fullBody`, `adaptive -> dynamic focus` | Legacy-safe defaults now explicit; revisit when custom split builder ships |
 | AI exercise IDs | Hyphen vs underscore risk | Potential validation failures for AI paths |
@@ -698,14 +610,9 @@ struct WorkoutGenerationInput: Codable {
 
 ---
 
-## 13. Full rules engine source
+## 13. Rules engine source
 
-The complete implementation lives in one file (~387 lines):
-
-`HotBod/Services/WorkoutGeneration/WorkoutGenerationService.swift`
-
-It contains:
-- `RulesWorkoutGenerationService` — generation
-- `WorkoutValidator` — post-generation safety checks
+Generation: `HotBod/Services/WorkoutGeneration/WorkoutGenerationService.swift`  
+Validation: `HotBod/Services/WorkoutGeneration/WorkoutValidator.swift`
 
 Unit tests: `HotBod/Tests/UnitTests/HotBodTests.swift` → `WorkoutGenerationTests`, `WorkoutValidator` tests, progressive overload tests.

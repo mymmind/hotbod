@@ -29,10 +29,10 @@ struct ExerciseThumbnailView: View {
             if let primaryMuscle {
                 Text(primaryMuscle.prefix(3).uppercased())
                     .font(ForgeTypography.tabLabel.weight(.bold))
-                    .foregroundStyle(ForgeColors.textOnInverse)
+                    .foregroundStyle(ForgeColors.background)
                     .padding(.horizontal, ForgeSpacing.s1 + 1)
                     .padding(.vertical, ForgeSpacing.s1 - 1)
-                    .background(ForgeColors.surfaceInverse.opacity(0.85))
+                    .background(ForgeColors.surfaceInverse.opacity(0.92))
                     .clipShape(RoundedRectangle.forge(ForgeRadius.xs))
                     .padding(ForgeSpacing.s1)
             }

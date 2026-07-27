@@ -17,7 +17,7 @@ struct WorkoutShareCard: View {
 
             Text(title.uppercased())
                 .font(ForgeTypography.displayAthletic)
-                .foregroundStyle(ForgeColors.textOnInverse)
+                .foregroundStyle(ForgeColors.textPrimary)
                 .lineLimit(2)
 
             HStack(spacing: ForgeSpacing.s4) {
@@ -41,7 +41,7 @@ struct WorkoutShareCard: View {
         }
         .padding(ForgeSpacing.s5)
         .frame(maxWidth: 360, alignment: .leading)
-        .background(ForgeColors.surfaceInverse)
+        .background(ForgeColors.surface)
     }
 
     private func shareMetric(label: String, value: String) -> some View {
@@ -51,7 +51,7 @@ struct WorkoutShareCard: View {
                 .foregroundStyle(ForgeColors.muted)
             Text(value)
                 .font(ForgeTypography.monoMetric)
-                .foregroundStyle(ForgeColors.textOnInverse)
+                .foregroundStyle(ForgeColors.textPrimary)
         }
     }
 }

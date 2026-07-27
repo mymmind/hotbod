@@ -4,6 +4,7 @@ struct MetricCard: View {
     let label: String
     let value: String
     var detail: String?
+    /// Legacy flag from light-mode inverted cards. Ignored in dark-only.
     var inverted: Bool = false
     var accent: Color?
     var animateValue: Bool = true
@@ -20,17 +21,17 @@ struct MetricCard: View {
                 .foregroundStyle(labelColor)
             Text(value)
                 .font(ForgeTypography.heroMetric)
-                .foregroundStyle(valueColor)
+                .foregroundStyle(ForgeColors.foreground)
                 .contentTransition(.numericText())
                 .modifier(MetricValueAnimationModifier(value: value, enabled: animateValue))
             if let detail {
                 Text(detail)
                     .font(ForgeTypography.body)
-                    .foregroundStyle(inverted ? ForgeColors.surface.opacity(0.8) : ForgeColors.muted)
+                    .foregroundStyle(ForgeColors.muted)
             }
         }
         .overlay(alignment: .leading) {
-            if let accent, !inverted {
+            if let accent {
                 Rectangle()
                     .fill(accent)
                     .frame(width: 3)
@@ -40,12 +41,7 @@ struct MetricCard: View {
     }
 
     private var labelColor: Color {
-        if let accent, !inverted { return accent }
-        return inverted ? ForgeColors.surface.opacity(0.7) : ForgeColors.muted
-    }
-
-    private var valueColor: Color {
-        inverted ? ForgeColors.surface : ForgeColors.foreground
+        accent ?? ForgeColors.muted
     }
 }
 

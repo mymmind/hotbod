@@ -4,6 +4,7 @@ import Foundation
 enum GenerationConstants {
 
     enum Volume {
+        /// Systemic soft guardrail (total working sets / week). Not the primary programming target.
         static func baseWeeklySetCap(experience: ExperienceLevel) -> Int {
             switch experience {
             case .beginner: 70
@@ -30,6 +31,48 @@ enum GenerationConstants {
 
         static func warningThreshold(experience: ExperienceLevel, soreness: SorenessLevel) -> Int {
             Int(Double(adjustedWeeklySetCap(experience: experience, soreness: soreness)) * warningCapFraction)
+        }
+
+        /// Schoenfeld-style hard-set landings per muscle per week.
+        static let primaryHardSetCredit = 1.0
+        static let secondaryHardSetCredit = 0.5
+        static let softCeilingSetsPerMuscle = 24
+        static let minimumCoverageFraction = 0.5
+        /// At or above this fraction of the weekly landing, hold/reduce load progression.
+        static let overloadHoldCompletionFraction = 1.0
+        /// Keep recent sets long enough for the current + previous rolling week.
+        static let recentSetsRetentionSeconds: TimeInterval = 14 * 24 * 60 * 60
+        static let maxRecentSetsStored = 64
+
+        static func weeklyLandingSets(
+            experience: ExperienceLevel,
+            goal: TrainingGoal
+        ) -> Int {
+            switch (experience, GenerationConstants.volumeGoalBand(goal)) {
+            case (.beginner, .hypertrophy): 10
+            case (.beginner, .strength): 8
+            case (.beginner, .fatLoss): 10
+            case (.intermediate, .hypertrophy): 14
+            case (.intermediate, .strength): 10
+            case (.intermediate, .fatLoss): 12
+            case (.advanced, .hypertrophy): 18
+            case (.advanced, .strength): 12
+            case (.advanced, .fatLoss): 14
+            }
+        }
+    }
+
+    enum VolumeGoalBand {
+        case hypertrophy
+        case strength
+        case fatLoss
+    }
+
+    static func volumeGoalBand(_ goal: TrainingGoal) -> VolumeGoalBand {
+        switch goal {
+        case .gainStrength: .strength
+        case .loseFat: .fatLoss
+        case .buildMuscle, .generalFitness, .athleticPerformance, .hybridAthlete: .hypertrophy
         }
     }
 
@@ -61,6 +104,23 @@ enum GenerationConstants {
         static let suboptimalSleepRecoveryPenalty: Double = 5
         static let poorSleepScoreThreshold: Double = 50
         static let suboptimalSleepScoreThreshold: Double = 70
+
+        /// HealthKit historically emits 0...1; generation thresholds use 0...100.
+        /// Values already on the 0...100 scale are left unchanged.
+        static func normalizeSleepScore(_ score: Double) -> Double {
+            score <= 1.0 ? score * 100.0 : score
+        }
+
+        static func normalizeSleepScore(_ score: Double?) -> Double? {
+            score.map(normalizeSleepScore)
+        }
+
+        /// Supertraining fitness–fatigue: fitness decays ~3× slower than fatigue.
+        static let fitnessToFatigueDecayRatio = 3.0
+        static let fatiguePerHardSet = 6.0
+        static let fitnessPerHardSet = 2.0
+        static let softShrinkPreparednessThreshold = 40.0
+        static let softShrinkSetMultiplier = 0.7
     }
 
     enum Targeting {
@@ -89,12 +149,16 @@ enum GenerationConstants {
 
     enum Scoring {
         static let primaryMuscleWeight = 10.0
+        /// Extra primary-muscle matches beyond the first (avoids dual-primary domination).
+        static let additionalPrimaryMuscleWeight = 4.0
         static let secondaryMuscleWeight = 4.0
         static let historyBonus = 2.0
         static let beginnerAdvancedPenalty = -5.0
         static let favoriteBonus = 3.0
         static let lessPreferredPenalty = -4.0
         static let variationJitterMagnitude = 1.5
+        static let recentUsePenaltyUnder3Days = 6.0
+        static let recentUsePenaltyUnder7Days = 3.0
     }
 
     enum Progression {
@@ -271,6 +335,8 @@ enum GenerationConstants {
         static let volumeDropThreshold = 0.3
         static let reEntryWeightMultiplier = 0.9
         static let reEntryRPETarget = 7.0
+        /// Schoenfeld-style scheduled reduced-volume week after sustained high-volume compliance.
+        static let scheduledAfterHighVolumeWeeks = 4
     }
 
     enum Weight {
@@ -319,7 +385,7 @@ enum GenerationConstants {
         .wrist: [.verticalPush, .horizontalPush],
         .hip: [.hinge, .squat, .lunge],
         .ankle: [.squat, .lunge],
-        .neck: [.verticalPush],
+        .neck: [.verticalPush]
     ]
 
     static func violatesInjuries(_ exercise: Exercise, injuries: [BodyLimitation]) -> Bool {

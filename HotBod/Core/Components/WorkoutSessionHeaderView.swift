@@ -132,7 +132,7 @@ struct WorkoutSessionHeaderView: View {
                 HStack(alignment: .firstTextBaseline, spacing: ForgeSpacing.s2) {
                     Text(exerciseName)
                         .font(ForgeTypography.display)
-                        .foregroundStyle(ForgeColors.textOnInverse)
+                        .foregroundStyle(ForgeColors.textPrimary)
                         .lineLimit(3)
                         .minimumScaleFactor(0.85)
                         .id(exerciseName)
@@ -143,7 +143,7 @@ struct WorkoutSessionHeaderView: View {
                         Button(action: onShowExerciseInfo) {
                             Image(systemName: "info.circle")
                                 .font(ForgeTypography.body)
-                                .foregroundStyle(ForgeColors.textOnInverse.opacity(0.7))
+                                .foregroundStyle(ForgeColors.textSecondary)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Exercise instructions")
@@ -154,7 +154,7 @@ struct WorkoutSessionHeaderView: View {
                 if !muscleLine.isEmpty {
                     Text(muscleLine)
                         .font(ForgeTypography.body)
-                        .foregroundStyle(ForgeColors.textOnInverse.opacity(0.55))
+                        .foregroundStyle(ForgeColors.textSecondary)
                         .lineLimit(2)
                 }
             }
@@ -209,7 +209,7 @@ struct WorkoutSessionHeaderView: View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.caption2.weight(.bold))
-                .foregroundStyle(enabled ? ForgeColors.textOnInverse : ForgeColors.textOnInverse.opacity(0.25))
+                .foregroundStyle(enabled ? ForgeColors.textPrimary : ForgeColors.textSecondary.opacity(0.35))
                 .frame(width: ForgeTarget.min, height: ForgeTarget.min)
                 .contentShape(Rectangle())
         }
@@ -257,7 +257,7 @@ struct WorkoutSessionHeaderView: View {
     private func segmentColor(for index: Int) -> Color {
         if index < currentExerciseIndex { return ForgeColors.accentGreen }
         if index == currentExerciseIndex { return ForgeColors.accent }
-        return ForgeColors.textOnInverse.opacity(0.15)
+        return ForgeColors.border
     }
 
     private func sessionMetrics(calories: Int) -> some View {
@@ -277,31 +277,31 @@ struct WorkoutSessionHeaderView: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(value)
                 .font(ForgeTypography.metric)
-                .foregroundStyle(ForgeColors.textOnInverse)
+                .foregroundStyle(ForgeColors.textPrimary)
                 .contentTransition(.numericText())
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
             Text(label.uppercased())
                 .font(ForgeTypography.tabLabel)
                 .tracking(ForgeTracking.tight)
-                .foregroundStyle(ForgeColors.textOnInverse.opacity(0.45))
+                .foregroundStyle(ForgeColors.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var metricDivider: some View {
         Rectangle()
-            .fill(ForgeColors.textOnInverse.opacity(0.12))
+            .fill(ForgeColors.border)
             .frame(width: 1, height: 32)
             .padding(.horizontal, ForgeSpacing.s3)
     }
 
     private var heroBackground: some View {
         ZStack(alignment: .bottom) {
-            ForgeColors.surfaceInverse
+            ForgeColors.surface
 
             LinearGradient(
-                colors: [ForgeColors.accent.opacity(0.14), .clear],
+                colors: [ForgeColors.accent.opacity(0.18), .clear],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )

@@ -29,7 +29,19 @@ enum SessionExercisePlanner {
         )
         let rpeTarget = ExercisePrescriptionOverrides.effectiveRPETarget(
             exerciseId: exercise.id,
-            fallback: 8
+            fallback: EffortPolicy.targetRPE(
+                for: EffortPolicy.context(
+                    EffortPolicy.SessionSignals(
+                        goal: goal,
+                        experience: experience,
+                        mechanics: exercise.resolvedMechanics,
+                        sessionMode: .standard,
+                        isDeload: stats?.isInDeloadWeek == true,
+                        returningFromBreak: stats?.returningFromBreak == true,
+                        sleepScore: nil
+                    )
+                )
+            )
         )
 
         var weight = stats?.planningWeightKg
@@ -90,6 +102,20 @@ enum SessionExercisePlanner {
             restSeconds: workoutExercise.restSeconds,
             reason: "Added manually."
         )
+    }
+
+    /// Inserts `exercise` immediately after `afterIndex`, then renumbers `orderIndex` 0…n-1.
+    /// If `afterIndex` is past the end, appends. If negative, inserts at the start.
+    static func insert(
+        _ exercise: WorkoutExercise,
+        into exercises: inout [WorkoutExercise],
+        afterIndex: Int
+    ) {
+        let insertAt = max(0, min(afterIndex + 1, exercises.count))
+        exercises.insert(exercise, at: insertAt)
+        for index in exercises.indices {
+            exercises[index].orderIndex = index
+        }
     }
 
     private static func plannedSet(

@@ -66,6 +66,10 @@ struct WorkoutSessionView: View {
     @State var pendingCompleteSetRequest: PendingCompleteSetRequest?
     @State var weightSanityEnteredKg: Double = 0
     @State var weightSanityBaselineKg: Double = 0
+    /// Planned set index whose weight/reps field currently has keyboard focus.
+    @State var focusedSetIndex: Int?
+    /// Last set the user edited; survives keyboard dismiss so Update/Complete stays correct.
+    @State var stickySetIndex: Int?
 
     private var showWeightSoftWarning: Binding<Bool> {
         Binding(
@@ -287,12 +291,6 @@ struct WorkoutSessionView: View {
                             bodyWeightKg: bodyWeightKg
                         )
 
-                        ExerciseDemoPlayerView(
-                            exerciseId: meta.id,
-                            mediaProvider: environment.exerciseMediaProvider,
-                            style: .fullBleed
-                        )
-
                         setTable(exercise: exercise, meta: meta)
                             .padding(.horizontal, ForgeSpacing.s4)
                             .padding(.top, ForgeSpacing.s5)
@@ -419,13 +417,25 @@ struct WorkoutSessionView: View {
                 }
             }
 
+            let setTarget = CompleteSetRouter.target(
+                plannedCount: exercise.plannedSets.count,
+                completedSetIndexes: Set(exercise.completedSets.map(\.setIndex)),
+                focusedSetIndex: focusedSetIndex ?? stickySetIndex
+            )
+
             ForgeButton(
-                title: "Complete Set",
+                title: CompleteSetRouter.buttonTitle(for: setTarget),
                 style: .accent,
-                accessibilityIdentifier: "session.completeSet",
+                isEnabled: setTarget != .none,
+                accessibilityIdentifier: setTarget.isUpdate ? "session.updateSet" : "session.completeSet",
                 playsFeedback: false
             ) {
-                completeCurrentSet(exercise: exercise, meta: meta, showWeightInput: showWeightInput)
+                handlePrimarySetAction(
+                    target: setTarget,
+                    exercise: exercise,
+                    meta: meta,
+                    showWeightInput: showWeightInput
+                )
             }
 
             HStack(spacing: ForgeSpacing.s5) {

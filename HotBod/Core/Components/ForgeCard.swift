@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ForgeCard<Content: View>: View {
+    /// Legacy flag from light-mode inverted cards. Ignored in dark-only.
     var inverted: Bool = false
     var animated: Bool = false
     @ViewBuilder let content: () -> Content
@@ -11,8 +12,8 @@ struct ForgeCard<Content: View>: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(inverted ? ForgeColors.surfaceInverse : ForgeColors.surface)
-        .foregroundStyle(inverted ? ForgeColors.surface : ForgeColors.foreground)
+        .background(ForgeColors.surface)
+        .foregroundStyle(ForgeColors.foreground)
         .overlay(
             Rectangle()
                 .stroke(ForgeColors.border, lineWidth: 1)
