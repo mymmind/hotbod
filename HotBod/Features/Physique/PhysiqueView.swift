@@ -214,6 +214,10 @@ struct PhysiqueView: View {
                 }
             }
 
+            if !assessment.physiqueDirections.isEmpty {
+                physiqueDirectionsSection(assessment)
+            }
+
             ForgeCard {
                 VStack(alignment: .leading, spacing: ForgeSpacing.s3) {
                     ForgeSectionHeader(title: "Why today’s training", subtitle: nil)
@@ -243,6 +247,52 @@ struct PhysiqueView: View {
             ) {
                 Task { await runAssessment() }
             }
+        }
+    }
+
+    private func physiqueDirectionsSection(_ assessment: PhysiqueAssessment) -> some View {
+        let catalog = PhysiqueArchetypeCatalogLoader.indexedById()
+        let resolvedDirections = assessment.physiqueDirections.compactMap {
+            match -> (PhysiqueArchetypeMatch, PhysiqueArchetypeCatalogEntry)? in
+            guard let entry = catalog[match.archetypeId] else { return nil }
+            return (match, entry)
+        }
+
+        return ForgeCard {
+            VStack(alignment: .leading, spacing: ForgeSpacing.s3) {
+                ForgeSectionHeader(
+                    title: "Physique directions",
+                    subtitle: "Reference directions for proportions and silhouette — not a prediction."
+                )
+
+                ForEach(resolvedDirections, id: \.0.archetypeId) { match, entry in
+                    VStack(alignment: .leading, spacing: ForgeSpacing.s1) {
+                        Text(entry.genericLabel)
+                            .font(ForgeTypography.body.weight(.semibold))
+                        if let referenceLine = PhysiqueDirectionCopy.referenceLine(for: entry) {
+                            Text(referenceLine)
+                                .font(ForgeTypography.caption)
+                                .foregroundStyle(ForgeColors.muted)
+                        }
+                        Text(match.similarityDimension)
+                            .font(ForgeTypography.caption)
+                            .foregroundStyle(ForgeColors.muted)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("physique.direction.\(match.archetypeId)")
+                    if match.archetypeId != resolvedDirections.last?.0.archetypeId {
+                        Divider()
+                    }
+                }
+
+                Text(
+                    "These are physique directions, not identity matches. "
+                        + "Bone structure, insertions, and training response differ."
+                )
+                    .font(ForgeTypography.caption)
+                    .foregroundStyle(ForgeColors.muted)
+            }
+            .accessibilityIdentifier("physique.directions")
         }
     }
 
