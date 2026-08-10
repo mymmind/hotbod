@@ -247,6 +247,7 @@
 		DD2D78FD4D9087E34E4DCFA5 /* AppEnvironment+Recovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF54B51FAA9C3D99F0F0697 /* AppEnvironment+Recovery.swift */; };
 		DDF1FFC759A326BC08882BC7 /* WorkoutSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12F64A3F7CC96B5BBBF6FD67 /* WorkoutSessionView.swift */; };
 		DE6B25692487267F6A76AF1D /* CoachModificationSafety.swift in Sources */ = {isa = PBXBuildFile; fileRef = F236A4511BBDA77AA466FC60 /* CoachModificationSafety.swift */; };
+		DF0F572863A4209D2DFD4BE0 /* PhysiqueAssessPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67AAE04870FFB254EE089922 /* PhysiqueAssessPipeline.swift */; };
 		DF983886D814E2C2408B9883 /* OnboardingProfileEditingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C027017511EEF5AF0C633125 /* OnboardingProfileEditingTests.swift */; };
 		E0052454076C0037FF3C9388 /* WorkoutSessionMetricDrafts.swift in Sources */ = {isa = PBXBuildFile; fileRef = C991E2C609AFAB63D9FFCB7E /* WorkoutSessionMetricDrafts.swift */; };
 		E076A8F29E8114C2F5CB9B3C /* ExercisePrescriptionOverrides.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BE3BB0CA701FC903DAB8C3 /* ExercisePrescriptionOverrides.swift */; };
@@ -445,6 +446,7 @@
 		6670ACBCC22BDECFD2C7B6D8 /* PhysiqueFocusCopyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueFocusCopyTests.swift; sourceTree = "<group>"; };
 		6683A51B444E5C78CBAFD6FD /* SessionExercisePlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionExercisePlannerTests.swift; sourceTree = "<group>"; };
 		67072FAB81659EAFCF803FC1 /* ProgressiveOverloadPropertyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressiveOverloadPropertyTests.swift; sourceTree = "<group>"; };
+		67AAE04870FFB254EE089922 /* PhysiqueAssessPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueAssessPipeline.swift; sourceTree = "<group>"; };
 		67D9C9D0FD13286A0220F18D /* P2ParityFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P2ParityFeatureTests.swift; sourceTree = "<group>"; };
 		69A6919D44AF5EC636C36253 /* ForgeElevation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgeElevation.swift; sourceTree = "<group>"; };
 		6A6FBC8B9448EF2DDCD804F6 /* SettingsView+Account.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsView+Account.swift"; sourceTree = "<group>"; };
@@ -1134,6 +1136,7 @@
 				32A138E868D29925FB841C0D /* PhysiqueArchetypeMatcher.swift */,
 				94879435624903CEC6C1B91E /* PhysiqueAssessmentDiffEngine.swift */,
 				3A10ADD785D6CECB1063DAB5 /* PhysiqueAssessmentSanitizer.swift */,
+				67AAE04870FFB254EE089922 /* PhysiqueAssessPipeline.swift */,
 				EAF2261265DE5AE33F9FB02C /* PhysiqueDirectionCopy.swift */,
 				DF6B965B6779850D0064E7D5 /* PhysiqueDirectionResolve.swift */,
 				E51E7FCB0DC15FAF53476EAE /* PhysiqueFocusCopy.swift */,
@@ -1661,6 +1664,7 @@
 				0324C5CEAB8F1E7AA823662A /* PhysiqueArchetypeCatalog.swift in Sources */,
 				640ECC167889CB4F071D0DD0 /* PhysiqueArchetypeCatalogLoader.swift in Sources */,
 				60C7E1529EB40C37F698EAB2 /* PhysiqueArchetypeMatcher.swift in Sources */,
+				DF0F572863A4209D2DFD4BE0 /* PhysiqueAssessPipeline.swift in Sources */,
 				F15AE925FAD3635186F56B54 /* PhysiqueAssessment.swift in Sources */,
 				5A15140C45B217BE06B0970B /* PhysiqueAssessmentDiff.swift in Sources */,
 				B4FC5C810D9251D541FA026D /* PhysiqueAssessmentDiffEngine.swift in Sources */,

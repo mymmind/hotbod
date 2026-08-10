@@ -40,9 +40,15 @@ extension AppEnvironment {
         }
 
         do {
-            let assessment = try await physiqueAssessmentService.assess(
+            let previous = try? await physiqueAssessmentRepository.fetchActive()
+            var assessment = try await physiqueAssessmentService.assess(
                 photos: photoList,
                 profile: profile
+            )
+            assessment = PhysiqueAssessPipeline.applyTrendAdaptation(
+                assessment: assessment,
+                previous: previous,
+                photos: photoList
             )
             await saveActivePhysiqueAssessment(assessment)
             physiqueStatusMessage = assessment.source == .onDevice

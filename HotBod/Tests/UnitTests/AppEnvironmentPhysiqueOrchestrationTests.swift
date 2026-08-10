@@ -1,6 +1,18 @@
 import XCTest
 @testable import HotBod
 
+private struct FixedPhysiqueAssessmentService: PhysiqueAssessmentServing, Sendable {
+    let assessment: PhysiqueAssessment
+
+    func assess(_ request: PhysiqueAssessmentRequest) async throws -> PhysiqueAssessment {
+        var result = assessment
+        result.frontPhotoId = request.selection.front.id
+        result.backPhotoId = request.selection.back.id
+        result.sidePhotoId = request.selection.side?.id
+        return result
+    }
+}
+
 @MainActor
 final class AppEnvironmentOrchestrationTests: XCTestCase {
     func testAssessPhysiquePersistsOnDeviceWhenRemoteUnavailable() async throws {
@@ -139,6 +151,64 @@ final class AppEnvironmentOrchestrationTests: XCTestCase {
         let env = AppEnvironment.makeForTests(repos: repos)
         await env.loadActivePhysiqueAssessment()
         XCTAssertNil(env.sinceLastPhysiqueDiff(photos: []))
+    }
+
+    func testRegression_trendAdaptRewritesBiasNotPriorities() async throws {
+        let repos = TestRepositories.empty()
+        var profile = UserProfile.empty()
+        profile.photoTrackingEnabled = true
+        try await repos.userProfile.saveProfile(profile)
+        try await repos.userProfile.setOnboardingComplete(true)
+
+        var older = FixtureBuilders.makePhysiqueAssessment(
+            createdAt: Date(timeIntervalSince1970: 1)
+        )
+        older.developmentPriorities = [
+            .init(muscle: .lats, reason: "width"),
+            .init(muscle: .upperChest, reason: "shelf")
+        ]
+        older.trainingBias = PhysiqueTrainingBias(
+            preferredMuscleGroups: [.back, .chest],
+            rationale: "old"
+        )
+        try await repos.physiqueAssessment.saveActive(older)
+
+        let front = FixtureBuilders.makeBodyPhoto(pose: .frontRelaxed, userId: profile.id)
+        let back = FixtureBuilders.makeBodyPhoto(pose: .backRelaxed, userId: profile.id)
+
+        var newer = FixtureBuilders.makePhysiqueAssessment(
+            createdAt: Date(timeIntervalSince1970: 2),
+            frontPhotoId: front.id,
+            backPhotoId: back.id
+        )
+        newer.developmentPriorities = [
+            .init(muscle: .lateralDelts, reason: "caps"),
+            .init(muscle: .lats, reason: "width")
+        ]
+        newer.trainingBias = PhysiqueTrainingBias(
+            preferredMuscleGroups: [.shoulders, .back],
+            rationale: "from assessor"
+        )
+        newer.trendAdaptation = nil
+
+        let env = AppEnvironment.makeForTests(
+            repos: repos,
+            physiqueAssessmentService: HybridPhysiqueAssessmentService(
+                remote: FixedPhysiqueAssessmentService(assessment: newer),
+                offline: OfflinePhysiqueAssessmentService(),
+                analyzer: MockBodyPhotoAnalyzer()
+            )
+        )
+        env.userProfile = profile
+        env.hasCompletedOnboarding = true
+
+        let result = await env.assessPhysique(photos: [front, back])
+
+        XCTAssertEqual(result?.developmentPriorities.map(\.muscle), [.lateralDelts, .lats])
+        XCTAssertEqual(result?.trainingBias.preferredMuscleGroups.first, .shoulders)
+        XCTAssertNotNil(result?.trendAdaptation)
+        XCTAssertTrue(result?.trendAdaptation?.reasons.contains { $0.contains("appeared") } == true)
+        XCTAssertEqual(env.activePhysiqueAssessment?.trendAdaptation?.previousAssessmentId, older.id)
     }
 
     func testRegression_wipeClearsPhysiqueInMemoryState() async throws {
