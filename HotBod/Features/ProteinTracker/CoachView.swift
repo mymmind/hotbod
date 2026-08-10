@@ -267,7 +267,8 @@ struct CoachView: View {
             return
         }
 
-        if let restMessage = CoachOfflineModify.restDayMessage(profile: profile) {
+        let plan = CoachOfflineModify.offlineModifyPlan(profile: profile)
+        if let restMessage = plan.recoveryNote {
             let msg = CoachMessage(
                 id: UUID(),
                 role: .assistant,
@@ -277,8 +278,9 @@ struct CoachView: View {
             )
             messages.append(msg)
             try? await environment.saveCoachMessage(msg)
-            return
         }
+
+        guard plan.shouldRegenerate else { return }
 
         let options = CoachOfflineModify.generationOptions(from: userMessage, profile: profile)
         let updated = await environment.regenerateTodayWorkout(profile: profile, options: options)

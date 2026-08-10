@@ -245,4 +245,14 @@ final class CoachOfflineModifyTests: XCTestCase {
             XCTAssertTrue(message?.contains(next) == true)
         }
     }
+
+    func testRegression_offlineModifyStillRegeneratesOnNonPreferredDay() {
+        var profile = UserProfile.empty()
+        let today = TrainingSchedule.weekday()
+        profile.preferredTrainingDays = Weekday.allCases.filter { $0 != today }
+
+        let plan = CoachOfflineModify.offlineModifyPlan(profile: profile)
+        XCTAssertNotNil(plan.recoveryNote)
+        XCTAssertTrue(plan.shouldRegenerate)
+    }
 }

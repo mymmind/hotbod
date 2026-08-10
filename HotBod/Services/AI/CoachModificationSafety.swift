@@ -67,4 +67,9 @@ enum CoachOfflineModify {
         }
         return "Optional recovery day — you can still train if you want."
     }
+
+    /// Soft Recovery framing for non-preferred days. Never refuses regenerate (design §4).
+    static func offlineModifyPlan(profile: UserProfile) -> (recoveryNote: String?, shouldRegenerate: Bool) {
+        (restDayMessage(profile: profile), true)
+    }
 }
