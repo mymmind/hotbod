@@ -137,6 +137,7 @@
 		7A0EF4046D9C89C7D1480851 /* LocalRepositories.swift in Sources */ = {isa = PBXBuildFile; fileRef = C92B94E876A4022EA1AA2E9F /* LocalRepositories.swift */; };
 		7ABFADDA6FA976B445FBCC55 /* HardeningDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB49B76F182221AA46E83A92 /* HardeningDomainTests.swift */; };
 		7AD46969099CB22975ED0C8D /* AppEnvironment+Nutrition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA318BAA424C43A6F258B0D /* AppEnvironment+Nutrition.swift */; };
+		7C79B98CF53DC025BCFAE2B4 /* PhysiqueTrendBiasAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E25A6FDEE92771140C39A77 /* PhysiqueTrendBiasAdapter.swift */; };
 		7C82922820A3D26045986CFB /* AppEnvironment+WorkoutSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC215A93630DB6E858B984C /* AppEnvironment+WorkoutSession.swift */; };
 		7F55DFAF877CD73C09922CB7 /* OnboardingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CD63F84E23AA7A77B1DE11 /* OnboardingUITests.swift */; };
 		8021A0A5196410D6D515D66F /* ExerciseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 992E76051847810CAB042063 /* ExerciseDetailView.swift */; };
@@ -202,6 +203,7 @@
 		B6FB7EB5D8795E30CC6334C0 /* TrainingSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26A58478E2D91B4F6C4FC25E /* TrainingSchedule.swift */; };
 		B717A927625814645875E7BF /* deadlift_demo.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = BEEB2CCD0B8C0ACEE41F9301 /* deadlift_demo.mp4 */; };
 		B79FABD08EEAF6047BDA77D2 /* ForgeColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DC06118A9CA23FA6D415758 /* ForgeColors.swift */; };
+		B81937CE180145D8B83226FA /* PhysiqueTrendBiasAdapterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28989E88D68204C700307FA8 /* PhysiqueTrendBiasAdapterTests.swift */; };
 		B82144390F2ED248CE3882F8 /* P1ParityFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AECC0C9A9B3F9B78734CFCD1 /* P1ParityFeatureTests.swift */; };
 		B94368E6F7DF40C6C6D614D2 /* HybridPhysiqueAssessmentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C405D7FA8E185902765DB9E /* HybridPhysiqueAssessmentService.swift */; };
 		BA930589A8578CAACD353E7E /* RecoveryDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BDA5E670A1986391578271 /* RecoveryDomainTests.swift */; };
@@ -369,8 +371,10 @@
 		271117557585ADBD679DB49D /* ForgeFloatingTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgeFloatingTabBar.swift; sourceTree = "<group>"; };
 		279224938D192A6D2D3AEA71 /* ExerciseCatalogLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseCatalogLoader.swift; sourceTree = "<group>"; };
 		27BFD735736D76623C14D1ED /* EquipmentConstraintPropertyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquipmentConstraintPropertyTests.swift; sourceTree = "<group>"; };
+		28989E88D68204C700307FA8 /* PhysiqueTrendBiasAdapterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueTrendBiasAdapterTests.swift; sourceTree = "<group>"; };
 		2A05BDCC6B9A250A63D9C065 /* P3ParityFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P3ParityFeatureTests.swift; sourceTree = "<group>"; };
 		2C05C3AA92467FCA523F5996 /* RecoveryDecayPropertyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryDecayPropertyTests.swift; sourceTree = "<group>"; };
+		2E25A6FDEE92771140C39A77 /* PhysiqueTrendBiasAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueTrendBiasAdapter.swift; sourceTree = "<group>"; };
 		2E7082234D7FE94E5B70DD50 /* BodyPhotoImportCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyPhotoImportCoordinator.swift; sourceTree = "<group>"; };
 		311F3C3CED44B71094990401 /* HotBodApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotBodApp.swift; sourceTree = "<group>"; };
 		32A138E868D29925FB841C0D /* PhysiqueArchetypeMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueArchetypeMatcher.swift; sourceTree = "<group>"; };
@@ -1099,6 +1103,7 @@
 				FD01D4C38E0E9636ECD81278 /* PhysiqueDomainTests.swift */,
 				6670ACBCC22BDECFD2C7B6D8 /* PhysiqueFocusCopyTests.swift */,
 				936482ADA7CEBAF4E20C04A0 /* PhysiqueTrendAdaptationDecodeTests.swift */,
+				28989E88D68204C700307FA8 /* PhysiqueTrendBiasAdapterTests.swift */,
 				F6751FFF4C16DEB7BCAA3714 /* PostSetActionPlannerTests.swift */,
 				D8825A3F7DDEB9D5DCA567DC /* ProgressiveOverloadDomainTests.swift */,
 				569E64F2A09045B746E664CA /* ProteinDomainTests.swift */,
@@ -1135,6 +1140,7 @@
 				6F1DB1DC0EDCC3A215BD0310 /* PhysiqueFocusMuscle+MuscleGroup.swift */,
 				B68DEFC3EAE1A174C396BA21 /* PhysiquePhotoGate.swift */,
 				5447BD286FA59A7DBFF79478 /* PhysiqueTrainingBiasMerger.swift */,
+				2E25A6FDEE92771140C39A77 /* PhysiqueTrendBiasAdapter.swift */,
 			);
 			path = Physique;
 			sourceTree = "<group>";
@@ -1513,6 +1519,7 @@
 				F042CB7CC0A48FE4C5CC3C10 /* PhysiqueDomainTests.swift in Sources */,
 				E0A1DD66EFD34BC09DEF3BA6 /* PhysiqueFocusCopyTests.swift in Sources */,
 				819721CC876480D6597E8A8B /* PhysiqueTrendAdaptationDecodeTests.swift in Sources */,
+				B81937CE180145D8B83226FA /* PhysiqueTrendBiasAdapterTests.swift in Sources */,
 				F429619D5D0382CEA0572A03 /* PostSetActionPlannerTests.swift in Sources */,
 				124276C862A50D622580C536 /* ProgressiveOverloadDomainTests.swift in Sources */,
 				40ABEFEC4B949EDC4F77E02A /* ProgressiveOverloadPropertyTests.swift in Sources */,
@@ -1668,6 +1675,7 @@
 				3D637A000A24B48979E0A84B /* PhysiquePhotoGate.swift in Sources */,
 				51C587A6F1136EEC6A286B35 /* PhysiqueTrainingBiasMerger.swift in Sources */,
 				7894BC899C18413EE3994FF5 /* PhysiqueTrendAdaptation.swift in Sources */,
+				7C79B98CF53DC025BCFAE2B4 /* PhysiqueTrendBiasAdapter.swift in Sources */,
 				F9C6BEC8A55FA78D4C6827F0 /* PhysiqueView.swift in Sources */,
 				8D6D62D4EFD29F429901F6EA /* PlistSecrets.swift in Sources */,
 				0617301269382CC57760D185 /* PostSetActionPlanner.swift in Sources */,
