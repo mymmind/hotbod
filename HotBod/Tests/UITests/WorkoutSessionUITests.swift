@@ -17,6 +17,8 @@ final class WorkoutSessionUITests: BaseUITestCase {
     }
   }
 
+  // UI test exemption: advance→end-confirmation / Keep Training navigation is covered by
+  // WorkoutSessionCalculatorTests (advanceDecision + endConfirmationCopy); no dedicated UI test here.
   private func waitForWorkoutComplete(timeout: TimeInterval = 15) -> Bool {
     if app.descendants(matching: .any)["session.workoutComplete"].waitForExistence(timeout: timeout) { return true }
     if app.staticTexts["session.workoutComplete"].waitForExistence(timeout: 2) { return true }
