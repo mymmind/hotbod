@@ -421,3 +421,37 @@ enum TrendDirection: String, Codable, CaseIterable, Identifiable {
         }
     }
 }
+
+enum PhysiqueAssessmentSource: String, Codable {
+    case cloud, onDevice
+}
+
+enum PhysiqueObservationConfidence: String, Codable {
+    case high, medium, low, uncertain
+}
+
+enum PhysiqueFocusMuscle: String, Codable, CaseIterable, Identifiable {
+    case lateralDelts, rearDelts, lats, upperChest, traps, chest, shoulders
+    case biceps, triceps, abs, glutes, quads, hamstrings, calves
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .lateralDelts: "Lateral Delts"
+        case .rearDelts: "Rear Delts"
+        case .lats: "Lats"
+        case .upperChest: "Upper Chest"
+        case .traps: "Traps"
+        case .chest: "Chest"
+        case .shoulders: "Shoulders"
+        case .biceps: "Biceps"
+        case .triceps: "Triceps"
+        case .abs: "Abs"
+        case .glutes: "Glutes"
+        case .quads: "Quads"
+        case .hamstrings: "Hamstrings"
+        case .calves: "Calves"
+        }
+    }
+}

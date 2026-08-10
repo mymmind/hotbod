@@ -86,6 +86,74 @@ enum FixtureBuilders {
     )
   }
 
+  static func makePhysiqueAssessment(
+    id: UUID = UUID(),
+    createdAt: Date = Date()
+  ) -> PhysiqueAssessment {
+    let frontPhotoId = UUID()
+    let backPhotoId = UUID()
+    let priorities: [PhysiqueDevelopmentPriority] = [
+      PhysiqueDevelopmentPriority(
+        muscle: .lateralDelts,
+        reason: "Side delt width improves shoulder line."
+      ),
+      PhysiqueDevelopmentPriority(
+        muscle: .lats,
+        reason: "Lat width supports V-taper balance."
+      ),
+      PhysiqueDevelopmentPriority(
+        muscle: .upperChest,
+        reason: "Upper chest fills the clavicular line."
+      )
+    ]
+    return PhysiqueAssessment(
+      id: id,
+      createdAt: createdAt,
+      frontPhotoId: frontPhotoId,
+      backPhotoId: backPhotoId,
+      sidePhotoId: nil,
+      photoQuality: PhysiquePhotoQuality(
+        anglesAvailable: ["front", "back"],
+        lightingQuality: "Even",
+        overallConfidence: 0.72
+      ),
+      physique: PhysiqueBuildSummary(
+        overallArchetype: "Athletic build with moderate shoulder-to-waist contrast",
+        frameSize: "Medium",
+        shoulderToWaist: "Moderate contrast",
+        waist: "Defined",
+        torso: "Balanced",
+        muscularity: "Moderate",
+        leanness: "Moderate"
+      ),
+      muscleEntries: [
+        PhysiqueMuscleEntry(
+          muscle: .lateralDelts,
+          current: "Moderate side delt development",
+          priorityRank: 1,
+          notes: "Visible from front angle",
+          confidence: .high
+        )
+      ],
+      developmentPriorities: priorities,
+      trainingBias: PhysiqueTrainingBias(
+        preferredMuscleGroups: [.shoulders, .back, .chest],
+        rationale: "Prioritize shoulder width, back width, and upper chest for frame balance."
+      ),
+      limitations: [
+        "Visual estimate only — not a medical assessment.",
+        "Side photo missing; rear detail may be less reliable."
+      ],
+      confidenceBands: PhysiqueConfidenceBands(
+        high: ["Front shoulder line"],
+        medium: ["Back lat spread"],
+        low: ["Rear delt detail without side photo"]
+      ),
+      source: .onDevice,
+      whyTodaySummary: "Bias shoulders, back, and chest to improve visual frame balance."
+    )
+  }
+
   static func makeValidWorkout(exerciseId: String, exercises: [Exercise]) -> GeneratedWorkout {
     GeneratedWorkout(
       id: UUID(),
