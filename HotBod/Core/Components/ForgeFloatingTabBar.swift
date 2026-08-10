@@ -28,7 +28,7 @@ struct ForgeFloatingTabBar: View {
         return Button {
             guard selectedTab != tab else { return }
             feedback.play(.tabSelection)
-            withAnimation(ForgeMotion.quick) { selectedTab = tab }
+            selectedTab = tab
         } label: {
             VStack(spacing: ForgeSpacing.s1) {
                 Image(systemName: tab.icon)
@@ -46,6 +46,7 @@ struct ForgeFloatingTabBar: View {
             .foregroundStyle(isSelected ? ForgeColors.accent : ForgeColors.textSecondary)
             .frame(maxWidth: .infinity)
             .forgeMinTapTarget()
+            .animation(ForgeMotion.quick, value: isSelected)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(tab.title), tab")

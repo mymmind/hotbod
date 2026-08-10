@@ -31,11 +31,9 @@ struct ProgressDashboardView: View {
                                 insightsCard
                                 bodyProgressCard
                             }
-                            .forgeAnimatedContent(id: "loaded")
                         }
                     }
                     .padding()
-                    .animation(ForgeMotion.standard, value: viewModel.isLoading)
                 }
             }
             .background(ForgeColors.background)
@@ -316,7 +314,6 @@ struct ProgressDashboardView: View {
                                         .foregroundStyle(ForgeColors.muted)
                                         .lineLimit(1)
                                 }
-                                .transition(ForgeMotion.appear)
                             }
                         }
                     }
