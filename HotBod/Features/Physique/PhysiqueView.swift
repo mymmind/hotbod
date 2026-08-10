@@ -180,7 +180,12 @@ struct PhysiqueView: View {
     }
 
     private func reportSection(_ assessment: PhysiqueAssessment) -> some View {
-        VStack(spacing: ForgeSpacing.s4) {
+        let resolvedDirections = PhysiqueDirectionResolve.resolved(
+            matches: assessment.physiqueDirections,
+            catalog: PhysiqueArchetypeCatalogLoader.indexedById()
+        )
+
+        return VStack(spacing: ForgeSpacing.s4) {
             ForgeCard {
                 VStack(alignment: .leading, spacing: ForgeSpacing.s3) {
                     ForgeSectionHeader(
@@ -214,8 +219,8 @@ struct PhysiqueView: View {
                 }
             }
 
-            if !assessment.physiqueDirections.isEmpty {
-                physiqueDirectionsSection(assessment)
+            if !resolvedDirections.isEmpty {
+                physiqueDirectionsSection(resolvedDirections)
             }
 
             ForgeCard {
@@ -250,37 +255,32 @@ struct PhysiqueView: View {
         }
     }
 
-    private func physiqueDirectionsSection(_ assessment: PhysiqueAssessment) -> some View {
-        let catalog = PhysiqueArchetypeCatalogLoader.indexedById()
-        let resolvedDirections = assessment.physiqueDirections.compactMap {
-            match -> (PhysiqueArchetypeMatch, PhysiqueArchetypeCatalogEntry)? in
-            guard let entry = catalog[match.archetypeId] else { return nil }
-            return (match, entry)
-        }
-
-        return ForgeCard {
+    private func physiqueDirectionsSection(
+        _ resolvedDirections: [(match: PhysiqueArchetypeMatch, entry: PhysiqueArchetypeCatalogEntry)]
+    ) -> some View {
+        ForgeCard {
             VStack(alignment: .leading, spacing: ForgeSpacing.s3) {
                 ForgeSectionHeader(
                     title: "Physique directions",
                     subtitle: "Reference directions for proportions and silhouette — not a prediction."
                 )
 
-                ForEach(resolvedDirections, id: \.0.archetypeId) { match, entry in
+                ForEach(resolvedDirections, id: \.match.archetypeId) { resolved in
                     VStack(alignment: .leading, spacing: ForgeSpacing.s1) {
-                        Text(entry.genericLabel)
+                        Text(resolved.entry.genericLabel)
                             .font(ForgeTypography.body.weight(.semibold))
-                        if let referenceLine = PhysiqueDirectionCopy.referenceLine(for: entry) {
+                        if let referenceLine = PhysiqueDirectionCopy.referenceLine(for: resolved.entry) {
                             Text(referenceLine)
                                 .font(ForgeTypography.caption)
                                 .foregroundStyle(ForgeColors.muted)
                         }
-                        Text(match.similarityDimension)
+                        Text(resolved.match.similarityDimension)
                             .font(ForgeTypography.caption)
                             .foregroundStyle(ForgeColors.muted)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityIdentifier("physique.direction.\(match.archetypeId)")
-                    if match.archetypeId != resolvedDirections.last?.0.archetypeId {
+                    .accessibilityIdentifier("physique.direction.\(resolved.match.archetypeId)")
+                    if resolved.match.archetypeId != resolvedDirections.last?.match.archetypeId {
                         Divider()
                     }
                 }
