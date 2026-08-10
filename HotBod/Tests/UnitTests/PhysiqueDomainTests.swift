@@ -23,3 +23,54 @@ final class PhysiqueFocusMuscleMappingTests: XCTestCase {
         XCTAssertFalse(decoded.limitations.contains { $0.localizedCaseInsensitiveContains("body fat %") })
     }
 }
+
+final class PhysiquePhotoGateTests: XCTestCase {
+    func testRequiresFrontAndBack() {
+        let front = FixtureBuilders.makeBodyPhoto(pose: .frontRelaxed)
+        let result = PhysiquePhotoGate.evaluate(photos: [front])
+        guard case .missingAngles(let missing) = result else {
+            return XCTFail("expected missingAngles")
+        }
+        XCTAssertTrue(missing.contains(.back))
+    }
+
+    func testSideOptionalWhenFrontAndBackPresent() {
+        let photos = [
+            FixtureBuilders.makeBodyPhoto(pose: .frontRelaxed),
+            FixtureBuilders.makeBodyPhoto(pose: .backRelaxed)
+        ]
+        guard case .ready(let selection) = PhysiquePhotoGate.evaluate(photos: photos) else {
+            return XCTFail("expected ready")
+        }
+        XCTAssertNil(selection.side)
+    }
+
+    func testQualityFailureOnLowPoseConfidence() {
+        var front = FixtureBuilders.makeBodyPhoto(pose: .frontRelaxed)
+        front.analysis?.poseConfidence = 0.1
+        let back = FixtureBuilders.makeBodyPhoto(pose: .backRelaxed)
+        let result = PhysiquePhotoGate.evaluate(photos: [front, back])
+        guard case .qualityFailed(let failures) = result else {
+            return XCTFail("expected qualityFailed")
+        }
+        XCTAssertEqual(failures.first?.angle, .front)
+    }
+}
+
+final class PhysiqueTrainingBiasMergerTests: XCTestCase {
+    func testAssessmentBiasPrecedesProfileAndDropsAvoided() {
+        let merged = PhysiqueTrainingBiasMerger.mergePreferredMuscleGroups(
+            profilePreferred: [.quads, .chest],
+            assessmentBias: [.shoulders, .back, .chest],
+            avoided: [.chest]
+        )
+        XCTAssertEqual(merged, [.shoulders, .back, .quads])
+    }
+
+    func testPrioritiesFlattenToMuscleGroups() {
+        let groups = PhysiqueTrainingBiasMerger.preferredGroups(
+            from: [.lateralDelts, .lats, .upperChest, .rearDelts]
+        )
+        XCTAssertEqual(groups, [.shoulders, .back, .chest])
+    }
+}

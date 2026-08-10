@@ -86,6 +86,33 @@ enum FixtureBuilders {
     )
   }
 
+  static func makeBodyPhoto(
+    pose: BodyPhotoPoseType,
+    analysis: BodyPhotoAnalysis? = BodyPhotoAnalysis(
+      poseConfidence: 0.8,
+      lightingScore: 0.8,
+      framingScore: 0.8,
+      shoulderWidthEstimate: nil,
+      waistWidthEstimate: nil,
+      hipWidthEstimate: nil,
+      shoulderWaistRatio: nil,
+      postureNotes: [],
+      comparisonSummary: nil,
+      limitations: []
+    ),
+    date: Date = Date()
+  ) -> BodyProgressPhoto {
+    var photo = BodyProgressPhoto(
+      id: UUID(),
+      userId: UUID(),
+      date: date,
+      poseType: pose,
+      localImagePath: "/tmp/\(UUID().uuidString).jpg"
+    )
+    photo.analysis = analysis
+    return photo
+  }
+
   static func makePhysiqueAssessment(
     id: UUID = UUID(),
     createdAt: Date = Date()
