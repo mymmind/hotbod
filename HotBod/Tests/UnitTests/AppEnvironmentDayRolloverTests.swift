@@ -31,7 +31,7 @@ final class AppEnvironmentDayRolloverTests: XCTestCase {
         XCTAssertNil(env.programState.todayRotationAdvancedOn, "yesterday's rotation marker should be cleared")
     }
 
-    func testRegression_bootstrapAutoGeneratesOnNonPreferredDay() async {
+    func testRegression_revalidateAutoGeneratesOnNonPreferredDay() async {
         let workout = FixtureBuilders.makeGeneratedWorkout()
         let generator = FixedMockWorkoutGenerationService(workout: workout)
         let env = AppEnvironment.makeForTests(workoutGenerationService: generator)
@@ -47,6 +47,35 @@ final class AppEnvironmentDayRolloverTests: XCTestCase {
 
         XCTAssertEqual(env.todayWorkout?.id, workout.id)
         XCTAssertTrue(env.isRestDay)
+    }
+
+    func testRegression_revalidateRegeneratesStalePlanOnNonPreferredDay() async throws {
+        let calendar = Calendar.current
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: Date())!
+        let staleWorkout = FixtureBuilders.makeGeneratedWorkout(createdAt: yesterday)
+        let freshWorkout = FixtureBuilders.makeGeneratedWorkout()
+        let generator = FixedMockWorkoutGenerationService(workout: freshWorkout)
+        let repos = TestRepositories.empty()
+        try await repos.workout.saveTodayWorkout(staleWorkout)
+
+        let env = AppEnvironment.makeForTests(repos: repos, workoutGenerationService: generator)
+        let today = TrainingSchedule.weekday()
+        var profile = UserProfile.empty()
+        profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
+        profile.trainingDaysPerWeek = 2
+        try await env.seedOnboardedProfile(profile)
+        env.todayWorkout = staleWorkout
+        env.recoveryStates = RecoveryCalculator.defaultStates()
+
+        await env.revalidateTodayPlanForCurrentDay()
+
+        XCTAssertTrue(env.isRestDay)
+        XCTAssertEqual(
+            env.todayWorkout?.id,
+            freshWorkout.id,
+            "stale non-preferred-day plan must regenerate, not clear-to-empty"
+        )
+        XCTAssertNotEqual(env.todayWorkout?.id, staleWorkout.id)
     }
 
     func testRegression_revalidateDoesNotClearFreshPlanOnNonPreferredDay() async throws {
