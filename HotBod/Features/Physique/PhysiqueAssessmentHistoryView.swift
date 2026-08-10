@@ -8,36 +8,30 @@ struct PhysiqueAssessmentHistoryView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            Color.clear
-                .frame(height: 0)
-                .accessibilityElement()
-                .accessibilityIdentifier("physique.history.list")
-
-            List {
-                ForEach(Array(history.enumerated()), id: \.element.id) { index, assessment in
-                    NavigationLink {
-                        PhysiqueAssessmentHistoryDetailView(
-                            assessment: assessment,
-                            historyIndex: index
-                        )
-                    } label: {
-                        historyRow(assessment, isCurrent: index == 0)
-                    }
-                    .accessibilityIdentifier("physique.history.\(assessment.id.uuidString)")
+        List {
+            ForEach(Array(history.enumerated()), id: \.element.id) { index, assessment in
+                NavigationLink {
+                    PhysiqueAssessmentHistoryDetailView(
+                        assessment: assessment,
+                        historyIndex: index
+                    )
+                } label: {
+                    historyRow(assessment, isCurrent: index == 0)
                 }
-
-                if history.count < 2 {
-                    Text("Reassess later to unlock change history.")
-                        .font(ForgeTypography.caption)
-                        .foregroundStyle(ForgeColors.muted)
-                        .listRowBackground(Color.clear)
-                }
+                .accessibilityIdentifier("physique.history.\(assessment.id.uuidString)")
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
+
+            if history.count < 2 {
+                Text("Reassess later to unlock change history.")
+                    .font(ForgeTypography.caption)
+                    .foregroundStyle(ForgeColors.muted)
+                    .listRowBackground(Color.clear)
+            }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
         .background(ForgeColors.background)
+        .accessibilityIdentifier("physique.history.list")
         .navigationTitle("Assessment history")
         .navigationBarTitleDisplayMode(.inline)
         .task {
