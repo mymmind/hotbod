@@ -8,6 +8,7 @@ class BaseUITestCase: XCTestCase {
   var openWorkoutPreviewOnLaunch = false
   var launchTab: String?
   var onboardingStartStep: Int?
+  var seedPhysiqueHistory = false
 
   private let tabOrder = ["today", "train", "protein", "progress", "physique"]
 
@@ -32,6 +33,9 @@ class BaseUITestCase: XCTestCase {
     }
     if let onboardingStartStep {
       app.launchArguments.append("-OnboardingStep=\(onboardingStartStep)")
+    }
+    if seedPhysiqueHistory {
+      app.launchArguments.append("-SeedPhysiqueHistory")
     }
     app.launch()
 

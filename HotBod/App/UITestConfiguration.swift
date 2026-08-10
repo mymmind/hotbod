@@ -82,6 +82,10 @@ enum UITestConfiguration {
         isUITesting && ProcessInfo.processInfo.arguments.contains("-AutoFinishOnboarding")
     }
 
+    static var shouldSeedPhysiqueHistory: Bool {
+        isUITesting && ProcessInfo.processInfo.arguments.contains("-SeedPhysiqueHistory")
+    }
+
     static func applyLaunchConfiguration() {
         if shouldResetState {
             PersistenceHelper.clearAllPersistedData()
@@ -119,6 +123,9 @@ enum UITestConfiguration {
             router.navigate(to: .settings)
         }
 
+        await seedPhysiqueHistoryIfNeeded(in: environment)
+        await environment.loadActivePhysiqueAssessment()
+
         if shouldStartWorkout {
             environment.cancelWorkoutGenerationIfNeeded()
             await environment.cancelActiveWorkoutIfNeeded()
@@ -142,5 +149,118 @@ enum UITestConfiguration {
                 router.navigate(to: .workoutPreview(workout))
             }
         }
+    }
+
+    @MainActor
+    static func seedPhysiqueHistoryIfNeeded(in environment: AppEnvironment) async {
+        guard shouldSeedPhysiqueHistory else { return }
+
+        let olderId = UUID(uuidString: "00000000-0000-0000-0000-0000000000A1")!
+        let newerId = UUID(uuidString: "00000000-0000-0000-0000-0000000000A2")!
+        let frontPhotoId = UUID()
+        let backPhotoId = UUID()
+
+        let older = PhysiqueAssessment(
+            id: olderId,
+            createdAt: Date().addingTimeInterval(-30 * 24 * 3600),
+            frontPhotoId: frontPhotoId,
+            backPhotoId: backPhotoId,
+            sidePhotoId: nil,
+            photoQuality: PhysiquePhotoQuality(
+                anglesAvailable: ["front", "back"],
+                lightingQuality: "Even",
+                overallConfidence: 0.72
+            ),
+            physique: PhysiqueBuildSummary(
+                overallArchetype: "Athletic build with moderate shoulder-to-waist contrast",
+                frameSize: "Medium",
+                shoulderToWaist: "Moderate contrast",
+                waist: "Defined",
+                torso: "Balanced",
+                muscularity: "Moderate",
+                leanness: "Moderate"
+            ),
+            muscleEntries: [
+                PhysiqueMuscleEntry(
+                    muscle: .lateralDelts,
+                    current: "Moderate side delt development",
+                    priorityRank: 1,
+                    notes: "Visible from front angle",
+                    confidence: .high
+                )
+            ],
+            developmentPriorities: [
+                PhysiqueDevelopmentPriority(muscle: .lats, reason: "Width"),
+                PhysiqueDevelopmentPriority(muscle: .upperChest, reason: "Shelf")
+            ],
+            trainingBias: PhysiqueTrainingBias(
+                preferredMuscleGroups: [.shoulders, .back, .chest],
+                rationale: "Prioritize shoulder width, back width, and upper chest for frame balance."
+            ),
+            limitations: [
+                "Visual estimate only — not a medical assessment.",
+                "Side photo missing; rear detail may be less reliable."
+            ],
+            confidenceBands: PhysiqueConfidenceBands(
+                high: ["Front shoulder line"],
+                medium: ["Back lat spread"],
+                low: ["Rear delt detail without side photo"]
+            ),
+            source: .onDevice,
+            whyTodaySummary: "Bias shoulders, back, and chest to improve visual frame balance."
+        )
+
+        let newer = PhysiqueAssessment(
+            id: newerId,
+            createdAt: Date(),
+            frontPhotoId: frontPhotoId,
+            backPhotoId: backPhotoId,
+            sidePhotoId: nil,
+            photoQuality: PhysiquePhotoQuality(
+                anglesAvailable: ["front", "back"],
+                lightingQuality: "Even",
+                overallConfidence: 0.72
+            ),
+            physique: PhysiqueBuildSummary(
+                overallArchetype: "Athletic build with moderate shoulder-to-waist contrast",
+                frameSize: "Large",
+                shoulderToWaist: "Moderate contrast",
+                waist: "Defined",
+                torso: "Balanced",
+                muscularity: "Moderate",
+                leanness: "Moderate"
+            ),
+            muscleEntries: [
+                PhysiqueMuscleEntry(
+                    muscle: .lateralDelts,
+                    current: "Moderate side delt development",
+                    priorityRank: 1,
+                    notes: "Visible from front angle",
+                    confidence: .high
+                )
+            ],
+            developmentPriorities: [
+                PhysiqueDevelopmentPriority(muscle: .lateralDelts, reason: "Caps"),
+                PhysiqueDevelopmentPriority(muscle: .lats, reason: "Width")
+            ],
+            trainingBias: PhysiqueTrainingBias(
+                preferredMuscleGroups: [.shoulders, .back, .chest],
+                rationale: "Prioritize shoulder width, back width, and upper chest for frame balance."
+            ),
+            limitations: [
+                "Visual estimate only — not a medical assessment.",
+                "Side photo missing; rear detail may be less reliable."
+            ],
+            confidenceBands: PhysiqueConfidenceBands(
+                high: ["Front shoulder line"],
+                medium: ["Back lat spread"],
+                low: ["Rear delt detail without side photo"]
+            ),
+            source: .onDevice,
+            whyTodaySummary: "Bias shoulders, back, and chest to improve visual frame balance."
+        )
+
+        await environment.saveActivePhysiqueAssessment(older)
+        await environment.saveActivePhysiqueAssessment(newer)
     }
 }
