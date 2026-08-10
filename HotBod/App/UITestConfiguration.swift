@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 enum UITestConfiguration {
     static var isUITesting: Bool {
@@ -86,6 +87,10 @@ enum UITestConfiguration {
         isUITesting && ProcessInfo.processInfo.arguments.contains("-SeedPhysiqueHistory")
     }
 
+    static var shouldSeedPhysiqueIllustrationReady: Bool {
+        isUITesting && ProcessInfo.processInfo.arguments.contains("-SeedPhysiqueIllustrationReady")
+    }
+
     static func applyLaunchConfiguration() {
         if shouldResetState {
             PersistenceHelper.clearAllPersistedData()
@@ -124,6 +129,7 @@ enum UITestConfiguration {
         }
 
         await seedPhysiqueHistoryIfNeeded(in: environment)
+        await seedPhysiqueIllustrationReadyIfNeeded(in: environment)
         await environment.loadActivePhysiqueAssessment()
 
         if shouldStartWorkout {
@@ -268,5 +274,85 @@ enum UITestConfiguration {
 
         await environment.saveActivePhysiqueAssessment(older)
         await environment.saveActivePhysiqueAssessment(adapted)
+    }
+
+    @MainActor
+    static func seedPhysiqueIllustrationReadyIfNeeded(in environment: AppEnvironment) async {
+        guard shouldSeedPhysiqueIllustrationReady else { return }
+        guard let profile = environment.userProfile else { return }
+
+        let frontPhotoId = UUID(uuidString: "00000000-0000-0000-0000-000000000101")!
+        let backPhotoId = UUID(uuidString: "00000000-0000-0000-0000-000000000102")!
+        let assessmentId = UUID(uuidString: "00000000-0000-0000-0000-000000000201")!
+
+        let dir = environment.bodyPhotosDirectory()
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let filename = "\(frontPhotoId.uuidString).jpg"
+        let fileURL = dir.appendingPathComponent(filename)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 8, height: 8)).image { _ in }
+        if let jpeg = image.jpegData(compressionQuality: 0.85) {
+            try? jpeg.write(to: fileURL, options: .atomic)
+        }
+
+        let frontPhoto = BodyProgressPhoto(
+            id: frontPhotoId,
+            userId: profile.id,
+            date: Date(),
+            poseType: .frontRelaxed,
+            localImagePath: filename
+        )
+        try? await environment.bodyProgressRepository.savePhoto(frontPhoto)
+        environment.bumpBodyPhotoRevision()
+
+        let assessment = PhysiqueAssessment(
+            id: assessmentId,
+            createdAt: Date(),
+            frontPhotoId: frontPhotoId,
+            backPhotoId: backPhotoId,
+            sidePhotoId: nil,
+            photoQuality: PhysiquePhotoQuality(
+                anglesAvailable: ["front", "back"],
+                lightingQuality: "Even",
+                overallConfidence: 0.72
+            ),
+            physique: PhysiqueBuildSummary(
+                overallArchetype: "Athletic build with moderate shoulder-to-waist contrast",
+                frameSize: "Medium",
+                shoulderToWaist: "Moderate contrast",
+                waist: "Defined",
+                torso: "Balanced",
+                muscularity: "Moderate",
+                leanness: "Moderate"
+            ),
+            muscleEntries: [
+                PhysiqueMuscleEntry(
+                    muscle: .lateralDelts,
+                    current: "Moderate side delt development",
+                    priorityRank: 1,
+                    notes: "Visible from front angle",
+                    confidence: .high
+                )
+            ],
+            developmentPriorities: [
+                PhysiqueDevelopmentPriority(muscle: .lateralDelts, reason: "Caps"),
+                PhysiqueDevelopmentPriority(muscle: .lats, reason: "Width")
+            ],
+            trainingBias: PhysiqueTrainingBias(
+                preferredMuscleGroups: [.shoulders, .back, .chest],
+                rationale: "Prioritize shoulder width, back width, and upper chest for frame balance."
+            ),
+            limitations: [
+                "Visual estimate only — not a medical assessment."
+            ],
+            confidenceBands: PhysiqueConfidenceBands(
+                high: ["Front shoulder line"],
+                medium: ["Back lat spread"],
+                low: []
+            ),
+            source: .onDevice,
+            whyTodaySummary: "Bias shoulders, back, and chest to improve visual frame balance."
+        )
+
+        await environment.saveActivePhysiqueAssessment(assessment)
     }
 }

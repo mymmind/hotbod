@@ -209,6 +209,11 @@ struct PhysiqueView: View {
                 sinceLastDiff: environment.sinceLastPhysiqueDiff(photos: photos)
             )
 
+            PhysiqueIllustrationSection(
+                assessment: assessment,
+                photos: photos
+            )
+
             if !hasSidePhoto {
                 ForgeButton(title: "Add side for higher confidence", style: .secondary) {
                     presentAddPhoto(for: .side)

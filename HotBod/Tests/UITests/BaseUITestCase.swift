@@ -9,6 +9,7 @@ class BaseUITestCase: XCTestCase {
   var launchTab: String?
   var onboardingStartStep: Int?
   var seedPhysiqueHistory = false
+  var seedPhysiqueIllustrationReady = false
 
   private let tabOrder = ["today", "train", "protein", "progress", "physique"]
 
@@ -36,6 +37,9 @@ class BaseUITestCase: XCTestCase {
     }
     if seedPhysiqueHistory {
       app.launchArguments.append("-SeedPhysiqueHistory")
+    }
+    if seedPhysiqueIllustrationReady {
+      app.launchArguments.append("-SeedPhysiqueIllustrationReady")
     }
     app.launch()
 
