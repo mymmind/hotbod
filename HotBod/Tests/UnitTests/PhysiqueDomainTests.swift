@@ -57,6 +57,27 @@ final class PhysiquePhotoGateTests: XCTestCase {
     }
 }
 
+final class OfflinePhysiqueAssessmentTests: XCTestCase {
+    func testProducesOnDeviceSourceAndBiasWithoutBodyFatPercent() async throws {
+        let service = OfflinePhysiqueAssessmentService()
+        let request = FixtureBuilders.makePhysiqueAssessmentRequest(includeSide: false)
+        let result = try await service.assess(request)
+        XCTAssertEqual(result.source, .onDevice)
+        XCTAssertFalse(result.trainingBias.preferredMuscleGroups.isEmpty)
+        XCTAssertFalse(result.whyTodaySummary.isEmpty)
+        let joined = (result.limitations + [result.physique.overallArchetype, result.whyTodaySummary]).joined(separator: " ")
+        XCTAssertFalse(joined.localizedCaseInsensitiveContains("body fat %"))
+        XCTAssertFalse(joined.localizedCaseInsensitiveContains("genetically"))
+    }
+
+    func testSidePhotoRaisesConfidence() async throws {
+        let service = OfflinePhysiqueAssessmentService()
+        let without = try await service.assess(FixtureBuilders.makePhysiqueAssessmentRequest(includeSide: false))
+        let with = try await service.assess(FixtureBuilders.makePhysiqueAssessmentRequest(includeSide: true))
+        XCTAssertGreaterThan(with.photoQuality.overallConfidence, without.photoQuality.overallConfidence)
+    }
+}
+
 final class PhysiqueTrainingBiasMergerTests: XCTestCase {
     func testAssessmentBiasPrecedesProfileAndDropsAvoided() {
         let merged = PhysiqueTrainingBiasMerger.mergePreferredMuscleGroups(

@@ -113,6 +113,59 @@ enum FixtureBuilders {
     return photo
   }
 
+  static func makePhysiqueAssessmentRequest(includeSide: Bool = false) -> PhysiqueAssessmentRequest {
+    let frontMetrics = BodyPhotoAnalysis(
+      poseConfidence: 0.8,
+      lightingScore: 0.75,
+      framingScore: 0.8,
+      shoulderWidthEstimate: 1.2,
+      waistWidthEstimate: 0.9,
+      hipWidthEstimate: 1.0,
+      shoulderWaistRatio: 1.35,
+      postureNotes: [],
+      comparisonSummary: nil,
+      limitations: []
+    )
+    let backMetrics = BodyPhotoAnalysis(
+      poseConfidence: 0.78,
+      lightingScore: 0.72,
+      framingScore: 0.76,
+      shoulderWidthEstimate: nil,
+      waistWidthEstimate: nil,
+      hipWidthEstimate: nil,
+      shoulderWaistRatio: nil,
+      postureNotes: [],
+      comparisonSummary: nil,
+      limitations: []
+    )
+    let sideMetrics = includeSide
+      ? BodyPhotoAnalysis(
+        poseConfidence: 0.82,
+        lightingScore: 0.74,
+        framingScore: 0.78,
+        shoulderWidthEstimate: nil,
+        waistWidthEstimate: nil,
+        hipWidthEstimate: nil,
+        shoulderWaistRatio: nil,
+        postureNotes: [],
+        comparisonSummary: nil,
+        limitations: []
+      )
+      : nil
+
+    let front = makeBodyPhoto(pose: .frontRelaxed, analysis: frontMetrics)
+    let back = makeBodyPhoto(pose: .backRelaxed, analysis: backMetrics)
+    let side = sideMetrics.map { makeBodyPhoto(pose: .sideRelaxed, analysis: $0) }
+
+    return PhysiqueAssessmentRequest(
+      selection: PhysiquePhotoSelection(front: front, back: back, side: side),
+      frontMetrics: frontMetrics,
+      backMetrics: backMetrics,
+      sideMetrics: sideMetrics,
+      profile: UserProfile.empty()
+    )
+  }
+
   static func makePhysiqueAssessment(
     id: UUID = UUID(),
     createdAt: Date = Date()

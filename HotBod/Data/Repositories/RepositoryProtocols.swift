@@ -113,3 +113,15 @@ protocol WorkoutGenerationService: Sendable {
     func generate(input: WorkoutGenerationInput) async throws -> GeneratedWorkout
     func validate(workout: GeneratedWorkout, input: WorkoutGenerationInput) -> WorkoutValidationResult
 }
+
+struct PhysiqueAssessmentRequest: Sendable {
+    var selection: PhysiquePhotoSelection
+    var frontMetrics: BodyPhotoAnalysis
+    var backMetrics: BodyPhotoAnalysis
+    var sideMetrics: BodyPhotoAnalysis?
+    var profile: UserProfile
+}
+
+protocol PhysiqueAssessmentServing: Sendable {
+    func assess(_ request: PhysiqueAssessmentRequest) async throws -> PhysiqueAssessment
+}
