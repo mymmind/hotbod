@@ -7,7 +7,9 @@ enum PhysiqueAssessmentSanitizer {
         #"\bgenetically\b"#,
         #"\bdiagnosed\s+with\b"#,
         #"\bmedical\s+diagnosis\b"#,
-        #"\byou\s+have\s+(?:a\s+)?(?:clinical|medical)\b"#
+        #"\byou\s+have\s+(?:a\s+)?(?:clinical|medical)\b"#,
+        #"\byou\s+look\s+like\b"#,
+        #"\bcelebrity\s+twin\b"#
     ]
 
     static func scrubFreeText(_ text: String) -> String {
@@ -71,6 +73,52 @@ enum PhysiqueAssessmentSanitizer {
             guard !reason.isEmpty else { return nil }
             return PhysiqueDevelopmentPriority(muscle: muscle, reason: reason)
         }
+    }
+
+    static func sanitizeDirections(
+        _ raw: [PhysiqueArchetypeMatchDraft]?,
+        catalogIds: Set<String>,
+        physique: PhysiqueBuildSummary,
+        priorities: [PhysiqueDevelopmentPriority],
+        overallConfidence: Double
+    ) -> [PhysiqueArchetypeMatch] {
+        let sanitized = (raw ?? [])
+            .filter { catalogIds.contains($0.archetypeId) }
+            .sorted { $0.rank < $1.rank }
+            .reduce(into: [PhysiqueArchetypeMatchDraft]()) { unique, draft in
+                guard !unique.contains(where: { $0.archetypeId == draft.archetypeId }) else { return }
+                unique.append(draft)
+            }
+            .prefix(3)
+            .compactMap { draft -> PhysiqueArchetypeMatch? in
+                let dimension = scrubFreeText(draft.similarityDimension)
+                guard !dimension.isEmpty else { return nil }
+                return PhysiqueArchetypeMatch(
+                    archetypeId: draft.archetypeId,
+                    rank: draft.rank,
+                    similarityDimension: dimension,
+                    confidence: PhysiqueObservationConfidence(rawValue: draft.confidenceRaw) ?? .low
+                )
+            }
+
+        let ranked = sanitized.enumerated().map { index, match in
+            PhysiqueArchetypeMatch(
+                archetypeId: match.archetypeId,
+                rank: index + 1,
+                similarityDimension: match.similarityDimension,
+                confidence: match.confidence
+            )
+        }
+
+        guard !ranked.isEmpty else {
+            return PhysiqueArchetypeMatcher.match(
+                physique: physique,
+                priorities: priorities,
+                overallConfidence: overallConfidence
+            )
+        }
+
+        return ranked
     }
 
     static func map(

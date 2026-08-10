@@ -85,6 +85,7 @@ final class OfflinePhysiqueAssessmentTests: XCTestCase {
         let joined = (result.limitations + [result.physique.overallArchetype, result.whyTodaySummary]).joined(separator: " ")
         XCTAssertFalse(joined.localizedCaseInsensitiveContains("body fat %"))
         XCTAssertFalse(joined.localizedCaseInsensitiveContains("genetically"))
+        XCTAssertFalse(result.physiqueDirections.isEmpty)
     }
 
     func testSidePhotoRaisesConfidence() async throws {

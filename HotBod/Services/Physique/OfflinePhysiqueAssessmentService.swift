@@ -13,6 +13,8 @@ struct OfflinePhysiqueAssessmentService: PhysiqueAssessmentServing {
             back: request.backMetrics,
             side: request.sideMetrics
         )
+        let summary = Self.buildSummary(ratio: ratio)
+        let priorities = Self.developmentPriorities(for: priorityMuscles)
 
         var limitations = [Self.visualOnlyDisclaimer]
         if !hasSide {
@@ -34,9 +36,9 @@ struct OfflinePhysiqueAssessmentService: PhysiqueAssessmentServing {
                 ),
                 overallConfidence: overallConfidence
             ),
-            physique: Self.buildSummary(ratio: ratio),
+            physique: summary,
             muscleEntries: Self.muscleEntries(priorityMuscles: priorityMuscles, hasSide: hasSide),
-            developmentPriorities: Self.developmentPriorities(for: priorityMuscles),
+            developmentPriorities: priorities,
             trainingBias: PhysiqueTrainingBias(
                 preferredMuscleGroups: preferredGroups,
                 rationale: Self.trainingRationale(for: preferredGroups)
@@ -44,7 +46,12 @@ struct OfflinePhysiqueAssessmentService: PhysiqueAssessmentServing {
             limitations: limitations,
             confidenceBands: Self.confidenceBands(hasSide: hasSide),
             source: .onDevice,
-            whyTodaySummary: Self.whyTodaySummary(from: preferredGroups)
+            whyTodaySummary: Self.whyTodaySummary(from: preferredGroups),
+            physiqueDirections: PhysiqueArchetypeMatcher.match(
+                physique: summary,
+                priorities: priorities,
+                overallConfidence: overallConfidence
+            )
         )
     }
 

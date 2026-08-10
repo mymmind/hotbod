@@ -103,6 +103,7 @@
 		5CC17B42D293ACC437903F1B /* VolumeCapPropertyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A42752F503EE313092164A0 /* VolumeCapPropertyTests.swift */; };
 		5EA92A562444EA56E555F8F5 /* PhysiqueUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD5460A7AD26DD3580365D96 /* PhysiqueUITests.swift */; };
 		5EC9A57CF3976EB175BF2E94 /* CalculatorDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A58FAE544364C0A792EAA00E /* CalculatorDomainTests.swift */; };
+		60C7E1529EB40C37F698EAB2 /* PhysiqueArchetypeMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32A138E868D29925FB841C0D /* PhysiqueArchetypeMatcher.swift */; };
 		62B30A0F5863F4AE2341F2C5 /* WorkoutShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60E5B58D42BB506379F3AD8E /* WorkoutShareCard.swift */; };
 		62ECC9711B111E1D78C1B4BA /* RemotePhysiqueAssessmentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A432AEFBFF252741A1D70CB3 /* RemotePhysiqueAssessmentService.swift */; };
 		632E07914DF479C990168E55 /* WorkoutSelectionRationale.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10D372E2C28780FCFDBC2296 /* WorkoutSelectionRationale.swift */; };
@@ -357,6 +358,7 @@
 		2C05C3AA92467FCA523F5996 /* RecoveryDecayPropertyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryDecayPropertyTests.swift; sourceTree = "<group>"; };
 		2E7082234D7FE94E5B70DD50 /* BodyPhotoImportCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyPhotoImportCoordinator.swift; sourceTree = "<group>"; };
 		311F3C3CED44B71094990401 /* HotBodApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotBodApp.swift; sourceTree = "<group>"; };
+		32A138E868D29925FB841C0D /* PhysiqueArchetypeMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueArchetypeMatcher.swift; sourceTree = "<group>"; };
 		331F170C77AFB60DB11F288F /* CatalogIntegrity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogIntegrity.swift; sourceTree = "<group>"; };
 		347255710E36AD87F59F7E67 /* CoachSafetyPropertyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachSafetyPropertyTests.swift; sourceTree = "<group>"; };
 		37CC27EEED3BE4252590BB35 /* IntegrationFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationFlowTests.swift; sourceTree = "<group>"; };
@@ -1089,6 +1091,7 @@
 			isa = PBXGroup;
 			children = (
 				264CE8F3524E4E903F583347 /* PhysiqueArchetypeCatalogLoader.swift */,
+				32A138E868D29925FB841C0D /* PhysiqueArchetypeMatcher.swift */,
 				3A10ADD785D6CECB1063DAB5 /* PhysiqueAssessmentSanitizer.swift */,
 				E51E7FCB0DC15FAF53476EAE /* PhysiqueFocusCopy.swift */,
 				6F1DB1DC0EDCC3A215BD0310 /* PhysiqueFocusMuscle+MuscleGroup.swift */,
@@ -1607,6 +1610,7 @@
 				64BA55FDC84429DFC9374E33 /* PhoneWatchSessionBridge.swift in Sources */,
 				0324C5CEAB8F1E7AA823662A /* PhysiqueArchetypeCatalog.swift in Sources */,
 				640ECC167889CB4F071D0DD0 /* PhysiqueArchetypeCatalogLoader.swift in Sources */,
+				60C7E1529EB40C37F698EAB2 /* PhysiqueArchetypeMatcher.swift in Sources */,
 				F15AE925FAD3635186F56B54 /* PhysiqueAssessment.swift in Sources */,
 				0766B17EE67EC4550CDFDC2A /* PhysiqueAssessmentSanitizer.swift in Sources */,
 				EB950175AF3A10109945E6F4 /* PhysiqueFocusCopy.swift in Sources */,

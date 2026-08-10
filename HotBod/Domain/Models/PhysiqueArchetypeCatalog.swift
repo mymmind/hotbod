@@ -14,3 +14,10 @@ struct PhysiqueArchetypeMatch: Codable, Hashable {
     var similarityDimension: String
     var confidence: PhysiqueObservationConfidence
 }
+
+struct PhysiqueArchetypeMatchDraft: Equatable {
+    var archetypeId: String
+    var rank: Int
+    var similarityDimension: String
+    var confidenceRaw: String
+}
