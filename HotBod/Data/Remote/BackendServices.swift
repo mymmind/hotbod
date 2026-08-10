@@ -73,15 +73,21 @@ enum BackendServices {
         return MockFoodSearchService()
     }
 
-    static func makeRemotePhysiqueAssessmentService() -> UnavailablePhysiqueAssessmentService {
-        UnavailablePhysiqueAssessmentService()
+    static func makeRemotePhysiqueAssessmentService(auth: AuthService) -> any PhysiqueAssessmentServing {
+        #if canImport(Supabase)
+        if SupabaseConfig.isConfigured, let client = SupabaseClientProvider.shared {
+            return RemotePhysiqueAssessmentService(client: client, auth: auth)
+        }
+        #endif
+        return UnavailablePhysiqueAssessmentService()
     }
 
     static func makeHybridPhysiqueAssessmentService(
-        analyzer: any BodyPhotoAnalyzer
+        analyzer: any BodyPhotoAnalyzer,
+        auth: AuthService = makeAuthService()
     ) -> HybridPhysiqueAssessmentService {
         HybridPhysiqueAssessmentService(
-            remote: makeRemotePhysiqueAssessmentService(),
+            remote: makeRemotePhysiqueAssessmentService(auth: auth),
             offline: OfflinePhysiqueAssessmentService(),
             analyzer: analyzer
         )

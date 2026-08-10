@@ -16,6 +16,7 @@
 		0549D0D4824AB067F78A3D14 /* USDAFoodSearchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EAA6CBD6294BAD074D46B94 /* USDAFoodSearchService.swift */; };
 		05C174671004F162DBF8D0BF /* ForgeMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701C8AB3B6F5D6CD75189A37 /* ForgeMotion.swift */; };
 		0617301269382CC57760D185 /* PostSetActionPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49235F6A74C62C94E9C66D3F /* PostSetActionPlanner.swift */; };
+		0766B17EE67EC4550CDFDC2A /* PhysiqueAssessmentSanitizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A10ADD785D6CECB1063DAB5 /* PhysiqueAssessmentSanitizer.swift */; };
 		0B6C317AA0EB317E23B0073D /* CoreFinisherPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7B0A609493C1C0DFF1DC98E /* CoreFinisherPlanner.swift */; };
 		0B99A0ADBB2FB56DB50B0F1D /* TodayWorkoutUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10E967443299F79693587CB0 /* TodayWorkoutUITests.swift */; };
 		0C7D02D57925535191028B91 /* WorkoutSessionHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04CE2EF7888A57AD1AAAAB58 /* WorkoutSessionHeaderView.swift */; };
@@ -356,6 +357,7 @@
 		37CC27EEED3BE4252590BB35 /* IntegrationFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationFlowTests.swift; sourceTree = "<group>"; };
 		394AFB7B957212D5087B2E0C /* HotBod.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HotBod.entitlements; sourceTree = "<group>"; };
 		3989FCD3D4B83ED18673E6FE /* AppEnvironment+Lifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppEnvironment+Lifecycle.swift"; sourceTree = "<group>"; };
+		3A10ADD785D6CECB1063DAB5 /* PhysiqueAssessmentSanitizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueAssessmentSanitizer.swift; sourceTree = "<group>"; };
 		3A62DD43877B01569476B0E2 /* GenerationConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenerationConstants.swift; sourceTree = "<group>"; };
 		3AB1AC93A9B37D26210CDA05 /* HotBodWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HotBodWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B8F1113071F16F825F749A5 /* Phase2AlgorithmsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Phase2AlgorithmsTests.swift; sourceTree = "<group>"; };
@@ -1076,6 +1078,7 @@
 		C200F4A21E31569F590A85FD /* Physique */ = {
 			isa = PBXGroup;
 			children = (
+				3A10ADD785D6CECB1063DAB5 /* PhysiqueAssessmentSanitizer.swift */,
 				E51E7FCB0DC15FAF53476EAE /* PhysiqueFocusCopy.swift */,
 				6F1DB1DC0EDCC3A215BD0310 /* PhysiqueFocusMuscle+MuscleGroup.swift */,
 				B68DEFC3EAE1A174C396BA21 /* PhysiquePhotoGate.swift */,
@@ -1589,6 +1592,7 @@
 				4020743C737A392DD8EF4890 /* Phase2Algorithms.swift in Sources */,
 				64BA55FDC84429DFC9374E33 /* PhoneWatchSessionBridge.swift in Sources */,
 				F15AE925FAD3635186F56B54 /* PhysiqueAssessment.swift in Sources */,
+				0766B17EE67EC4550CDFDC2A /* PhysiqueAssessmentSanitizer.swift in Sources */,
 				EB950175AF3A10109945E6F4 /* PhysiqueFocusCopy.swift in Sources */,
 				1BEB5F3F19E06EB06D723BAD /* PhysiqueFocusMuscle+MuscleGroup.swift in Sources */,
 				3D637A000A24B48979E0A84B /* PhysiquePhotoGate.swift in Sources */,

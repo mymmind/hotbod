@@ -115,6 +115,81 @@ final class OfflinePhysiqueAssessmentTests: XCTestCase {
     }
 }
 
+final class PhysiqueAssessmentSanitizerTests: XCTestCase {
+    func testRemotePayloadMapperDropsUnknownMusclesAndUncertainPriorities() {
+        let payloadPriorities = ["lateralDelts", "not_a_muscle", "rearDelts"]
+        let confidences = ["high", "high", "uncertain"]
+        let muscles = PhysiqueAssessmentSanitizer.priorities(
+            rawIds: payloadPriorities,
+            confidences: confidences
+        )
+        XCTAssertEqual(muscles, [.lateralDelts])
+    }
+
+    func testSanitizeDevelopmentPrioritiesRemovesUncertainMuscles() {
+        let payload = RemotePhysiqueAssessmentPayload(
+            photoQuality: RemotePhysiquePhotoQualityPayload(
+                anglesAvailable: ["front", "back"],
+                lightingQuality: "Even",
+                overallConfidence: 0.7
+            ),
+            physique: RemotePhysiqueBuildSummaryPayload(
+                overallArchetype: "Balanced build",
+                frameSize: "Medium",
+                shoulderToWaist: "Moderate contrast",
+                waist: "Defined",
+                torso: "Balanced",
+                muscularity: "Moderate",
+                leanness: "Moderate"
+            ),
+            muscleEntries: [
+                RemotePhysiqueMuscleEntryPayload(
+                    muscle: "lateralDelts",
+                    current: "Moderate",
+                    priorityRank: 1,
+                    notes: "Front visible",
+                    confidence: "high"
+                ),
+                RemotePhysiqueMuscleEntryPayload(
+                    muscle: "rearDelts",
+                    current: "Unknown",
+                    priorityRank: nil,
+                    notes: "Side missing",
+                    confidence: "uncertain"
+                )
+            ],
+            developmentPriorities: [
+                RemotePhysiqueDevelopmentPriorityPayload(
+                    muscle: "lateralDelts",
+                    reason: "Shoulder width."
+                ),
+                RemotePhysiqueDevelopmentPriorityPayload(
+                    muscle: "rearDelts",
+                    reason: "Should not appear."
+                )
+            ],
+            trainingBias: RemotePhysiqueTrainingBiasPayload(
+                preferredMuscleGroups: ["shoulders", "back"],
+                rationale: "Server bias"
+            ),
+            limitations: ["Visual estimate only."],
+            confidenceBands: RemotePhysiqueConfidenceBandsPayload(
+                high: [],
+                medium: [],
+                low: ["Rear delts"]
+            ),
+            whyTodaySummary: "Bias shoulders."
+        )
+
+        let request = FixtureBuilders.makePhysiqueAssessmentRequest(includeSide: false)
+        let assessment = PhysiqueAssessmentSanitizer.map(payload, request: request)
+
+        XCTAssertEqual(assessment.source, .cloud)
+        XCTAssertEqual(assessment.developmentPriorities.map(\.muscle), [.lateralDelts])
+        XCTAssertEqual(assessment.trainingBias.preferredMuscleGroups, [.shoulders])
+    }
+}
+
 final class PhysiqueTrainingBiasMergerTests: XCTestCase {
     func testAssessmentBiasPrecedesProfileAndDropsAvoided() {
         let merged = PhysiqueTrainingBiasMerger.mergePreferredMuscleGroups(
