@@ -103,13 +103,15 @@ extension AppEnvironment {
             if let (record, data) = try await physiqueIllustrationStore.fetch(assessmentId: assessmentId) {
                 physiqueIllustration = record
                 physiqueIllustrationImageData = data
-            } else {
+            } else if physiqueIllustration?.assessmentId != assessmentId {
                 physiqueIllustration = nil
                 physiqueIllustrationImageData = nil
             }
         } catch {
-            physiqueIllustration = nil
-            physiqueIllustrationImageData = nil
+            if physiqueIllustration?.assessmentId != assessmentId {
+                physiqueIllustration = nil
+                physiqueIllustrationImageData = nil
+            }
         }
     }
 
@@ -122,7 +124,12 @@ extension AppEnvironment {
             return
         }
 
-        guard let frontPhoto = photos.first(where: { $0.id == assessment.frontPhotoId }),
+        var photoList = photos
+        if photoList.first(where: { $0.id == assessment.frontPhotoId }) == nil {
+            photoList = await fetchBodyPhotos()
+        }
+
+        guard let frontPhoto = photoList.first(where: { $0.id == assessment.frontPhotoId }),
               BodyPhotoImageProcessor.fileExists(at: frontPhoto.localImagePath),
               let uiImage = BodyPhotoImageProcessor.loadUIImage(at: frontPhoto.localImagePath),
               let uploadData = PhysiqueIllustrationImageCodec.jpegDataForUpload(from: uiImage) else {
@@ -171,6 +178,12 @@ extension AppEnvironment {
     private func sanitizedIllustrationServerMessage(_ message: String) -> String {
         let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return "Illustration unavailable." }
+
+        let lower = trimmed.lowercased()
+        let infraSubstrings = ["openai", "api_key", "not configured", "internal server"]
+        if infraSubstrings.contains(where: { lower.contains($0) }) {
+            return "Illustration unavailable."
+        }
         if trimmed.count > 200 || trimmed.localizedCaseInsensitiveContains("base64") {
             return "Illustration unavailable."
         }

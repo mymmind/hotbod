@@ -155,6 +155,11 @@ Deno.test("handler returns image when OpenAI stubbed", async () => {
         ? headers.get("Authorization")
         : headers?.Authorization;
       assertEquals(auth, "Bearer test-key");
+      const body = init?.body;
+      assertEquals(body instanceof FormData, true);
+      const formData = body as FormData;
+      assertEquals(formData.has("image[]"), true);
+      assertEquals(formData.get("image[]") instanceof Blob, true);
       return Promise.resolve(new Response(JSON.stringify({
         data: [{ b64_json: stubImageB64 }],
       }), { status: 200 }));

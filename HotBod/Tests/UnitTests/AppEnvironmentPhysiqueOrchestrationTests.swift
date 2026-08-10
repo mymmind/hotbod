@@ -251,6 +251,36 @@ final class AppEnvironmentOrchestrationTests: XCTestCase {
         XCTAssertFalse(env.isGeneratingPhysiqueIllustration)
     }
 
+    func testRegression_loadPhysiqueIllustrationClearsWhenAssessmentDiffers() async throws {
+        let repos = TestRepositories.empty()
+        var profile = UserProfile.empty()
+        try await repos.userProfile.saveProfile(profile)
+        try await repos.userProfile.setOnboardingComplete(true)
+        let front = FixtureBuilders.makeBodyPhoto(pose: .frontRelaxed, userId: profile.id)
+        try writeBodyPhotoFile(for: front)
+        try await repos.bodyProgress.savePhoto(front)
+        var assessmentA = FixtureBuilders.makePhysiqueAssessment()
+        assessmentA.frontPhotoId = front.id
+        try await repos.physiqueAssessment.saveActive(assessmentA)
+
+        let assessmentB = FixtureBuilders.makePhysiqueAssessment()
+
+        let env = AppEnvironment.makeForTests(
+            repos: repos,
+            physiqueIllustrationService: MockPhysiqueIllustrationService()
+        )
+        env.userProfile = profile
+        env.hasCompletedOnboarding = true
+
+        await env.generatePhysiqueIllustration(assessment: assessmentA, photos: [front])
+        XCTAssertNotNil(env.physiqueIllustrationImageData)
+        XCTAssertEqual(env.physiqueIllustration?.assessmentId, assessmentA.id)
+
+        await env.loadPhysiqueIllustration(for: assessmentB.id)
+        XCTAssertNil(env.physiqueIllustration)
+        XCTAssertNil(env.physiqueIllustrationImageData)
+    }
+
     func testRegression_wipeClearsPhysiqueIllustration() async throws {
         try await PersistenceTestHelpers.withIsolatedPersistenceOnMainActor {
             let repos = TestRepositories.empty()

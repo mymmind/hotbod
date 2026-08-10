@@ -58,7 +58,7 @@ export async function handlePhysiqueIllustrateRequest(req: Request): Promise<Res
 
     const formData = new FormData();
     formData.append("model", Deno.env.get("OPENAI_IMAGE_MODEL") ?? "gpt-image-1");
-    formData.append("image", imageBlob, "front.jpg");
+    formData.append("image[]", imageBlob, "front.jpg");
     formData.append("prompt", prompt);
     formData.append("size", "1024x1024");
 

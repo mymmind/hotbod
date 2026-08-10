@@ -6,6 +6,24 @@ struct PhysiqueIllustrationSection: View {
     let assessment: PhysiqueAssessment
     let photos: [BodyProgressPhoto]
 
+    @State private var resolvedPhotos: [BodyProgressPhoto] = []
+    @State private var hasResolvedPhotoAvailability = false
+
+    private var effectivePhotos: [BodyProgressPhoto] {
+        photos.isEmpty ? resolvedPhotos : photos
+    }
+
+    private var hasFrontPhotoForIllustration: Bool {
+        guard let frontPhoto = effectivePhotos.first(where: { $0.id == assessment.frontPhotoId }) else {
+            return false
+        }
+        return BodyPhotoImageProcessor.fileExists(at: frontPhoto.localImagePath)
+    }
+
+    private var canGenerateIllustration: Bool {
+        !hasResolvedPhotoAvailability || hasFrontPhotoForIllustration
+    }
+
     var body: some View {
         ForgeCard {
             VStack(alignment: .leading, spacing: ForgeSpacing.s3) {
@@ -25,6 +43,8 @@ struct PhysiqueIllustrationSection: View {
             }
         }
         .task(id: assessment.id) {
+            resolvedPhotos = await environment.fetchBodyPhotos()
+            hasResolvedPhotoAvailability = true
             await environment.loadPhysiqueIllustration(for: assessment.id)
         }
     }
@@ -36,16 +56,24 @@ struct PhysiqueIllustrationSection: View {
                 .foregroundStyle(ForgeColors.muted)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
+            if hasResolvedPhotoAvailability && !hasFrontPhotoForIllustration {
+                Text("Add a front photo to generate.")
+                    .font(ForgeTypography.caption)
+                    .foregroundStyle(ForgeColors.muted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
             ForgeButton(
                 title: "Generate illustrative direction",
                 style: .secondary,
                 isLoading: environment.isGeneratingPhysiqueIllustration,
+                isEnabled: canGenerateIllustration,
                 accessibilityIdentifier: "physique.illustrate"
             ) {
                 Task {
                     await environment.generatePhysiqueIllustration(
                         assessment: assessment,
-                        photos: photos
+                        photos: effectivePhotos
                     )
                 }
             }
@@ -71,12 +99,13 @@ struct PhysiqueIllustrationSection: View {
                 title: "Regenerate",
                 style: .secondary,
                 isLoading: environment.isGeneratingPhysiqueIllustration,
+                isEnabled: canGenerateIllustration,
                 accessibilityIdentifier: "physique.illustrate.regenerate"
             ) {
                 Task {
                     await environment.generatePhysiqueIllustration(
                         assessment: assessment,
-                        photos: photos
+                        photos: effectivePhotos
                     )
                 }
             }
