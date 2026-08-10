@@ -61,6 +61,7 @@ export async function handlePhysiqueAssessRequest(req: Request): Promise<Respons
         experienceLevel: body.profile.experienceLevel,
         limitations: body.profile.limitations ?? [],
       },
+      allowedArchetypes: body.allowedArchetypes,
     });
 
     const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -100,7 +101,14 @@ export async function handlePhysiqueAssessRequest(req: Request): Promise<Respons
     }
 
     const parsed = JSON.parse(rawContent) as PhysiqueAssessResponsePayload;
-    return json(parsed);
+    const allowedIds = new Set(body.allowedArchetypes.map((entry) => entry.id));
+    const filtered: PhysiqueAssessResponsePayload = {
+      ...parsed,
+      physiqueDirections: (parsed.physiqueDirections ?? []).filter((direction) =>
+        allowedIds.has(direction.archetypeId)
+      ),
+    };
+    return json(filtered);
   } catch (error) {
     console.error("physique-assess handler error:", error instanceof Error ? error.message : error);
     return json({ error: "Internal server error." }, 500);

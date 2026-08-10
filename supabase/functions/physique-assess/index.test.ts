@@ -4,7 +4,10 @@ import {
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { stub } from "https://deno.land/std@0.224.0/testing/mock.ts";
 import { handlePhysiqueAssessRequest, json } from "./index.ts";
-import type { PhysiqueAssessRequest } from "../_shared/physiqueSchemas.ts";
+import {
+  type PhysiqueAssessRequest,
+  PHYSIQUE_ASSESS_RESPONSE_SCHEMA,
+} from "../_shared/physiqueSchemas.ts";
 
 function sampleMetrics() {
   return {
@@ -21,6 +24,14 @@ function sampleMetrics() {
   };
 }
 
+function sampleAllowedArchetypes() {
+  return [
+    { id: "classic_athletic", genericLabel: "Classic athletic", tags: ["lean", "athletic"] },
+    { id: "lean_fighter", genericLabel: "Lean fighter", tags: ["lean", "compact"] },
+    { id: "mens_physique", genericLabel: "Men's physique direction", tags: ["v_taper"] },
+  ];
+}
+
 function sampleRequest(): PhysiqueAssessRequest {
   return {
     metrics: {
@@ -33,6 +44,7 @@ function sampleRequest(): PhysiqueAssessRequest {
       experienceLevel: "intermediate",
       limitations: [],
     },
+    allowedArchetypes: sampleAllowedArchetypes(),
   };
 }
 
@@ -85,7 +97,158 @@ const validAssessment = {
     low: [],
   },
   whyTodaySummary: "Bias shoulders and back for frame balance.",
+  physiqueDirections: [
+    {
+      archetypeId: "classic_athletic",
+      rank: 1,
+      similarityDimension: "Moderate V-taper with defined shoulders",
+      confidence: "high",
+    },
+    {
+      archetypeId: "lean_fighter",
+      rank: 2,
+      similarityDimension: "Compact lean silhouette",
+      confidence: "medium",
+    },
+  ],
 };
+
+Deno.test("PHYSIQUE_ASSESS_RESPONSE_SCHEMA requires physiqueDirections", () => {
+  assertEquals(
+    PHYSIQUE_ASSESS_RESPONSE_SCHEMA.required.includes("physiqueDirections"),
+    true,
+  );
+  const directionItem = PHYSIQUE_ASSESS_RESPONSE_SCHEMA.properties.physiqueDirections.items;
+  assertEquals(directionItem.required, ["archetypeId", "rank", "similarityDimension", "confidence"]);
+});
+
+Deno.test("handlePhysiqueAssessRequest returns 400 without allowedArchetypes", async () => {
+  const priorKey = Deno.env.get("OPENAI_API_KEY");
+  const priorUrl = Deno.env.get("SUPABASE_URL");
+  const priorAnon = Deno.env.get("SUPABASE_ANON_KEY");
+  Deno.env.set("OPENAI_API_KEY", "test-key");
+  Deno.env.set("SUPABASE_URL", "https://example.supabase.co");
+  Deno.env.set("SUPABASE_ANON_KEY", "anon-key");
+
+  const fetchStub = stub(globalThis, "fetch", (input) => {
+    const url = String(input);
+    if (url.includes("/auth/v1/user")) {
+      return Promise.resolve(new Response(JSON.stringify({ id: "user-1" }), { status: 200 }));
+    }
+    return Promise.resolve(new Response("unexpected", { status: 500 }));
+  });
+
+  try {
+    const body = sampleRequest();
+    // @ts-expect-error intentional invalid payload for validation test
+    delete body.allowedArchetypes;
+    const response = await handlePhysiqueAssessRequest(
+      physiqueRequest(body, { Authorization: "Bearer token" }),
+    );
+    assertEquals(response.status, 400);
+    const payload = await response.json();
+    assertMatch(payload.error, /allowedArchetypes/i);
+  } finally {
+    fetchStub.restore();
+    if (priorKey) Deno.env.set("OPENAI_API_KEY", priorKey);
+    else Deno.env.delete("OPENAI_API_KEY");
+    if (priorUrl) Deno.env.set("SUPABASE_URL", priorUrl);
+    else Deno.env.delete("SUPABASE_URL");
+    if (priorAnon) Deno.env.set("SUPABASE_ANON_KEY", priorAnon);
+    else Deno.env.delete("SUPABASE_ANON_KEY");
+  }
+});
+
+Deno.test("handlePhysiqueAssessRequest returns 400 for empty allowedArchetypes", async () => {
+  const priorKey = Deno.env.get("OPENAI_API_KEY");
+  const priorUrl = Deno.env.get("SUPABASE_URL");
+  const priorAnon = Deno.env.get("SUPABASE_ANON_KEY");
+  Deno.env.set("OPENAI_API_KEY", "test-key");
+  Deno.env.set("SUPABASE_URL", "https://example.supabase.co");
+  Deno.env.set("SUPABASE_ANON_KEY", "anon-key");
+
+  const fetchStub = stub(globalThis, "fetch", (input) => {
+    const url = String(input);
+    if (url.includes("/auth/v1/user")) {
+      return Promise.resolve(new Response(JSON.stringify({ id: "user-1" }), { status: 200 }));
+    }
+    return Promise.resolve(new Response("unexpected", { status: 500 }));
+  });
+
+  try {
+    const body = sampleRequest();
+    body.allowedArchetypes = [];
+    const response = await handlePhysiqueAssessRequest(
+      physiqueRequest(body, { Authorization: "Bearer token" }),
+    );
+    assertEquals(response.status, 400);
+    const payload = await response.json();
+    assertMatch(payload.error, /allowedArchetypes/i);
+  } finally {
+    fetchStub.restore();
+    if (priorKey) Deno.env.set("OPENAI_API_KEY", priorKey);
+    else Deno.env.delete("OPENAI_API_KEY");
+    if (priorUrl) Deno.env.set("SUPABASE_URL", priorUrl);
+    else Deno.env.delete("SUPABASE_URL");
+    if (priorAnon) Deno.env.set("SUPABASE_ANON_KEY", priorAnon);
+    else Deno.env.delete("SUPABASE_ANON_KEY");
+  }
+});
+
+Deno.test("handlePhysiqueAssessRequest filters unknown physique direction ids", async () => {
+  Deno.env.set("OPENAI_API_KEY", "test-key");
+  Deno.env.set("SUPABASE_URL", "https://example.supabase.co");
+  Deno.env.set("SUPABASE_ANON_KEY", "anon-key");
+
+  const assessmentWithUnknown = {
+    ...validAssessment,
+    physiqueDirections: [
+      ...validAssessment.physiqueDirections,
+      {
+        archetypeId: "not_in_catalog",
+        rank: 3,
+        similarityDimension: "Unknown silhouette",
+        confidence: "low",
+      },
+    ],
+  };
+
+  const fetchStub = stub(globalThis, "fetch", (input) => {
+    const url = String(input);
+    if (url.includes("/auth/v1/user")) {
+      return Promise.resolve(
+        new Response(JSON.stringify({ id: "user-1", aud: "authenticated" }), { status: 200 }),
+      );
+    }
+    if (url.includes("api.openai.com")) {
+      return Promise.resolve(new Response(JSON.stringify({
+        choices: [{ message: { content: JSON.stringify(assessmentWithUnknown) } }],
+      }), { status: 200 }));
+    }
+    return Promise.resolve(new Response("[]", { status: 200 }));
+  });
+
+  try {
+    const response = await handlePhysiqueAssessRequest(
+      physiqueRequest(sampleRequest(), { Authorization: "Bearer token" }),
+    );
+    assertEquals(response.status, 200);
+    const payload = await response.json();
+    assertEquals(payload.physiqueDirections.length, 2);
+    assertEquals(
+      payload.physiqueDirections.every((d: { archetypeId: string }) =>
+        sampleAllowedArchetypes().some((a) => a.id === d.archetypeId)
+      ),
+      true,
+    );
+    assertEquals(
+      payload.physiqueDirections.some((d: { archetypeId: string }) => d.archetypeId === "not_in_catalog"),
+      false,
+    );
+  } finally {
+    fetchStub.restore();
+  }
+});
 
 Deno.test("json helper sets CORS and content type", async () => {
   const response = json({ ok: true }, 201);
@@ -250,6 +413,7 @@ Deno.test("handlePhysiqueAssessRequest returns valid assessment payload", async 
     assertEquals(response.status, 200);
     const payload = await response.json();
     assertEquals(payload.developmentPriorities[0].muscle, "lateralDelts");
+    assertEquals(payload.physiqueDirections.length, 2);
     assertEquals(payload.source, undefined);
   } finally {
     fetchStub.restore();

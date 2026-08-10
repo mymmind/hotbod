@@ -11,6 +11,13 @@ struct UnavailablePhysiqueAssessmentService: PhysiqueAssessmentServing, Sendable
     }
 }
 
+struct RemotePhysiqueArchetypeMatchPayload: Codable {
+    let archetypeId: String
+    let rank: Int
+    let similarityDimension: String
+    let confidence: String
+}
+
 struct RemotePhysiqueAssessmentPayload: Codable {
     let photoQuality: RemotePhysiquePhotoQualityPayload
     let physique: RemotePhysiqueBuildSummaryPayload
@@ -20,6 +27,7 @@ struct RemotePhysiqueAssessmentPayload: Codable {
     let limitations: [String]
     let confidenceBands: RemotePhysiqueConfidenceBandsPayload
     let whyTodaySummary: String
+    let physiqueDirections: [RemotePhysiqueArchetypeMatchPayload]
 }
 
 struct RemotePhysiquePhotoQualityPayload: Codable {
@@ -62,10 +70,17 @@ struct RemotePhysiqueConfidenceBandsPayload: Codable {
     let low: [String]
 }
 
+struct PhysiqueAssessAllowedArchetypePayload: Codable {
+    let id: String
+    let genericLabel: String
+    let tags: [String]
+}
+
 struct PhysiqueAssessInvokeRequest: Codable {
     let metrics: PhysiqueAssessMetricsPayload
     let anglesAvailable: [String]
     let profile: PhysiqueAssessProfilePayload
+    let allowedArchetypes: [PhysiqueAssessAllowedArchetypePayload]
 }
 
 struct PhysiqueAssessMetricsPayload: Codable {
@@ -140,7 +155,14 @@ actor RemotePhysiqueAssessmentService: PhysiqueAssessmentServing {
                 goal: request.profile.goal.rawValue,
                 experienceLevel: request.profile.experienceLevel.rawValue,
                 limitations: request.profile.limitations.map(\.rawValue)
-            )
+            ),
+            allowedArchetypes: PhysiqueArchetypeCatalogLoader.load().map { entry in
+                PhysiqueAssessAllowedArchetypePayload(
+                    id: entry.id,
+                    genericLabel: entry.genericLabel,
+                    tags: entry.tags
+                )
+            }
         )
     }
 

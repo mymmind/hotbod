@@ -139,7 +139,31 @@ enum PhysiqueAssessmentSanitizer {
         let preferredGroups = PhysiqueTrainingBiasMerger.preferredGroups(
             from: sanitizedPriorities.map(\.muscle)
         )
-        let archetype = scrubFreeText(payload.physique.overallArchetype)
+        let catalogIds = Set(PhysiqueArchetypeCatalogLoader.load().map(\.id))
+        let physiqueSummary = PhysiqueBuildSummary(
+            overallArchetype: scrubFreeText(payload.physique.overallArchetype),
+            frameSize: payload.physique.frameSize,
+            shoulderToWaist: payload.physique.shoulderToWaist,
+            waist: payload.physique.waist,
+            torso: payload.physique.torso,
+            muscularity: payload.physique.muscularity,
+            leanness: payload.physique.leanness
+        )
+        let physiqueDirections = sanitizeDirections(
+            payload.physiqueDirections.map {
+                PhysiqueArchetypeMatchDraft(
+                    archetypeId: $0.archetypeId,
+                    rank: $0.rank,
+                    similarityDimension: $0.similarityDimension,
+                    confidenceRaw: $0.confidence
+                )
+            },
+            catalogIds: catalogIds,
+            physique: physiqueSummary,
+            priorities: sanitizedPriorities,
+            overallConfidence: payload.photoQuality.overallConfidence
+        )
+        let archetype = physiqueSummary.overallArchetype
         let rationale = scrubFreeText(payload.trainingBias.rationale)
         let whyTodaySummary = scrubFreeText(payload.whyTodaySummary)
 
@@ -158,12 +182,12 @@ enum PhysiqueAssessmentSanitizer {
                 overallArchetype: archetype.isEmpty
                     ? "Balanced build with modest shoulder-to-waist contrast"
                     : archetype,
-                frameSize: payload.physique.frameSize,
-                shoulderToWaist: payload.physique.shoulderToWaist,
-                waist: payload.physique.waist,
-                torso: payload.physique.torso,
-                muscularity: payload.physique.muscularity,
-                leanness: payload.physique.leanness
+                frameSize: physiqueSummary.frameSize,
+                shoulderToWaist: physiqueSummary.shoulderToWaist,
+                waist: physiqueSummary.waist,
+                torso: physiqueSummary.torso,
+                muscularity: physiqueSummary.muscularity,
+                leanness: physiqueSummary.leanness
             ),
             muscleEntries: muscleEntries,
             developmentPriorities: sanitizedPriorities,
@@ -180,7 +204,8 @@ enum PhysiqueAssessmentSanitizer {
             source: .cloud,
             whyTodaySummary: whyTodaySummary.isEmpty
                 ? "Bias training toward visible development priorities."
-                : whyTodaySummary
+                : whyTodaySummary,
+            physiqueDirections: physiqueDirections
         )
     }
 }

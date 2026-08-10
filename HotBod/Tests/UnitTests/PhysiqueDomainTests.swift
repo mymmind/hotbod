@@ -293,7 +293,8 @@ final class PhysiqueAssessmentSanitizerTests: XCTestCase {
                 medium: [],
                 low: ["Rear delts"]
             ),
-            whyTodaySummary: "Bias shoulders."
+            whyTodaySummary: "Bias shoulders.",
+            physiqueDirections: []
         )
 
         let request = FixtureBuilders.makePhysiqueAssessmentRequest(includeSide: false)
@@ -349,7 +350,8 @@ final class PhysiqueAssessmentSanitizerTests: XCTestCase {
                 medium: [],
                 low: []
             ),
-            whyTodaySummary: "Bias shoulders."
+            whyTodaySummary: "Bias shoulders.",
+            physiqueDirections: []
         )
 
         let request = FixtureBuilders.makePhysiqueAssessmentRequest(includeSide: false)
@@ -399,7 +401,8 @@ final class PhysiqueAssessmentSanitizerTests: XCTestCase {
                 medium: [],
                 low: []
             ),
-            whyTodaySummary: "Bias shoulders despite body fat % estimate."
+            whyTodaySummary: "Bias shoulders despite body fat % estimate.",
+            physiqueDirections: []
         )
 
         let request = FixtureBuilders.makePhysiqueAssessmentRequest(includeSide: false)
@@ -416,6 +419,79 @@ final class PhysiqueAssessmentSanitizerTests: XCTestCase {
         XCTAssertFalse(joined.localizedCaseInsensitiveContains("genetically"))
         XCTAssertFalse(joined.localizedCaseInsensitiveContains("diagnosed with"))
         XCTAssertFalse(joined.localizedCaseInsensitiveContains("medical diagnosis"))
+    }
+
+    func testSanitizerMapAttachesCatalogBackedDirections() {
+        let payload = RemotePhysiqueAssessmentPayload(
+            photoQuality: RemotePhysiquePhotoQualityPayload(
+                anglesAvailable: ["front", "back"],
+                lightingQuality: "Even",
+                overallConfidence: 0.75
+            ),
+            physique: RemotePhysiqueBuildSummaryPayload(
+                overallArchetype: "Athletic build with moderate shoulder-to-waist contrast",
+                frameSize: "Medium",
+                shoulderToWaist: "Moderate contrast",
+                waist: "Defined",
+                torso: "Balanced",
+                muscularity: "Moderate",
+                leanness: "Moderate"
+            ),
+            muscleEntries: [
+                RemotePhysiqueMuscleEntryPayload(
+                    muscle: "lateralDelts",
+                    current: "Moderate",
+                    priorityRank: 1,
+                    notes: "Front visible",
+                    confidence: "high"
+                )
+            ],
+            developmentPriorities: [
+                RemotePhysiqueDevelopmentPriorityPayload(
+                    muscle: "lateralDelts",
+                    reason: "Shoulder width."
+                )
+            ],
+            trainingBias: RemotePhysiqueTrainingBiasPayload(
+                preferredMuscleGroups: ["shoulders"],
+                rationale: "Server bias"
+            ),
+            limitations: ["Visual estimate only."],
+            confidenceBands: RemotePhysiqueConfidenceBandsPayload(
+                high: [],
+                medium: [],
+                low: []
+            ),
+            whyTodaySummary: "Bias shoulders.",
+            physiqueDirections: [
+                RemotePhysiqueArchetypeMatchPayload(
+                    archetypeId: "not_real",
+                    rank: 1,
+                    similarityDimension: "Unknown silhouette",
+                    confidence: "high"
+                ),
+                RemotePhysiqueArchetypeMatchPayload(
+                    archetypeId: "classic_athletic",
+                    rank: 2,
+                    similarityDimension: "Moderate V-taper proportions",
+                    confidence: "high"
+                ),
+                RemotePhysiqueArchetypeMatchPayload(
+                    archetypeId: "lean_fighter",
+                    rank: 3,
+                    similarityDimension: "Compact lean frame",
+                    confidence: "medium"
+                )
+            ]
+        )
+
+        let request = FixtureBuilders.makePhysiqueAssessmentRequest(includeSide: false)
+        let assessment = PhysiqueAssessmentSanitizer.map(payload, request: request)
+
+        XCTAssertEqual(assessment.physiqueDirections.count, 2)
+        XCTAssertFalse(assessment.physiqueDirections.contains { $0.archetypeId == "not_real" })
+        XCTAssertEqual(assessment.physiqueDirections.map(\.archetypeId), ["classic_athletic", "lean_fighter"])
+        XCTAssertEqual(assessment.physiqueDirections.map(\.rank), [1, 2])
     }
 }
 

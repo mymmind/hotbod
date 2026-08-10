@@ -54,6 +54,19 @@ export interface BodyPhotoAnalysisLike {
   limitations: string[];
 }
 
+export interface AllowedArchetypeLike {
+  id: string;
+  genericLabel: string;
+  tags: string[];
+}
+
+export interface PhysiqueDirectionLike {
+  archetypeId: string;
+  rank: number;
+  similarityDimension: string;
+  confidence: (typeof PHYSIQUE_CONFIDENCE_LEVELS)[number];
+}
+
 export interface PhysiqueAssessRequest {
   metrics: {
     front: BodyPhotoAnalysisLike;
@@ -66,6 +79,7 @@ export interface PhysiqueAssessRequest {
     experienceLevel: string;
     limitations: string[];
   };
+  allowedArchetypes: AllowedArchetypeLike[];
 }
 
 export interface PhysiqueAssessResponsePayload {
@@ -105,6 +119,7 @@ export interface PhysiqueAssessResponsePayload {
     low: string[];
   };
   whyTodaySummary: string;
+  physiqueDirections: PhysiqueDirectionLike[];
 }
 
 
@@ -120,6 +135,7 @@ export const PHYSIQUE_ASSESS_RESPONSE_SCHEMA = {
     "limitations",
     "confidenceBands",
     "whyTodaySummary",
+    "physiqueDirections",
   ],
   properties: {
     photoQuality: {
@@ -208,6 +224,20 @@ export const PHYSIQUE_ASSESS_RESPONSE_SCHEMA = {
       },
     },
     whyTodaySummary: { type: "string" },
+    physiqueDirections: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["archetypeId", "rank", "similarityDimension", "confidence"],
+        properties: {
+          archetypeId: { type: "string" },
+          rank: { type: "number" },
+          similarityDimension: { type: "string" },
+          confidence: { type: "string", enum: [...PHYSIQUE_CONFIDENCE_LEVELS] },
+        },
+      },
+    },
   },
 } as const;
 
@@ -228,6 +258,13 @@ export function buildPhysiqueSystemPrompt(): string {
     "- Keep limitations practical (visibility, angle gaps, visual-estimate disclaimer).",
     "- whyTodaySummary: 3-5 lines linking priorities to today's training bias.",
     "",
+    "Physique directions (physiqueDirections):",
+    "- Rank exactly 1–3 directions from allowedArchetypes only (use archetypeId values).",
+    "- Describe proportions or silhouette in similarityDimension — not identity or resemblance.",
+    "- Never say \"you look like\", celebrity names, twin/lookalike language, or identity claims.",
+    "- Never cite body-fat percentages or genetic destiny in similarityDimension.",
+    "- Order by rank 1 (closest proportional match) through 3.",
+    "",
     "Allowed muscle ids:",
     PHYSIQUE_FOCUS_MUSCLES.join(", "),
   ].join("\n");
@@ -245,6 +282,14 @@ export function validatePhysiqueRequest(body: PhysiqueAssessRequest): string | n
   }
   if (!body.profile?.goal?.trim() || !body.profile?.experienceLevel?.trim()) {
     return "profile.goal and profile.experienceLevel are required.";
+  }
+  if (!Array.isArray(body.allowedArchetypes) || body.allowedArchetypes.length === 0) {
+    return "allowedArchetypes must be a non-empty array.";
+  }
+  for (const entry of body.allowedArchetypes) {
+    if (!entry?.id?.trim() || !entry?.genericLabel?.trim() || !Array.isArray(entry.tags)) {
+      return "Each allowedArchetypes entry requires id, genericLabel, and tags.";
+    }
   }
   return null;
 }
