@@ -184,6 +184,7 @@ final class AppEnvironment {
 
         hasCompletedOnboarding = (try? await userProfileRepository.isOnboardingComplete()) ?? false
         userProfile = try? await userProfileRepository.fetchProfile()
+        await loadActivePhysiqueAssessment()
         todayWorkout = try? await workoutRepository.fetchTodayWorkout()
         programState = (try? await programStateRepository.fetchState()) ?? TrainingProgramState()
         recoveryStates = RecoveryCalculator.normalizeStates(

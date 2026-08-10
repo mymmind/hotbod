@@ -123,6 +123,28 @@ final class AppEnvironmentWorkoutGenerationTests: XCTestCase {
         XCTAssertEqual(input.targetDurationMinutes, profile.preferredSessionLengthMinutes)
     }
 
+    func testMakeWorkoutGenerationInputMergesPhysiqueBiasAheadOfProfilePreferred() async throws {
+        let repos = TestRepositories.empty()
+        var profile = UserProfile.empty()
+        profile.preferredMuscleGroups = [.quads]
+        profile.avoidedMuscleGroups = [.chest]
+        try await repos.userProfile.saveProfile(profile)
+
+        var assessment = FixtureBuilders.makePhysiqueAssessment()
+        assessment.trainingBias = PhysiqueTrainingBias(
+            preferredMuscleGroups: [.shoulders, .back, .chest],
+            rationale: "V-taper focus"
+        )
+        try await repos.physiqueAssessment.saveActive(assessment)
+
+        let env = AppEnvironment.makeForTests(repos: repos)
+        env.userProfile = profile
+        await env.loadActivePhysiqueAssessment()
+
+        let input = await env.makeWorkoutGenerationInput(profile: profile, splitDayFocus: .push)
+        XCTAssertEqual(input.preferredMuscleGroups, [.shoulders, .back, .quads])
+    }
+
     func testMakeWorkoutGenerationInputUsesInjectedStats() async throws {
         let repos = TestRepositories.empty(exercises: exercises)
         let env = AppEnvironment.makeForTests(repos: repos)
