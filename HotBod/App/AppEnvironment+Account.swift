@@ -46,5 +46,8 @@ extension AppEnvironment {
         healthReadiness = .empty
         paywallFeature = nil
         bodyPhotoRevision &+= 1
+        activePhysiqueAssessment = nil
+        physiqueAssessmentHistory = []
+        physiqueStatusMessage = nil
     }
 }

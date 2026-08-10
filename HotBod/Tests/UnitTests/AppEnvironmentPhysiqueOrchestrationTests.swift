@@ -140,4 +140,18 @@ final class AppEnvironmentOrchestrationTests: XCTestCase {
         await env.loadActivePhysiqueAssessment()
         XCTAssertNil(env.sinceLastPhysiqueDiff(photos: []))
     }
+
+    func testRegression_wipeClearsPhysiqueInMemoryState() async throws {
+        let env = AppEnvironment.makeForTests()
+        let assessment = FixtureBuilders.makePhysiqueAssessment()
+        env.activePhysiqueAssessment = assessment
+        env.physiqueAssessmentHistory = [assessment]
+        env.physiqueStatusMessage = "Offline analysis used."
+
+        try await env.wipeAllLocalUserData()
+
+        XCTAssertNil(env.activePhysiqueAssessment)
+        XCTAssertTrue(env.physiqueAssessmentHistory.isEmpty)
+        XCTAssertNil(env.physiqueStatusMessage)
+    }
 }
