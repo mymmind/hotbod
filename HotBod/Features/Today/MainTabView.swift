@@ -19,8 +19,8 @@ struct MainTabView: View {
                     ProteinTrackerView()
                 case .progress:
                     ProgressDashboardView()
-                case .coach:
-                    CoachView(presentation: .tab)
+                case .physique:
+                    PhysiqueView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

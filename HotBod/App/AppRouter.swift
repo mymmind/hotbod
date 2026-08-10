@@ -8,7 +8,7 @@ enum AppRoute: Hashable {
     case workoutPreview(GeneratedWorkout)
     case exerciseDetail(String)
     case settings
-    case coach
+    case physique
 }
 
 @Observable
@@ -24,7 +24,7 @@ final class AppRouter {
     }
 
     enum MainTab: Int, CaseIterable, Identifiable {
-        case today, train, protein, progress, coach
+        case today, train, protein, progress, physique
 
         var id: Int { rawValue }
 
@@ -34,7 +34,7 @@ final class AppRouter {
             case .train: "Train"
             case .protein: "Protein"
             case .progress: "Progress"
-            case .coach: "Coach"
+            case .physique: "Physique"
             }
         }
 
@@ -44,7 +44,7 @@ final class AppRouter {
             case .train: "dumbbell"
             case .protein: "fork.knife"
             case .progress: "chart.line.uptrend.xyaxis"
-            case .coach: "bubble.left.and.bubble.right"
+            case .physique: "figure.stand"
             }
         }
     }

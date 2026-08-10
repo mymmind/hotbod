@@ -54,6 +54,7 @@ enum UITestConfiguration {
         for argument in ProcessInfo.processInfo.arguments {
             guard argument.hasPrefix("-OpenTab=") else { continue }
             let rawValue = String(argument.dropFirst("-OpenTab=".count)).lowercased()
+            if rawValue == "coach" { return .physique }
             return AppRouter.MainTab.allCases.first { $0.title.lowercased() == rawValue }
         }
         return nil

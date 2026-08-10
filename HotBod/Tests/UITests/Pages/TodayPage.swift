@@ -10,7 +10,7 @@ struct TodayPage {
   var switchFocusButton: XCUIElement { app.buttons["today.switchFocus"] }
   var generateButton: XCUIElement { app.buttons["today.generate"] }
   var settingsButton: XCUIElement { app.buttons["today.settings"] }
-  var askCoachButton: XCUIElement { app.buttons["Ask Coach"] }
+  var physiqueFocusButton: XCUIElement { app.buttons["Physique focus"] }
 
   func waitForHero(timeout: TimeInterval = 8) -> Bool {
     startWorkoutButton.waitForExistence(timeout: timeout)

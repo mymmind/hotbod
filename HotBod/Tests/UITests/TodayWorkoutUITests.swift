@@ -97,13 +97,13 @@ final class TodayWorkoutUITests: BaseUITestCase {
     tapButton("settings.done", label: "Done")
   }
 
-  func testAskCoachNavigatesToCoach() {
+  func testPhysiqueFocusNavigatesToPhysiqueTab() {
     XCTAssertTrue(waitForTabBar())
     app.swipeUp()
 
-    guard today.askCoachButton.waitForExistence(timeout: 5) else { return }
+    guard today.physiqueFocusButton.waitForExistence(timeout: 5) else { return }
 
-    today.askCoachButton.tap()
-    XCTAssertTrue(app.staticTexts["Coach"].waitForExistence(timeout: 8))
+    today.physiqueFocusButton.tap()
+    XCTAssertTrue(app.staticTexts["Physique"].waitForExistence(timeout: 8))
   }
 }

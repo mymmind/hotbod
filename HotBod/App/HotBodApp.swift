@@ -95,11 +95,11 @@ struct RootView: View {
                     SettingsView(presentation: .routerOverlay)
                 }
                 .forgeAnimatedContent(id: "settings")
-            case .coach:
+            case .physique:
                 NavigationStack {
-                    CoachView(presentation: .routerOverlay)
+                    PhysiqueView()
                 }
-                .forgeAnimatedContent(id: "coach")
+                .forgeAnimatedContent(id: "physique")
             }
         }
         .animation(UITestConfiguration.isUITesting ? nil : ForgeMotion.standard, value: router.route)

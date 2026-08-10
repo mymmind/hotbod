@@ -9,7 +9,7 @@ class BaseUITestCase: XCTestCase {
   var launchTab: String?
   var onboardingStartStep: Int?
 
-  private let tabOrder = ["today", "train", "protein", "progress", "coach"]
+  private let tabOrder = ["today", "train", "protein", "progress", "physique"]
 
   override func setUpWithError() throws {
     continueAfterFailure = false
@@ -119,9 +119,10 @@ class BaseUITestCase: XCTestCase {
       return app.otherElements["progress.dashboard"].waitForExistence(timeout: timeout)
         || app.otherElements["progress.compliance"].waitForExistence(timeout: 2)
         || waitForSectionHeader("Compliance", timeout: 2)
-    case "coach":
-      return app.otherElements["coach.root"].waitForExistence(timeout: timeout)
-        || app.staticTexts["Ask your coach"].waitForExistence(timeout: 2)
+    case "physique", "coach":
+      return app.otherElements["physique.root"].waitForExistence(timeout: timeout)
+        || app.staticTexts["Physique"].waitForExistence(timeout: 2)
+        || app.staticTexts["Add front and back photos to get a focus plan."].waitForExistence(timeout: 2)
     default:
       return app.buttons["tab.\(tab)"].waitForExistence(timeout: timeout)
     }

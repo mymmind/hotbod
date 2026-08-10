@@ -8,7 +8,6 @@ struct TodayView: View {
     @State private var proteinToday: Double = 0
     @State private var proteinStreak = 0
     @State private var workoutStreak = 0
-    @State private var showCoach = false
     @State private var completedSession: WorkoutSession?
     @State private var activeSession: WorkoutSession?
     @State private var showSummary = false
@@ -59,9 +58,6 @@ struct TodayView: View {
                     averageReadiness: averageReadiness,
                     states: environment.recoveryStates
                 )
-            }
-            .navigationDestination(isPresented: $showCoach) {
-                CoachView(presentation: .navigationPush)
             }
             .onChange(of: environment.calendarDayRevision) { _, _ in
                 Task { await refreshDayScopedContent() }
@@ -644,7 +640,9 @@ struct TodayView: View {
         TodayDisclosureSection(title: "Why This Workout?") {
             Text(workout.rationale)
                 .font(ForgeTypography.body)
-            ForgeButton(title: "Ask Coach", style: .secondary) { showCoach = true }
+            ForgeButton(title: "Physique focus", style: .secondary) {
+                router.selectedTab = .physique
+            }
         }
     }
 
