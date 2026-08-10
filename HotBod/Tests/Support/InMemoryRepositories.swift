@@ -233,11 +233,22 @@ actor InMemoryCoachRepository: CoachRepository {
 }
 
 actor InMemoryPhysiqueAssessmentRepository: PhysiqueAssessmentRepository {
-  private var active: PhysiqueAssessment?
+  private var assessments: [PhysiqueAssessment] = []
 
-  func fetchActive() async throws -> PhysiqueAssessment? { active }
-  func saveActive(_ assessment: PhysiqueAssessment) async throws { active = assessment }
-  func clearActive() async throws { active = nil }
+  func fetchActive() async throws -> PhysiqueAssessment? { assessments.first }
+  func fetchHistory() async throws -> [PhysiqueAssessment] { assessments }
+  func fetch(id: UUID) async throws -> PhysiqueAssessment? {
+    assessments.first { $0.id == id }
+  }
+  func saveActive(_ assessment: PhysiqueAssessment) async throws {
+    assessments.removeAll { $0.id == assessment.id }
+    assessments.insert(assessment, at: 0)
+    if assessments.count > 12 {
+      assessments = Array(assessments.prefix(12))
+    }
+  }
+  func clearActive() async throws { assessments = [] }
+  func clearAll() async throws { assessments = [] }
 }
 
 final class CountingCloudSyncService: CloudSyncService, @unchecked Sendable {

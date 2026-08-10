@@ -571,12 +571,113 @@ final class LocalBodyProgressRepositoryTests: XCTestCase {
 final class LocalPhysiqueAssessmentRepositoryTests: XCTestCase {
     func testLocalPhysiqueAssessmentRepositoryPersistsActive() async throws {
         try await PersistenceTestHelpers.withIsolatedPersistence {
-            let repo = LocalPhysiqueAssessmentRepository(key: "physique_assessment_test_\(UUID().uuidString).json")
+            let repo = LocalPhysiqueAssessmentRepository(
+                historyKey: "physique_history_\(UUID().uuidString).json",
+                legacyKey: "physique_legacy_\(UUID().uuidString).json"
+            )
             let assessment = FixtureBuilders.makePhysiqueAssessment()
             try await repo.saveActive(assessment)
             let loaded = try await repo.fetchActive()
             XCTAssertEqual(loaded?.id, assessment.id)
         }
+    }
+
+    func testSaveActivePrependsAndFetchHistoryNewestFirst() async throws {
+        try await PersistenceTestHelpers.withIsolatedPersistence {
+            let repo = LocalPhysiqueAssessmentRepository(
+                historyKey: "physique_history_\(UUID().uuidString).json",
+                legacyKey: "physique_legacy_\(UUID().uuidString).json"
+            )
+            let older = FixtureBuilders.makePhysiqueAssessment(
+                id: UUID(),
+                createdAt: Date(timeIntervalSince1970: 1_000)
+            )
+            let newer = FixtureBuilders.makePhysiqueAssessment(
+                id: UUID(),
+                createdAt: Date(timeIntervalSince1970: 2_000)
+            )
+            try await repo.saveActive(older)
+            try await repo.saveActive(newer)
+            let history = try await repo.fetchHistory()
+            XCTAssertEqual(history.map(\.id), [newer.id, older.id])
+            let active = try await repo.fetchActive()
+            XCTAssertEqual(active?.id, newer.id)
+        }
+    }
+
+    func testSaveActivePrunesToTwelve() async throws {
+        try await PersistenceTestHelpers.withIsolatedPersistence {
+            let repo = LocalPhysiqueAssessmentRepository(
+                historyKey: "physique_history_\(UUID().uuidString).json",
+                legacyKey: "physique_legacy_\(UUID().uuidString).json"
+            )
+            for i in 0..<13 {
+                try await repo.saveActive(
+                    FixtureBuilders.makePhysiqueAssessment(
+                        id: UUID(),
+                        createdAt: Date(timeIntervalSince1970: TimeInterval(i))
+                    )
+                )
+            }
+            let history = try await repo.fetchHistory()
+            XCTAssertEqual(history.count, 12)
+        }
+    }
+
+    func testSaveActiveReplacesExistingIdAndMovesToFront() async throws {
+        try await PersistenceTestHelpers.withIsolatedPersistence {
+            let repo = LocalPhysiqueAssessmentRepository(
+                historyKey: "physique_history_\(UUID().uuidString).json",
+                legacyKey: "physique_legacy_\(UUID().uuidString).json"
+            )
+            let id = UUID()
+            var first = FixtureBuilders.makePhysiqueAssessment(id: id, createdAt: Date(timeIntervalSince1970: 1))
+            first.whyTodaySummary = "first"
+            try await repo.saveActive(first)
+            try await repo.saveActive(
+                FixtureBuilders.makePhysiqueAssessment(
+                    id: UUID(),
+                    createdAt: Date(timeIntervalSince1970: 2)
+                )
+            )
+            var updated = first
+            updated.whyTodaySummary = "updated"
+            updated.createdAt = Date(timeIntervalSince1970: 3)
+            try await repo.saveActive(updated)
+            let history = try await repo.fetchHistory()
+            XCTAssertEqual(history.first?.id, id)
+            XCTAssertEqual(history.first?.whyTodaySummary, "updated")
+            XCTAssertEqual(history.filter { $0.id == id }.count, 1)
+        }
+    }
+
+    func testMigratesLegacySingleActiveFile() async throws {
+        try await PersistenceTestHelpers.withIsolatedPersistence {
+            let historyKey = "physique_history_\(UUID().uuidString).json"
+            let legacyKey = "physique_legacy_\(UUID().uuidString).json"
+            let assessment = FixtureBuilders.makePhysiqueAssessment()
+            PersistenceHelper.save(assessment, to: legacyKey)
+            let repo = LocalPhysiqueAssessmentRepository(historyKey: historyKey, legacyKey: legacyKey)
+            let history = try await repo.fetchHistory()
+            XCTAssertEqual(history.map(\.id), [assessment.id])
+            XCTAssertNil(PersistenceHelper.load(PhysiqueAssessment.self, from: legacyKey))
+            XCTAssertNotNil(PersistenceHelper.load(PhysiqueAssessmentHistoryDocument.self, from: historyKey))
+        }
+    }
+
+    func testInMemoryPhysiqueAssessmentRepositoryHistorySemantics() async throws {
+        let repo = InMemoryPhysiqueAssessmentRepository()
+        let a = FixtureBuilders.makePhysiqueAssessment(createdAt: Date(timeIntervalSince1970: 1))
+        let b = FixtureBuilders.makePhysiqueAssessment(createdAt: Date(timeIntervalSince1970: 2))
+        try await repo.saveActive(a)
+        try await repo.saveActive(b)
+        let history = try await repo.fetchHistory()
+        XCTAssertEqual(history.map(\.id), [b.id, a.id])
+        let fetched = try await repo.fetch(id: a.id)
+        XCTAssertEqual(fetched?.id, a.id)
+        try await repo.clearAll()
+        let cleared = try await repo.fetchHistory()
+        XCTAssertTrue(cleared.isEmpty)
     }
 }
 
