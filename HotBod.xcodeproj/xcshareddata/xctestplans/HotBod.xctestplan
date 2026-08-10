@@ -33,7 +33,8 @@
             "ProteinTrackerUITests/testProteinTabShowsDailyHero",
             "CoachUITests/testCoachTabShowsSuggestions",
             "WorkoutSessionUITests/testSessionShowsCompleteSetButton",
-            "WorkoutSessionUITests/testRegression_exerciseCompleteIsFullScreen"
+            "WorkoutSessionUITests/testRegression_exerciseCompleteIsFullScreen",
+            "WorkoutSessionUITests/testRegression_finishingLastExerciseWithIncompleteShowsConfirmAndKeepTraining"
           ]
         }
       ]

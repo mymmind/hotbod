@@ -33,7 +33,8 @@
             "TodayWorkoutUITests/testRegression_nonPreferredDayShowsRecoveryWithStart",
             "ProteinTrackerUITests/testProteinTabShowsDailyHero",
             "CoachUITests/testCoachTabShowsSuggestions",
-            "WorkoutSessionUITests/testRegression_exerciseCompleteIsFullScreen"
+            "WorkoutSessionUITests/testRegression_exerciseCompleteIsFullScreen",
+            "WorkoutSessionUITests/testRegression_finishingLastExerciseWithIncompleteShowsConfirmAndKeepTraining"
           ]
         }
       ]

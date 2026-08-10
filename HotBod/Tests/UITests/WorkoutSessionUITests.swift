@@ -17,8 +17,6 @@ final class WorkoutSessionUITests: BaseUITestCase {
     }
   }
 
-  // UI test exemption: advance→end-confirmation / Keep Training navigation is covered by
-  // WorkoutSessionCalculatorTests (advanceDecision + endConfirmationCopy); no dedicated UI test here.
   private func waitForWorkoutComplete(timeout: TimeInterval = 15) -> Bool {
     if app.descendants(matching: .any)["session.workoutComplete"].waitForExistence(timeout: timeout) { return true }
     if app.staticTexts["session.workoutComplete"].waitForExistence(timeout: 2) { return true }
@@ -172,5 +170,71 @@ final class WorkoutSessionUITests: BaseUITestCase {
     XCTAssertTrue(session.exerciseComplete.waitForExistence(timeout: 2))
     XCTAssertTrue(session.exerciseCompleteContinue.waitForExistence(timeout: 2))
     XCTAssertFalse(session.completeSetButton.exists, "Active session Complete Set must not remain visible")
+  }
+
+  /// Jumping to the last exercise and finishing it must confirm end — not auto-complete —
+  /// and Keep Training returns to the first incomplete exercise.
+  func testRegression_finishingLastExerciseWithIncompleteShowsConfirmAndKeepTraining() {
+    XCTAssertTrue(session.waitForSession())
+
+    // UI-test workouts are 3 exercises; jump ahead like a mid-session abs finisher.
+    for _ in 0..<2 {
+      XCTAssertTrue(session.nextExerciseButton.waitForExistence(timeout: 5))
+      tapElement(session.nextExerciseButton)
+    }
+    XCTAssertTrue(
+      app.staticTexts.matching(NSPredicate(format: "label CONTAINS '3 of 3'")).firstMatch
+        .waitForExistence(timeout: 8),
+      "Expected last exercise after jumping ahead"
+    )
+
+    var sawExerciseComplete = false
+    for _ in 0..<24 {
+      session.dismissTransientPromptsIfNeeded()
+
+      if session.exerciseComplete.waitForExistence(timeout: 1) {
+        sawExerciseComplete = true
+        break
+      }
+
+      if session.completeSetButton.waitForExistence(timeout: 2) {
+        if session.completeSetButton.isHittable {
+          session.completeSetButton.tap()
+        } else {
+          session.completeSetButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
+        session.dismissTransientPromptsIfNeeded()
+        continue
+      }
+
+      session.dismissTransientPromptsIfNeeded()
+    }
+
+    XCTAssertTrue(sawExerciseComplete, "Expected Exercise Complete after finishing last exercise")
+    XCTAssertTrue(session.exerciseCompleteContinue.waitForExistence(timeout: 5))
+    tapElement(session.exerciseCompleteContinue)
+
+    XCTAssertFalse(
+      waitForWorkoutComplete(timeout: 2),
+      "Finishing last list exercise must not auto-complete the workout"
+    )
+    XCTAssertTrue(
+      session.keepTrainingButton.waitForExistence(timeout: 8)
+        || session.endWorkoutSaveButton.waitForExistence(timeout: 2),
+      "Expected end-workout confirmation"
+    )
+    if session.keepTrainingButton.waitForExistence(timeout: 2) {
+      session.keepTrainingButton.tap()
+    } else {
+      app.buttons["Keep Training"].tap()
+    }
+
+    XCTAssertTrue(session.completeSetButton.waitForExistence(timeout: 8))
+    XCTAssertTrue(
+      app.staticTexts.matching(NSPredicate(format: "label CONTAINS '1 of 3'")).firstMatch
+        .waitForExistence(timeout: 8),
+      "Keep Training must jump to the first incomplete exercise"
+    )
+    XCTAssertFalse(waitForWorkoutComplete(timeout: 1), "Session must still be in progress")
   }
 }

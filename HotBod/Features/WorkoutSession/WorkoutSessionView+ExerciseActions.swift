@@ -474,10 +474,7 @@ extension WorkoutSessionView {
             currentExerciseIndex: currentExerciseIndex
         ) {
         case .goToExercise(let index):
-            withAnimation(ForgeMotion.exercise) {
-                currentExerciseIndex = index
-                furthestExerciseIndex = max(furthestExerciseIndex, index)
-            }
+            goToExercise(at: index)
         case .confirmEnd:
             showEndConfirmation = true
         }

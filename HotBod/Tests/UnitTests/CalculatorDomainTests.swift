@@ -174,4 +174,62 @@ final class WorkoutSessionCalculatorTests: XCTestCase {
         XCTAssertEqual(complete.title, "Finish Workout?")
         XCTAssertEqual(complete.message, "All sets logged. Ready to end this session?")
     }
+
+    func testIsExerciseCompleteRequiresLoggedSetsAndIgnoresSkipped() {
+        let set = PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
+        let done = CompletedSet(setIndex: 0, weightKg: 50, reps: 8)
+        let incomplete = WorkoutExercise(exerciseId: "a", orderIndex: 0, plannedSets: [set], completedSets: [])
+        let complete = WorkoutExercise(exerciseId: "b", orderIndex: 1, plannedSets: [set], completedSets: [done])
+        let skipped = WorkoutExercise(
+            exerciseId: "c",
+            orderIndex: 2,
+            plannedSets: [set],
+            completedSets: [],
+            wasSkipped: true
+        )
+        XCTAssertFalse(WorkoutSessionCalculator.isExerciseComplete(incomplete))
+        XCTAssertTrue(WorkoutSessionCalculator.isExerciseComplete(complete))
+        XCTAssertFalse(WorkoutSessionCalculator.isExerciseComplete(skipped))
+        XCTAssertTrue(WorkoutSessionCalculator.needsSetsLogged(incomplete))
+        XCTAssertFalse(WorkoutSessionCalculator.needsSetsLogged(complete))
+        XCTAssertFalse(WorkoutSessionCalculator.needsSetsLogged(skipped))
+    }
+
+    func testAdvanceDecisionEmptySessionConfirmsEnd() {
+        let session = WorkoutSession(
+            userId: UUID(),
+            title: "Empty",
+            estimatedDurationMinutes: 45,
+            exercises: [],
+            status: .inProgress
+        )
+        XCTAssertTrue(WorkoutSessionCalculator.isSessionFullyLogged(session))
+        XCTAssertEqual(
+            WorkoutSessionCalculator.advanceDecision(session: session, currentExerciseIndex: 0),
+            .confirmEnd
+        )
+        XCTAssertNil(WorkoutSessionCalculator.firstIncompleteExerciseIndex(in: session))
+    }
+
+    func testAdvanceDecisionOutOfBoundsIndexConfirmsEndWhenWorkRemains() {
+        let set = PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
+        let exercises = [
+            WorkoutExercise(exerciseId: "a", orderIndex: 0, plannedSets: [set], completedSets: [])
+        ]
+        let session = WorkoutSession(
+            userId: UUID(),
+            title: "Test",
+            estimatedDurationMinutes: 45,
+            exercises: exercises,
+            status: .inProgress
+        )
+        XCTAssertEqual(
+            WorkoutSessionCalculator.advanceDecision(session: session, currentExerciseIndex: 99),
+            .confirmEnd
+        )
+        XCTAssertEqual(
+            WorkoutSessionCalculator.advanceDecision(session: session, currentExerciseIndex: -1),
+            .goToExercise(index: 0)
+        )
+    }
 }

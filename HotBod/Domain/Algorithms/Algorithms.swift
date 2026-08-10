@@ -740,9 +740,7 @@ enum WorkoutSessionCalculator {
 
     /// First exercise that still has sets to log; falls back to last non-skipped exercise.
     static func currentExerciseIndex(for session: WorkoutSession) -> Int {
-        if let idx = session.exercises.firstIndex(where: {
-            !$0.wasSkipped && $0.completedSets.count < $0.plannedSets.count
-        }) {
+        if let idx = session.exercises.firstIndex(where: needsSetsLogged) {
             return idx
         }
         if let last = session.exercises.lastIndex(where: { !$0.wasSkipped }) {
@@ -794,22 +792,25 @@ enum WorkoutSessionCalculator {
         max(0, Int(ceil(end.timeIntervalSince(now))))
     }
 
+    /// Non-skipped exercise that still has planned sets to log.
+    static func needsSetsLogged(_ exercise: WorkoutExercise) -> Bool {
+        !exercise.wasSkipped && exercise.completedSets.count < exercise.plannedSets.count
+    }
+
     static func isExerciseComplete(_ exercise: WorkoutExercise) -> Bool {
-        !exercise.wasSkipped && exercise.completedSets.count >= exercise.plannedSets.count
+        !exercise.wasSkipped && !needsSetsLogged(exercise)
     }
 
     static func isSessionFullyLogged(_ session: WorkoutSession) -> Bool {
-        session.exercises.allSatisfy { $0.wasSkipped || isExerciseComplete($0) }
+        !session.exercises.contains(where: needsSetsLogged)
     }
 
     static func incompleteExerciseCount(in session: WorkoutSession) -> Int {
-        session.exercises.filter { !$0.wasSkipped && $0.completedSets.count < $0.plannedSets.count }.count
+        session.exercises.filter(needsSetsLogged).count
     }
 
     static func firstIncompleteExerciseIndex(in session: WorkoutSession) -> Int? {
-        session.exercises.firstIndex(where: {
-            !$0.wasSkipped && $0.completedSets.count < $0.plannedSets.count
-        })
+        session.exercises.firstIndex(where: needsSetsLogged)
     }
 
     static func advanceDecision(
@@ -819,8 +820,9 @@ enum WorkoutSessionCalculator {
         if isSessionFullyLogged(session) {
             return .confirmEnd
         }
-        if currentExerciseIndex + 1 < session.exercises.count {
-            return .goToExercise(index: currentExerciseIndex + 1)
+        let nextIndex = currentExerciseIndex + 1
+        if session.exercises.indices.contains(nextIndex) {
+            return .goToExercise(index: nextIndex)
         }
         return .confirmEnd
     }

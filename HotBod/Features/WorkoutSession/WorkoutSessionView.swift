@@ -236,6 +236,7 @@ struct WorkoutSessionView: View {
             Button("Keep Training", role: .cancel) {
                 keepTrainingAfterEndConfirmation()
             }
+            .accessibilityIdentifier("session.endWorkout.keepTraining")
         } message: {
             Text(endConfirmationCopy.message)
         }

@@ -54,6 +54,16 @@ struct WorkoutSessionPage {
   }
   var finishWorkoutButton: XCUIElement { app.buttons["session.finishWorkout"] }
   var workoutMenuButton: XCUIElement { app.buttons["session.workoutMenu"] }
+  var endWorkoutSaveButton: XCUIElement {
+    let byId = app.buttons["session.endWorkout.save"]
+    if byId.exists { return byId }
+    return app.buttons["End & Save Progress"]
+  }
+  var keepTrainingButton: XCUIElement {
+    let byId = app.buttons["session.endWorkout.keepTraining"]
+    if byId.exists { return byId }
+    return app.buttons["Keep Training"]
+  }
 
   var exerciseComplete: XCUIElement {
     app.descendants(matching: .any)["session.exerciseComplete"]
