@@ -32,7 +32,8 @@
             "TodayWorkoutUITests/testTodayShowsWorkoutHero",
             "TodayWorkoutUITests/testRegression_nonPreferredDayShowsRecoveryWithStart",
             "ProteinTrackerUITests/testProteinTabShowsDailyHero",
-            "CoachUITests/testCoachTabShowsSuggestions",
+            "PhysiqueUITests/testPhysiqueTabEmptyState",
+            "PhysiqueUITests/testRegression_coachChatEntryPointsRemovedFromPhysiqueTab",
             "WorkoutSessionUITests/testRegression_exerciseCompleteIsFullScreen",
             "WorkoutSessionUITests/testRegression_finishingLastExerciseWithIncompleteShowsConfirmAndKeepTraining"
           ]

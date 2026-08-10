@@ -31,7 +31,8 @@
             "LaunchUITests/testTrainTabOpens",
             "TodayWorkoutUITests/testTodayShowsWorkoutHero",
             "ProteinTrackerUITests/testProteinTabShowsDailyHero",
-            "CoachUITests/testCoachTabShowsSuggestions",
+            "PhysiqueUITests/testPhysiqueTabEmptyState",
+            "PhysiqueUITests/testRegression_coachChatEntryPointsRemovedFromPhysiqueTab",
             "WorkoutSessionUITests/testSessionShowsCompleteSetButton",
             "WorkoutSessionUITests/testRegression_exerciseCompleteIsFullScreen",
             "WorkoutSessionUITests/testRegression_finishingLastExerciseWithIncompleteShowsConfirmAndKeepTraining"

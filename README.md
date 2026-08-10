@@ -95,7 +95,7 @@ App works fully offline without `SupabaseConfig.plist`.
 
 ## Phase 4 — AI coach (Edge Functions)
 
-Status: optional cloud mode available when Supabase + secrets are configured.
+Status: optional cloud mode available when Supabase + secrets are configured. **Physique assessment** (Physique tab + `physique-assess` edge function) is the primary AI surface; the chat `coach` function remains deployed but dormant in the app UI.
 
 ### 1. Set secrets and deploy
 
@@ -110,15 +110,15 @@ The `coach` function requires a signed-in user JWT. It never exposes your OpenAI
 
 ### 2. How it works
 
-| Mode | Coach behavior |
-|------|----------------|
-| No Supabase config | Offline mock coach |
-| Configured, signed out | Offline mock coach |
-| Configured, signed in | Calls `coach` edge function with `allowedExerciseIds` from local seed |
+| Mode | Physique assessment | Chat coach (dormant) |
+|------|---------------------|----------------------|
+| No Supabase config | Offline heuristics | Offline mock (not surfaced in UI) |
+| Configured, signed out | Offline heuristics | Offline mock (not surfaced in UI) |
+| Configured, signed in | Calls `physique-assess` edge function | `coach` function available but not linked from tabs |
 
-When the AI proposes a workout, Coach shows **Apply Workout** after server + client validation. Invalid proposals (unknown exercise IDs, etc.) are rejected.
+Physique assessment returns structured focus priorities and training bias from front/back (optional side) photos. Deploy with `supabase functions deploy physique-assess`.
 
-Coach messages are persisted to `coach_messages` when using the cloud coach.
+The legacy `coach` edge function and `coach_messages` table remain for future use; chat UI was removed in favor of the Physique tab.
 
 ## Dashboard setup (no CLI)
 
