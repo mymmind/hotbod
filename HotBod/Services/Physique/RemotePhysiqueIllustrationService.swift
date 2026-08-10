@@ -17,6 +17,10 @@ struct RemotePhysiqueIllustrateResponse: Decodable {
     var contentType: String
 }
 
+struct RemotePhysiqueIllustrateErrorResponse: Decodable {
+    var error: String
+}
+
 actor RemotePhysiqueIllustrationService: PhysiqueIllustrationService {
     private static let logger = Logger(
         subsystem: "com.hotbod.app",
@@ -64,7 +68,7 @@ actor RemotePhysiqueIllustrationService: PhysiqueIllustrationService {
             )
         } catch {
             logFailure(error)
-            throw PhysiqueIllustrationError.unavailable
+            throw Self.mapInvokeError(error)
         }
 
         guard let decoded = Data(base64Encoded: response.imageBase64), !decoded.isEmpty else {
@@ -90,5 +94,19 @@ actor RemotePhysiqueIllustrationService: PhysiqueIllustrationService {
                 "Cloud physique illustration request failed: \(error.localizedDescription, privacy: .public)"
             )
         }
+    }
+
+    private static func mapInvokeError(_ error: Error) -> PhysiqueIllustrationError {
+        #if canImport(Supabase)
+        if case FunctionsError.httpError(_, let data) = error,
+           let payload = try? JSONDecoder().decode(RemotePhysiqueIllustrateErrorResponse.self, from: data),
+           !payload.error.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return .serverMessage(payload.error)
+        }
+        #endif
+        if error is DecodingError {
+            return .invalidResponse
+        }
+        return .unavailable
     }
 }

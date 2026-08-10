@@ -96,15 +96,15 @@ enum BackendServices {
     }
 
     static func makePhysiqueIllustrationService(auth: AuthService = makeAuthService()) -> any PhysiqueIllustrationService {
+        if UITestConfiguration.isUITesting || UITestConfiguration.shouldMockAI {
+            return MockPhysiqueIllustrationService()
+        }
+
         #if canImport(Supabase)
         if SupabaseConfig.isConfigured, let client = SupabaseClientProvider.shared {
             return RemotePhysiqueIllustrationService(client: client, auth: auth)
         }
         #endif
-
-        if UITestConfiguration.isUITesting || UITestConfiguration.shouldMockAI {
-            return MockPhysiqueIllustrationService()
-        }
 
         return UnavailablePhysiqueIllustrationService()
     }
