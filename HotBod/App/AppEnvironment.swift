@@ -15,6 +15,7 @@ final class AppEnvironment {
     let foodSearchService: any FoodSearchService
     let exerciseMediaProvider: any ExerciseMediaProvider
     let bodyPhotoAnalyzer: any BodyPhotoAnalyzer
+    let physiqueAssessmentService: HybridPhysiqueAssessmentService
     let healthKitReadinessService: any HealthKitReadinessService
     let healthKitWorkoutExportService: any HealthKitWorkoutExportService
     let stravaIntegrationService: any StravaIntegrationService
@@ -43,6 +44,7 @@ final class AppEnvironment {
     var paywallFeature: ProFeature?
     var bodyPhotoRevision = 0
     var activePhysiqueAssessment: PhysiqueAssessment?
+    var physiqueStatusMessage: String?
     var onboardingViewModel = OnboardingViewModel()
 
     var sessionSaveTask: Task<Void, Never>?
@@ -77,6 +79,7 @@ final class AppEnvironment {
         foodSearchService: (any FoodSearchService)? = nil,
         exerciseMediaProvider: any ExerciseMediaProvider = LocalExerciseMediaProvider(),
         bodyPhotoAnalyzer: any BodyPhotoAnalyzer = VisionBodyPhotoAnalyzer(),
+        physiqueAssessmentService: HybridPhysiqueAssessmentService? = nil,
         healthKitReadinessService: (any HealthKitReadinessService)? = nil,
         healthKitWorkoutExportService: (any HealthKitWorkoutExportService)? = nil,
         stravaIntegrationService: (any StravaIntegrationService)? = nil,
@@ -98,6 +101,8 @@ final class AppEnvironment {
         self.foodSearchService = foodSearchService ?? BackendServices.makeFoodSearchService()
         self.exerciseMediaProvider = exerciseMediaProvider
         self.bodyPhotoAnalyzer = bodyPhotoAnalyzer
+        self.physiqueAssessmentService = physiqueAssessmentService
+            ?? BackendServices.makeHybridPhysiqueAssessmentService(analyzer: bodyPhotoAnalyzer)
         self.healthKitReadinessService = healthKitReadinessService ?? HealthKitReadinessServiceFactory.makeDefault()
         self.healthKitWorkoutExportService = healthKitWorkoutExportService ?? HealthKitWorkoutExportServiceFactory.makeDefault()
         self.stravaIntegrationService = stravaIntegrationService ?? StravaIntegrationServiceFactory.makeDefault()
@@ -124,6 +129,7 @@ final class AppEnvironment {
         foodSearchService: (any FoodSearchService)? = nil,
         exerciseMediaProvider: any ExerciseMediaProvider = LocalExerciseMediaProvider(),
         bodyPhotoAnalyzer: any BodyPhotoAnalyzer = VisionBodyPhotoAnalyzer(),
+        physiqueAssessmentService: HybridPhysiqueAssessmentService? = nil,
         healthKitReadinessService: (any HealthKitReadinessService)? = nil,
         healthKitWorkoutExportService: (any HealthKitWorkoutExportService)? = nil,
         stravaIntegrationService: (any StravaIntegrationService)? = nil,
@@ -150,6 +156,7 @@ final class AppEnvironment {
             foodSearchService: foodSearchService,
             exerciseMediaProvider: exerciseMediaProvider,
             bodyPhotoAnalyzer: bodyPhotoAnalyzer,
+            physiqueAssessmentService: physiqueAssessmentService,
             healthKitReadinessService: healthKitReadinessService,
             healthKitWorkoutExportService: healthKitWorkoutExportService,
             stravaIntegrationService: stravaIntegrationService,

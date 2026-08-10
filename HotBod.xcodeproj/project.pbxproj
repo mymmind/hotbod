@@ -101,6 +101,7 @@
 		5CC17B42D293ACC437903F1B /* VolumeCapPropertyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A42752F503EE313092164A0 /* VolumeCapPropertyTests.swift */; };
 		5EC9A57CF3976EB175BF2E94 /* CalculatorDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A58FAE544364C0A792EAA00E /* CalculatorDomainTests.swift */; };
 		62B30A0F5863F4AE2341F2C5 /* WorkoutShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60E5B58D42BB506379F3AD8E /* WorkoutShareCard.swift */; };
+		62ECC9711B111E1D78C1B4BA /* RemotePhysiqueAssessmentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A432AEFBFF252741A1D70CB3 /* RemotePhysiqueAssessmentService.swift */; };
 		632E07914DF479C990168E55 /* WorkoutSelectionRationale.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10D372E2C28780FCFDBC2296 /* WorkoutSelectionRationale.swift */; };
 		64BA55FDC84429DFC9374E33 /* PhoneWatchSessionBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1273B5F82410DEAE0BA7348 /* PhoneWatchSessionBridge.swift */; };
 		6523B6903553291F788D35C1 /* AppEnvironment+Lifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3989FCD3D4B83ED18673E6FE /* AppEnvironment+Lifecycle.swift */; };
@@ -188,6 +189,7 @@
 		B717A927625814645875E7BF /* deadlift_demo.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = BEEB2CCD0B8C0ACEE41F9301 /* deadlift_demo.mp4 */; };
 		B79FABD08EEAF6047BDA77D2 /* ForgeColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DC06118A9CA23FA6D415758 /* ForgeColors.swift */; };
 		B82144390F2ED248CE3882F8 /* P1ParityFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AECC0C9A9B3F9B78734CFCD1 /* P1ParityFeatureTests.swift */; };
+		B94368E6F7DF40C6C6D614D2 /* HybridPhysiqueAssessmentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C405D7FA8E185902765DB9E /* HybridPhysiqueAssessmentService.swift */; };
 		BA930589A8578CAACD353E7E /* RecoveryDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BDA5E670A1986391578271 /* RecoveryDomainTests.swift */; };
 		BBD8B19FDA95305C1EACDDA6 /* FixtureBuilders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5586034F4A97D5489831CFD7 /* FixtureBuilders.swift */; };
 		BD3CC17572E77F06D5D883F4 /* ForgeSetMetricField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23C926C2BDD8971A69005102 /* ForgeSetMetricField.swift */; };
@@ -216,6 +218,7 @@
 		D4DBC185ACCA7AD08AB1A26D /* TodayMetricTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 003177D369F352DDA5C5CC85 /* TodayMetricTile.swift */; };
 		D68BE424EAD85CF1B1D0E583 /* AppEnvironment+Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = E66A3E5C228BE0F6A4F6AC87 /* AppEnvironment+Profile.swift */; };
 		D6B4473C7CBCFCF6D1626742 /* BodyProgressPhoto+Timeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C893A267C1E03740A65C2BE /* BodyProgressPhoto+Timeline.swift */; };
+		D6F50D5158A3C716E597CF8F /* AppEnvironmentPhysiqueOrchestrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55B32A81CC561283349180A3 /* AppEnvironmentPhysiqueOrchestrationTests.swift */; };
 		D729182CE6B0F8873D2546AA /* ExerciseSeed.json in Resources */ = {isa = PBXBuildFile; fileRef = 20B5378CE5FD9CD9351FB447 /* ExerciseSeed.json */; };
 		D97C597C7F47304796E2665B /* ExerciseVarietyScoringTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEF6E8C1BB94D6D35D3E5F1D /* ExerciseVarietyScoringTests.swift */; };
 		DAC0CF91731F72D5FEFEFCDB /* MuscleVolumePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A685FD73AD99DD342DE86B77 /* MuscleVolumePlanner.swift */; };
@@ -323,6 +326,7 @@
 		1A2A94DB6E9D509353D634B8 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		1A42752F503EE313092164A0 /* VolumeCapPropertyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeCapPropertyTests.swift; sourceTree = "<group>"; };
 		1A6E43B462E7918DE4F6D010 /* UITestConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestConfiguration.swift; sourceTree = "<group>"; };
+		1C405D7FA8E185902765DB9E /* HybridPhysiqueAssessmentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HybridPhysiqueAssessmentService.swift; sourceTree = "<group>"; };
 		1DC215A93630DB6E858B984C /* AppEnvironment+WorkoutSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppEnvironment+WorkoutSession.swift"; sourceTree = "<group>"; };
 		1E6FEE1E6ED011D28473B18A /* AddExerciseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddExerciseSheet.swift; sourceTree = "<group>"; };
 		1EAA6CBD6294BAD074D46B94 /* USDAFoodSearchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = USDAFoodSearchService.swift; sourceTree = "<group>"; };
@@ -388,6 +392,7 @@
 		54D8500342F5F3DAFFF6FCD0 /* OfflinePhysiqueAssessmentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflinePhysiqueAssessmentService.swift; sourceTree = "<group>"; };
 		5586034F4A97D5489831CFD7 /* FixtureBuilders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixtureBuilders.swift; sourceTree = "<group>"; };
 		55A2B232F50E8B1CD9E1699D /* HealthKitWorkoutExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitWorkoutExportService.swift; sourceTree = "<group>"; };
+		55B32A81CC561283349180A3 /* AppEnvironmentPhysiqueOrchestrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironmentPhysiqueOrchestrationTests.swift; sourceTree = "<group>"; };
 		56338BC0B09B653D9BF218CA /* ForgeSubscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgeSubscriptionService.swift; sourceTree = "<group>"; };
 		569E64F2A09045B746E664CA /* ProteinDomainTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProteinDomainTests.swift; sourceTree = "<group>"; };
 		570A353760744D5E246AF7EE /* PhysiqueAssessment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueAssessment.swift; sourceTree = "<group>"; };
@@ -462,6 +467,7 @@
 		A3123E4C6C38C218B596B1D6 /* LocalPhysiqueAssessmentRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalPhysiqueAssessmentRepository.swift; sourceTree = "<group>"; };
 		A383FD59CF3B9A88F6172946 /* WorkoutSessionView+SetTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkoutSessionView+SetTable.swift"; sourceTree = "<group>"; };
 		A43046C0DBEA17BF9BA5919D /* HotBodWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HotBodWatch.entitlements; sourceTree = "<group>"; };
+		A432AEFBFF252741A1D70CB3 /* RemotePhysiqueAssessmentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemotePhysiqueAssessmentService.swift; sourceTree = "<group>"; };
 		A460E7612946A5C17D0930BE /* ForgeIcons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgeIcons.swift; sourceTree = "<group>"; };
 		A563F8BE1CE5689761461C42 /* SupabaseDTOTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseDTOTests.swift; sourceTree = "<group>"; };
 		A589DF67D1BDC2DB38795EB2 /* SettingsComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsComponents.swift; sourceTree = "<group>"; };
@@ -1010,6 +1016,7 @@
 			children = (
 				D3180C017213CB0430E3BEE0 /* AppEnvironmentDayRolloverTests.swift */,
 				ED165C0AC40987BAB9DE61CF /* AppEnvironmentOrchestrationTests.swift */,
+				55B32A81CC561283349180A3 /* AppEnvironmentPhysiqueOrchestrationTests.swift */,
 				EB1DF9354C90972341F78A1C /* BodyPhotoDomainTests.swift */,
 				A58FAE544364C0A792EAA00E /* CalculatorDomainTests.swift */,
 				4C158096167D088ED9C4E366 /* CoachDomainTests.swift */,
@@ -1066,7 +1073,9 @@
 		C2F32EF6A351BEFFD5EE87B6 /* Physique */ = {
 			isa = PBXGroup;
 			children = (
+				1C405D7FA8E185902765DB9E /* HybridPhysiqueAssessmentService.swift */,
 				54D8500342F5F3DAFFF6FCD0 /* OfflinePhysiqueAssessmentService.swift */,
+				A432AEFBFF252741A1D70CB3 /* RemotePhysiqueAssessmentService.swift */,
 			);
 			path = Physique;
 			sourceTree = "<group>";
@@ -1395,6 +1404,7 @@
 			files = (
 				71CEE18AE080038DFB373C44 /* AppEnvironmentDayRolloverTests.swift in Sources */,
 				90B2C6009A0B536AE2A68CD7 /* AppEnvironmentOrchestrationTests.swift in Sources */,
+				D6F50D5158A3C716E597CF8F /* AppEnvironmentPhysiqueOrchestrationTests.swift in Sources */,
 				F667B4439DDC421E94C9FEC4 /* BodyPhotoDomainTests.swift in Sources */,
 				5EC9A57CF3976EB175BF2E94 /* CalculatorDomainTests.swift in Sources */,
 				6B7D17DEB361C780F05505C9 /* CatalogIntegrityPropertyTests.swift in Sources */,
@@ -1544,6 +1554,7 @@
 				AD02E2305975C80ECED5E504 /* HealthKitReadinessService.swift in Sources */,
 				55B6641F94FC018825E3ED9D /* HealthKitWorkoutExportService.swift in Sources */,
 				498B24950F4A7FFB999E27AC /* HotBodApp.swift in Sources */,
+				B94368E6F7DF40C6C6D614D2 /* HybridPhysiqueAssessmentService.swift in Sources */,
 				74D9E4649F4754D4FE71902A /* L10n.swift in Sources */,
 				783563910C782F2E7BFD70F6 /* LaunchRouteResolver.swift in Sources */,
 				4E5BE885C31376F3B9770A5C /* LocalExerciseRepository.swift in Sources */,
@@ -1573,6 +1584,7 @@
 				93E0BC09522B89553E37FB49 /* ProgressDashboardView.swift in Sources */,
 				7202E3CB1021F4A9033CFE80 /* ProteinTrackerView.swift in Sources */,
 				AA6D04F891B44E9EC90FB2C5 /* RemoteAIWorkoutService.swift in Sources */,
+				62ECC9711B111E1D78C1B4BA /* RemotePhysiqueAssessmentService.swift in Sources */,
 				AE2313D59B0460D21719F269 /* RepositoryProtocols.swift in Sources */,
 				D37F09C44A6BB4001BD84B78 /* RestTimerFeedbackPlanner.swift in Sources */,
 				23DED7644F2AD97FCCCE10CB /* SessionExercisePlanner.swift in Sources */,

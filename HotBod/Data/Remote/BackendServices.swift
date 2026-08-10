@@ -72,4 +72,18 @@ enum BackendServices {
         }
         return MockFoodSearchService()
     }
+
+    static func makeRemotePhysiqueAssessmentService() -> UnavailablePhysiqueAssessmentService {
+        UnavailablePhysiqueAssessmentService()
+    }
+
+    static func makeHybridPhysiqueAssessmentService(
+        analyzer: any BodyPhotoAnalyzer
+    ) -> HybridPhysiqueAssessmentService {
+        HybridPhysiqueAssessmentService(
+            remote: makeRemotePhysiqueAssessmentService(),
+            offline: OfflinePhysiqueAssessmentService(),
+            analyzer: analyzer
+        )
+    }
 }

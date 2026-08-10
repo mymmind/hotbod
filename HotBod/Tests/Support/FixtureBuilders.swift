@@ -88,6 +88,7 @@ enum FixtureBuilders {
 
   static func makeBodyPhoto(
     pose: BodyPhotoPoseType,
+    userId: UUID = UUID(),
     analysis: BodyPhotoAnalysis? = BodyPhotoAnalysis(
       poseConfidence: 0.8,
       lightingScore: 0.8,
@@ -104,7 +105,7 @@ enum FixtureBuilders {
   ) -> BodyProgressPhoto {
     var photo = BodyProgressPhoto(
       id: UUID(),
-      userId: UUID(),
+      userId: userId,
       date: date,
       poseType: pose,
       localImagePath: "/tmp/\(UUID().uuidString).jpg"
@@ -266,9 +267,11 @@ extension AppEnvironment {
     aiWorkoutService: (any AIWorkoutService)? = nil,
     foodSearchService: (any FoodSearchService)? = nil,
     authService: (any AuthService)? = nil,
-    cloudSyncService: (any CloudSyncService)? = nil
+    cloudSyncService: (any CloudSyncService)? = nil,
+    physiqueAssessmentService: HybridPhysiqueAssessmentService? = nil
   ) -> AppEnvironment {
-    AppEnvironment(
+    let analyzer = MockBodyPhotoAnalyzer()
+    return AppEnvironment(
       repositories: AppEnvironmentRepositories(
         workout: repos.workout,
         exercise: repos.exercise,
@@ -286,7 +289,12 @@ extension AppEnvironment {
       ),
       aiWorkoutService: aiWorkoutService ?? MockAIWorkoutService(),
       foodSearchService: foodSearchService ?? MockFoodSearchService(),
-      bodyPhotoAnalyzer: MockBodyPhotoAnalyzer(),
+      bodyPhotoAnalyzer: analyzer,
+      physiqueAssessmentService: physiqueAssessmentService ?? HybridPhysiqueAssessmentService(
+        remote: UnavailablePhysiqueAssessmentService(),
+        offline: OfflinePhysiqueAssessmentService(),
+        analyzer: analyzer
+      ),
       healthKitReadinessService: MockHealthKitReadinessService(),
       healthKitWorkoutExportService: MockHealthKitWorkoutExportService(),
       stravaIntegrationService: NoOpStravaIntegrationService(),
