@@ -260,7 +260,13 @@ enum UITestConfiguration {
             whyTodaySummary: "Bias shoulders, back, and chest to improve visual frame balance."
         )
 
+        let adapted = PhysiqueAssessPipeline.applyTrendAdaptation(
+            assessment: newer,
+            previous: older,
+            photos: []
+        )
+
         await environment.saveActivePhysiqueAssessment(older)
-        await environment.saveActivePhysiqueAssessment(newer)
+        await environment.saveActivePhysiqueAssessment(adapted)
     }
 }

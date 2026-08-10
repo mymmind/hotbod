@@ -23,6 +23,16 @@ final class PhysiqueHistoryUITests: BaseUITestCase {
     XCTAssertTrue(app.staticTexts["Current"].waitForExistence(timeout: 5))
   }
 
+  func testUpdatedBecauseVisibleWhenSeededAdaptApplies() {
+    XCTAssertTrue(
+      app.otherElements["physique.updatedBecause"].waitForExistence(timeout: 10)
+        || app.descendants(matching: .any)["physique.updatedBecause"].waitForExistence(timeout: 10)
+    )
+    XCTAssertTrue(
+      app.staticTexts["UPDATED BECAUSE"].exists || app.staticTexts["Updated because"].exists
+    )
+  }
+
   func testPastDetailHasNoReassess() {
     XCTAssertTrue(app.buttons["physique.history"].waitForExistence(timeout: 10))
     app.buttons["physique.history"].tap()

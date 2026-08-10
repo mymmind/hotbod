@@ -18,6 +18,9 @@ struct PhysiqueAssessmentReportContent: View {
                 sinceLastCard(sinceLastDiff)
             }
             developmentPrioritiesCard
+            if let adaptation = assessment.trendAdaptation, !adaptation.reasons.isEmpty {
+                updatedBecauseCard(adaptation)
+            }
             if !resolvedDirections.isEmpty {
                 physiqueDirectionsSection(resolvedDirections)
             }
@@ -94,6 +97,21 @@ struct PhysiqueAssessmentReportContent: View {
                 }
             }
         }
+    }
+
+    private func updatedBecauseCard(_ adaptation: PhysiqueTrendAdaptation) -> some View {
+        ForgeCard {
+            VStack(alignment: .leading, spacing: ForgeSpacing.s3) {
+                ForgeSectionHeader(title: "Updated because", subtitle: nil)
+                ForEach(adaptation.reasons, id: \.self) { reason in
+                    Text(reason)
+                        .font(ForgeTypography.body)
+                        .foregroundStyle(ForgeColors.muted)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
+        .accessibilityIdentifier("physique.updatedBecause")
     }
 
     private var whyTodayCard: some View {
