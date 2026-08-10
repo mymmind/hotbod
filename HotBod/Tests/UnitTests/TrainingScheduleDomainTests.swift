@@ -198,6 +198,26 @@ final class TrainingScheduleTests: XCTestCase {
         XCTAssertEqual(TrainingSchedule.currentSplitFocus(state: state, split: .pushPullLegs), .pull)
     }
 
+    func testRegression_nextFocusFollowsLastSessionAcrossNonPreferredDay() {
+        var profile = UserProfile.empty()
+        profile.preferredSplit = .pushPullLegs
+        let today = TrainingSchedule.weekday()
+        profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
+        profile.trainingDaysPerWeek = 2
+
+        var state = TrainingProgramState(splitDayIndex: 0) // push
+        XCTAssertEqual(TrainingSchedule.currentSplitFocus(state: state, split: .pushPullLegs), .push)
+
+        TrainingSchedule.advanceRotation(state: &state, split: .pushPullLegs) // -> pull
+        TrainingSchedule.advanceRotation(state: &state, split: .pushPullLegs) // -> legs
+        XCTAssertEqual(TrainingSchedule.currentSplitFocus(state: state, split: .pushPullLegs), .legs)
+
+        // Non-preferred calendar day must still read the next focus (push).
+        TrainingSchedule.advanceRotation(state: &state, split: .pushPullLegs)
+        XCTAssertEqual(TrainingSchedule.currentSplitFocus(state: state, split: .pushPullLegs), .push)
+        XCTAssertFalse(TrainingSchedule.isTrainingDay(profile: profile))
+    }
+
     private func dateFor(weekday: Weekday) -> Date {
         var calendar = Calendar.current
         calendar.firstWeekday = Weekday.sunday.rawValue
