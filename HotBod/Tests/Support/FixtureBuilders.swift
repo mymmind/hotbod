@@ -172,11 +172,15 @@ enum FixtureBuilders {
 
   static func makePhysiqueAssessment(
     id: UUID = UUID(),
-    createdAt: Date = Date()
+    createdAt: Date = Date(),
+    frontPhotoId: UUID = UUID(),
+    backPhotoId: UUID = UUID(),
+    sidePhotoId: UUID? = nil,
+    physique: PhysiqueBuildSummary? = nil,
+    developmentPriorities: [PhysiqueDevelopmentPriority]? = nil,
+    physiqueDirections: [PhysiqueArchetypeMatch] = []
   ) -> PhysiqueAssessment {
-    let frontPhotoId = UUID()
-    let backPhotoId = UUID()
-    let priorities: [PhysiqueDevelopmentPriority] = [
+    let priorities = developmentPriorities ?? [
       PhysiqueDevelopmentPriority(
         muscle: .lateralDelts,
         reason: "Side delt width improves shoulder line."
@@ -195,13 +199,13 @@ enum FixtureBuilders {
       createdAt: createdAt,
       frontPhotoId: frontPhotoId,
       backPhotoId: backPhotoId,
-      sidePhotoId: nil,
+      sidePhotoId: sidePhotoId,
       photoQuality: PhysiquePhotoQuality(
         anglesAvailable: ["front", "back"],
         lightingQuality: "Even",
         overallConfidence: 0.72
       ),
-      physique: PhysiqueBuildSummary(
+      physique: physique ?? PhysiqueBuildSummary(
         overallArchetype: "Athletic build with moderate shoulder-to-waist contrast",
         frameSize: "Medium",
         shoulderToWaist: "Moderate contrast",
@@ -234,7 +238,8 @@ enum FixtureBuilders {
         low: ["Rear delt detail without side photo"]
       ),
       source: .onDevice,
-      whyTodaySummary: "Bias shoulders, back, and chest to improve visual frame balance."
+      whyTodaySummary: "Bias shoulders, back, and chest to improve visual frame balance.",
+      physiqueDirections: physiqueDirections
     )
   }
 
