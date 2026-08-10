@@ -119,14 +119,11 @@ struct OfflinePhysiqueAssessmentService: PhysiqueAssessmentServing {
         back: BodyPhotoAnalysis,
         side: BodyPhotoAnalysis?
     ) -> Double {
-        var scores = [
+        let frontBackScores = [
             front.poseConfidence, front.lightingScore, front.framingScore,
             back.poseConfidence, back.lightingScore, back.framingScore
         ]
-        if let side {
-            scores.append(contentsOf: [side.poseConfidence, side.lightingScore, side.framingScore])
-        }
-        let base = scores.reduce(0, +) / Double(scores.count)
+        let base = frontBackScores.reduce(0, +) / Double(frontBackScores.count)
         if side != nil {
             return min(1.0, max(base + 0.12, 0.82))
         }

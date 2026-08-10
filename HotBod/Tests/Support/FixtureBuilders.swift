@@ -113,7 +113,10 @@ enum FixtureBuilders {
     return photo
   }
 
-  static func makePhysiqueAssessmentRequest(includeSide: Bool = false) -> PhysiqueAssessmentRequest {
+  static func makePhysiqueAssessmentRequest(
+    includeSide: Bool = false,
+    poorSideMetrics: Bool = false
+  ) -> PhysiqueAssessmentRequest {
     let frontMetrics = BodyPhotoAnalysis(
       poseConfidence: 0.8,
       lightingScore: 0.75,
@@ -140,9 +143,9 @@ enum FixtureBuilders {
     )
     let sideMetrics = includeSide
       ? BodyPhotoAnalysis(
-        poseConfidence: 0.82,
-        lightingScore: 0.74,
-        framingScore: 0.78,
+        poseConfidence: poorSideMetrics ? 0.2 : 0.82,
+        lightingScore: poorSideMetrics ? 0.2 : 0.74,
+        framingScore: poorSideMetrics ? 0.2 : 0.78,
         shoulderWidthEstimate: nil,
         waistWidthEstimate: nil,
         hipWidthEstimate: nil,

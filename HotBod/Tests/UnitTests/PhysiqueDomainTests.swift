@@ -76,6 +76,43 @@ final class OfflinePhysiqueAssessmentTests: XCTestCase {
         let with = try await service.assess(FixtureBuilders.makePhysiqueAssessmentRequest(includeSide: true))
         XCTAssertGreaterThan(with.photoQuality.overallConfidence, without.photoQuality.overallConfidence)
     }
+
+    func testWithoutSideRanksTrapsNotRearDelts() async throws {
+        let service = OfflinePhysiqueAssessmentService()
+        let result = try await service.assess(FixtureBuilders.makePhysiqueAssessmentRequest(includeSide: false))
+
+        let rankedMuscles = result.developmentPriorities.map(\.muscle)
+        XCTAssertTrue(rankedMuscles.contains(.traps))
+        XCTAssertFalse(rankedMuscles.contains(.rearDelts))
+
+        let rearDeltsEntry = result.muscleEntries.first { $0.muscle == .rearDelts }
+        XCTAssertNotNil(rearDeltsEntry)
+        XCTAssertEqual(rearDeltsEntry?.confidence, .uncertain)
+        XCTAssertNil(rearDeltsEntry?.priorityRank)
+    }
+
+    func testWithSideRanksRearDelts() async throws {
+        let service = OfflinePhysiqueAssessmentService()
+        let result = try await service.assess(FixtureBuilders.makePhysiqueAssessmentRequest(includeSide: true))
+
+        let rankedMuscles = result.developmentPriorities.map(\.muscle)
+        XCTAssertTrue(rankedMuscles.contains(.rearDelts))
+        XCTAssertFalse(rankedMuscles.contains(.traps))
+
+        let rearDeltsEntry = result.muscleEntries.first { $0.muscle == .rearDelts }
+        XCTAssertNotNil(rearDeltsEntry)
+        XCTAssertNotNil(rearDeltsEntry?.priorityRank)
+        XCTAssertNotEqual(rearDeltsEntry?.confidence, .uncertain)
+    }
+
+    func testPoorSidePhotoStillRaisesConfidenceOverNoSide() async throws {
+        let service = OfflinePhysiqueAssessmentService()
+        let without = try await service.assess(FixtureBuilders.makePhysiqueAssessmentRequest(includeSide: false))
+        let withPoorSide = try await service.assess(
+            FixtureBuilders.makePhysiqueAssessmentRequest(includeSide: true, poorSideMetrics: true)
+        )
+        XCTAssertGreaterThan(withPoorSide.photoQuality.overallConfidence, without.photoQuality.overallConfidence)
+    }
 }
 
 final class PhysiqueTrainingBiasMergerTests: XCTestCase {
