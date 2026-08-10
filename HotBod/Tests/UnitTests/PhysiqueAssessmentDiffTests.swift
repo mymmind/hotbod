@@ -108,4 +108,30 @@ final class PhysiqueAssessmentDiffTests: XCTestCase {
         XCTAssertFalse(diff.hasMeaningfulChange)
         XCTAssertEqual(diff.summaryLines, ["No meaningful change since last assessment."])
     }
+
+    func testUnknownOnlyDirectionChangeIsNotMeaningful() {
+        var previous = FixtureBuilders.makePhysiqueAssessment()
+        var current = FixtureBuilders.makePhysiqueAssessment()
+        previous.physiqueDirections = [
+            PhysiqueArchetypeMatch(
+                archetypeId: "not_in_catalog_abc",
+                rank: 1,
+                similarityDimension: "x",
+                confidence: .low
+            )
+        ]
+        current.physiqueDirections = [
+            PhysiqueArchetypeMatch(
+                archetypeId: "not_in_catalog_xyz",
+                rank: 1,
+                similarityDimension: "y",
+                confidence: .low
+            )
+        ]
+        let diff = PhysiqueAssessmentDiffEngine.diff(previous: previous, current: current)
+        XCTAssertFalse(diff.hasMeaningfulChange)
+        XCTAssertEqual(diff.summaryLines, ["No meaningful change since last assessment."])
+        XCTAssertEqual(Set(diff.directionChanges.added), ["not_in_catalog_xyz"])
+        XCTAssertEqual(diff.directionChanges.removed, ["not_in_catalog_abc"])
+    }
 }

@@ -19,8 +19,7 @@ enum PhysiqueAssessmentDiffEngine {
             || !priorityChanges.added.isEmpty
             || !priorityChanges.removed.isEmpty
             || priorityChanges.reordered
-            || !directionChanges.added.isEmpty
-            || !directionChanges.removed.isEmpty
+            || hasResolvableDirectionChanges(directionChanges, catalog: catalog)
         let summaryLines = makeSummaryLines(
             buildChanges: buildChanges,
             priorityChanges: priorityChanges,
@@ -173,5 +172,13 @@ enum PhysiqueAssessmentDiffEngine {
         catalog: [String: PhysiqueArchetypeCatalogEntry]
     ) -> [String] {
         archetypeIds.compactMap { catalog[$0]?.genericLabel }
+    }
+
+    private static func hasResolvableDirectionChanges(
+        _ directionChanges: PhysiqueDirectionChanges,
+        catalog: [String: PhysiqueArchetypeCatalogEntry]
+    ) -> Bool {
+        directionChanges.added.contains { catalog[$0] != nil }
+            || directionChanges.removed.contains { catalog[$0] != nil }
     }
 }
