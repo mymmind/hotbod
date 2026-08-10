@@ -468,13 +468,18 @@ extension WorkoutSessionView {
         showExerciseComplete = false
         pendingPostSetAction = nil
         clearPersistedRestState()
-        if currentExerciseIndex + 1 < session.exercises.count {
+
+        switch WorkoutSessionCalculator.advanceDecision(
+            session: session,
+            currentExerciseIndex: currentExerciseIndex
+        ) {
+        case .goToExercise(let index):
             withAnimation(ForgeMotion.exercise) {
-                currentExerciseIndex += 1
-                furthestExerciseIndex = max(furthestExerciseIndex, currentExerciseIndex)
+                currentExerciseIndex = index
+                furthestExerciseIndex = max(furthestExerciseIndex, index)
             }
-        } else {
-            finishWorkout()
+        case .confirmEnd:
+            showEndConfirmation = true
         }
     }
 }

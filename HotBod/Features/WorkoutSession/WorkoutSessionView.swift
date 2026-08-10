@@ -42,7 +42,7 @@ struct WorkoutSessionView: View {
     @State var swapResolver: ExerciseSwapResolver?
     @State private var showPreview = false
     @State private var showExplanation = false
-    @State private var showEndConfirmation = false
+    @State var showEndConfirmation = false
     @State private var showCancelConfirmation = false
     @State var exerciseStatsById: [String: UserExerciseStats] = [:]
     @State var flashSetId: UUID?
