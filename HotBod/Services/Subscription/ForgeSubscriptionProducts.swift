@@ -10,10 +10,17 @@ enum ForgeSubscriptionProducts {
 /// Toggle before release to re-enable StoreKit gates and free-tier limits.
 enum SubscriptionConfig {
 #if DEBUG
-    static let unrestrictedAccess = true
+    private static let defaultUnrestrictedAccess = true
 #else
-    static let unrestrictedAccess = false
+    private static let defaultUnrestrictedAccess = false
 #endif
+
+    /// Unit-test seam to exercise free-tier gates under DEBUG. Always clear in `defer`/tearDown.
+    nonisolated(unsafe) static var unrestrictedAccessOverride: Bool?
+
+    static var unrestrictedAccess: Bool {
+        unrestrictedAccessOverride ?? defaultUnrestrictedAccess
+    }
 }
 
 enum FreeTierLimits {

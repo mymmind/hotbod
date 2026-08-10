@@ -566,8 +566,10 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
         XCTAssertNotEqual(env.todayWorkout?.exercises.map(\.exerciseId), originalExerciseIds)
     }
 
-    // ensureTodayWorkoutOnLaunch is free; user regenerate uses the standard Pro/quota path (no rest-day loophole).
     func testRegression_nonPreferredDayUserRegenerateUsesStandardQuotaPath() async throws {
+        SubscriptionConfig.unrestrictedAccessOverride = false
+        defer { SubscriptionConfig.unrestrictedAccessOverride = nil }
+
         let today = TrainingSchedule.weekday()
         var profile = UserProfile.empty()
         profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(4))
@@ -588,18 +590,20 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
             subscriptionService: ForgeSubscriptionService(grantProForTesting: false)
         )
         try await env.seedOnboardedProfile(profile)
-        env.programState.weeklyRegenerationCount = FreeTierLimits.weeklyRegenerations
         await env.bootstrap()
+        env.programState.weeklyRegenerationCount = FreeTierLimits.weeklyRegenerations
+        try await env.programStateRepository.saveState(env.programState)
+        XCTAssertFalse(env.isPro)
+        XCTAssertEqual(env.remainingFreeRegenerations, 0)
 
         let first = await env.ensureTodayWorkoutOnLaunch(profile: profile)
-        XCTAssertTrue(first)
+        XCTAssertTrue(first, "initial ensure must remain free when quota is exhausted")
         let originalId = try XCTUnwrap(env.todayWorkout?.id)
 
-        // DEBUG unrestrictedAccess still allows regenerate; Release would paywall when quota is exhausted.
         let second = await env.regenerateTodayWorkout(profile: profile)
-        XCTAssertTrue(second)
-        XCTAssertNotEqual(env.todayWorkout?.id, originalId)
-        XCTAssertNil(env.paywallFeature)
+        XCTAssertFalse(second, "user regenerate on non-preferred day must not bypass Pro/quota")
+        XCTAssertEqual(env.todayWorkout?.id, originalId)
+        XCTAssertEqual(env.paywallFeature, .unlimitedGeneration)
     }
 
     // UI-test exemption: Rest / Train lighter alert UI is covered by domain classification
