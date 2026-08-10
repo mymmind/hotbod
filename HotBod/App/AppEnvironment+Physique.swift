@@ -2,12 +2,28 @@ import Foundation
 
 extension AppEnvironment {
     func loadActivePhysiqueAssessment() async {
-        activePhysiqueAssessment = try? await physiqueAssessmentRepository.fetchActive()
+        let history = (try? await physiqueAssessmentRepository.fetchHistory()) ?? []
+        physiqueAssessmentHistory = history
+        activePhysiqueAssessment = history.first
     }
 
     func saveActivePhysiqueAssessment(_ assessment: PhysiqueAssessment) async {
         try? await physiqueAssessmentRepository.saveActive(assessment)
-        activePhysiqueAssessment = assessment
+        await loadActivePhysiqueAssessment()
+    }
+
+    func sinceLastPhysiqueDiff(photos: [BodyProgressPhoto]) -> PhysiqueAssessmentDiff? {
+        guard physiqueAssessmentHistory.count >= 2 else { return nil }
+        let current = physiqueAssessmentHistory[0]
+        let previous = physiqueAssessmentHistory[1]
+        let currentRatio = photos.first { $0.id == current.frontPhotoId }?.analysis?.shoulderWaistRatio
+        let previousRatio = photos.first { $0.id == previous.frontPhotoId }?.analysis?.shoulderWaistRatio
+        return PhysiqueAssessmentDiffEngine.diff(
+            previous: previous,
+            current: current,
+            previousFrontRatio: previousRatio,
+            currentFrontRatio: currentRatio
+        )
     }
 
     func assessPhysique(photos: [BodyProgressPhoto]? = nil) async -> PhysiqueAssessment? {

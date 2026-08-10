@@ -199,6 +199,10 @@ struct PhysiqueView: View {
                 }
             }
 
+            if let diff = environment.sinceLastPhysiqueDiff(photos: photos) {
+                sinceLastCard(diff)
+            }
+
             ForgeCard {
                 VStack(alignment: .leading, spacing: ForgeSpacing.s3) {
                     ForgeSectionHeader(title: "Development Priorities", subtitle: "Ranked focus areas")
@@ -253,6 +257,40 @@ struct PhysiqueView: View {
                 Task { await runAssessment() }
             }
         }
+    }
+
+    private func sinceLastCard(_ diff: PhysiqueAssessmentDiff) -> some View {
+        ForgeCard {
+            VStack(alignment: .leading, spacing: ForgeSpacing.s3) {
+                ForgeSectionHeader(
+                    title: "Since last assessment",
+                    subtitle: dateRangeSubtitle(from: diff.previousDate, to: diff.currentDate)
+                )
+                ForEach(diff.summaryLines, id: \.self) { line in
+                    Text(line)
+                        .font(ForgeTypography.body)
+                        .foregroundStyle(ForgeColors.muted)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                if !diff.visionTrends.isEmpty {
+                    Text("Visual trend")
+                        .font(ForgeTypography.caption.weight(.semibold))
+                        .foregroundStyle(ForgeColors.muted)
+                    ForEach(diff.visionTrends, id: \.self) { trend in
+                        Text(trend)
+                            .font(ForgeTypography.caption)
+                            .foregroundStyle(ForgeColors.muted)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
+            .accessibilityIdentifier("physique.sinceLast")
+        }
+    }
+
+    private func dateRangeSubtitle(from previousDate: Date, to currentDate: Date) -> String {
+        let format = Date.FormatStyle(date: .abbreviated, time: .omitted)
+        return "\(previousDate.formatted(format)) → \(currentDate.formatted(format))"
     }
 
     private func physiqueDirectionsSection(

@@ -93,4 +93,51 @@ final class AppEnvironmentOrchestrationTests: XCTestCase {
         XCTAssertEqual(input.preferredMuscleGroups, [.shoulders, .back, .quads])
         XCTAssertFalse(assessment.physiqueDirections.isEmpty)
     }
+
+    func testLoadActivePhysiqueAssessmentPopulatesHistory() async throws {
+        let repos = TestRepositories.empty()
+        let older = FixtureBuilders.makePhysiqueAssessment(createdAt: Date(timeIntervalSince1970: 1))
+        let newer = FixtureBuilders.makePhysiqueAssessment(createdAt: Date(timeIntervalSince1970: 2))
+        try await repos.physiqueAssessment.saveActive(older)
+        try await repos.physiqueAssessment.saveActive(newer)
+        let env = AppEnvironment.makeForTests(repos: repos)
+        await env.loadActivePhysiqueAssessment()
+        XCTAssertEqual(env.activePhysiqueAssessment?.id, newer.id)
+        XCTAssertEqual(env.physiqueAssessmentHistory.map(\.id), [newer.id, older.id])
+    }
+
+    func testRegression_trainingBiasUsesNewestAssessmentOnly() async throws {
+        let repos = TestRepositories.empty()
+        var profile = UserProfile.empty()
+        profile.preferredMuscleGroups = []
+        try await repos.userProfile.saveProfile(profile)
+
+        var older = FixtureBuilders.makePhysiqueAssessment(createdAt: Date(timeIntervalSince1970: 1))
+        older.trainingBias = PhysiqueTrainingBias(
+            preferredMuscleGroups: [.quads],
+            rationale: "old"
+        )
+        var newer = FixtureBuilders.makePhysiqueAssessment(createdAt: Date(timeIntervalSince1970: 2))
+        newer.trainingBias = PhysiqueTrainingBias(
+            preferredMuscleGroups: [.shoulders, .back],
+            rationale: "new"
+        )
+        try await repos.physiqueAssessment.saveActive(older)
+        try await repos.physiqueAssessment.saveActive(newer)
+
+        let env = AppEnvironment.makeForTests(repos: repos)
+        env.userProfile = profile
+        await env.loadActivePhysiqueAssessment()
+        let input = await env.makeWorkoutGenerationInput(profile: profile, splitDayFocus: .push)
+        XCTAssertEqual(input.preferredMuscleGroups, [.shoulders, .back])
+        XCTAssertFalse(input.preferredMuscleGroups.contains(.quads))
+    }
+
+    func testSinceLastPhysiqueDiffNilWithSingleAssessment() async throws {
+        let repos = TestRepositories.empty()
+        try await repos.physiqueAssessment.saveActive(FixtureBuilders.makePhysiqueAssessment())
+        let env = AppEnvironment.makeForTests(repos: repos)
+        await env.loadActivePhysiqueAssessment()
+        XCTAssertNil(env.sinceLastPhysiqueDiff(photos: []))
+    }
 }

@@ -44,6 +44,7 @@ final class AppEnvironment {
     var paywallFeature: ProFeature?
     var bodyPhotoRevision = 0
     var activePhysiqueAssessment: PhysiqueAssessment?
+    var physiqueAssessmentHistory: [PhysiqueAssessment] = []
     var physiqueStatusMessage: String?
     var onboardingViewModel = OnboardingViewModel()
 
