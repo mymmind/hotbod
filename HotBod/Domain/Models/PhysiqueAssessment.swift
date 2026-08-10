@@ -56,6 +56,7 @@ struct PhysiqueAssessment: Identifiable, Hashable {
     var source: PhysiqueAssessmentSource
     var whyTodaySummary: String
     var physiqueDirections: [PhysiqueArchetypeMatch]
+    var trendAdaptation: PhysiqueTrendAdaptation?
 
     init(
         id: UUID,
@@ -72,7 +73,8 @@ struct PhysiqueAssessment: Identifiable, Hashable {
         confidenceBands: PhysiqueConfidenceBands,
         source: PhysiqueAssessmentSource,
         whyTodaySummary: String,
-        physiqueDirections: [PhysiqueArchetypeMatch] = []
+        physiqueDirections: [PhysiqueArchetypeMatch] = [],
+        trendAdaptation: PhysiqueTrendAdaptation? = nil
     ) {
         self.id = id
         self.createdAt = createdAt
@@ -89,6 +91,7 @@ struct PhysiqueAssessment: Identifiable, Hashable {
         self.source = source
         self.whyTodaySummary = whyTodaySummary
         self.physiqueDirections = physiqueDirections
+        self.trendAdaptation = trendAdaptation
     }
 }
 
@@ -109,6 +112,7 @@ extension PhysiqueAssessment: Codable {
         case source
         case whyTodaySummary
         case physiqueDirections
+        case trendAdaptation
     }
 
     init(from decoder: Decoder) throws {
@@ -134,5 +138,9 @@ extension PhysiqueAssessment: Codable {
             [PhysiqueArchetypeMatch].self,
             forKey: .physiqueDirections
         ) ?? []
+        trendAdaptation = try container.decodeIfPresent(
+            PhysiqueTrendAdaptation.self,
+            forKey: .trendAdaptation
+        )
     }
 }

@@ -133,6 +133,7 @@
 		767E5313D91EECF652FC04CC /* ProteinCompliancePropertyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B223C53918C56269F4CD2D52 /* ProteinCompliancePropertyTests.swift */; };
 		769F770B4AA148CE3545D181 /* TodayPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A41004D5DA04ED3018F117 /* TodayPage.swift */; };
 		783563910C782F2E7BFD70F6 /* LaunchRouteResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01C3807E7861035E628DBA3 /* LaunchRouteResolver.swift */; };
+		7894BC899C18413EE3994FF5 /* PhysiqueTrendAdaptation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF814F9C739A3046CF362D00 /* PhysiqueTrendAdaptation.swift */; };
 		7A0EF4046D9C89C7D1480851 /* LocalRepositories.swift in Sources */ = {isa = PBXBuildFile; fileRef = C92B94E876A4022EA1AA2E9F /* LocalRepositories.swift */; };
 		7ABFADDA6FA976B445FBCC55 /* HardeningDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB49B76F182221AA46E83A92 /* HardeningDomainTests.swift */; };
 		7AD46969099CB22975ED0C8D /* AppEnvironment+Nutrition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA318BAA424C43A6F258B0D /* AppEnvironment+Nutrition.swift */; };
@@ -141,6 +142,7 @@
 		8021A0A5196410D6D515D66F /* ExerciseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 992E76051847810CAB042063 /* ExerciseDetailView.swift */; };
 		8058627E5477C9ECA99F9863 /* ForgeFloatingTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271117557585ADBD679DB49D /* ForgeFloatingTabBar.swift */; };
 		817CAA51135076565DB5FA01 /* VisionBodyPhotoAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D241318036FBEA01CC91845E /* VisionBodyPhotoAnalyzer.swift */; };
+		819721CC876480D6597E8A8B /* PhysiqueTrendAdaptationDecodeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 936482ADA7CEBAF4E20C04A0 /* PhysiqueTrendAdaptationDecodeTests.swift */; };
 		8340D8E1B9D7D51FC6D7F778 /* AppEnvironment+Integrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21BDC05A2CF7953BCE10FE77 /* AppEnvironment+Integrations.swift */; };
 		858646B2ED69F93AED517E9C /* MuscleVolumePlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BD0CE9FDCE8FC0E3DEC031C /* MuscleVolumePlannerTests.swift */; };
 		8886E861973244008CC5E2B1 /* SessionSetEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46534E73D53D45E985F4C232 /* SessionSetEditorTests.swift */; };
@@ -476,6 +478,7 @@
 		921DE574AA4D857B7F734E72 /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
 		9224CB899B2DF1831FCD0D5F /* PhysiqueArchetypeCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueArchetypeCatalog.swift; sourceTree = "<group>"; };
 		9264F0FE066E3E63A4978D8A /* CoreFinisherPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreFinisherPlannerTests.swift; sourceTree = "<group>"; };
+		936482ADA7CEBAF4E20C04A0 /* PhysiqueTrendAdaptationDecodeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueTrendAdaptationDecodeTests.swift; sourceTree = "<group>"; };
 		94879435624903CEC6C1B91E /* PhysiqueAssessmentDiffEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueAssessmentDiffEngine.swift; sourceTree = "<group>"; };
 		95A356489BF2AA58EBE7AD72 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		9701AE782509CF3A35C879D3 /* WorkoutValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutValidator.swift; sourceTree = "<group>"; };
@@ -512,6 +515,7 @@
 		AE9EA356C4C50934104BC158 /* ForgeTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgeTypography.swift; sourceTree = "<group>"; };
 		AECC0C9A9B3F9B78734CFCD1 /* P1ParityFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P1ParityFeatureTests.swift; sourceTree = "<group>"; };
 		AEF6E8C1BB94D6D35D3E5F1D /* ExerciseVarietyScoringTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseVarietyScoringTests.swift; sourceTree = "<group>"; };
+		AF814F9C739A3046CF362D00 /* PhysiqueTrendAdaptation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueTrendAdaptation.swift; sourceTree = "<group>"; };
 		B08FEBE2BACDEDC26D217362 /* SwapExerciseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwapExerciseSheet.swift; sourceTree = "<group>"; };
 		B223C53918C56269F4CD2D52 /* ProteinCompliancePropertyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProteinCompliancePropertyTests.swift; sourceTree = "<group>"; };
 		B2AF4D0C7C02D44FC90EC1B8 /* WorkoutReminderScheduling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutReminderScheduling.swift; sourceTree = "<group>"; };
@@ -682,6 +686,7 @@
 				570A353760744D5E246AF7EE /* PhysiqueAssessment.swift */,
 				DDE6329142EEDE4B1F4DFC7C /* PhysiqueAssessmentDiff.swift */,
 				6B1840587D86C0E0D4F04EA3 /* PhysiqueAssessmentHistoryDocument.swift */,
+				AF814F9C739A3046CF362D00 /* PhysiqueTrendAdaptation.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1093,6 +1098,7 @@
 				DC68719248FAB4D872904B8D /* PhysiqueDirectionResolveTests.swift */,
 				FD01D4C38E0E9636ECD81278 /* PhysiqueDomainTests.swift */,
 				6670ACBCC22BDECFD2C7B6D8 /* PhysiqueFocusCopyTests.swift */,
+				936482ADA7CEBAF4E20C04A0 /* PhysiqueTrendAdaptationDecodeTests.swift */,
 				F6751FFF4C16DEB7BCAA3714 /* PostSetActionPlannerTests.swift */,
 				D8825A3F7DDEB9D5DCA567DC /* ProgressiveOverloadDomainTests.swift */,
 				569E64F2A09045B746E664CA /* ProteinDomainTests.swift */,
@@ -1506,6 +1512,7 @@
 				5EA364507916E95005D35AC7 /* PhysiqueDirectionResolveTests.swift in Sources */,
 				F042CB7CC0A48FE4C5CC3C10 /* PhysiqueDomainTests.swift in Sources */,
 				E0A1DD66EFD34BC09DEF3BA6 /* PhysiqueFocusCopyTests.swift in Sources */,
+				819721CC876480D6597E8A8B /* PhysiqueTrendAdaptationDecodeTests.swift in Sources */,
 				F429619D5D0382CEA0572A03 /* PostSetActionPlannerTests.swift in Sources */,
 				124276C862A50D622580C536 /* ProgressiveOverloadDomainTests.swift in Sources */,
 				40ABEFEC4B949EDC4F77E02A /* ProgressiveOverloadPropertyTests.swift in Sources */,
@@ -1660,6 +1667,7 @@
 				1BEB5F3F19E06EB06D723BAD /* PhysiqueFocusMuscle+MuscleGroup.swift in Sources */,
 				3D637A000A24B48979E0A84B /* PhysiquePhotoGate.swift in Sources */,
 				51C587A6F1136EEC6A286B35 /* PhysiqueTrainingBiasMerger.swift in Sources */,
+				7894BC899C18413EE3994FF5 /* PhysiqueTrendAdaptation.swift in Sources */,
 				F9C6BEC8A55FA78D4C6827F0 /* PhysiqueView.swift in Sources */,
 				8D6D62D4EFD29F429901F6EA /* PlistSecrets.swift in Sources */,
 				0617301269382CC57760D185 /* PostSetActionPlanner.swift in Sources */,

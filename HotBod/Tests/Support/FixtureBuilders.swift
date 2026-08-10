@@ -178,7 +178,8 @@ enum FixtureBuilders {
     sidePhotoId: UUID? = nil,
     physique: PhysiqueBuildSummary? = nil,
     developmentPriorities: [PhysiqueDevelopmentPriority]? = nil,
-    physiqueDirections: [PhysiqueArchetypeMatch] = []
+    physiqueDirections: [PhysiqueArchetypeMatch] = [],
+    trendAdaptation: PhysiqueTrendAdaptation? = nil
   ) -> PhysiqueAssessment {
     let priorities = developmentPriorities ?? [
       PhysiqueDevelopmentPriority(
@@ -239,7 +240,8 @@ enum FixtureBuilders {
       ),
       source: .onDevice,
       whyTodaySummary: "Bias shoulders, back, and chest to improve visual frame balance.",
-      physiqueDirections: physiqueDirections
+      physiqueDirections: physiqueDirections,
+      trendAdaptation: trendAdaptation
     )
   }
 
