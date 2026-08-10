@@ -103,7 +103,7 @@ export async function handlePhysiqueAssessRequest(req: Request): Promise<Respons
     return json(parsed);
   } catch (error) {
     console.error("physique-assess handler error:", error instanceof Error ? error.message : error);
-    return json({ error: error instanceof Error ? error.message : "Unknown error" }, 500);
+    return json({ error: "Internal server error." }, 500);
   }
 }
 

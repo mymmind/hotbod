@@ -84,12 +84,14 @@ enum BackendServices {
 
     static func makeHybridPhysiqueAssessmentService(
         analyzer: any BodyPhotoAnalyzer,
-        auth: AuthService = makeAuthService()
+        auth: AuthService = makeAuthService(),
+        bodyProgress: (any BodyProgressRepository)? = nil
     ) -> HybridPhysiqueAssessmentService {
         HybridPhysiqueAssessmentService(
             remote: makeRemotePhysiqueAssessmentService(auth: auth),
             offline: OfflinePhysiqueAssessmentService(),
-            analyzer: analyzer
+            analyzer: analyzer,
+            bodyProgress: bodyProgress
         )
     }
 }

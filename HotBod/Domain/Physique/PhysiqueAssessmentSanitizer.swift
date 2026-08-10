@@ -1,6 +1,36 @@
 import Foundation
 
 enum PhysiqueAssessmentSanitizer {
+    private static let disallowedPatterns: [String] = [
+        #"body\s*fat\s*%"#,
+        #"body\s*fat\s*percent"#,
+        #"\bgenetically\b"#,
+        #"\bdiagnosed\s+with\b"#,
+        #"\bmedical\s+diagnosis\b"#,
+        #"\byou\s+have\s+(?:a\s+)?(?:clinical|medical)\b"#
+    ]
+
+    static func scrubFreeText(_ text: String) -> String {
+        var result = text
+        for pattern in disallowedPatterns {
+            result = result.replacingOccurrences(
+                of: pattern,
+                with: "",
+                options: [.regularExpression, .caseInsensitive]
+            )
+        }
+        return result
+            .replacingOccurrences(of: #"\s{2,}"#, with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    static func scrubFreeTexts(_ texts: [String]) -> [String] {
+        texts.compactMap { text in
+            let scrubbed = scrubFreeText(text)
+            return scrubbed.isEmpty ? nil : scrubbed
+        }
+    }
+
     static func priorities(rawIds: [String], confidences: [String]) -> [PhysiqueFocusMuscle] {
         zip(rawIds, confidences).compactMap { id, confidence in
             guard confidence != PhysiqueObservationConfidence.uncertain.rawValue else { return nil }
@@ -17,9 +47,9 @@ enum PhysiqueAssessmentSanitizer {
             let confidence = PhysiqueObservationConfidence(rawValue: entry.confidence) ?? .uncertain
             return PhysiqueMuscleEntry(
                 muscle: muscle,
-                current: entry.current,
+                current: scrubFreeText(entry.current),
                 priorityRank: confidence == .uncertain ? nil : entry.priorityRank,
-                notes: entry.notes,
+                notes: scrubFreeText(entry.notes),
                 confidence: confidence
             )
         }
@@ -27,12 +57,19 @@ enum PhysiqueAssessmentSanitizer {
 
     static func sanitizeDevelopmentPriorities(
         _ priorities: [RemotePhysiqueDevelopmentPriorityPayload],
-        excluding uncertainMuscles: Set<PhysiqueFocusMuscle>
+        muscleEntries: [PhysiqueMuscleEntry]
     ) -> [PhysiqueDevelopmentPriority] {
-        priorities.compactMap { priority in
+        let confidentMuscles = Set(
+            muscleEntries
+                .filter { $0.confidence != .uncertain }
+                .map(\.muscle)
+        )
+        return priorities.compactMap { priority in
             guard let muscle = PhysiqueFocusMuscle(rawValue: priority.muscle) else { return nil }
-            guard !uncertainMuscles.contains(muscle) else { return nil }
-            return PhysiqueDevelopmentPriority(muscle: muscle, reason: priority.reason)
+            guard confidentMuscles.contains(muscle) else { return nil }
+            let reason = scrubFreeText(priority.reason)
+            guard !reason.isEmpty else { return nil }
+            return PhysiqueDevelopmentPriority(muscle: muscle, reason: reason)
         }
     }
 
@@ -41,18 +78,16 @@ enum PhysiqueAssessmentSanitizer {
         request: PhysiqueAssessmentRequest
     ) -> PhysiqueAssessment {
         let muscleEntries = sanitizeMuscleEntries(payload.muscleEntries)
-        let uncertainMuscles = Set(
-            muscleEntries
-                .filter { $0.confidence == .uncertain }
-                .map(\.muscle)
-        )
         let sanitizedPriorities = sanitizeDevelopmentPriorities(
             payload.developmentPriorities,
-            excluding: uncertainMuscles
+            muscleEntries: muscleEntries
         )
         let preferredGroups = PhysiqueTrainingBiasMerger.preferredGroups(
             from: sanitizedPriorities.map(\.muscle)
         )
+        let archetype = scrubFreeText(payload.physique.overallArchetype)
+        let rationale = scrubFreeText(payload.trainingBias.rationale)
+        let whyTodaySummary = scrubFreeText(payload.whyTodaySummary)
 
         return PhysiqueAssessment(
             id: UUID(),
@@ -66,7 +101,9 @@ enum PhysiqueAssessmentSanitizer {
                 overallConfidence: payload.photoQuality.overallConfidence
             ),
             physique: PhysiqueBuildSummary(
-                overallArchetype: payload.physique.overallArchetype,
+                overallArchetype: archetype.isEmpty
+                    ? "Balanced build with modest shoulder-to-waist contrast"
+                    : archetype,
                 frameSize: payload.physique.frameSize,
                 shoulderToWaist: payload.physique.shoulderToWaist,
                 waist: payload.physique.waist,
@@ -78,16 +115,18 @@ enum PhysiqueAssessmentSanitizer {
             developmentPriorities: sanitizedPriorities,
             trainingBias: PhysiqueTrainingBias(
                 preferredMuscleGroups: preferredGroups,
-                rationale: payload.trainingBias.rationale
+                rationale: rationale.isEmpty ? "Prioritize balanced frame development." : rationale
             ),
-            limitations: payload.limitations,
+            limitations: scrubFreeTexts(payload.limitations),
             confidenceBands: PhysiqueConfidenceBands(
                 high: payload.confidenceBands.high,
                 medium: payload.confidenceBands.medium,
                 low: payload.confidenceBands.low
             ),
             source: .cloud,
-            whyTodaySummary: payload.whyTodaySummary
+            whyTodaySummary: whyTodaySummary.isEmpty
+                ? "Bias training toward visible development priorities."
+                : whyTodaySummary
         )
     }
 }

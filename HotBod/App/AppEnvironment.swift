@@ -102,7 +102,11 @@ final class AppEnvironment {
         self.exerciseMediaProvider = exerciseMediaProvider
         self.bodyPhotoAnalyzer = bodyPhotoAnalyzer
         self.physiqueAssessmentService = physiqueAssessmentService
-            ?? BackendServices.makeHybridPhysiqueAssessmentService(analyzer: bodyPhotoAnalyzer, auth: auth)
+            ?? BackendServices.makeHybridPhysiqueAssessmentService(
+                analyzer: bodyPhotoAnalyzer,
+                auth: auth,
+                bodyProgress: repositories.bodyProgress
+            )
         self.healthKitReadinessService = healthKitReadinessService ?? HealthKitReadinessServiceFactory.makeDefault()
         self.healthKitWorkoutExportService = healthKitWorkoutExportService ?? HealthKitWorkoutExportServiceFactory.makeDefault()
         self.stravaIntegrationService = stravaIntegrationService ?? StravaIntegrationServiceFactory.makeDefault()

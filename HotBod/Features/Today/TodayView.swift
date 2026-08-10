@@ -176,6 +176,7 @@ struct TodayView: View {
                         Task { await environment.regenerateTodayWorkout(profile: profile) }
                     }
                 }
+                physiqueFocusSection
             }
             .padding()
         }
@@ -205,11 +206,14 @@ struct TodayView: View {
                 sorenessStrip
                     .forgeStaggeredAppear(index: 2, isVisible: contentAppeared)
 
-                secondary()
+                physiqueFocusSection
                     .forgeStaggeredAppear(index: 3, isVisible: contentAppeared)
 
-                progressFooter
+                secondary()
                     .forgeStaggeredAppear(index: 4, isVisible: contentAppeared)
+
+                progressFooter
+                    .forgeStaggeredAppear(index: 5, isVisible: contentAppeared)
             }
             .padding(.horizontal, ForgeSpacing.s5)
             .padding(.top, ForgeSpacing.s5)
@@ -640,7 +644,13 @@ struct TodayView: View {
         TodayDisclosureSection(title: "Why This Workout?") {
             Text(workout.rationale)
                 .font(ForgeTypography.body)
-            if let assessment = environment.activePhysiqueAssessment {
+        }
+    }
+
+    @ViewBuilder
+    private var physiqueFocusSection: some View {
+        if let assessment = environment.activePhysiqueAssessment {
+            VStack(alignment: .leading, spacing: 10) {
                 Button {
                     router.selectedTab = .physique
                 } label: {
@@ -651,9 +661,10 @@ struct TodayView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("today.physiqueFocus")
-            }
-            ForgeButton(title: "Physique focus", style: .secondary) {
-                router.selectedTab = .physique
+
+                ForgeButton(title: "Physique focus", style: .secondary) {
+                    router.selectedTab = .physique
+                }
             }
         }
     }

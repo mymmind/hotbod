@@ -88,11 +88,61 @@ enum PhysiquePhotoGate {
             qualityFailures.append(failure)
         }
 
-        if !qualityFailures.isEmpty {
-            return .qualityFailed(qualityFailures)
+        let requiredFailures = qualityFailures.filter { $0.angle == .front || $0.angle == .back }
+        if !requiredFailures.isEmpty {
+            return .qualityFailed(requiredFailures)
         }
 
-        return .ready(PhysiquePhotoSelection(front: front, back: back, side: side))
+        var sidePhoto = side
+        if qualityFailures.contains(where: { $0.angle == .side }) {
+            sidePhoto = nil
+        }
+
+        return .ready(PhysiquePhotoSelection(front: front, back: back, side: sidePhoto))
+    }
+
+    static func regate(
+        selection: PhysiquePhotoSelection,
+        minimumPoseConfidence: Double = BodyPhotoVisionMetrics.minimumPoseConfidence,
+        minimumFramingScore: Double = BodyPhotoVisionMetrics.minimumFramingScore
+    ) -> PhysiquePhotoGateResult {
+        var requiredFailures: [(angle: PhysiquePhotoAngle, reason: String)] = []
+
+        if let failure = qualityIssue(
+            for: selection.front,
+            angle: .front,
+            minimumPoseConfidence: minimumPoseConfidence,
+            minimumFramingScore: minimumFramingScore
+        ) {
+            requiredFailures.append(failure)
+        }
+        if let failure = qualityIssue(
+            for: selection.back,
+            angle: .back,
+            minimumPoseConfidence: minimumPoseConfidence,
+            minimumFramingScore: minimumFramingScore
+        ) {
+            requiredFailures.append(failure)
+        }
+
+        if !requiredFailures.isEmpty {
+            return .qualityFailed(requiredFailures)
+        }
+
+        var sidePhoto = selection.side
+        if let side = selection.side,
+           qualityIssue(
+               for: side,
+               angle: .side,
+               minimumPoseConfidence: minimumPoseConfidence,
+               minimumFramingScore: minimumFramingScore
+           ) != nil {
+            sidePhoto = nil
+        }
+
+        return .ready(
+            PhysiquePhotoSelection(front: selection.front, back: selection.back, side: sidePhoto)
+        )
     }
 
     static func hasSide(_ selection: PhysiquePhotoSelection) -> Bool {

@@ -283,3 +283,37 @@ Deno.test("handlePhysiqueAssessRequest returns 502 for empty AI content", async 
     fetchStub.restore();
   }
 });
+
+Deno.test("handlePhysiqueAssessRequest returns generic 500 on handler failure", async () => {
+  Deno.env.set("OPENAI_API_KEY", "test-key");
+  Deno.env.set("SUPABASE_URL", "https://example.supabase.co");
+  Deno.env.set("SUPABASE_ANON_KEY", "anon-key");
+
+  const fetchStub = stub(globalThis, "fetch", (input) => {
+    const url = String(input);
+    if (url.includes("/auth/v1/user")) {
+      return Promise.resolve(
+        new Response(JSON.stringify({ id: "user-1", aud: "authenticated" }), { status: 200 }),
+      );
+    }
+    return Promise.resolve(new Response("[]", { status: 200 }));
+  });
+
+  try {
+    const response = await handlePhysiqueAssessRequest(
+      new Request("http://localhost/physique-assess", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer token",
+          "Content-Type": "application/json",
+        },
+        body: "{not-json",
+      }),
+    );
+    assertEquals(response.status, 500);
+    const payload = await response.json();
+    assertEquals(payload.error, "Internal server error.");
+  } finally {
+    fetchStub.restore();
+  }
+});

@@ -24,6 +24,19 @@ struct HybridPhysiqueAssessmentService: Sendable {
     let remote: any PhysiqueAssessmentServing
     let offline: any PhysiqueAssessmentServing
     let analyzer: any BodyPhotoAnalyzer
+    let bodyProgress: (any BodyProgressRepository)?
+
+    init(
+        remote: any PhysiqueAssessmentServing,
+        offline: any PhysiqueAssessmentServing,
+        analyzer: any BodyPhotoAnalyzer,
+        bodyProgress: (any BodyProgressRepository)? = nil
+    ) {
+        self.remote = remote
+        self.offline = offline
+        self.analyzer = analyzer
+        self.bodyProgress = bodyProgress
+    }
 
     func assess(photos: [BodyProgressPhoto], profile: UserProfile) async throws -> PhysiqueAssessment {
         switch PhysiquePhotoGate.evaluate(photos: photos) {
@@ -35,11 +48,12 @@ struct HybridPhysiqueAssessmentService: Sendable {
             )
         case .ready(let selection):
             let prepared = try await ensureMetrics(selection: selection, in: photos)
+            let regated = try await regatePrepared(prepared)
             let request = PhysiqueAssessmentRequest(
-                selection: prepared.selection,
-                frontMetrics: prepared.frontMetrics,
-                backMetrics: prepared.backMetrics,
-                sideMetrics: prepared.sideMetrics,
+                selection: regated.selection,
+                frontMetrics: regated.frontMetrics,
+                backMetrics: regated.backMetrics,
+                sideMetrics: regated.sideMetrics,
                 profile: profile
             )
             do {
@@ -75,6 +89,45 @@ struct HybridPhysiqueAssessmentService: Sendable {
             backMetrics: backMetrics,
             sideMetrics: side?.analysis
         )
+    }
+
+    private func regatePrepared(_ prepared: PreparedMetrics) async throws -> PreparedMetrics {
+        switch PhysiquePhotoGate.regate(selection: prepared.selection) {
+        case .missingAngles(let angles):
+            throw PhysiqueAssessmentError.missingAngles(angles)
+        case .qualityFailed(let failures):
+            throw PhysiqueAssessmentError.qualityFailed(
+                failures.map { ($0.angle, $0.reason) }
+            )
+        case .ready(let selection):
+            guard let frontMetrics = selection.front.analysis,
+                  let backMetrics = selection.back.analysis else {
+                throw PhysiqueAssessmentError.qualityFailed([(.front, "Analysis unavailable")])
+            }
+
+            if let bodyProgress {
+                try await persistAnalysisIfNeeded(for: selection.front, using: bodyProgress)
+                try await persistAnalysisIfNeeded(for: selection.back, using: bodyProgress)
+                if let side = selection.side {
+                    try await persistAnalysisIfNeeded(for: side, using: bodyProgress)
+                }
+            }
+
+            return PreparedMetrics(
+                selection: selection,
+                frontMetrics: frontMetrics,
+                backMetrics: backMetrics,
+                sideMetrics: selection.side?.analysis
+            )
+        }
+    }
+
+    private func persistAnalysisIfNeeded(
+        for photo: BodyProgressPhoto,
+        using repository: any BodyProgressRepository
+    ) async throws {
+        guard photo.analysis != nil else { return }
+        try await repository.savePhoto(photo)
     }
 
     private func ensureAnalysis(
