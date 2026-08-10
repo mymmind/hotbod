@@ -3,6 +3,16 @@ import Foundation
 enum PhysiqueArchetypeMatcher {
     private static let fallbackSimilarityDimension = "Proportional similarity on visible frame traits."
 
+    private static let hintStopwords: Set<String> = [
+        "about", "after", "along", "also", "among", "another", "around", "across",
+        "before", "being", "between", "both", "build", "could", "during", "each",
+        "from", "have", "into", "just", "like", "look", "made", "make", "more",
+        "most", "much", "only", "other", "over", "same", "should", "some", "such",
+        "than", "that", "their", "them", "then", "there", "these", "they", "this",
+        "those", "through", "under", "very", "were", "what", "when", "where",
+        "which", "while", "will", "with", "within", "without", "would", "your"
+    ]
+
     static func match(
         physique: PhysiqueBuildSummary,
         priorities: [PhysiqueDevelopmentPriority],
@@ -79,7 +89,7 @@ enum PhysiqueArchetypeMatcher {
         let keywords = hint
             .lowercased()
             .components(separatedBy: CharacterSet.alphanumerics.inverted)
-            .filter { $0.count >= 4 }
+            .filter { $0.count >= 5 && !hintStopwords.contains($0) }
         return keywords.contains { overallArchetype.contains($0) }
     }
 

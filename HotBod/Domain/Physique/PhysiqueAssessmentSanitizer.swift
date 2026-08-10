@@ -8,9 +8,15 @@ enum PhysiqueAssessmentSanitizer {
         #"\bdiagnosed\s+with\b"#,
         #"\bmedical\s+diagnosis\b"#,
         #"\byou\s+have\s+(?:a\s+)?(?:clinical|medical)\b"#,
-        #"\byou\s+look\s+like\b"#,
-        #"\bcelebrity\s+twin\b"#
+        #"\byou\s+look\s+like\b.*"#,
+        #"\bcelebrity\s+twin\b"#,
+        #"\ba\s+twin\b"#,
+        #"\blookalike\b"#,
+        #"\btwin\b"#,
+        #"\bcelebrity\b"#
     ]
+
+    private static let trivialScrubResidue = #"^(?:a|an|the)\.?$"#
 
     static func scrubFreeText(_ text: String) -> String {
         var result = text
@@ -21,9 +27,13 @@ enum PhysiqueAssessmentSanitizer {
                 options: [.regularExpression, .caseInsensitive]
             )
         }
-        return result
+        let trimmed = result
             .replacingOccurrences(of: #"\s{2,}"#, with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.range(of: trivialScrubResidue, options: [.regularExpression, .caseInsensitive]) != nil {
+            return ""
+        }
+        return trimmed
     }
 
     static func scrubFreeTexts(_ texts: [String]) -> [String] {
@@ -82,31 +92,27 @@ enum PhysiqueAssessmentSanitizer {
         priorities: [PhysiqueDevelopmentPriority],
         overallConfidence: Double
     ) -> [PhysiqueArchetypeMatch] {
-        let sanitized = (raw ?? [])
+        let scrubbed = (raw ?? [])
             .filter { catalogIds.contains($0.archetypeId) }
-            .sorted { $0.rank < $1.rank }
-            .reduce(into: [PhysiqueArchetypeMatchDraft]()) { unique, draft in
-                guard !unique.contains(where: { $0.archetypeId == draft.archetypeId }) else { return }
-                unique.append(draft)
-            }
-            .prefix(3)
-            .compactMap { draft -> PhysiqueArchetypeMatch? in
+            .compactMap { draft -> (draft: PhysiqueArchetypeMatchDraft, dimension: String)? in
                 let dimension = scrubFreeText(draft.similarityDimension)
                 guard !dimension.isEmpty else { return nil }
-                return PhysiqueArchetypeMatch(
-                    archetypeId: draft.archetypeId,
-                    rank: draft.rank,
-                    similarityDimension: dimension,
-                    confidence: PhysiqueObservationConfidence(rawValue: draft.confidenceRaw) ?? .low
-                )
+                return (draft, dimension)
             }
 
-        let ranked = sanitized.enumerated().map { index, match in
+        let unique = scrubbed
+            .sorted { $0.draft.rank < $1.draft.rank }
+            .reduce(into: [(draft: PhysiqueArchetypeMatchDraft, dimension: String)]()) { unique, item in
+                guard !unique.contains(where: { $0.draft.archetypeId == item.draft.archetypeId }) else { return }
+                unique.append(item)
+            }
+
+        let ranked = unique.prefix(3).enumerated().map { index, item in
             PhysiqueArchetypeMatch(
-                archetypeId: match.archetypeId,
+                archetypeId: item.draft.archetypeId,
                 rank: index + 1,
-                similarityDimension: match.similarityDimension,
-                confidence: match.confidence
+                similarityDimension: item.dimension,
+                confidence: PhysiqueObservationConfidence(rawValue: item.draft.confidenceRaw) ?? .low
             )
         }
 

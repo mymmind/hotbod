@@ -75,6 +75,43 @@ final class PhysiqueArchetypeMatcherTests: XCTestCase {
         )
         XCTAssertLessThanOrEqual(matches.count, 1)
     }
+
+    func testRegression_stopwordsDoNotInflateHintBonus() {
+        let physique = PhysiqueBuildSummary(
+            overallArchetype: "Balanced build with modest contrast",
+            frameSize: "Medium",
+            shoulderToWaist: "Modest contrast",
+            waist: "Defined",
+            torso: "Balanced",
+            muscularity: "Moderate",
+            leanness: "Moderate"
+        )
+        let catalog = [
+            PhysiqueArchetypeCatalogEntry(
+                id: "baseline_only",
+                genericLabel: "Baseline",
+                referenceLabel: nil,
+                tags: ["athletic"],
+                similarityHints: ["Build with that from this have"]
+            ),
+            PhysiqueArchetypeCatalogEntry(
+                id: "unrelated_tags",
+                genericLabel: "Unrelated",
+                referenceLabel: nil,
+                tags: ["lean", "compact"],
+                similarityHints: ["Build with that from this have"]
+            )
+        ]
+        let matches = PhysiqueArchetypeMatcher.match(
+            physique: physique,
+            priorities: [],
+            catalog: catalog,
+            overallConfidence: 0.8
+        )
+        XCTAssertEqual(matches.count, 1)
+        XCTAssertEqual(matches[0].archetypeId, "baseline_only")
+        XCTAssertEqual(matches[0].confidence, .low)
+    }
 }
 
 final class PhysiqueArchetypeSanitizerTests: XCTestCase {
@@ -101,6 +138,12 @@ final class PhysiqueArchetypeSanitizerTests: XCTestCase {
                     rank: 4,
                     similarityDimension: "V-taper direction",
                     confidenceRaw: "low"
+                ),
+                .init(
+                    archetypeId: "v_taper_focus",
+                    rank: 5,
+                    similarityDimension: "Shoulder width exceeds waist",
+                    confidenceRaw: "medium"
                 )
             ],
             catalogIds: catalogIds,
@@ -110,7 +153,9 @@ final class PhysiqueArchetypeSanitizerTests: XCTestCase {
         )
         XCTAssertEqual(cleaned.count, 3)
         XCTAssertFalse(cleaned.contains { $0.archetypeId == "not_real" })
+        XCTAssertFalse(cleaned.contains { $0.archetypeId == "lean_fighter" })
         XCTAssertFalse(cleaned.contains { $0.similarityDimension.localizedCaseInsensitiveContains("look like") })
+        XCTAssertEqual(cleaned.map(\.archetypeId), ["classic_athletic", "mens_physique", "v_taper_focus"])
         XCTAssertEqual(cleaned.map(\.rank), [1, 2, 3])
 
         let fallback = PhysiqueAssessmentSanitizer.sanitizeDirections(
@@ -121,5 +166,51 @@ final class PhysiqueArchetypeSanitizerTests: XCTestCase {
             overallConfidence: 0.8
         )
         XCTAssertFalse(fallback.isEmpty)
+    }
+
+    func testRegression_scrubbedEmptyRowsDropBeforeCapSoLowerRankedSurvive() {
+        let catalogIds = Set(PhysiqueArchetypeCatalogLoader.load().map(\.id))
+        let assessment = FixtureBuilders.makePhysiqueAssessment()
+        let cleaned = PhysiqueAssessmentSanitizer.sanitizeDirections(
+            [
+                .init(
+                    archetypeId: "classic_athletic",
+                    rank: 1,
+                    similarityDimension: "you look like a celebrity twin",
+                    confidenceRaw: "high"
+                ),
+                .init(
+                    archetypeId: "lean_fighter",
+                    rank: 2,
+                    similarityDimension: "you look like a twin",
+                    confidenceRaw: "medium"
+                ),
+                .init(
+                    archetypeId: "mens_physique",
+                    rank: 3,
+                    similarityDimension: "V-taper direction",
+                    confidenceRaw: "low"
+                ),
+                .init(
+                    archetypeId: "v_taper_focus",
+                    rank: 4,
+                    similarityDimension: "Shoulder width exceeds waist",
+                    confidenceRaw: "medium"
+                ),
+                .init(
+                    archetypeId: "balanced_athletic",
+                    rank: 5,
+                    similarityDimension: "Even development across muscle groups",
+                    confidenceRaw: "low"
+                )
+            ],
+            catalogIds: catalogIds,
+            physique: assessment.physique,
+            priorities: assessment.developmentPriorities,
+            overallConfidence: assessment.photoQuality.overallConfidence
+        )
+        XCTAssertEqual(cleaned.count, 3)
+        XCTAssertEqual(cleaned.map(\.archetypeId), ["mens_physique", "v_taper_focus", "balanced_athletic"])
+        XCTAssertEqual(cleaned.map(\.rank), [1, 2, 3])
     }
 }
