@@ -449,7 +449,7 @@ struct TodayView: View {
             return await environment.switchTodaySplitFocus()
         case .trainAnyway:
             guard let profile = environment.userProfile else { return false }
-            return await environment.generateTodayWorkoutOnRestDay(profile: profile)
+            return await environment.regenerateTodayWorkout(profile: profile)
         case .readiness:
             guard let profile = environment.userProfile else { return false }
             return await environment.refreshTodayWorkoutForReadinessChange(profile: profile)
