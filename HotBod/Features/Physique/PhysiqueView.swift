@@ -220,6 +220,7 @@ struct PhysiqueView: View {
                     Text(assessment.whyTodaySummary)
                         .font(ForgeTypography.body)
                         .foregroundStyle(ForgeColors.muted)
+                        .lineLimit(5)
                     if !assessment.trainingBias.rationale.isEmpty {
                         Text(assessment.trainingBias.rationale)
                             .font(ForgeTypography.caption)

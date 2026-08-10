@@ -640,6 +640,18 @@ struct TodayView: View {
         TodayDisclosureSection(title: "Why This Workout?") {
             Text(workout.rationale)
                 .font(ForgeTypography.body)
+            if let assessment = environment.activePhysiqueAssessment {
+                Button {
+                    router.selectedTab = .physique
+                } label: {
+                    Text(PhysiqueFocusCopy.todayBiasLine(from: assessment))
+                        .font(ForgeTypography.caption)
+                        .foregroundStyle(ForgeColors.muted)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("today.physiqueFocus")
+            }
             ForgeButton(title: "Physique focus", style: .secondary) {
                 router.selectedTab = .physique
             }

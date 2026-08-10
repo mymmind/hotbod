@@ -14,4 +14,11 @@ final class PhysiqueUITests: BaseUITestCase {
     )
     XCTAssertFalse(app.staticTexts["Ask your coach"].exists)
   }
+
+  func testRegression_coachChatEntryPointsRemovedFromPhysiqueTab() {
+    XCTAssertTrue(app.otherElements["physique.root"].waitForExistence(timeout: 10)
+      || app.staticTexts["Physique"].waitForExistence(timeout: 10))
+    XCTAssertFalse(app.textFields["coach.input"].exists)
+    XCTAssertFalse(app.staticTexts["Ask your coach"].exists)
+  }
 }
