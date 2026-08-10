@@ -14,7 +14,7 @@ final class AppEnvironmentDayRolloverTests: XCTestCase {
 
         let env = AppEnvironment.makeForTests(repos: repos, workoutGenerationService: generator)
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = [TrainingSchedule.weekday(), .wednesday]
+        profile.reminderTrainingDays = [TrainingSchedule.weekday(), .wednesday]
         try await env.seedOnboardedProfile(profile)
         env.todayWorkout = staleWorkout
 
@@ -37,8 +37,7 @@ final class AppEnvironmentDayRolloverTests: XCTestCase {
         let env = AppEnvironment.makeForTests(workoutGenerationService: generator)
         let today = TrainingSchedule.weekday()
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
-        profile.trainingDaysPerWeek = 2
+        profile.reminderTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
         env.userProfile = profile
         env.hasCompletedOnboarding = true
         env.recoveryStates = RecoveryCalculator.defaultStates()
@@ -61,8 +60,7 @@ final class AppEnvironmentDayRolloverTests: XCTestCase {
         let env = AppEnvironment.makeForTests(repos: repos, workoutGenerationService: generator)
         let today = TrainingSchedule.weekday()
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
-        profile.trainingDaysPerWeek = 2
+        profile.reminderTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
         try await env.seedOnboardedProfile(profile)
         env.todayWorkout = staleWorkout
         env.recoveryStates = RecoveryCalculator.defaultStates()
@@ -85,8 +83,7 @@ final class AppEnvironmentDayRolloverTests: XCTestCase {
         let env = AppEnvironment.makeForTests(repos: repos)
         let today = TrainingSchedule.weekday()
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
-        profile.trainingDaysPerWeek = 2
+        profile.reminderTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
         env.userProfile = profile
         env.hasCompletedOnboarding = true
         env.todayWorkout = fresh

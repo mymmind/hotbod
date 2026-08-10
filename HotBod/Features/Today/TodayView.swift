@@ -249,7 +249,7 @@ struct TodayView: View {
             ambientGlow: true,
             accent: ForgeColors.accentGreen,
             primaryAction: environment.todayWorkout == nil
-                ? (title: "Generate", action: { regenerateWorkout() })
+                ? (title: "Generate", action: { generateAndStartWorkout() })
                 : nil,
             primaryAccessibilityIdentifier: environment.todayWorkout == nil ? "today.generate" : nil
         )
@@ -410,6 +410,40 @@ struct TodayView: View {
 
     private func regenerateWorkout() {
         performAnimatedWorkoutRefresh(.regenerate)
+    }
+
+    /// Empty Recovery state: build today's plan and start immediately.
+    private func generateAndStartWorkout() {
+        WorkoutHeroRefreshRunner.performAnimatedRefresh(
+            kind: .regenerate,
+            environment: environment,
+            feedback: feedback,
+            isRegenerating: { isRegenerating },
+            beginRegenerating: {
+                withAnimation(ForgeMotion.regenerate) {
+                    isRegenerating = true
+                    regenSpin = true
+                }
+            },
+            endRegenerating: {
+                withAnimation(ForgeMotion.regenerate) {
+                    isRegenerating = false
+                    regenSpin = false
+                }
+            },
+            refresh: { kind in
+                await performWorkoutRefresh(kind)
+            },
+            reload: {
+                await loadExerciseCatalog()
+                await loadCompletedSession()
+                await loadActiveSession()
+                if let workout = environment.todayWorkout, activeSession == nil {
+                    startWorkout(workout)
+                }
+            },
+            onGenerationFailure: { showGenerationFailureAlert = true }
+        )
     }
 
     private func applySorenessChange(_ level: SorenessLevel) {

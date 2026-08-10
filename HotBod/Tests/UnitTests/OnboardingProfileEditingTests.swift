@@ -46,7 +46,6 @@ final class OnboardingProfileEditingTests: XCTestCase {
 
     func testNormalizeForCompletionRespectsLockedSplit() {
         var profile = UserProfile.empty()
-        profile.trainingDaysPerWeek = 3
         profile.preferredSplit = .arnold
 
         OnboardingProfileEditing.normalizeForCompletion(&profile, lockSplit: true)
@@ -65,34 +64,32 @@ final class OnboardingProfileEditingTests: XCTestCase {
 
     func testToggleTrainingDayUpdatesDaysPerWeek() {
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = [.monday]
+        profile.reminderTrainingDays = [.monday]
 
         OnboardingProfileEditing.toggleTrainingDay(.wednesday, in: &profile)
 
-        XCTAssertEqual(profile.preferredTrainingDays, [.monday, .wednesday])
+        XCTAssertEqual(profile.reminderTrainingDays, [.monday, .wednesday])
         XCTAssertEqual(profile.trainingDaysPerWeek, 2)
     }
 
     func testRegression_onboardingScheduleDerivesFrequencyFromSelectedDays() {
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = [.friday, .monday, .wednesday, .monday]
-        profile.trainingDaysPerWeek = 7
+        profile.reminderTrainingDays = [.friday, .monday, .wednesday, .monday]
 
         OnboardingProfileEditing.reconcileSchedule(&profile)
 
-        XCTAssertEqual(profile.preferredTrainingDays, [.monday, .wednesday, .friday])
+        XCTAssertEqual(profile.reminderTrainingDays, [.monday, .wednesday, .friday])
         XCTAssertEqual(profile.trainingDaysPerWeek, 3)
     }
 
     func testRegression_onboardingScheduleCannotDropBelowTwoDays() {
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = [.monday, .wednesday]
-        profile.trainingDaysPerWeek = 2
+        profile.reminderTrainingDays = [.monday, .wednesday]
 
         let changed = OnboardingProfileEditing.toggleTrainingDay(.monday, in: &profile)
 
         XCTAssertFalse(changed)
-        XCTAssertEqual(profile.preferredTrainingDays, [.monday, .wednesday])
+        XCTAssertEqual(profile.reminderTrainingDays, [.monday, .wednesday])
     }
 
     func testSuggestedSplitMatchesFrequency() {
@@ -104,8 +101,7 @@ final class OnboardingProfileEditingTests: XCTestCase {
 
     func testNormalizeForCompletionReconcilesScheduleAndSplit() {
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = [.monday, .wednesday, .friday]
-        profile.trainingDaysPerWeek = 6
+        profile.reminderTrainingDays = [.monday, .wednesday, .friday]
         profile.limitations = []
         profile.weightKg = nil
 

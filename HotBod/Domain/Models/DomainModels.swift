@@ -10,11 +10,13 @@ struct UserProfile: Identifiable, Codable, Hashable {
     var experienceLevel: ExperienceLevel
     var trainingLocation: TrainingLocation
     var availableEquipment: [Equipment]
-    var trainingDaysPerWeek: Int
     var preferredSessionLengthMinutes: Int
     var preferredSplit: TrainingSplit
-    var preferredTrainingDays: [Weekday]
+    /// Usual training days — drives local reminders and soft Recovery framing (not a generation gate).
+    var reminderTrainingDays: [Weekday]
     var timeOfDayPreference: TimeOfDayPreference
+    /// When true, schedule local workout reminders on `reminderTrainingDays`.
+    var workoutRemindersEnabled: Bool
     var limitations: [BodyLimitation]
     var limitationNotes: String?
     var preferredMuscleGroups: [MuscleGroup]?
@@ -33,11 +35,16 @@ struct UserProfile: Identifiable, Codable, Hashable {
     var createdAt: Date
     var updatedAt: Date
 
+    /// Derived from `reminderTrainingDays` — not persisted as an independent source of truth.
+    var trainingDaysPerWeek: Int { max(reminderTrainingDays.count, 0) }
+
     enum CodingKeys: String, CodingKey {
         case id, name, age, goal, limitations, limitationNotes
         case heightCm, weightKg, experienceLevel, trainingLocation, availableEquipment
         case trainingDaysPerWeek, preferredSessionLengthMinutes, preferredSplit
-        case preferredTrainingDays, timeOfDayPreference, preferredMuscleGroups, avoidedMuscleGroups
+        case reminderTrainingDays, preferredTrainingDays
+        case timeOfDayPreference, workoutRemindersEnabled
+        case preferredMuscleGroups, avoidedMuscleGroups
         case proteinGoalGrams, photoTrackingEnabled, includeWarmupSets, includeCooldown
         case preferredExerciseGrouping, preferredExerciseVariability, cardioBlockPlacement
         case includeConditioning, includeCoreFinisher
@@ -56,11 +63,11 @@ struct UserProfile: Identifiable, Codable, Hashable {
         experienceLevel: ExperienceLevel,
         trainingLocation: TrainingLocation,
         availableEquipment: [Equipment],
-        trainingDaysPerWeek: Int,
         preferredSessionLengthMinutes: Int,
         preferredSplit: TrainingSplit,
-        preferredTrainingDays: [Weekday],
+        reminderTrainingDays: [Weekday],
         timeOfDayPreference: TimeOfDayPreference,
+        workoutRemindersEnabled: Bool = true,
         limitations: [BodyLimitation],
         limitationNotes: String? = nil,
         preferredMuscleGroups: [MuscleGroup]? = nil,
@@ -88,11 +95,11 @@ struct UserProfile: Identifiable, Codable, Hashable {
         self.experienceLevel = experienceLevel
         self.trainingLocation = trainingLocation
         self.availableEquipment = availableEquipment
-        self.trainingDaysPerWeek = trainingDaysPerWeek
         self.preferredSessionLengthMinutes = preferredSessionLengthMinutes
         self.preferredSplit = preferredSplit
-        self.preferredTrainingDays = preferredTrainingDays
+        self.reminderTrainingDays = reminderTrainingDays
         self.timeOfDayPreference = timeOfDayPreference
+        self.workoutRemindersEnabled = workoutRemindersEnabled
         self.limitations = limitations
         self.limitationNotes = limitationNotes
         self.preferredMuscleGroups = preferredMuscleGroups
@@ -123,11 +130,19 @@ struct UserProfile: Identifiable, Codable, Hashable {
         experienceLevel = try container.decode(ExperienceLevel.self, forKey: .experienceLevel)
         trainingLocation = try container.decode(TrainingLocation.self, forKey: .trainingLocation)
         availableEquipment = try container.decode([Equipment].self, forKey: .availableEquipment)
-        trainingDaysPerWeek = try container.decode(Int.self, forKey: .trainingDaysPerWeek)
         preferredSessionLengthMinutes = try container.decode(Int.self, forKey: .preferredSessionLengthMinutes)
         preferredSplit = try container.decode(TrainingSplit.self, forKey: .preferredSplit)
-        preferredTrainingDays = try container.decode([Weekday].self, forKey: .preferredTrainingDays)
+        if let modern = try container.decodeIfPresent([Weekday].self, forKey: .reminderTrainingDays) {
+            reminderTrainingDays = modern
+        } else if let legacy = try container.decodeIfPresent([Weekday].self, forKey: .preferredTrainingDays) {
+            reminderTrainingDays = legacy
+        } else {
+            reminderTrainingDays = [.monday, .tuesday, .thursday, .friday]
+        }
+        // Legacy independent frequency is ignored; days list is source of truth.
+        _ = try container.decodeIfPresent(Int.self, forKey: .trainingDaysPerWeek)
         timeOfDayPreference = try container.decode(TimeOfDayPreference.self, forKey: .timeOfDayPreference)
+        workoutRemindersEnabled = try container.decodeIfPresent(Bool.self, forKey: .workoutRemindersEnabled) ?? true
         limitations = try container.decode([BodyLimitation].self, forKey: .limitations)
         limitationNotes = try container.decodeIfPresent(String.self, forKey: .limitationNotes)
         preferredMuscleGroups = try container.decodeIfPresent([MuscleGroup].self, forKey: .preferredMuscleGroups)
@@ -156,6 +171,42 @@ struct UserProfile: Identifiable, Codable, Hashable {
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
     }
 
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(name, forKey: .name)
+        try container.encodeIfPresent(age, forKey: .age)
+        try container.encodeIfPresent(heightCm, forKey: .heightCm)
+        try container.encodeIfPresent(weightKg, forKey: .weightKg)
+        try container.encode(goal, forKey: .goal)
+        try container.encode(experienceLevel, forKey: .experienceLevel)
+        try container.encode(trainingLocation, forKey: .trainingLocation)
+        try container.encode(availableEquipment, forKey: .availableEquipment)
+        try container.encode(trainingDaysPerWeek, forKey: .trainingDaysPerWeek)
+        try container.encode(preferredSessionLengthMinutes, forKey: .preferredSessionLengthMinutes)
+        try container.encode(preferredSplit, forKey: .preferredSplit)
+        try container.encode(reminderTrainingDays, forKey: .reminderTrainingDays)
+        try container.encode(timeOfDayPreference, forKey: .timeOfDayPreference)
+        try container.encode(workoutRemindersEnabled, forKey: .workoutRemindersEnabled)
+        try container.encode(limitations, forKey: .limitations)
+        try container.encodeIfPresent(limitationNotes, forKey: .limitationNotes)
+        try container.encodeIfPresent(preferredMuscleGroups, forKey: .preferredMuscleGroups)
+        try container.encodeIfPresent(avoidedMuscleGroups, forKey: .avoidedMuscleGroups)
+        try container.encode(proteinGoalGrams, forKey: .proteinGoalGrams)
+        try container.encode(photoTrackingEnabled, forKey: .photoTrackingEnabled)
+        try container.encode(includeWarmupSets, forKey: .includeWarmupSets)
+        try container.encode(includeCooldown, forKey: .includeCooldown)
+        try container.encode(preferredExerciseGrouping, forKey: .preferredExerciseGrouping)
+        try container.encode(preferredExerciseVariability, forKey: .preferredExerciseVariability)
+        try container.encode(cardioBlockPlacement, forKey: .cardioBlockPlacement)
+        try container.encode(includeConditioning, forKey: .includeConditioning)
+        try container.encode(includeCoreFinisher, forKey: .includeCoreFinisher)
+        try container.encode(maxAvailableWeightKg, forKey: .maxAvailableWeightKg)
+        try container.encode(exportWorkoutsToHealthKit, forKey: .exportWorkoutsToHealthKit)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(updatedAt, forKey: .updatedAt)
+    }
+
     static func empty() -> UserProfile {
         UserProfile(
             id: UUID(),
@@ -163,11 +214,11 @@ struct UserProfile: Identifiable, Codable, Hashable {
             experienceLevel: .intermediate,
             trainingLocation: .commercialGym,
             availableEquipment: Equipment.allCases,
-            trainingDaysPerWeek: 4,
             preferredSessionLengthMinutes: 45,
             preferredSplit: .upperLower,
-            preferredTrainingDays: [.monday, .tuesday, .thursday, .friday],
+            reminderTrainingDays: [.monday, .tuesday, .thursday, .friday],
             timeOfDayPreference: .flexible,
+            workoutRemindersEnabled: true,
             limitations: [.none],
             preferredMuscleGroups: [],
             avoidedMuscleGroups: [],
@@ -196,11 +247,11 @@ struct UserProfile: Identifiable, Codable, Hashable {
             experienceLevel: experienceLevel,
             trainingLocation: trainingLocation,
             availableEquipment: availableEquipment,
-            trainingDaysPerWeek: trainingDaysPerWeek,
             preferredSessionLengthMinutes: preferredSessionLengthMinutes,
             preferredSplit: preferredSplit,
-            preferredTrainingDays: preferredTrainingDays,
+            reminderTrainingDays: reminderTrainingDays,
             timeOfDayPreference: timeOfDayPreference,
+            workoutRemindersEnabled: workoutRemindersEnabled,
             limitations: limitations,
             limitationNotes: limitationNotes,
             preferredMuscleGroups: preferredMuscleGroups,

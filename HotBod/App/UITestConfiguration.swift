@@ -96,13 +96,11 @@ enum UITestConfiguration {
         var profile = UserProfile.empty()
         profile.name = "UI Test User"
         if shouldForceRestDay {
-            profile.preferredTrainingDays = Array(
+            profile.reminderTrainingDays = Array(
                 Weekday.allCases.filter { $0 != TrainingSchedule.weekday() }.prefix(2)
             )
-            profile.trainingDaysPerWeek = profile.preferredTrainingDays.count
         } else {
-            profile.trainingDaysPerWeek = 4
-            profile.preferredTrainingDays = [.monday, .tuesday, .thursday, .friday]
+            profile.reminderTrainingDays = [.monday, .tuesday, .thursday, .friday]
         }
         return profile
     }

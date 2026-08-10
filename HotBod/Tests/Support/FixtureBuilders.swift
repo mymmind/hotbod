@@ -141,7 +141,8 @@ extension AppEnvironment {
       authService: authService ?? NoOpAuthService(),
       cloudSyncService: cloudSyncService ?? NoOpCloudSyncService(),
       feedbackService: ForgeFeedbackService(),
-      subscriptionService: ForgeSubscriptionService(grantProForTesting: true)
+      subscriptionService: ForgeSubscriptionService(grantProForTesting: true),
+      workoutReminderScheduler: NoOpWorkoutReminderScheduler()
     )
   }
 

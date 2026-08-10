@@ -266,8 +266,7 @@ final class AppEnvironmentWorkoutGenerationTests: XCTestCase {
         let env = AppEnvironment.makeForTests(workoutGenerationService: generator)
         let today = TrainingSchedule.weekday()
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
-        profile.trainingDaysPerWeek = 2
+        profile.reminderTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
         env.userProfile = profile
         env.recoveryStates = RecoveryCalculator.defaultStates()
 
@@ -283,8 +282,7 @@ final class AppEnvironmentWorkoutGenerationTests: XCTestCase {
         let env = AppEnvironment.makeForTests(workoutGenerationService: generator)
         let today = TrainingSchedule.weekday()
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
-        profile.trainingDaysPerWeek = 2
+        profile.reminderTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
         env.userProfile = profile
         env.recoveryStates = RecoveryCalculator.defaultStates()
 
@@ -299,8 +297,7 @@ final class AppEnvironmentWorkoutGenerationTests: XCTestCase {
         let generator = FixedMockWorkoutGenerationService(workout: workout)
         let env = AppEnvironment.makeForTests(workoutGenerationService: generator)
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = [TrainingSchedule.weekday(), .wednesday]
-        profile.trainingDaysPerWeek = 2
+        profile.reminderTrainingDays = [TrainingSchedule.weekday(), .wednesday]
         env.userProfile = profile
         env.todayWorkout = workout
         env.recoveryStates = RecoveryCalculator.defaultStates()
@@ -317,8 +314,7 @@ final class AppEnvironmentWorkoutGenerationTests: XCTestCase {
         let env = AppEnvironment.makeForTests(workoutGenerationService: generator)
         let today = TrainingSchedule.weekday()
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
-        profile.trainingDaysPerWeek = 2
+        profile.reminderTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
         env.userProfile = profile
         env.todayWorkout = workout
         env.recoveryStates = RecoveryCalculator.defaultStates()
@@ -335,8 +331,7 @@ final class AppEnvironmentWorkoutGenerationTests: XCTestCase {
         let env = AppEnvironment.makeForTests(workoutGenerationService: generator)
         let today = TrainingSchedule.weekday()
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
-        profile.trainingDaysPerWeek = 2
+        profile.reminderTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
         env.userProfile = profile
         env.recoveryStates = RecoveryCalculator.defaultStates()
 
@@ -423,7 +418,7 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
 
     func testBootstrapAndRegenerateOnTrainingDay() async throws {
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = [TrainingSchedule.weekday()]
+        profile.reminderTrainingDays = [TrainingSchedule.weekday()]
         let fresh = FixtureBuilders.makeGeneratedWorkout()
         let env = AppEnvironment.makeForTests(
             repos: TestRepositories.withCatalog(),
@@ -440,7 +435,7 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
     func testRegression_regenerateOnRestDayWhenWorkoutExists() async throws {
         let today = TrainingSchedule.weekday()
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = Weekday.allCases.filter { $0 != today }
+        profile.reminderTrainingDays = Weekday.allCases.filter { $0 != today }
         let fresh = FixtureBuilders.makeGeneratedWorkout()
         let env = AppEnvironment.makeForTests(
             repos: TestRepositories.withCatalog(),
@@ -459,7 +454,7 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
 
     func testRulesEngineRegenerateAfterBootstrap() async throws {
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = [TrainingSchedule.weekday(), .monday, .tuesday, .thursday, .friday]
+        profile.reminderTrainingDays = [TrainingSchedule.weekday(), .monday, .tuesday, .thursday, .friday]
         let env = AppEnvironment.makeForTests(repos: TestRepositories.withCatalog())
         try await env.seedOnboardedProfile(profile)
         await env.bootstrap()
@@ -482,8 +477,7 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
     func testRulesEngineRegenerateOnNonPreferredDayAfterOnboarding() async throws {
         let today = TrainingSchedule.weekday()
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(4))
-        profile.trainingDaysPerWeek = profile.preferredTrainingDays.count
+        profile.reminderTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(4))
 
         let env = AppEnvironment.makeForTests(repos: TestRepositories.withCatalog())
         try await env.seedOnboardedProfile(profile)
@@ -501,7 +495,7 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
 
     func testRegression_stuckGenerationActiveDoesNotBlockRegenerate() async throws {
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = [TrainingSchedule.weekday(), .monday, .tuesday, .thursday, .friday]
+        profile.reminderTrainingDays = [TrainingSchedule.weekday(), .monday, .tuesday, .thursday, .friday]
         let env = AppEnvironment.makeForTests(repos: TestRepositories.withCatalog())
         try await env.seedOnboardedProfile(profile)
         await env.bootstrap()
@@ -515,8 +509,7 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
     func testRulesEngineRegenerateTwiceOnNonPreferredDay() async throws {
         let today = TrainingSchedule.weekday()
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(4))
-        profile.trainingDaysPerWeek = profile.preferredTrainingDays.count
+        profile.reminderTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(4))
 
         let env = AppEnvironment.makeForTests(repos: TestRepositories.withCatalog())
         try await env.seedOnboardedProfile(profile)
@@ -542,8 +535,7 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
 
         let today = TrainingSchedule.weekday()
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(4))
-        profile.trainingDaysPerWeek = profile.preferredTrainingDays.count
+        profile.reminderTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(4))
 
         let repos = TestRepositories.withCatalog()
         let env = AppEnvironment(
@@ -580,7 +572,7 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
     // (`allowsRecoveryOverride`) + this orchestration regression and does not have a dedicated UI test yet.
     func testRegression_criticalFatigueTrainLighterSavesRecoveryWorkout() async throws {
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = [TrainingSchedule.weekday(), .monday, .tuesday, .thursday, .friday]
+        profile.reminderTrainingDays = [TrainingSchedule.weekday(), .monday, .tuesday, .thursday, .friday]
         profile.availableEquipment = Equipment.allCases
         let env = AppEnvironment.makeForTests(repos: TestRepositories.withCatalog())
         try await env.seedOnboardedProfile(profile)
@@ -838,16 +830,16 @@ final class AppEnvironmentOnboardingAndCoachTests: XCTestCase {
         )
         let today = TrainingSchedule.weekday()
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
-        profile.trainingDaysPerWeek = 2
+        profile.reminderTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
 
         let session = await env.finishOnboardingAndStartTodayWorkout(profile: profile)
 
-        XCTAssertEqual(env.userProfile?.preferredTrainingDays, profile.preferredTrainingDays)
-        XCTAssertFalse(env.userProfile?.preferredTrainingDays.contains(today) ?? true)
+        XCTAssertEqual(env.userProfile?.reminderTrainingDays, profile.reminderTrainingDays)
+        XCTAssertFalse(env.userProfile?.reminderTrainingDays.contains(today) ?? true)
         XCTAssertTrue(env.hasCompletedOnboarding)
         XCTAssertEqual(env.todayWorkout?.id, workout.id)
-        XCTAssertNil(session)
+        // Auto-start after generation regardless of reminder day.
+        XCTAssertNotNil(session)
     }
 
     func testRegression_finishOnboardingWithoutWorkoutLeavesProfileSaved() async throws {
@@ -859,8 +851,7 @@ final class AppEnvironmentOnboardingAndCoachTests: XCTestCase {
         var profile = UserProfile.empty()
         let today = TrainingSchedule.weekday()
         let anotherDay = Weekday.allCases.first { $0 != today }!
-        profile.preferredTrainingDays = [today, anotherDay]
-        profile.trainingDaysPerWeek = 2
+        profile.reminderTrainingDays = [today, anotherDay]
 
         let session = await env.finishOnboardingAndStartTodayWorkout(profile: profile)
 
@@ -1014,24 +1005,22 @@ final class SettingsDraftEditingRefreshTests: XCTestCase {
 final class SettingsDraftEditingScheduleTests: XCTestCase {
     func testRegression_settingsScheduleAlwaysDerivesFrequencyFromSelectedDays() {
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = [.monday, .wednesday, .friday]
-        profile.trainingDaysPerWeek = 6
+        profile.reminderTrainingDays = [.monday, .wednesday, .friday]
 
         SettingsDraftEditing.reconcileSchedule(&profile)
 
-        XCTAssertEqual(profile.preferredTrainingDays, [.monday, .wednesday, .friday])
+        XCTAssertEqual(profile.reminderTrainingDays, [.monday, .wednesday, .friday])
         XCTAssertEqual(profile.trainingDaysPerWeek, 3)
     }
 
     func testRegression_settingsScheduleCannotDropBelowTwoDays() {
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = [.monday, .wednesday]
-        profile.trainingDaysPerWeek = 2
+        profile.reminderTrainingDays = [.monday, .wednesday]
 
         let changed = SettingsDraftEditing.toggleTrainingDay(.monday, in: &profile)
 
         XCTAssertFalse(changed)
-        XCTAssertEqual(profile.preferredTrainingDays, [.monday, .wednesday])
+        XCTAssertEqual(profile.reminderTrainingDays, [.monday, .wednesday])
         XCTAssertEqual(profile.trainingDaysPerWeek, 2)
     }
 }

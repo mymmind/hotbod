@@ -378,6 +378,16 @@ enum TimeOfDayPreference: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
     var displayName: String { rawValue.capitalized }
+
+    /// Hour-of-day used for local workout reminder scheduling.
+    var reminderHour: Int {
+        switch self {
+        case .morning: 7
+        case .lunch: 12
+        case .evening: 17
+        case .flexible: 9
+        }
+    }
 }
 
 enum Weekday: Int, Codable, CaseIterable, Identifiable {

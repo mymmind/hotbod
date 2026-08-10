@@ -119,7 +119,7 @@ enum TrainingSchedule {
     }
 
     static func isTrainingDay(profile: UserProfile, date: Date = Date()) -> Bool {
-        let preferred = profile.preferredTrainingDays
+        let preferred = profile.reminderTrainingDays
         guard !preferred.isEmpty else {
             // No days selected = flexible schedule; user can train any day.
             return true
@@ -159,6 +159,30 @@ enum TrainingSchedule {
         let sequence = splitSequence(for: split)
         guard !sequence.isEmpty else { return .fullBody }
         return sequence[state.splitDayIndex % sequence.count]
+    }
+
+    /// Adaptive focus: bias toward the fresher of upper vs lower musculature from recovery state.
+    static func adaptiveFocus(recoveryStates: [MuscleRecoveryState]) -> SplitDayFocus {
+        let upper: Set<MuscleGroup> = [.chest, .back, .shoulders, .biceps, .triceps]
+        let lower: Set<MuscleGroup> = [.quads, .hamstrings, .glutes, .calves]
+        func average(for muscles: Set<MuscleGroup>) -> Double {
+            let values = recoveryStates.filter { muscles.contains($0.muscleGroup) }.map(\.recoveryPercentage)
+            guard !values.isEmpty else { return 0.5 }
+            return values.reduce(0, +) / Double(values.count)
+        }
+        return average(for: upper) >= average(for: lower) ? .upper : .lower
+    }
+
+    /// Resolves the session focus for generation. Fixed splits use rotation; adaptive uses recovery.
+    static func resolveGenerationFocus(
+        state: TrainingProgramState,
+        split: TrainingSplit,
+        recoveryStates: [MuscleRecoveryState]
+    ) -> SplitDayFocus? {
+        if split == .adaptive {
+            return adaptiveFocus(recoveryStates: recoveryStates)
+        }
+        return currentSplitFocus(state: state, split: split)
     }
 
     static func advanceRotation(state: inout TrainingProgramState, split: TrainingSplit) {

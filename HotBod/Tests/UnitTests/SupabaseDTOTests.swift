@@ -37,7 +37,7 @@ final class ProfileRowTests: XCTestCase {
         var local = UserProfile.empty()
         local.name = "Local Name"
         local.availableEquipment = [.dumbbell, .barbell]
-        local.preferredTrainingDays = [.monday, .wednesday]
+        local.reminderTrainingDays = [.monday, .wednesday]
 
         let remote = ProfileRow(
             from: UserProfile.empty(),
@@ -50,7 +50,7 @@ final class ProfileRowTests: XCTestCase {
         let merged = sparseRemote.toUserProfile(fallback: local)
         XCTAssertEqual(merged.name, "Local Name")
         XCTAssertEqual(merged.availableEquipment, [.dumbbell, .barbell])
-        XCTAssertEqual(merged.preferredTrainingDays, [.monday, .wednesday])
+        XCTAssertEqual(merged.reminderTrainingDays, [.monday, .wednesday])
     }
 
     func testToUserProfileRoundTripPreservesParityFields() {

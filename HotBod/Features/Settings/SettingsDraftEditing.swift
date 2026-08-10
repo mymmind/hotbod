@@ -31,7 +31,7 @@ enum SettingsDraftEditing {
             || draft.trainingDaysPerWeek != original.trainingDaysPerWeek
             || draft.preferredSessionLengthMinutes != original.preferredSessionLengthMinutes
             || draft.preferredSplit != original.preferredSplit
-            || draft.preferredTrainingDays != original.preferredTrainingDays
+            || draft.reminderTrainingDays != original.reminderTrainingDays
             || draft.timeOfDayPreference != original.timeOfDayPreference
             || draft.limitations != original.limitations
             || draft.limitationNotes != original.limitationNotes

@@ -12,6 +12,8 @@ struct ProfileRow: Codable {
     var experienceLevel: String
     var trainingLocation: String?
     var trainingDaysPerWeek: Int?
+    var reminderTrainingDays: [Int]?
+    var workoutRemindersEnabled: Bool?
     var preferredSessionLengthMinutes: Int?
     var preferredSplit: String?
     var proteinGoalGrams: Double?
@@ -35,6 +37,8 @@ struct ProfileRow: Codable {
         case experienceLevel = "experience_level"
         case trainingLocation = "training_location"
         case trainingDaysPerWeek = "training_days_per_week"
+        case reminderTrainingDays = "reminder_training_days"
+        case workoutRemindersEnabled = "workout_reminders_enabled"
         case preferredSessionLengthMinutes = "preferred_session_length_minutes"
         case preferredSplit = "preferred_split"
         case proteinGoalGrams = "protein_goal_grams"
@@ -62,6 +66,8 @@ struct ProfileRow: Codable {
         experienceLevel = profile.experienceLevel.rawValue
         trainingLocation = profile.trainingLocation.rawValue
         trainingDaysPerWeek = profile.trainingDaysPerWeek
+        reminderTrainingDays = profile.reminderTrainingDays.map(\.rawValue)
+        workoutRemindersEnabled = profile.workoutRemindersEnabled
         preferredSessionLengthMinutes = profile.preferredSessionLengthMinutes
         preferredSplit = profile.preferredSplit.rawValue
         proteinGoalGrams = profile.proteinGoalGrams
@@ -90,11 +96,17 @@ struct ProfileRow: Codable {
             experienceLevel: ExperienceLevel(rawValue: experienceLevel) ?? fallback?.experienceLevel ?? .intermediate,
             trainingLocation: TrainingLocation(rawValue: trainingLocation ?? "") ?? fallback?.trainingLocation ?? .commercialGym,
             availableEquipment: fallback?.availableEquipment ?? Equipment.allCases,
-            trainingDaysPerWeek: trainingDaysPerWeek ?? fallback?.trainingDaysPerWeek ?? 4,
             preferredSessionLengthMinutes: preferredSessionLengthMinutes ?? fallback?.preferredSessionLengthMinutes ?? 45,
             preferredSplit: TrainingSplit(rawValue: preferredSplit ?? "") ?? fallback?.preferredSplit ?? .upperLower,
-            preferredTrainingDays: fallback?.preferredTrainingDays ?? [.monday, .tuesday, .thursday, .friday],
+            reminderTrainingDays: {
+                if let raw = reminderTrainingDays {
+                    let days = raw.compactMap(Weekday.init(rawValue:))
+                    if !days.isEmpty { return Weekday.allCases.filter { days.contains($0) } }
+                }
+                return fallback?.reminderTrainingDays ?? [.monday, .tuesday, .thursday, .friday]
+            }(),
             timeOfDayPreference: fallback?.timeOfDayPreference ?? .flexible,
+            workoutRemindersEnabled: workoutRemindersEnabled ?? fallback?.workoutRemindersEnabled ?? true,
             limitations: fallback?.limitations ?? [],
             limitationNotes: fallback?.limitationNotes,
             proteinGoalGrams: proteinGoalGrams ?? fallback?.proteinGoalGrams ?? 145,

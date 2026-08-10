@@ -4,14 +4,14 @@ import XCTest
 final class TrainingScheduleTests: XCTestCase {
     func testRestDayRespectsPreferredTrainingDays() {
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = [.monday, .wednesday, .friday]
+        profile.reminderTrainingDays = [.monday, .wednesday, .friday]
         XCTAssertTrue(TrainingSchedule.isTrainingDay(profile: profile, date: dateFor(weekday: .monday)))
         XCTAssertFalse(TrainingSchedule.isTrainingDay(profile: profile, date: dateFor(weekday: .tuesday)))
     }
 
     func testEmptyPreferredDaysTreatsEveryDayAsTrainingDay() {
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = []
+        profile.reminderTrainingDays = []
         for day in Weekday.allCases {
             XCTAssertTrue(
                 TrainingSchedule.isTrainingDay(profile: profile, date: dateFor(weekday: day)),
@@ -34,7 +34,7 @@ final class TrainingScheduleTests: XCTestCase {
 
     func testNextTrainingDateSkipsRestDays() {
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = [.monday, .wednesday, .friday]
+        profile.reminderTrainingDays = [.monday, .wednesday, .friday]
         let monday = dateFor(weekday: .monday)
         let next = TrainingSchedule.nextTrainingDate(profile: profile, from: monday)
         XCTAssertNotNil(next)
@@ -53,7 +53,7 @@ final class TrainingScheduleTests: XCTestCase {
 
     func testUpcomingWorkoutValidOnScheduledTrainingDay() {
         var profile = UserProfile.empty()
-        profile.preferredTrainingDays = [.monday, .wednesday, .friday]
+        profile.reminderTrainingDays = [.monday, .wednesday, .friday]
         var state = TrainingProgramState()
         let today = dateFor(weekday: .wednesday)
         state.upcomingWorkout = GeneratedWorkout(
@@ -202,8 +202,7 @@ final class TrainingScheduleTests: XCTestCase {
         var profile = UserProfile.empty()
         profile.preferredSplit = .pushPullLegs
         let today = TrainingSchedule.weekday()
-        profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
-        profile.trainingDaysPerWeek = 2
+        profile.reminderTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
 
         var state = TrainingProgramState(splitDayIndex: 0) // push
         XCTAssertEqual(TrainingSchedule.currentSplitFocus(state: state, split: .pushPullLegs), .push)

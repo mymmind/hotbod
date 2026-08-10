@@ -22,6 +22,7 @@ final class AppEnvironment {
     let cloudSyncService: any CloudSyncService
     let feedbackService: ForgeFeedbackService
     let subscriptionService: ForgeSubscriptionService
+    let workoutReminderScheduler: any WorkoutReminderScheduling
 
     var userProfile: UserProfile?
     var todayWorkout: GeneratedWorkout?
@@ -81,7 +82,8 @@ final class AppEnvironment {
         authService: (any AuthService)? = nil,
         cloudSyncService: (any CloudSyncService)? = nil,
         feedbackService: ForgeFeedbackService = ForgeFeedbackService(),
-        subscriptionService: ForgeSubscriptionService = ForgeSubscriptionService()
+        subscriptionService: ForgeSubscriptionService = ForgeSubscriptionService(),
+        workoutReminderScheduler: (any WorkoutReminderScheduling)? = nil
     ) {
         self.repositories = repositories
         self.workoutGenerationService = workoutGenerationService
@@ -101,6 +103,8 @@ final class AppEnvironment {
         self.cloudSyncService = cloudSyncService ?? BackendServices.makeCloudSyncService(auth: auth)
         self.feedbackService = feedbackService
         self.subscriptionService = subscriptionService
+        self.workoutReminderScheduler = workoutReminderScheduler
+            ?? (UITestConfiguration.isUITesting ? NoOpWorkoutReminderScheduler() : LocalWorkoutReminderScheduler())
     }
 
     convenience init(
@@ -205,6 +209,7 @@ final class AppEnvironment {
         await subscriptionService.bootstrap()
 
         await revalidateTodayPlanForCurrentDay()
+        await rescheduleWorkoutReminders()
     }
 
     /// Re-validates today's plan for the current calendar day: clears stale completion
@@ -328,7 +333,20 @@ final class AppEnvironment {
 
     var currentSplitFocus: SplitDayFocus? {
         guard let profile = userProfile else { return nil }
-        return TrainingSchedule.currentSplitFocus(state: programState, split: profile.preferredSplit)
+        return TrainingSchedule.resolveGenerationFocus(
+            state: programState,
+            split: profile.preferredSplit,
+            recoveryStates: recoveryStates
+        )
+    }
+
+    func rescheduleWorkoutReminders() async {
+        guard let profile = userProfile else {
+            await workoutReminderScheduler.cancelAll()
+            return
+        }
+        let focusHint = currentSplitFocus?.displayName
+        await workoutReminderScheduler.reschedule(profile: profile, focusHint: focusHint)
     }
 
     func cloudSyncIfSignedIn(_ action: () async throws -> Void) async {

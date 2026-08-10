@@ -199,8 +199,7 @@ final class OnboardingViewModel {
             profile.experienceLevel = .intermediate
             profile.trainingLocation = .commercialGym
             profile.availableEquipment = [.barbell, .dumbbell, .bench, .cable, .machine]
-            profile.trainingDaysPerWeek = 4
-            profile.preferredTrainingDays = [.monday, .tuesday, .thursday, .friday]
+            profile.reminderTrainingDays = [.monday, .tuesday, .thursday, .friday]
             profile.weightKg = 80
             profile.heightCm = 178
             profile.age = 30
@@ -217,8 +216,7 @@ final class OnboardingViewModel {
             profile.experienceLevel = .intermediate
             profile.trainingLocation = .commercialGym
             profile.availableEquipment = [.barbell, .dumbbell, .bench, .cable, .machine]
-            profile.trainingDaysPerWeek = 4
-            profile.preferredTrainingDays = [.monday, .tuesday, .thursday, .friday]
+            profile.reminderTrainingDays = [.monday, .tuesday, .thursday, .friday]
             profile.weightKg = 80
             profile.heightCm = 178
             profile.age = 30
@@ -355,7 +353,7 @@ struct OnboardingScheduleView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 ForgeSectionHeader(title: "Schedule", subtitle: "Training frequency")
-                Text("\(viewModel.profile.preferredTrainingDays.count) days per week")
+                Text("\(viewModel.profile.reminderTrainingDays.count) days per week")
                     .font(ForgeTypography.body)
 
                 Text("Session length").font(ForgeTypography.heading)
@@ -373,7 +371,7 @@ struct OnboardingScheduleView: View {
                     .foregroundStyle(ForgeColors.muted)
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 60))], spacing: 8) {
                     ForEach(Weekday.allCases) { day in
-                        SelectableChip(title: day.shortName, isSelected: viewModel.profile.preferredTrainingDays.contains(day)) {
+                        SelectableChip(title: day.shortName, isSelected: viewModel.profile.reminderTrainingDays.contains(day)) {
                             if OnboardingProfileEditing.toggleTrainingDay(day, in: &viewModel.profile) {
                                 applyAutomaticSplitIfNeeded()
                             }
@@ -643,10 +641,10 @@ struct OnboardingPlanView: View {
     private var preview: UserProfile { viewModel.planPreviewProfile }
 
     private var scheduleSummary: String {
-        if preview.preferredTrainingDays.isEmpty {
+        if preview.reminderTrainingDays.isEmpty {
             return "\(preview.trainingDaysPerWeek)x / week · flexible days"
         }
-        let days = preview.preferredTrainingDays.map(\.shortName).joined(separator: ", ")
+        let days = preview.reminderTrainingDays.map(\.shortName).joined(separator: ", ")
         return "\(preview.trainingDaysPerWeek)x / week · \(days)"
     }
 

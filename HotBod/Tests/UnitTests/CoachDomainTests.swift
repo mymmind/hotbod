@@ -233,7 +233,7 @@ final class CoachOfflineModifyTests: XCTestCase {
     func testRestDayMessageIncludesNextTrainingDay() {
         var profile = UserProfile.empty()
         let today = TrainingSchedule.weekday()
-        profile.preferredTrainingDays = Weekday.allCases.filter { $0 != today }
+        profile.reminderTrainingDays = Weekday.allCases.filter { $0 != today }
         let message = CoachOfflineModify.restDayMessage(profile: profile)
         XCTAssertNotNil(message)
         XCTAssertFalse(message?.lowercased().contains("cannot") == true)
@@ -249,7 +249,7 @@ final class CoachOfflineModifyTests: XCTestCase {
     func testRegression_offlineModifyStillRegeneratesOnNonPreferredDay() {
         var profile = UserProfile.empty()
         let today = TrainingSchedule.weekday()
-        profile.preferredTrainingDays = Weekday.allCases.filter { $0 != today }
+        profile.reminderTrainingDays = Weekday.allCases.filter { $0 != today }
 
         let plan = CoachOfflineModify.offlineModifyPlan(profile: profile)
         XCTAssertNotNil(plan.recoveryNote)

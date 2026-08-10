@@ -9,7 +9,7 @@ final class IntegrationFlowTests: XCTestCase {
   func testColdStartBootstrapGeneratesFirstWorkoutOnTrainingDay() async throws {
     let env = makeEnvironment()
     var profile = UserProfile.empty()
-    profile.preferredTrainingDays = [TrainingSchedule.weekday(), .monday, .tuesday, .thursday, .friday]
+    profile.reminderTrainingDays = [TrainingSchedule.weekday(), .monday, .tuesday, .thursday, .friday]
 
     try await env.seedOnboardedProfile(profile)
     await env.bootstrap()
@@ -33,7 +33,7 @@ final class IntegrationFlowTests: XCTestCase {
     let env = makeEnvironment()
     var profile = UserProfile.empty()
     let today = TrainingSchedule.weekday()
-    profile.preferredTrainingDays = Weekday.allCases.filter { $0 != today }
+    profile.reminderTrainingDays = Weekday.allCases.filter { $0 != today }
 
     try await env.seedOnboardedProfile(profile)
     await env.bootstrap()
@@ -54,7 +54,7 @@ final class IntegrationFlowTests: XCTestCase {
 
     let env = AppEnvironment.makeForTests(repos: repos, workoutGenerationService: generator)
     var profile = UserProfile.empty()
-    profile.preferredTrainingDays = [TrainingSchedule.weekday(), .wednesday]
+    profile.reminderTrainingDays = [TrainingSchedule.weekday(), .wednesday]
     try await env.seedOnboardedProfile(profile)
     await env.bootstrap()
 
@@ -163,7 +163,7 @@ final class IntegrationFlowTests: XCTestCase {
   func testRegenerateProducesFreshValidatedWorkout() async throws {
     let env = makeEnvironment()
     var profile = UserProfile.empty()
-    profile.preferredTrainingDays = [TrainingSchedule.weekday(), .monday, .tuesday, .thursday, .friday]
+    profile.reminderTrainingDays = [TrainingSchedule.weekday(), .monday, .tuesday, .thursday, .friday]
     try await env.seedOnboardedProfile(profile)
     await env.bootstrap()
 
@@ -223,7 +223,7 @@ final class IntegrationFlowTests: XCTestCase {
   func testRestDayProfileIsDetectedAfterBootstrap() async throws {
     let env = makeEnvironment()
     var profile = UserProfile.empty()
-    profile.preferredTrainingDays = [.monday]
+    profile.reminderTrainingDays = [.monday]
     try await env.seedOnboardedProfile(profile)
     await env.bootstrap()
 
@@ -237,7 +237,7 @@ final class IntegrationFlowTests: XCTestCase {
   func testRestDayCoachMessageMentionsRecovery() async throws {
     var profile = UserProfile.empty()
     let today = TrainingSchedule.weekday()
-    profile.preferredTrainingDays = Weekday.allCases.filter { $0 != today }
+    profile.reminderTrainingDays = Weekday.allCases.filter { $0 != today }
 
     let message = CoachOfflineModify.restDayMessage(profile: profile)
     XCTAssertNotNil(message)

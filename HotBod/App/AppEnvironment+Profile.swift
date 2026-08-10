@@ -11,6 +11,7 @@ extension AppEnvironment {
             await cloudSyncIfSignedIn {
                 try await cloudSyncService.pushProfile(updated)
             }
+            await rescheduleWorkoutReminders()
             if refreshWorkout {
                 _ = await regenerateTodayWorkout(profile: updated)
             }
@@ -30,9 +31,8 @@ extension AppEnvironment {
         try await recoveryRepository.saveRecoveryStates(recoveryStates)
     }
 
-    /// Completes onboarding, ensures today's plan exists, and returns a session when
-    /// today is a preferred training day and generation succeeds. Non-preferred days
-    /// keep the plan ready without auto-starting a session.
+    /// Completes onboarding, ensures today's plan exists, schedules reminders, and
+    /// auto-starts today's session when generation succeeds.
     func finishOnboardingAndStartTodayWorkout(
         profile: UserProfile,
         lockSplit: Bool = false
@@ -53,6 +53,7 @@ extension AppEnvironment {
         }
 
         await normalizeProgramStateForToday(profile: updated)
+        await rescheduleWorkoutReminders()
         guard await ensureTodayWorkoutOnLaunch(profile: updated),
               let workout = todayWorkout else {
             if todayWorkout == nil {
@@ -61,12 +62,7 @@ extension AppEnvironment {
             return nil
         }
 
-        // Preferred day: auto-start. Non-preferred: leave plan ready under Recovery UI.
-        guard TrainingSchedule.isTrainingDay(profile: updated) else {
-            syncMessage = nil
-            return nil
-        }
-
+        // Always auto-start after onboarding generation — reminder days are not a start gate.
         return await resumeOrStartWorkout(
             from: workout,
             deferStartTimestamp: !UITestConfiguration.isUITesting

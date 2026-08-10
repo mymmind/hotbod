@@ -95,7 +95,11 @@ extension AppEnvironment {
         await cancelActiveWorkoutIfNeeded()
         await applyRecoveryDecay()
 
-        let splitFocus = TrainingSchedule.currentSplitFocus(state: programState, split: profile.preferredSplit)
+        let splitFocus = TrainingSchedule.resolveGenerationFocus(
+            state: programState,
+            split: profile.preferredSplit,
+            recoveryStates: recoveryStates
+        )
         var effectiveOptions = options
         if effectiveOptions.excludeExerciseIds.isEmpty, let current = todayWorkout {
             effectiveOptions.excludeExerciseIds = current.exercises.map(\.exerciseId)
@@ -126,7 +130,11 @@ extension AppEnvironment {
         await cancelActiveWorkoutIfNeeded()
         await applyRecoveryDecay()
 
-        let splitFocus = TrainingSchedule.currentSplitFocus(state: programState, split: profile.preferredSplit)
+        let splitFocus = TrainingSchedule.resolveGenerationFocus(
+            state: programState,
+            split: profile.preferredSplit,
+            recoveryStates: recoveryStates
+        )
         var effectiveOptions = options
 
         // Exclude the currently displayed workout exercises to encourage swaps.
@@ -157,7 +165,11 @@ extension AppEnvironment {
         var proposedState = programState
         let wasCompleted = TrainingSchedule.isTodayWorkoutCompleted(state: proposedState)
         TrainingSchedule.toggleSplitFocus(state: &proposedState, split: profile.preferredSplit)
-        let splitFocus = TrainingSchedule.currentSplitFocus(state: proposedState, split: profile.preferredSplit)
+        let splitFocus = TrainingSchedule.resolveGenerationFocus(
+            state: proposedState,
+            split: profile.preferredSplit,
+            recoveryStates: recoveryStates
+        )
 
         var options = WorkoutGenerationOptions()
         options.preferVariation = true

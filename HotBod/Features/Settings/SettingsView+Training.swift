@@ -112,7 +112,7 @@ extension SettingsView {
 
     var scheduleSection: some View {
         SettingsComponents.section(title: "Schedule", subtitle: "Frequency and length") {
-            Text("\(draft.preferredTrainingDays.count) days per week")
+            Text("\(draft.reminderTrainingDays.count) days per week")
                 .font(ForgeTypography.body)
 
             Text("Session length")
@@ -131,7 +131,15 @@ extension SettingsView {
                 }
             }
 
-            Text("Preferred days for reminders")
+            Toggle(isOn: $draft.workoutRemindersEnabled) {
+                Text("Workout reminders")
+                    .font(ForgeTypography.body)
+            }
+            .tint(ForgeColors.accent)
+            .padding(.top, 8)
+            .accessibilityIdentifier("settings.workoutReminders")
+
+            Text("Reminder days")
                 .font(ForgeTypography.caption)
                 .foregroundStyle(ForgeColors.muted)
                 .padding(.top, 4)
@@ -140,14 +148,14 @@ extension SettingsView {
                 ForEach(Weekday.allCases) { day in
                     SelectableChip(
                         title: day.shortName,
-                        isSelected: draft.preferredTrainingDays.contains(day)
+                        isSelected: draft.reminderTrainingDays.contains(day)
                     ) {
                         SettingsDraftEditing.toggleTrainingDay(day, in: &draft)
                     }
                 }
             }
 
-            Text("Used for reminders and Recovery framing. You can train any day.")
+            Text("Reminders fire on these days at your time preference. You can train any day.")
                 .font(ForgeTypography.caption)
                 .foregroundStyle(ForgeColors.muted)
                 .padding(.top, 4)
