@@ -30,7 +30,7 @@
             "LaunchUITests/testTodayTabShowsHero",
             "LaunchUITests/testTrainTabOpens",
             "TodayWorkoutUITests/testTodayShowsWorkoutHero",
-            "TodayWorkoutUITests/testRegression_trainAnywayReplacesRestHeroWithPlan",
+            "TodayWorkoutUITests/testRegression_nonPreferredDayShowsRecoveryWithStart",
             "ProteinTrackerUITests/testProteinTabShowsDailyHero",
             "CoachUITests/testCoachTabShowsSuggestions",
             "WorkoutSessionUITests/testRegression_exerciseCompleteIsFullScreen"

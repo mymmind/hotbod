@@ -29,7 +29,7 @@ final class IntegrationFlowTests: XCTestCase {
     XCTAssertNil(env.todayWorkout)
   }
 
-  func testColdStartOnRestDayDoesNotGenerateWorkout() async throws {
+  func testColdStartOnRestDayAutoGeneratesWorkout() async throws {
     let env = makeEnvironment()
     var profile = UserProfile.empty()
     let today = TrainingSchedule.weekday()
@@ -39,7 +39,8 @@ final class IntegrationFlowTests: XCTestCase {
     await env.bootstrap()
 
     XCTAssertTrue(env.isRestDay)
-    XCTAssertNil(env.todayWorkout)
+    XCTAssertNotNil(env.todayWorkout)
+    XCTAssertFalse(env.todayWorkout?.exercises.isEmpty ?? true)
   }
 
   func testHandleAppBecameActiveRegeneratesStaleWorkoutAfterBootstrap() async throws {
@@ -240,7 +241,10 @@ final class IntegrationFlowTests: XCTestCase {
 
     let message = CoachOfflineModify.restDayMessage(profile: profile)
     XCTAssertNotNil(message)
-    XCTAssertTrue(message?.lowercased().contains("rest") == true)
+    XCTAssertTrue(
+      message?.lowercased().contains("recovery") == true
+      || message?.lowercased().contains("optional") == true
+    )
   }
 
   // MARK: - Coach modify

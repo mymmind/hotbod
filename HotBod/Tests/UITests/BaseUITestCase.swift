@@ -76,7 +76,7 @@ class BaseUITestCase: XCTestCase {
   func waitForMainShell(timeout: TimeInterval = 12) -> Bool {
     if app.buttons["today.startWorkout"].waitForExistence(timeout: timeout) { return true }
     if app.buttons["today.resumeWorkout"].waitForExistence(timeout: 2) { return true }
-    if app.buttons["today.trainAnyway"].waitForExistence(timeout: 2) { return true }
+    if app.buttons["today.generate"].waitForExistence(timeout: 2) { return true }
     if app.buttons["today.settings"].waitForExistence(timeout: 2) { return true }
     if app.staticTexts["No workout yet"].waitForExistence(timeout: 2) { return true }
     if app.staticTexts["Recovery"].waitForExistence(timeout: 2) { return true }
@@ -86,7 +86,7 @@ class BaseUITestCase: XCTestCase {
   func waitForTodayWorkoutReady(timeout: TimeInterval = 25) -> Bool {
     app.buttons["today.startWorkout"].waitForExistence(timeout: timeout)
       || app.buttons["today.resumeWorkout"].waitForExistence(timeout: 3)
-      || app.buttons["today.trainAnyway"].waitForExistence(timeout: 3)
+      || app.buttons["today.generate"].waitForExistence(timeout: 3)
   }
 
   func tapTab(_ tab: String) {

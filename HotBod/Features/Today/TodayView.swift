@@ -148,7 +148,17 @@ struct TodayView: View {
 
     @ViewBuilder
     private var primaryTodayContent: some View {
-        if let workout = environment.todayWorkout {
+        if environment.isRestDay && !environment.isTodayWorkoutCompleted {
+            editorialLayout(
+                workout: environment.todayWorkout,
+                hero: { restDayHero },
+                secondary: {
+                    if let workout = environment.todayWorkout {
+                        restDayPlanActions(workout)
+                    }
+                }
+            )
+        } else if let workout = environment.todayWorkout {
             editorialLayout(
                 workout: workout,
                 hero: {
@@ -160,8 +170,6 @@ struct TodayView: View {
                     }
                 }
             )
-        } else if environment.isRestDay {
-            editorialLayout(hero: { restDayHero })
         } else {
             VStack(spacing: 16) {
                 EmptyStateView(
@@ -240,11 +248,10 @@ struct TodayView: View {
             footerLine: restDayFooterLine,
             ambientGlow: true,
             accent: ForgeColors.accentGreen,
-            primaryAction: (
-                title: "Train anyway",
-                action: trainAnyway
-            ),
-            primaryAccessibilityIdentifier: "today.trainAnyway"
+            primaryAction: environment.todayWorkout == nil
+                ? (title: "Generate", action: { regenerateWorkout() })
+                : nil,
+            primaryAccessibilityIdentifier: environment.todayWorkout == nil ? "today.generate" : nil
         )
         .scaleEffect(isRegenerating ? 0.97 : 1)
         .opacity(isRegenerating ? 0.88 : 1)
@@ -262,7 +269,7 @@ struct TodayView: View {
     private var restDayFooterLine: String? {
         var parts: [String] = []
         if let nextDay = environment.userProfile.flatMap({ TrainingSchedule.nextTrainingDayLabel(profile: $0) }) {
-            parts.append("Next session: \(nextDay)")
+            parts.append("Usual days resume \(nextDay)")
         }
         if let focus = environment.userProfile.flatMap({
             TrainingSchedule.currentSplitFocus(state: environment.programState, split: $0.preferredSplit)
@@ -270,6 +277,39 @@ struct TodayView: View {
             parts.append("Up next: \(focus.displayName)")
         }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    @ViewBuilder
+    private func restDayPlanActions(_ workout: GeneratedWorkout) -> some View {
+        VStack(spacing: 12) {
+            ForgeButton(
+                title: activeSession != nil ? "Resume Workout" : "Start Workout",
+                style: .accent,
+                accessibilityIdentifier: activeSession != nil ? "today.resumeWorkout" : "today.startWorkout"
+            ) {
+                startWorkout(workout)
+            }
+
+            HStack(spacing: 12) {
+                ForgeButton(
+                    title: "Regenerate",
+                    style: .secondary,
+                    isLoading: isRegenerating,
+                    accessibilityIdentifier: "today.regenerate"
+                ) {
+                    regenerateWorkout()
+                }
+                ForgeButton(
+                    title: "Preview",
+                    style: .secondary,
+                    accessibilityIdentifier: "today.preview"
+                ) {
+                    router.navigate(to: .workoutPreview(workout))
+                }
+            }
+
+            secondarySections(workout: workout)
+        }
     }
 
     private func workoutHero(_ workout: GeneratedWorkout, completed: Bool, session: WorkoutSession?) -> some View {
@@ -372,15 +412,10 @@ struct TodayView: View {
         performAnimatedWorkoutRefresh(.regenerate)
     }
 
-    private func trainAnyway() {
-        performAnimatedWorkoutRefresh(.trainAnyway)
-    }
-
     private func applySorenessChange(_ level: SorenessLevel) {
         guard environment.sorenessLevel != level else { return }
         environment.setSoreness(level)
         guard !environment.isTodayWorkoutCompleted else { return }
-        guard !environment.isRestDay || environment.todayWorkout != nil else { return }
         guard !isRegenerating, !environment.isWorkoutGenerationInFlight else { return }
         performAnimatedWorkoutRefresh(.readiness)
     }
@@ -447,9 +482,6 @@ struct TodayView: View {
             return await environment.regenerateTodayWorkout(profile: profile)
         case .switchSplit:
             return await environment.switchTodaySplitFocus()
-        case .trainAnyway:
-            guard let profile = environment.userProfile else { return false }
-            return await environment.generateTodayWorkoutOnRestDay(profile: profile)
         case .readiness:
             guard let profile = environment.userProfile else { return false }
             return await environment.refreshTodayWorkoutForReadinessChange(profile: profile)

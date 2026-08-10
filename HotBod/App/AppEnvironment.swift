@@ -168,8 +168,7 @@ final class AppEnvironment {
             hasCompletedOnboarding = true
             recoveryStates = RecoveryCalculator.defaultStates()
             try? await recoveryRepository.saveRecoveryStates(recoveryStates)
-            if TrainingSchedule.isTrainingDay(profile: profile),
-               !UITestConfiguration.shouldStartWorkout,
+            if !UITestConfiguration.shouldStartWorkout,
                !UITestConfiguration.shouldOpenWorkoutPreview {
                 await ensureTodayWorkoutOnLaunch(profile: profile)
             }
@@ -209,9 +208,9 @@ final class AppEnvironment {
     }
 
     /// Re-validates today's plan for the current calendar day: clears stale completion
-    /// markers and regenerates (or clears) a plan generated on a previous day. Called
-    /// from bootstrap and on foreground resume — bootstrap alone is not enough because
-    /// iOS usually resumes the app from background instead of relaunching it.
+    /// markers and regenerates a plan generated on a previous day. Called from bootstrap
+    /// and on foreground resume — bootstrap alone is not enough because iOS usually
+    /// resumes the app from background instead of relaunching it.
     func revalidateTodayPlanForCurrentDay() async {
         guard hasCompletedOnboarding, let profile = userProfile else { return }
         await normalizeProgramStateForToday(profile: profile)
@@ -220,19 +219,13 @@ final class AppEnvironment {
             || isStartingWorkoutSession
         let now = Date()
         let calendar = Calendar.current
-        if TrainingSchedule.isTrainingDay(profile: profile) {
-            if todayWorkout == nil, !isTodayWorkoutCompleted, !generationBlocked {
-                await ensureTodayWorkoutOnLaunch(profile: profile)
-            } else if let workout = todayWorkout,
-                      !generationBlocked,
-                      await shouldRegenerateStaleTodayWorkout(workout, now: now, calendar: calendar),
-                      !isTodayWorkoutCompleted {
-                await ensureTodayWorkoutOnLaunch(profile: profile)
-            }
+        if todayWorkout == nil, !isTodayWorkoutCompleted, !generationBlocked {
+            await ensureTodayWorkoutOnLaunch(profile: profile)
         } else if let workout = todayWorkout,
                   !generationBlocked,
-                  await shouldRegenerateStaleTodayWorkout(workout, now: now, calendar: calendar) {
-            await clearTodayWorkout()
+                  await shouldRegenerateStaleTodayWorkout(workout, now: now, calendar: calendar),
+                  !isTodayWorkoutCompleted {
+            await ensureTodayWorkoutOnLaunch(profile: profile)
         }
     }
 

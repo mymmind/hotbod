@@ -30,8 +30,9 @@ extension AppEnvironment {
         try await recoveryRepository.saveRecoveryStates(recoveryStates)
     }
 
-    /// Completes onboarding, preserves the selected schedule, and returns a session
-    /// when today is a scheduled training day and generation succeeds.
+    /// Completes onboarding, ensures today's plan exists, and returns a session when
+    /// today is a preferred training day and generation succeeds. Non-preferred days
+    /// keep the plan ready without auto-starting a session.
     func finishOnboardingAndStartTodayWorkout(
         profile: UserProfile,
         lockSplit: Bool = false
@@ -51,11 +52,6 @@ extension AppEnvironment {
             return nil
         }
 
-        guard TrainingSchedule.isTrainingDay(profile: updated) else {
-            syncMessage = nil
-            return nil
-        }
-
         await normalizeProgramStateForToday(profile: updated)
         guard await ensureTodayWorkoutOnLaunch(profile: updated),
               let workout = todayWorkout else {
@@ -64,6 +60,13 @@ extension AppEnvironment {
             }
             return nil
         }
+
+        // Preferred day: auto-start. Non-preferred: leave plan ready under Recovery UI.
+        guard TrainingSchedule.isTrainingDay(profile: updated) else {
+            syncMessage = nil
+            return nil
+        }
+
         return await resumeOrStartWorkout(
             from: workout,
             deferStartTimestamp: !UITestConfiguration.isUITesting

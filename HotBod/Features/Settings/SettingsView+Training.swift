@@ -131,7 +131,7 @@ extension SettingsView {
                 }
             }
 
-            Text("Preferred days")
+            Text("Preferred days for reminders")
                 .font(ForgeTypography.caption)
                 .foregroundStyle(ForgeColors.muted)
                 .padding(.top, 4)
@@ -146,6 +146,11 @@ extension SettingsView {
                     }
                 }
             }
+
+            Text("Used for reminders and Recovery framing. You can train any day.")
+                .font(ForgeTypography.caption)
+                .foregroundStyle(ForgeColors.muted)
+                .padding(.top, 4)
         }
     }
 

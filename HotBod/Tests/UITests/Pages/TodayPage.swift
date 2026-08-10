@@ -8,13 +8,14 @@ struct TodayPage {
   var regenerateButton: XCUIElement { app.buttons["today.regenerate"] }
   var previewButton: XCUIElement { app.buttons["today.preview"] }
   var switchFocusButton: XCUIElement { app.buttons["today.switchFocus"] }
-  var trainAnywayButton: XCUIElement { app.buttons["today.trainAnyway"] }
+  var generateButton: XCUIElement { app.buttons["today.generate"] }
   var settingsButton: XCUIElement { app.buttons["today.settings"] }
   var askCoachButton: XCUIElement { app.buttons["Ask Coach"] }
 
   func waitForHero(timeout: TimeInterval = 8) -> Bool {
     startWorkoutButton.waitForExistence(timeout: timeout)
       || resumeWorkoutButton.waitForExistence(timeout: 1)
+      || generateButton.waitForExistence(timeout: 1)
       || app.staticTexts["Recovery"].waitForExistence(timeout: 1)
       || app.staticTexts["No workout yet"].waitForExistence(timeout: 1)
   }

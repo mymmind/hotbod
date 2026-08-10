@@ -34,14 +34,24 @@ final class TodayWorkoutUITests: BaseUITestCase {
     XCTAssertTrue(today.waitForHero(timeout: 15))
   }
 
-  func testRegression_trainAnywayReplacesRestHeroWithPlan() {
+  func testRegression_nonPreferredDayShowsRecoveryWithStart() {
     app.terminate()
     app.launchArguments.append("-ForceRestDay")
     app.launch()
     XCTAssertTrue(waitForTabBar())
 
-    tapButton("today.trainAnyway", label: "Train Anyway")
-    XCTAssertTrue(app.buttons["today.startWorkout"].waitForExistence(timeout: 20))
+    XCTAssertTrue(
+      app.staticTexts["Rest Day"].waitForExistence(timeout: 10)
+        || app.staticTexts["Recovery"].waitForExistence(timeout: 2)
+    )
+    XCTAssertTrue(
+      app.buttons["today.startWorkout"].waitForExistence(timeout: 20)
+        || app.buttons["today.generate"].waitForExistence(timeout: 5)
+    )
+    if app.buttons["today.generate"].exists {
+      app.buttons["today.generate"].tap()
+      XCTAssertTrue(app.buttons["today.startWorkout"].waitForExistence(timeout: 20))
+    }
   }
 
   func testPreviewOpensWorkoutPreview() {

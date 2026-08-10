@@ -260,7 +260,7 @@ final class AppEnvironmentWorkoutGenerationTests: XCTestCase {
         XCTAssertNil(env.todayWorkout)
     }
 
-    func testRegression_trainAnywayGeneratesOnUnscheduledDay() async {
+    func testRegression_regenerateOnNonPreferredDay() async {
         let workout = FixtureBuilders.makeGeneratedWorkout()
         let generator = FixedMockWorkoutGenerationService(workout: workout)
         let env = AppEnvironment.makeForTests(workoutGenerationService: generator)
@@ -271,24 +271,27 @@ final class AppEnvironmentWorkoutGenerationTests: XCTestCase {
         env.userProfile = profile
         env.recoveryStates = RecoveryCalculator.defaultStates()
 
-        let generated = await env.generateTodayWorkoutOnRestDay(profile: profile)
+        let generated = await env.regenerateTodayWorkout(profile: profile)
 
         XCTAssertTrue(generated)
         XCTAssertEqual(env.todayWorkout?.id, workout.id)
     }
 
-    func testRegression_normalRegenerationRemainsBlockedOnUnscheduledDay() async {
-        let generator = FixedMockWorkoutGenerationService(workout: FixtureBuilders.makeGeneratedWorkout())
+    func testRegression_regenerateSucceedsOnNonPreferredDayWithoutExistingPlan() async {
+        let workout = FixtureBuilders.makeGeneratedWorkout()
+        let generator = FixedMockWorkoutGenerationService(workout: workout)
         let env = AppEnvironment.makeForTests(workoutGenerationService: generator)
         let today = TrainingSchedule.weekday()
         var profile = UserProfile.empty()
         profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
         profile.trainingDaysPerWeek = 2
+        env.userProfile = profile
+        env.recoveryStates = RecoveryCalculator.defaultStates()
 
         let generated = await env.regenerateTodayWorkout(profile: profile)
 
-        XCTAssertFalse(generated)
-        XCTAssertNil(env.todayWorkout)
+        XCTAssertTrue(generated)
+        XCTAssertEqual(env.todayWorkout?.id, workout.id)
     }
 
     func testRegression_readinessRefreshRegeneratesTrainingDayWorkout() async {
@@ -326,8 +329,9 @@ final class AppEnvironmentWorkoutGenerationTests: XCTestCase {
         XCTAssertEqual(env.todayWorkout?.id, workout.id)
     }
 
-    func testRegression_readinessRefreshSkipsBareRestDay() async {
-        let generator = FixedMockWorkoutGenerationService(workout: FixtureBuilders.makeGeneratedWorkout())
+    func testRegression_readinessRefreshGeneratesOnBareNonPreferredDay() async {
+        let workout = FixtureBuilders.makeGeneratedWorkout()
+        let generator = FixedMockWorkoutGenerationService(workout: workout)
         let env = AppEnvironment.makeForTests(workoutGenerationService: generator)
         let today = TrainingSchedule.weekday()
         var profile = UserProfile.empty()
@@ -338,39 +342,8 @@ final class AppEnvironmentWorkoutGenerationTests: XCTestCase {
 
         let refreshed = await env.refreshTodayWorkoutForReadinessChange(profile: profile)
 
-        XCTAssertFalse(refreshed)
-        XCTAssertNil(env.todayWorkout)
-    }
-}
-
-@MainActor
-final class AppEnvironmentDayRolloverTests: XCTestCase {
-    func testRegression_revalidateOnResumeRegeneratesStaleWorkoutFromYesterday() async throws {
-        let calendar = Calendar.current
-        let yesterday = calendar.date(byAdding: .day, value: -1, to: Date())!
-        let staleWorkout = FixtureBuilders.makeGeneratedWorkout(createdAt: yesterday)
-        let freshWorkout = FixtureBuilders.makeGeneratedWorkout()
-        let generator = FixedMockWorkoutGenerationService(workout: freshWorkout)
-        var repos = TestRepositories.empty()
-        try await repos.workout.saveTodayWorkout(staleWorkout)
-
-        let env = AppEnvironment.makeForTests(repos: repos, workoutGenerationService: generator)
-        var profile = UserProfile.empty()
-        profile.preferredTrainingDays = [TrainingSchedule.weekday(), .wednesday]
-        try await env.seedOnboardedProfile(profile)
-        env.todayWorkout = staleWorkout
-
-        var state = TrainingProgramState()
-        state.todayCompletedSessionId = UUID()
-        state.todayCompletedOn = TrainingSchedule.startOfDay(yesterday)
-        state.todayRotationAdvancedOn = TrainingSchedule.startOfDay(yesterday)
-        env.programState = state
-
-        await env.revalidateTodayPlanForCurrentDay()
-
-        XCTAssertEqual(env.todayWorkout?.id, freshWorkout.id, "stale workout should be regenerated on day rollover")
-        XCTAssertNil(env.programState.todayCompletedOn, "yesterday's completion marker should be cleared")
-        XCTAssertNil(env.programState.todayRotationAdvancedOn, "yesterday's rotation marker should be cleared")
+        XCTAssertTrue(refreshed)
+        XCTAssertEqual(env.todayWorkout?.id, workout.id)
     }
 }
 
@@ -506,7 +479,7 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
         XCTAssertNotNil(env.todayWorkout)
     }
 
-    func testRulesEngineTrainAnywayOnRestDayAfterOnboarding() async throws {
+    func testRulesEngineRegenerateOnNonPreferredDayAfterOnboarding() async throws {
         let today = TrainingSchedule.weekday()
         var profile = UserProfile.empty()
         profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(4))
@@ -517,16 +490,11 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
         await env.bootstrap()
 
         XCTAssertTrue(env.isRestDay)
-        XCTAssertNil(env.todayWorkout)
+        XCTAssertNotNil(env.todayWorkout, "bootstrap should auto-generate even on non-preferred days")
+        XCTAssertFalse(env.todayWorkout?.exercises.isEmpty ?? true)
 
-        let generated = await env.generateTodayWorkoutOnRestDay(profile: profile)
-        if !generated {
-            XCTFail(
-                "train anyway failed: failure=\(String(describing: env.lastGenerationFailure)) " +
-                "validation=\(String(describing: env.lastValidation))"
-            )
-        }
-        XCTAssertTrue(generated)
+        let generated = await env.regenerateTodayWorkout(profile: profile)
+        XCTAssertTrue(generated, "failure=\(String(describing: env.lastGenerationFailure))")
         XCTAssertNotNil(env.todayWorkout)
         XCTAssertFalse(env.todayWorkout?.exercises.isEmpty ?? true)
     }
@@ -544,7 +512,7 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
         XCTAssertFalse(env.isWorkoutGenerationInFlight)
     }
 
-    func testRulesEngineRegenerateAfterTrainAnywayOnRestDay() async throws {
+    func testRulesEngineRegenerateTwiceOnNonPreferredDay() async throws {
         let today = TrainingSchedule.weekday()
         var profile = UserProfile.empty()
         profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(4))
@@ -554,24 +522,24 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
         try await env.seedOnboardedProfile(profile)
         await env.bootstrap()
 
-        let trained = await env.generateTodayWorkoutOnRestDay(profile: profile)
+        let trained = await env.ensureTodayWorkoutOnLaunch(profile: profile)
         XCTAssertTrue(trained)
         let originalId = try XCTUnwrap(env.todayWorkout?.id)
         let originalExerciseIds = try XCTUnwrap(env.todayWorkout?.exercises.map(\.exerciseId))
 
         let regenerated = await env.regenerateTodayWorkout(profile: profile)
-        if !regenerated {
-            XCTFail(
-                "regenerate after train anyway failed: failure=\(String(describing: env.lastGenerationFailure)) " +
-                "validation=\(String(describing: env.lastValidation)) paywall=\(String(describing: env.paywallFeature))"
-            )
-        }
-        XCTAssertTrue(regenerated)
+        XCTAssertTrue(
+            regenerated,
+            "failure=\(String(describing: env.lastGenerationFailure)) validation=\(String(describing: env.lastValidation))"
+        )
         XCTAssertNotEqual(env.todayWorkout?.id, originalId)
         XCTAssertNotEqual(env.todayWorkout?.exercises.map(\.exerciseId), originalExerciseIds)
     }
 
-    func testRegression_restDayRegenerateWorksWhenFreeQuotaExhausted() async throws {
+    func testRegression_nonPreferredDayUserRegenerateUsesStandardQuotaPath() async throws {
+        SubscriptionConfig.unrestrictedAccessOverride = false
+        defer { SubscriptionConfig.unrestrictedAccessOverride = nil }
+
         let today = TrainingSchedule.weekday()
         var profile = UserProfile.empty()
         profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(4))
@@ -592,17 +560,20 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
             subscriptionService: ForgeSubscriptionService(grantProForTesting: false)
         )
         try await env.seedOnboardedProfile(profile)
-        env.programState.weeklyRegenerationCount = FreeTierLimits.weeklyRegenerations
         await env.bootstrap()
+        env.programState.weeklyRegenerationCount = FreeTierLimits.weeklyRegenerations
+        try await env.programStateRepository.saveState(env.programState)
+        XCTAssertFalse(env.isPro)
+        XCTAssertEqual(env.remainingFreeRegenerations, 0)
 
-        let first = await env.generateTodayWorkoutOnRestDay(profile: profile)
-        XCTAssertTrue(first)
+        let first = await env.ensureTodayWorkoutOnLaunch(profile: profile)
+        XCTAssertTrue(first, "initial ensure must remain free when quota is exhausted")
         let originalId = try XCTUnwrap(env.todayWorkout?.id)
 
-        let second = await env.generateTodayWorkoutOnRestDay(profile: profile)
-        XCTAssertTrue(second)
-        XCTAssertNotEqual(env.todayWorkout?.id, originalId)
-        XCTAssertNil(env.paywallFeature)
+        let second = await env.regenerateTodayWorkout(profile: profile)
+        XCTAssertFalse(second, "user regenerate on non-preferred day must not bypass Pro/quota")
+        XCTAssertEqual(env.todayWorkout?.id, originalId)
+        XCTAssertEqual(env.paywallFeature, .unlimitedGeneration)
     }
 
     // UI-test exemption: Rest / Train lighter alert UI is covered by domain classification
@@ -861,17 +832,22 @@ final class AppEnvironmentOnboardingAndCoachTests: XCTestCase {
     }
 
     func testRegression_onboardingCompletionDoesNotAddToday() async {
-        let env = AppEnvironment.makeForTests()
+        let workout = FixtureBuilders.makeGeneratedWorkout()
+        let env = AppEnvironment.makeForTests(
+            workoutGenerationService: FixedMockWorkoutGenerationService(workout: workout)
+        )
         let today = TrainingSchedule.weekday()
         var profile = UserProfile.empty()
         profile.preferredTrainingDays = Array(Weekday.allCases.filter { $0 != today }.prefix(2))
         profile.trainingDaysPerWeek = 2
 
-        _ = await env.finishOnboardingAndStartTodayWorkout(profile: profile)
+        let session = await env.finishOnboardingAndStartTodayWorkout(profile: profile)
 
         XCTAssertEqual(env.userProfile?.preferredTrainingDays, profile.preferredTrainingDays)
         XCTAssertFalse(env.userProfile?.preferredTrainingDays.contains(today) ?? true)
         XCTAssertTrue(env.hasCompletedOnboarding)
+        XCTAssertEqual(env.todayWorkout?.id, workout.id)
+        XCTAssertNil(session)
     }
 
     func testRegression_finishOnboardingWithoutWorkoutLeavesProfileSaved() async throws {

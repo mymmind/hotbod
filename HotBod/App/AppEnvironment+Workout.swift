@@ -6,13 +6,10 @@ extension AppEnvironment {
         profile: UserProfile,
         options: WorkoutGenerationOptions = WorkoutGenerationOptions()
     ) async -> Bool {
-        let onRestDay = !TrainingSchedule.isTrainingDay(profile: profile)
-        let requiresPro = SubscriptionConfig.unrestrictedAccess ? false : !onRestDay
-        return await regenerateTodayWorkout(
+        await regenerateTodayWorkout(
             profile: profile,
             options: options,
-            allowsUnscheduledDay: onRestDay && todayWorkout != nil,
-            requiresProAccess: requiresPro
+            requiresProAccess: SubscriptionConfig.unrestrictedAccess ? false : true
         )
     }
 
@@ -22,7 +19,6 @@ extension AppEnvironment {
         await regenerateTodayWorkout(
             profile: profile,
             options: WorkoutGenerationOptions(),
-            allowsUnscheduledDay: false,
             requiresProAccess: false
         )
     }
@@ -72,39 +68,18 @@ extension AppEnvironment {
         try? await workoutRepository.saveTodayWorkout(workout)
     }
 
-    @discardableResult
-    func generateTodayWorkoutOnRestDay(
-        profile: UserProfile,
-        options: WorkoutGenerationOptions = WorkoutGenerationOptions()
-    ) async -> Bool {
-        await regenerateTodayWorkout(
-            profile: profile,
-            options: options,
-            allowsUnscheduledDay: true,
-            requiresProAccess: false
-        )
-    }
-
     /// Rebuilds today's plan after readiness input changes (e.g. soreness).
     @discardableResult
     func refreshTodayWorkoutForReadinessChange(profile: UserProfile) async -> Bool {
         guard !isTodayWorkoutCompleted else { return false }
-        if isRestDay {
-            guard todayWorkout != nil else { return false }
-            return await generateTodayWorkoutOnRestDay(profile: profile)
-        }
         return await regenerateTodayWorkout(profile: profile)
     }
 
     private func regenerateTodayWorkout(
         profile: UserProfile,
         options: WorkoutGenerationOptions,
-        allowsUnscheduledDay: Bool,
         requiresProAccess: Bool
     ) async -> Bool {
-        guard allowsUnscheduledDay
-            || TrainingSchedule.isTrainingDay(profile: profile)
-            || todayWorkout != nil else { return false }
         guard !isTodayWorkoutCompleted else { return false }
         cancelWorkoutGenerationIfNeeded()
         guard reserveWorkoutGeneration() else { return false }
@@ -145,7 +120,6 @@ extension AppEnvironment {
         profile: UserProfile,
         options: WorkoutGenerationOptions = WorkoutGenerationOptions()
     ) async -> Bool {
-        guard TrainingSchedule.isTrainingDay(profile: profile) else { return false }
         guard reserveWorkoutGeneration() else { return false }
         defer { releaseWorkoutGenerationReservation() }
 
@@ -173,8 +147,7 @@ extension AppEnvironment {
 
     @discardableResult
     func switchTodaySplitFocus() async -> Bool {
-        guard let profile = userProfile,
-              TrainingSchedule.isTrainingDay(profile: profile) else { return false }
+        guard let profile = userProfile else { return false }
         guard reserveWorkoutGeneration() else { return false }
         defer { releaseWorkoutGenerationReservation() }
 
@@ -417,7 +390,7 @@ extension AppEnvironment {
     }
 
     /// User override after a critical-fatigue-only generation failure: build and save a recovery session.
-    /// Does not require Pro or consume free regeneration quota (same semantics as rest-day generation).
+    /// Does not require Pro or consume free regeneration quota.
     @discardableResult
     func generateLighterWorkoutAfterFatigue(profile: UserProfile) async -> Bool {
         var options = WorkoutGenerationOptions()
@@ -426,13 +399,9 @@ extension AppEnvironment {
         if TrainingSchedule.isTodayWorkoutCompleted(state: programState) {
             return await restartTodayWorkout(profile: profile, options: options)
         }
-        if isRestDay {
-            return await generateTodayWorkoutOnRestDay(profile: profile, options: options)
-        }
         return await regenerateTodayWorkout(
             profile: profile,
             options: options,
-            allowsUnscheduledDay: false,
             requiresProAccess: false
         )
     }
