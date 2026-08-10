@@ -709,6 +709,16 @@ enum VolumeCalculator {
     }
 }
 
+enum WorkoutAdvanceDecision: Equatable {
+    case goToExercise(index: Int)
+    case confirmEnd
+}
+
+struct WorkoutEndConfirmationCopy: Equatable {
+    let title: String
+    let message: String
+}
+
 enum WorkoutSessionCalculator {
     /// Moderate strength-training MET (Ainsworth compendium).
     private static let strengthTrainingMET = 5.0
@@ -782,5 +792,50 @@ enum WorkoutSessionCalculator {
     /// Wall-clock remaining rest. UI must re-evaluate this each second (e.g. `TimelineView`).
     static func restSecondsRemaining(until end: Date, at now: Date = Date()) -> Int {
         max(0, Int(ceil(end.timeIntervalSince(now))))
+    }
+
+    static func isExerciseComplete(_ exercise: WorkoutExercise) -> Bool {
+        !exercise.wasSkipped && exercise.completedSets.count >= exercise.plannedSets.count
+    }
+
+    static func isSessionFullyLogged(_ session: WorkoutSession) -> Bool {
+        session.exercises.allSatisfy { $0.wasSkipped || isExerciseComplete($0) }
+    }
+
+    static func incompleteExerciseCount(in session: WorkoutSession) -> Int {
+        session.exercises.filter { !$0.wasSkipped && $0.completedSets.count < $0.plannedSets.count }.count
+    }
+
+    static func firstIncompleteExerciseIndex(in session: WorkoutSession) -> Int? {
+        session.exercises.firstIndex(where: {
+            !$0.wasSkipped && $0.completedSets.count < $0.plannedSets.count
+        })
+    }
+
+    static func advanceDecision(
+        session: WorkoutSession,
+        currentExerciseIndex: Int
+    ) -> WorkoutAdvanceDecision {
+        if isSessionFullyLogged(session) {
+            return .confirmEnd
+        }
+        if currentExerciseIndex + 1 < session.exercises.count {
+            return .goToExercise(index: currentExerciseIndex + 1)
+        }
+        return .confirmEnd
+    }
+
+    static func endConfirmationCopy(incompleteExerciseCount: Int) -> WorkoutEndConfirmationCopy {
+        if incompleteExerciseCount <= 0 {
+            return WorkoutEndConfirmationCopy(
+                title: "Finish Workout?",
+                message: "All sets logged. Ready to end this session?"
+            )
+        }
+        let noun = incompleteExerciseCount == 1 ? "exercise" : "exercises"
+        return WorkoutEndConfirmationCopy(
+            title: "End Workout?",
+            message: "\(incompleteExerciseCount) \(noun) still incomplete. Logged sets will be saved."
+        )
     }
 }

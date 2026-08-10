@@ -63,4 +63,115 @@ final class WorkoutSessionCalculatorTests: XCTestCase {
         let midSession = WorkoutSession(userId: UUID(), title: "Test", estimatedDurationMinutes: 45, exercises: midFirst, status: .inProgress)
         XCTAssertEqual(WorkoutSessionCalculator.currentExerciseIndex(for: midSession), 0)
     }
+
+    func testIsSessionFullyLoggedOutOfOrder() {
+        let set = PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
+        let done = CompletedSet(setIndex: 0, weightKg: 50, reps: 8)
+        let exercises = [
+            WorkoutExercise(exerciseId: "a", orderIndex: 0, plannedSets: [set], completedSets: [done]),
+            WorkoutExercise(exerciseId: "b", orderIndex: 1, plannedSets: [set], completedSets: [done]),
+            WorkoutExercise(exerciseId: "c", orderIndex: 2, plannedSets: [set], completedSets: [done])
+        ]
+        let session = WorkoutSession(
+            userId: UUID(),
+            title: "Test",
+            estimatedDurationMinutes: 45,
+            exercises: exercises,
+            status: .inProgress
+        )
+        XCTAssertTrue(WorkoutSessionCalculator.isSessionFullyLogged(session))
+        XCTAssertEqual(WorkoutSessionCalculator.incompleteExerciseCount(in: session), 0)
+        XCTAssertNil(WorkoutSessionCalculator.firstIncompleteExerciseIndex(in: session))
+    }
+
+    func testIncompleteCountIgnoresSkipped() {
+        let set = PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
+        let done = CompletedSet(setIndex: 0, weightKg: 50, reps: 8)
+        let exercises = [
+            WorkoutExercise(exerciseId: "a", orderIndex: 0, plannedSets: [set], completedSets: []),
+            WorkoutExercise(exerciseId: "b", orderIndex: 1, plannedSets: [set], completedSets: [done], wasSkipped: true),
+            WorkoutExercise(exerciseId: "c", orderIndex: 2, plannedSets: [set], completedSets: [done])
+        ]
+        let session = WorkoutSession(
+            userId: UUID(),
+            title: "Test",
+            estimatedDurationMinutes: 45,
+            exercises: exercises,
+            status: .inProgress
+        )
+        XCTAssertFalse(WorkoutSessionCalculator.isSessionFullyLogged(session))
+        XCTAssertEqual(WorkoutSessionCalculator.incompleteExerciseCount(in: session), 1)
+        XCTAssertEqual(WorkoutSessionCalculator.firstIncompleteExerciseIndex(in: session), 0)
+    }
+
+    func testRegression_finishingLastIndexWithEarlierIncompleteDoesNotAutoComplete() {
+        let set = PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
+        let done = CompletedSet(setIndex: 0, weightKg: 50, reps: 8)
+        let exercises = [
+            WorkoutExercise(exerciseId: "a", orderIndex: 0, plannedSets: [set], completedSets: []),
+            WorkoutExercise(exerciseId: "b", orderIndex: 1, plannedSets: [set], completedSets: [done])
+        ]
+        let session = WorkoutSession(
+            userId: UUID(),
+            title: "Test",
+            estimatedDurationMinutes: 45,
+            exercises: exercises,
+            status: .inProgress
+        )
+        let decision = WorkoutSessionCalculator.advanceDecision(session: session, currentExerciseIndex: 1)
+        XCTAssertEqual(decision, .confirmEnd)
+        XCTAssertFalse(WorkoutSessionCalculator.isSessionFullyLogged(session))
+        XCTAssertEqual(WorkoutSessionCalculator.firstIncompleteExerciseIndex(in: session), 0)
+    }
+
+    func testAdvanceDecisionFullyLoggedPromptsConfirmEvenMidList() {
+        let set = PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
+        let done = CompletedSet(setIndex: 0, weightKg: 50, reps: 8)
+        let exercises = [
+            WorkoutExercise(exerciseId: "a", orderIndex: 0, plannedSets: [set], completedSets: [done]),
+            WorkoutExercise(exerciseId: "b", orderIndex: 1, plannedSets: [set], completedSets: [done]),
+            WorkoutExercise(exerciseId: "c", orderIndex: 2, plannedSets: [set], completedSets: [done])
+        ]
+        let session = WorkoutSession(
+            userId: UUID(),
+            title: "Test",
+            estimatedDurationMinutes: 45,
+            exercises: exercises,
+            status: .inProgress
+        )
+        let decision = WorkoutSessionCalculator.advanceDecision(session: session, currentExerciseIndex: 1)
+        XCTAssertEqual(decision, .confirmEnd)
+    }
+
+    func testAdvanceDecisionGoesToNextIndexWhenWorkRemains() {
+        let set = PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
+        let done = CompletedSet(setIndex: 0, weightKg: 50, reps: 8)
+        let exercises = [
+            WorkoutExercise(exerciseId: "a", orderIndex: 0, plannedSets: [set], completedSets: [done]),
+            WorkoutExercise(exerciseId: "b", orderIndex: 1, plannedSets: [set], completedSets: [])
+        ]
+        let session = WorkoutSession(
+            userId: UUID(),
+            title: "Test",
+            estimatedDurationMinutes: 45,
+            exercises: exercises,
+            status: .inProgress
+        )
+        let decision = WorkoutSessionCalculator.advanceDecision(session: session, currentExerciseIndex: 0)
+        XCTAssertEqual(decision, .goToExercise(index: 1))
+    }
+
+    func testEndConfirmationCopyIncompleteVsComplete() {
+        let incomplete = WorkoutSessionCalculator.endConfirmationCopy(incompleteExerciseCount: 2)
+        XCTAssertEqual(incomplete.title, "End Workout?")
+        XCTAssertEqual(incomplete.message, "2 exercises still incomplete. Logged sets will be saved.")
+
+        let singular = WorkoutSessionCalculator.endConfirmationCopy(incompleteExerciseCount: 1)
+        XCTAssertEqual(singular.title, "End Workout?")
+        XCTAssertEqual(singular.message, "1 exercise still incomplete. Logged sets will be saved.")
+
+        let complete = WorkoutSessionCalculator.endConfirmationCopy(incompleteExerciseCount: 0)
+        XCTAssertEqual(complete.title, "Finish Workout?")
+        XCTAssertEqual(complete.message, "All sets logged. Ready to end this session?")
+    }
 }
