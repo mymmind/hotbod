@@ -371,7 +371,7 @@ struct TrainView: View {
             return await environment.regenerateTodayWorkout(profile: profile)
         case .switchSplit:
             return await environment.switchTodaySplitFocus()
-        case .trainAnyway, .readiness:
+        case .readiness:
             return false
         }
     }

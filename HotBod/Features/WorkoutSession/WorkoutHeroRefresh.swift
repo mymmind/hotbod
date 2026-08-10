@@ -3,7 +3,6 @@ import SwiftUI
 enum WorkoutHeroRefreshKind {
     case regenerate
     case switchSplit
-    case trainAnyway
     case readiness
 }
 
@@ -76,7 +75,7 @@ enum WorkoutHeroRefreshRunner {
     private static func feedbackKind(for kind: WorkoutHeroRefreshKind) -> ForgeFeedbackEvent {
         switch kind {
         case .regenerate: .workoutRegenerate
-        case .switchSplit, .trainAnyway, .readiness: .success
+        case .switchSplit, .readiness: .success
         }
     }
 }
