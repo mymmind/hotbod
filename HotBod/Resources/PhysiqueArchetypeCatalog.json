@@ -1,0 +1,112 @@
+[
+  {
+    "id": "lean_fighter",
+    "genericLabel": "Lean fighter",
+    "referenceLabel": "Bruce Lee–style athletic build",
+    "tags": ["lean", "compact", "fighter"],
+    "similarityHints": [
+      "Low body mass with visible muscle definition",
+      "Compact frame with athletic proportions",
+      "Lean silhouette with functional muscle tone"
+    ]
+  },
+  {
+    "id": "classic_athletic",
+    "genericLabel": "Classic athletic",
+    "referenceLabel": "Brad Pitt — Fight Club era",
+    "tags": ["lean", "athletic", "v_taper"],
+    "similarityHints": [
+      "Moderate muscle with low body fat",
+      "Defined V-taper from shoulders to waist",
+      "Balanced upper-body proportions"
+    ]
+  },
+  {
+    "id": "compact_athletic",
+    "genericLabel": "Compact athletic",
+    "referenceLabel": "Young Jean-Claude Van Damme–style",
+    "tags": ["compact", "athletic", "defined"],
+    "similarityHints": [
+      "Shorter frame with dense muscle development",
+      "Visible definition without excessive bulk",
+      "Proportional limb-to-torso balance"
+    ]
+  },
+  {
+    "id": "mens_physique",
+    "genericLabel": "Men's physique direction",
+    "referenceLabel": null,
+    "tags": ["v_taper", "delts", "lats", "muscular"],
+    "similarityHints": [
+      "Broad shoulders tapering to a narrow waist",
+      "Emphasis on delt and lat width",
+      "Stage-ready upper-body proportions"
+    ]
+  },
+  {
+    "id": "muscular_athletic",
+    "genericLabel": "Muscular athletic",
+    "referenceLabel": null,
+    "tags": ["muscular", "athletic", "balanced"],
+    "similarityHints": [
+      "Above-average muscle mass with athletic lines",
+      "Full-body development without extreme bulk",
+      "Solid frame with visible muscle separation"
+    ]
+  },
+  {
+    "id": "lean_aesthetic",
+    "genericLabel": "Lean aesthetic",
+    "referenceLabel": null,
+    "tags": ["lean", "aesthetic", "defined"],
+    "similarityHints": [
+      "Low body fat with moderate muscle",
+      "Clean lines and visible ab definition",
+      "Emphasis on proportion over mass"
+    ]
+  },
+  {
+    "id": "v_taper_focus",
+    "genericLabel": "V-taper focus",
+    "referenceLabel": null,
+    "tags": ["v_taper", "lats", "shoulders"],
+    "similarityHints": [
+      "Shoulder width noticeably exceeds waist",
+      "Lat spread contributes to taper",
+      "Upper-body dominant silhouette"
+    ]
+  },
+  {
+    "id": "combat_athlete",
+    "genericLabel": "Lightweight combat-athlete",
+    "referenceLabel": null,
+    "tags": ["lean", "athletic", "fighter", "compact"],
+    "similarityHints": [
+      "Weight-class lean with functional muscle",
+      "Compact build optimized for power-to-weight",
+      "Defined without excessive hypertrophy"
+    ]
+  },
+  {
+    "id": "balanced_athletic",
+    "genericLabel": "Balanced athletic",
+    "referenceLabel": null,
+    "tags": ["balanced", "athletic", "moderate"],
+    "similarityHints": [
+      "Even development across muscle groups",
+      "Moderate leanness and muscularity",
+      "No single body part dominates the silhouette"
+    ]
+  },
+  {
+    "id": "upper_body_presence",
+    "genericLabel": "Upper-body presence",
+    "referenceLabel": null,
+    "tags": ["shoulders", "chest", "traps", "upper_body"],
+    "similarityHints": [
+      "Shoulders and chest draw visual attention",
+      "Upper back and trap development visible",
+      "Torso-dominant proportional balance"
+    ]
+  }
+]
