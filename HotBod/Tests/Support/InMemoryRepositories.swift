@@ -11,6 +11,7 @@ struct TestRepositories {
   var exerciseStats: InMemoryExerciseStatsRepository
   var programState: InMemoryProgramStateRepository
   var coach: InMemoryCoachRepository
+  var physiqueAssessment: InMemoryPhysiqueAssessmentRepository
 
   static func withCatalog() -> TestRepositories {
     empty(exercises: ExerciseCatalogLoader.loadExercises())
@@ -26,7 +27,8 @@ struct TestRepositories {
       recovery: InMemoryRecoveryRepository(),
       exerciseStats: InMemoryExerciseStatsRepository(),
       programState: InMemoryProgramStateRepository(),
-      coach: InMemoryCoachRepository()
+      coach: InMemoryCoachRepository(),
+      physiqueAssessment: InMemoryPhysiqueAssessmentRepository()
     )
   }
 }
@@ -228,6 +230,14 @@ actor InMemoryCoachRepository: CoachRepository {
       messages.append(message)
     }
   }
+}
+
+actor InMemoryPhysiqueAssessmentRepository: PhysiqueAssessmentRepository {
+  private var active: PhysiqueAssessment?
+
+  func fetchActive() async throws -> PhysiqueAssessment? { active }
+  func saveActive(_ assessment: PhysiqueAssessment) async throws { active = assessment }
+  func clearActive() async throws { active = nil }
 }
 
 final class CountingCloudSyncService: CloudSyncService, @unchecked Sendable {

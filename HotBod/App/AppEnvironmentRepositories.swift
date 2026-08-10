@@ -12,6 +12,7 @@ struct AppEnvironmentRepositories {
     let exerciseStats: any ExerciseStatsRepository
     let programState: any ProgramStateRepository
     let coach: any CoachRepository
+    let physiqueAssessment: any PhysiqueAssessmentRepository
 
     init(
         workout: any WorkoutRepository = LocalWorkoutRepository(),
@@ -22,7 +23,8 @@ struct AppEnvironmentRepositories {
         recovery: any RecoveryRepository = LocalRecoveryRepository(),
         exerciseStats: any ExerciseStatsRepository = LocalExerciseStatsRepository(),
         programState: any ProgramStateRepository = LocalProgramStateRepository(),
-        coach: any CoachRepository = LocalCoachRepository()
+        coach: any CoachRepository = LocalCoachRepository(),
+        physiqueAssessment: any PhysiqueAssessmentRepository = LocalPhysiqueAssessmentRepository()
     ) {
         self.workout = workout
         self.exercise = exercise
@@ -33,6 +35,7 @@ struct AppEnvironmentRepositories {
         self.exerciseStats = exerciseStats
         self.programState = programState
         self.coach = coach
+        self.physiqueAssessment = physiqueAssessment
     }
 
     var syncStores: SyncLocalStores {

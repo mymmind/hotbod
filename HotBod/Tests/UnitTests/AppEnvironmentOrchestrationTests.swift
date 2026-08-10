@@ -44,6 +44,15 @@ final class AppEnvironmentBootstrapTests: XCTestCase {
         XCTAssertEqual(env.programState.splitDayIndex, 3)
     }
 
+    func testLoadActivePhysiqueAssessmentPopulatesEnvironment() async throws {
+        let repos = TestRepositories.empty()
+        let assessment = FixtureBuilders.makePhysiqueAssessment()
+        try await repos.physiqueAssessment.saveActive(assessment)
+        let env = AppEnvironment.makeForTests(repos: repos)
+        await env.loadActivePhysiqueAssessment()
+        XCTAssertEqual(env.activePhysiqueAssessment?.id, assessment.id)
+    }
+
     func testBootstrapLoadsRecoveryStates() async throws {
         var repos = TestRepositories.empty()
         var states = RecoveryCalculator.defaultStates()

@@ -566,6 +566,20 @@ final class LocalBodyProgressRepositoryTests: XCTestCase {
     }
 }
 
+// MARK: - LocalPhysiqueAssessmentRepository
+
+final class LocalPhysiqueAssessmentRepositoryTests: XCTestCase {
+    func testLocalPhysiqueAssessmentRepositoryPersistsActive() async throws {
+        try await PersistenceTestHelpers.withIsolatedPersistence {
+            let repo = LocalPhysiqueAssessmentRepository(key: "physique_assessment_test_\(UUID().uuidString).json")
+            let assessment = FixtureBuilders.makePhysiqueAssessment()
+            try await repo.saveActive(assessment)
+            let loaded = try await repo.fetchActive()
+            XCTAssertEqual(loaded?.id, assessment.id)
+        }
+    }
+}
+
 // MARK: - LocalCoachRepository
 
 final class LocalCoachRepositoryTests: XCTestCase {

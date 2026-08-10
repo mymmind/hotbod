@@ -222,7 +222,8 @@ extension AppEnvironment {
         recovery: repos.recovery,
         exerciseStats: repos.exerciseStats,
         programState: repos.programState,
-        coach: repos.coach
+        coach: repos.coach,
+        physiqueAssessment: repos.physiqueAssessment
       ),
       workoutGenerationService: workoutGenerationService ?? RulesWorkoutGenerationService(
         exerciseRepository: repos.exercise

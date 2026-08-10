@@ -77,6 +77,12 @@ protocol CoachRepository: Sendable {
     func saveMessage(_ message: CoachMessage) async throws
 }
 
+protocol PhysiqueAssessmentRepository: Sendable {
+    func fetchActive() async throws -> PhysiqueAssessment?
+    func saveActive(_ assessment: PhysiqueAssessment) async throws
+    func clearActive() async throws
+}
+
 // MARK: - Service Protocols
 
 protocol AIWorkoutService: Sendable {

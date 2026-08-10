@@ -42,6 +42,7 @@ final class AppEnvironment {
     var isFoodAPIConfigured = FoodAPIConfig.isConfigured
     var paywallFeature: ProFeature?
     var bodyPhotoRevision = 0
+    var activePhysiqueAssessment: PhysiqueAssessment?
     var onboardingViewModel = OnboardingViewModel()
 
     var sessionSaveTask: Task<Void, Never>?
@@ -117,6 +118,7 @@ final class AppEnvironment {
         exerciseStatsRepository: any ExerciseStatsRepository = LocalExerciseStatsRepository(),
         programStateRepository: any ProgramStateRepository = LocalProgramStateRepository(),
         coachRepository: any CoachRepository = LocalCoachRepository(),
+        physiqueAssessmentRepository: any PhysiqueAssessmentRepository = LocalPhysiqueAssessmentRepository(),
         workoutGenerationService: any WorkoutGenerationService = RulesWorkoutGenerationService(),
         aiWorkoutService: (any AIWorkoutService)? = nil,
         foodSearchService: (any FoodSearchService)? = nil,
@@ -140,7 +142,8 @@ final class AppEnvironment {
                 recovery: recoveryRepository,
                 exerciseStats: exerciseStatsRepository,
                 programState: programStateRepository,
-                coach: coachRepository
+                coach: coachRepository,
+                physiqueAssessment: physiqueAssessmentRepository
             ),
             workoutGenerationService: workoutGenerationService,
             aiWorkoutService: aiWorkoutService,
@@ -367,4 +370,5 @@ extension AppEnvironment {
     var exerciseStatsRepository: any ExerciseStatsRepository { repositories.exerciseStats }
     var programStateRepository: any ProgramStateRepository { repositories.programState }
     var coachRepository: any CoachRepository { repositories.coach }
+    var physiqueAssessmentRepository: any PhysiqueAssessmentRepository { repositories.physiqueAssessment }
 }
