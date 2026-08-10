@@ -97,4 +97,83 @@ extension AppEnvironment {
             return "Complete onboarding to run a physique assessment."
         }
     }
+
+    func loadPhysiqueIllustration(for assessmentId: UUID) async {
+        do {
+            if let (record, data) = try await physiqueIllustrationStore.fetch(assessmentId: assessmentId) {
+                physiqueIllustration = record
+                physiqueIllustrationImageData = data
+            } else {
+                physiqueIllustration = nil
+                physiqueIllustrationImageData = nil
+            }
+        } catch {
+            physiqueIllustration = nil
+            physiqueIllustrationImageData = nil
+        }
+    }
+
+    func generatePhysiqueIllustration(
+        assessment: PhysiqueAssessment,
+        photos: [BodyProgressPhoto]
+    ) async {
+        guard hasCompletedOnboarding, userProfile != nil else {
+            physiqueIllustrationStatus = nil
+            return
+        }
+
+        guard let frontPhoto = photos.first(where: { $0.id == assessment.frontPhotoId }),
+              BodyPhotoImageProcessor.fileExists(at: frontPhoto.localImagePath),
+              let uiImage = BodyPhotoImageProcessor.loadUIImage(at: frontPhoto.localImagePath),
+              let uploadData = PhysiqueIllustrationImageCodec.jpegDataForUpload(from: uiImage) else {
+            physiqueIllustrationStatus = "Illustration unavailable."
+            return
+        }
+
+        let hints = PhysiqueIllustrationHintsBuilder.make(from: assessment)
+        isGeneratingPhysiqueIllustration = true
+        physiqueIllustrationStatus = nil
+
+        defer { isGeneratingPhysiqueIllustration = false }
+
+        do {
+            let imageData = try await physiqueIllustrationService.generate(
+                assessmentId: assessment.id,
+                hints: hints,
+                imageData: uploadData
+            )
+            let record = try await physiqueIllustrationStore.save(
+                assessmentId: assessment.id,
+                sourcePhotoId: frontPhoto.id,
+                imageData: imageData
+            )
+            physiqueIllustration = record
+            physiqueIllustrationImageData = imageData
+            physiqueIllustrationStatus = nil
+        } catch let error as PhysiqueIllustrationError {
+            physiqueIllustrationStatus = physiqueIllustrationStatusMessage(for: error)
+        } catch {
+            physiqueIllustrationStatus = "Illustration unavailable."
+        }
+    }
+
+    private func physiqueIllustrationStatusMessage(for error: PhysiqueIllustrationError) -> String {
+        switch error {
+        case .notConfigured:
+            return "Sign in to generate."
+        case .unavailable, .invalidResponse:
+            return "Illustration unavailable."
+        case .serverMessage(let message):
+            return sanitizedIllustrationServerMessage(message)
+        }
+    }
+
+    private func sanitizedIllustrationServerMessage(_ message: String) -> String {
+        let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "Illustration unavailable." }
+        if trimmed.count > 200 || trimmed.localizedCaseInsensitiveContains("base64") {
+            return "Illustration unavailable."
+        }
+        return trimmed
+    }
 }

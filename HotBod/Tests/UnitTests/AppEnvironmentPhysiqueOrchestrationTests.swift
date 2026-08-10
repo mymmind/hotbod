@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 @testable import HotBod
 
@@ -224,4 +225,72 @@ final class AppEnvironmentOrchestrationTests: XCTestCase {
         XCTAssertTrue(env.physiqueAssessmentHistory.isEmpty)
         XCTAssertNil(env.physiqueStatusMessage)
     }
+
+    func testGeneratePhysiqueIllustrationPersistsWithMock() async throws {
+        let repos = TestRepositories.empty()
+        var profile = UserProfile.empty()
+        try await repos.userProfile.saveProfile(profile)
+        try await repos.userProfile.setOnboardingComplete(true)
+        let front = FixtureBuilders.makeBodyPhoto(pose: .frontRelaxed, userId: profile.id)
+        try writeBodyPhotoFile(for: front)
+        try await repos.bodyProgress.savePhoto(front)
+        var assessment = FixtureBuilders.makePhysiqueAssessment()
+        assessment.frontPhotoId = front.id
+        try await repos.physiqueAssessment.saveActive(assessment)
+
+        let env = AppEnvironment.makeForTests(
+            repos: repos,
+            physiqueIllustrationService: MockPhysiqueIllustrationService()
+        )
+        env.userProfile = profile
+        env.hasCompletedOnboarding = true
+        await env.loadActivePhysiqueAssessment()
+        await env.generatePhysiqueIllustration(assessment: assessment, photos: [front])
+        XCTAssertNotNil(env.physiqueIllustration)
+        XCTAssertEqual(env.physiqueIllustration?.assessmentId, assessment.id)
+        XCTAssertFalse(env.isGeneratingPhysiqueIllustration)
+    }
+
+    func testRegression_wipeClearsPhysiqueIllustration() async throws {
+        try await PersistenceTestHelpers.withIsolatedPersistenceOnMainActor {
+            let repos = TestRepositories.empty()
+            let env = AppEnvironment.makeForTests(repos: repos)
+            let assessmentId = UUID()
+            let photoId = UUID()
+            let jpeg = PhysiqueIllustrationImageCodec.jpegDataForUpload(
+                from: UIGraphicsImageRenderer(size: CGSize(width: 8, height: 8)).image { _ in }
+            )!
+            let record = try await env.physiqueIllustrationStore.save(
+                assessmentId: assessmentId,
+                sourcePhotoId: photoId,
+                imageData: jpeg
+            )
+            env.physiqueIllustration = record
+            env.physiqueIllustrationImageData = jpeg
+            env.physiqueIllustrationStatus = "Ready"
+
+            try await env.wipeAllLocalUserData()
+
+            XCTAssertNil(env.physiqueIllustration)
+            XCTAssertNil(env.physiqueIllustrationImageData)
+            XCTAssertNil(env.physiqueIllustrationStatus)
+            XCTAssertFalse(env.isGeneratingPhysiqueIllustration)
+            let fetched = try await env.physiqueIllustrationStore.fetch(assessmentId: assessmentId)
+            XCTAssertNil(fetched)
+        }
+    }
+}
+
+private func writeBodyPhotoFile(for photo: BodyProgressPhoto) throws {
+    let url = BodyPhotoPathResolver.resolve(photo.localImagePath)
+    try FileManager.default.createDirectory(
+        at: url.deletingLastPathComponent(),
+        withIntermediateDirectories: true
+    )
+    let image = UIGraphicsImageRenderer(size: CGSize(width: 8, height: 8)).image { _ in }
+    guard let data = image.jpegData(compressionQuality: 0.85) else {
+        struct MissingJPEG: Error {}
+        throw MissingJPEG()
+    }
+    try data.write(to: url, options: .atomic)
 }

@@ -16,6 +16,8 @@ final class AppEnvironment {
     let exerciseMediaProvider: any ExerciseMediaProvider
     let bodyPhotoAnalyzer: any BodyPhotoAnalyzer
     let physiqueAssessmentService: HybridPhysiqueAssessmentService
+    let physiqueIllustrationService: any PhysiqueIllustrationService
+    let physiqueIllustrationStore: LocalPhysiqueIllustrationStore
     let healthKitReadinessService: any HealthKitReadinessService
     let healthKitWorkoutExportService: any HealthKitWorkoutExportService
     let stravaIntegrationService: any StravaIntegrationService
@@ -46,6 +48,10 @@ final class AppEnvironment {
     var activePhysiqueAssessment: PhysiqueAssessment?
     var physiqueAssessmentHistory: [PhysiqueAssessment] = []
     var physiqueStatusMessage: String?
+    var physiqueIllustration: PhysiqueIllustrationRecord?
+    var physiqueIllustrationImageData: Data?
+    var physiqueIllustrationStatus: String?
+    var isGeneratingPhysiqueIllustration = false
     var onboardingViewModel = OnboardingViewModel()
 
     var sessionSaveTask: Task<Void, Never>?
@@ -81,6 +87,8 @@ final class AppEnvironment {
         exerciseMediaProvider: any ExerciseMediaProvider = LocalExerciseMediaProvider(),
         bodyPhotoAnalyzer: any BodyPhotoAnalyzer = VisionBodyPhotoAnalyzer(),
         physiqueAssessmentService: HybridPhysiqueAssessmentService? = nil,
+        physiqueIllustrationService: (any PhysiqueIllustrationService)? = nil,
+        physiqueIllustrationStore: LocalPhysiqueIllustrationStore? = nil,
         healthKitReadinessService: (any HealthKitReadinessService)? = nil,
         healthKitWorkoutExportService: (any HealthKitWorkoutExportService)? = nil,
         stravaIntegrationService: (any StravaIntegrationService)? = nil,
@@ -108,6 +116,9 @@ final class AppEnvironment {
                 auth: auth,
                 bodyProgress: repositories.bodyProgress
             )
+        self.physiqueIllustrationService = physiqueIllustrationService
+            ?? BackendServices.makePhysiqueIllustrationService(auth: auth)
+        self.physiqueIllustrationStore = physiqueIllustrationStore ?? LocalPhysiqueIllustrationStore()
         self.healthKitReadinessService = healthKitReadinessService ?? HealthKitReadinessServiceFactory.makeDefault()
         self.healthKitWorkoutExportService = healthKitWorkoutExportService ?? HealthKitWorkoutExportServiceFactory.makeDefault()
         self.stravaIntegrationService = stravaIntegrationService ?? StravaIntegrationServiceFactory.makeDefault()
@@ -135,6 +146,8 @@ final class AppEnvironment {
         exerciseMediaProvider: any ExerciseMediaProvider = LocalExerciseMediaProvider(),
         bodyPhotoAnalyzer: any BodyPhotoAnalyzer = VisionBodyPhotoAnalyzer(),
         physiqueAssessmentService: HybridPhysiqueAssessmentService? = nil,
+        physiqueIllustrationService: (any PhysiqueIllustrationService)? = nil,
+        physiqueIllustrationStore: LocalPhysiqueIllustrationStore? = nil,
         healthKitReadinessService: (any HealthKitReadinessService)? = nil,
         healthKitWorkoutExportService: (any HealthKitWorkoutExportService)? = nil,
         stravaIntegrationService: (any StravaIntegrationService)? = nil,
@@ -162,6 +175,8 @@ final class AppEnvironment {
             exerciseMediaProvider: exerciseMediaProvider,
             bodyPhotoAnalyzer: bodyPhotoAnalyzer,
             physiqueAssessmentService: physiqueAssessmentService,
+            physiqueIllustrationService: physiqueIllustrationService,
+            physiqueIllustrationStore: physiqueIllustrationStore,
             healthKitReadinessService: healthKitReadinessService,
             healthKitWorkoutExportService: healthKitWorkoutExportService,
             stravaIntegrationService: stravaIntegrationService,

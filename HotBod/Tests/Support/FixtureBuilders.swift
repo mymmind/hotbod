@@ -275,6 +275,8 @@ extension AppEnvironment {
     foodSearchService: (any FoodSearchService)? = nil,
     authService: (any AuthService)? = nil,
     cloudSyncService: (any CloudSyncService)? = nil,
+    physiqueIllustrationService: (any PhysiqueIllustrationService)? = nil,
+    physiqueIllustrationStore: LocalPhysiqueIllustrationStore? = nil,
     physiqueAssessmentService: HybridPhysiqueAssessmentService? = nil
   ) -> AppEnvironment {
     let analyzer = MockBodyPhotoAnalyzer()
@@ -302,6 +304,8 @@ extension AppEnvironment {
         offline: OfflinePhysiqueAssessmentService(),
         analyzer: analyzer
       ),
+      physiqueIllustrationService: physiqueIllustrationService ?? MockPhysiqueIllustrationService(),
+      physiqueIllustrationStore: physiqueIllustrationStore,
       healthKitReadinessService: MockHealthKitReadinessService(),
       healthKitWorkoutExportService: MockHealthKitWorkoutExportService(),
       stravaIntegrationService: NoOpStravaIntegrationService(),

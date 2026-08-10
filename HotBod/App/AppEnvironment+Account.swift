@@ -21,6 +21,7 @@ extension AppEnvironment {
 
         try await exerciseRepository.resetUserPreferences()
         try await exerciseRepository.resetCustomExercises()
+        try await physiqueIllustrationStore.clearAll()
         PersistenceHelper.clearAllPersistedData()
         AppGroupSessionStore.clearAll()
         resetRuntimeStateAfterDataDeletion()
@@ -49,5 +50,9 @@ extension AppEnvironment {
         activePhysiqueAssessment = nil
         physiqueAssessmentHistory = []
         physiqueStatusMessage = nil
+        physiqueIllustration = nil
+        physiqueIllustrationImageData = nil
+        physiqueIllustrationStatus = nil
+        isGeneratingPhysiqueIllustration = false
     }
 }

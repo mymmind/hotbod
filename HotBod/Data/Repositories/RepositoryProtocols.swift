@@ -128,3 +128,18 @@ struct PhysiqueAssessmentRequest: Sendable {
 protocol PhysiqueAssessmentServing: Sendable {
     func assess(_ request: PhysiqueAssessmentRequest) async throws -> PhysiqueAssessment
 }
+
+protocol PhysiqueIllustrationService: Sendable {
+    func generate(
+        assessmentId: UUID,
+        hints: PhysiqueIllustrationHints,
+        imageData: Data
+    ) async throws -> Data
+}
+
+enum PhysiqueIllustrationError: Error, Equatable {
+    case notConfigured
+    case unavailable
+    case invalidResponse
+    case serverMessage(String)
+}
