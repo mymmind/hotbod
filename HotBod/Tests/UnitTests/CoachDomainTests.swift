@@ -236,6 +236,13 @@ final class CoachOfflineModifyTests: XCTestCase {
         profile.preferredTrainingDays = Weekday.allCases.filter { $0 != today }
         let message = CoachOfflineModify.restDayMessage(profile: profile)
         XCTAssertNotNil(message)
-        XCTAssertTrue(message?.lowercased().contains("rest day") == true)
+        XCTAssertFalse(message?.lowercased().contains("cannot") == true)
+        XCTAssertTrue(
+            message?.lowercased().contains("recovery") == true
+            || message?.lowercased().contains("optional") == true
+        )
+        if let next = TrainingSchedule.nextTrainingDayLabel(profile: profile) {
+            XCTAssertTrue(message?.contains(next) == true)
+        }
     }
 }

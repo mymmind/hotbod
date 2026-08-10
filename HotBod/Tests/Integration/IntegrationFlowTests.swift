@@ -241,7 +241,10 @@ final class IntegrationFlowTests: XCTestCase {
 
     let message = CoachOfflineModify.restDayMessage(profile: profile)
     XCTAssertNotNil(message)
-    XCTAssertTrue(message?.lowercased().contains("rest") == true)
+    XCTAssertTrue(
+      message?.lowercased().contains("recovery") == true
+      || message?.lowercased().contains("optional") == true
+    )
   }
 
   // MARK: - Coach modify

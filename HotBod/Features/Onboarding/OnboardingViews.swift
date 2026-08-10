@@ -368,6 +368,9 @@ struct OnboardingScheduleView: View {
                 }
 
                 Text("Preferred days").font(ForgeTypography.heading)
+                Text("Pick your usual days. You can still train on others.")
+                    .font(ForgeTypography.caption)
+                    .foregroundStyle(ForgeColors.muted)
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 60))], spacing: 8) {
                     ForEach(Weekday.allCases) { day in
                         SelectableChip(title: day.shortName, isSelected: viewModel.profile.preferredTrainingDays.contains(day)) {

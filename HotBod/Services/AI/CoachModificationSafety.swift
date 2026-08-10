@@ -63,8 +63,8 @@ enum CoachOfflineModify {
     static func restDayMessage(profile: UserProfile) -> String? {
         guard !TrainingSchedule.isTrainingDay(profile: profile) else { return nil }
         if let next = TrainingSchedule.nextTrainingDayLabel(profile: profile) {
-            return "Today is a rest day. Next session: \(next)."
+            return "Optional recovery day. Usual training days resume \(next)."
         }
-        return "Today is a rest day."
+        return "Optional recovery day — you can still train if you want."
     }
 }
