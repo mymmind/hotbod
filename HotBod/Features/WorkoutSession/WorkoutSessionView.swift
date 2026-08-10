@@ -117,6 +117,18 @@ struct WorkoutSessionView: View {
         WorkoutSessionCalculator.totalPlannedSets(exercises: session.exercises)
     }
 
+    private var endConfirmationCopy: WorkoutEndConfirmationCopy {
+        WorkoutSessionCalculator.endConfirmationCopy(
+            incompleteExerciseCount: WorkoutSessionCalculator.incompleteExerciseCount(in: session)
+        )
+    }
+
+    private func keepTrainingAfterEndConfirmation() {
+        if let index = WorkoutSessionCalculator.firstIncompleteExerciseIndex(in: session) {
+            goToExercise(at: index)
+        }
+    }
+
     var bodyWeightKg: Double {
         environment.userProfile?.weightKg ?? 80
     }
@@ -214,12 +226,18 @@ struct WorkoutSessionView: View {
                 safetyNotes: environment.todayWorkout?.safetyNotes ?? []
             )
         }
-        .confirmationDialog("End Workout?", isPresented: $showEndConfirmation, titleVisibility: .visible) {
+        .confirmationDialog(
+            endConfirmationCopy.title,
+            isPresented: $showEndConfirmation,
+            titleVisibility: .visible
+        ) {
             Button("End & Save Progress") { finishWorkout() }
                 .accessibilityIdentifier("session.endWorkout.save")
-            Button("Keep Training", role: .cancel) {}
+            Button("Keep Training", role: .cancel) {
+                keepTrainingAfterEndConfirmation()
+            }
         } message: {
-            Text("Your logged sets will be saved and counted toward today's session.")
+            Text(endConfirmationCopy.message)
         }
         .confirmationDialog("Cancel Workout?", isPresented: $showCancelConfirmation, titleVisibility: .visible) {
             Button("Cancel Workout", role: .destructive) {
