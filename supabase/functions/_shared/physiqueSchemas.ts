@@ -162,7 +162,7 @@ export const PHYSIQUE_ASSESS_RESPONSE_SCHEMA = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["muscle", "current", "notes", "confidence"],
+        required: ["muscle", "current", "priorityRank", "notes", "confidence"],
         properties: {
           muscle: { type: "string", enum: [...PHYSIQUE_FOCUS_MUSCLES] },
           current: { type: "string" },
