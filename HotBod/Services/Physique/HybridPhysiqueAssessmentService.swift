@@ -67,7 +67,7 @@ struct HybridPhysiqueAssessmentService: Sendable {
     private struct PreparedMetrics: Sendable {
         var selection: PhysiquePhotoSelection
         var frontMetrics: BodyPhotoAnalysis
-        var backMetrics: BodyPhotoAnalysis
+        var backMetrics: BodyPhotoAnalysis?
         var sideMetrics: BodyPhotoAnalysis?
     }
 
@@ -82,14 +82,14 @@ struct HybridPhysiqueAssessmentService: Sendable {
         guard let frontMetrics = front.analysis else {
             throw PhysiqueAssessmentError.qualityFailed([(.front, "Analysis unavailable")])
         }
-        guard let back, let backMetrics = back.analysis else {
+        if let back, back.analysis == nil {
             throw PhysiqueAssessmentError.qualityFailed([(.back, "Analysis unavailable")])
         }
 
         return PreparedMetrics(
             selection: PhysiquePhotoSelection(front: front, back: back, side: side),
             frontMetrics: frontMetrics,
-            backMetrics: backMetrics,
+            backMetrics: back?.analysis,
             sideMetrics: side?.analysis
         )
     }
@@ -106,13 +106,15 @@ struct HybridPhysiqueAssessmentService: Sendable {
             guard let frontMetrics = selection.front.analysis else {
                 throw PhysiqueAssessmentError.qualityFailed([(.front, "Analysis unavailable")])
             }
-            guard let back = selection.back, let backMetrics = back.analysis else {
+            if let back = selection.back, back.analysis == nil {
                 throw PhysiqueAssessmentError.qualityFailed([(.back, "Analysis unavailable")])
             }
 
             if let bodyProgress {
                 try await persistAnalysisIfNeeded(for: selection.front, using: bodyProgress)
-                try await persistAnalysisIfNeeded(for: back, using: bodyProgress)
+                if let back = selection.back {
+                    try await persistAnalysisIfNeeded(for: back, using: bodyProgress)
+                }
                 if let side = selection.side {
                     try await persistAnalysisIfNeeded(for: side, using: bodyProgress)
                 }
@@ -121,7 +123,7 @@ struct HybridPhysiqueAssessmentService: Sendable {
             return PreparedMetrics(
                 selection: selection,
                 frontMetrics: frontMetrics,
-                backMetrics: backMetrics,
+                backMetrics: selection.back?.analysis,
                 sideMetrics: selection.side?.analysis
             )
         }

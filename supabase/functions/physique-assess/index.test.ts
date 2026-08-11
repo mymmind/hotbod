@@ -293,7 +293,55 @@ Deno.test("handlePhysiqueAssessRequest returns 401 without Authorization", async
   }
 });
 
-Deno.test("handlePhysiqueAssessRequest returns 400 for missing back metrics", async () => {
+Deno.test("handlePhysiqueAssessRequest accepts front-only metrics", async () => {
+  const priorKey = Deno.env.get("OPENAI_API_KEY");
+  const priorUrl = Deno.env.get("SUPABASE_URL");
+  const priorAnon = Deno.env.get("SUPABASE_ANON_KEY");
+  Deno.env.set("OPENAI_API_KEY", "test-key");
+  Deno.env.set("SUPABASE_URL", "https://example.supabase.co");
+  Deno.env.set("SUPABASE_ANON_KEY", "anon-key");
+
+  const fetchStub = stub(globalThis, "fetch", (input) => {
+    const url = String(input);
+    if (url.includes("/auth/v1/user")) {
+      return Promise.resolve(
+        new Response(JSON.stringify({ id: "user-1", aud: "authenticated" }), { status: 200 }),
+      );
+    }
+    if (url.includes("api.openai.com")) {
+      return Promise.resolve(new Response(JSON.stringify({
+        choices: [{ message: { content: JSON.stringify({
+          ...validAssessment,
+          photoQuality: {
+            ...validAssessment.photoQuality,
+            anglesAvailable: ["front"],
+          },
+        }) } }],
+      }), { status: 200 }));
+    }
+    return Promise.resolve(new Response("[]", { status: 200 }));
+  });
+
+  try {
+    const body = sampleRequest();
+    delete body.metrics.back;
+    body.anglesAvailable = ["front"];
+    const response = await handlePhysiqueAssessRequest(
+      physiqueRequest(body, { Authorization: "Bearer token" }),
+    );
+    assertEquals(response.status, 200);
+  } finally {
+    fetchStub.restore();
+    if (priorKey) Deno.env.set("OPENAI_API_KEY", priorKey);
+    else Deno.env.delete("OPENAI_API_KEY");
+    if (priorUrl) Deno.env.set("SUPABASE_URL", priorUrl);
+    else Deno.env.delete("SUPABASE_URL");
+    if (priorAnon) Deno.env.set("SUPABASE_ANON_KEY", priorAnon);
+    else Deno.env.delete("SUPABASE_ANON_KEY");
+  }
+});
+
+Deno.test("handlePhysiqueAssessRequest returns 400 when back listed without metrics", async () => {
   const priorKey = Deno.env.get("OPENAI_API_KEY");
   const priorUrl = Deno.env.get("SUPABASE_URL");
   const priorAnon = Deno.env.get("SUPABASE_ANON_KEY");
@@ -311,14 +359,14 @@ Deno.test("handlePhysiqueAssessRequest returns 400 for missing back metrics", as
 
   try {
     const body = sampleRequest();
-    // @ts-expect-error intentional invalid payload for validation test
     delete body.metrics.back;
+    body.anglesAvailable = ["front", "back"];
     const response = await handlePhysiqueAssessRequest(
       physiqueRequest(body, { Authorization: "Bearer token" }),
     );
     assertEquals(response.status, 400);
     const payload = await response.json();
-    assertMatch(payload.error, /metrics\.front and metrics\.back/i);
+    assertMatch(payload.error, /back/i);
   } finally {
     fetchStub.restore();
     if (priorKey) Deno.env.set("OPENAI_API_KEY", priorKey);

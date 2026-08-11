@@ -174,6 +174,17 @@ final class OfflinePhysiqueAssessmentTests: XCTestCase {
         )
         XCTAssertGreaterThan(withPoorSide.photoQuality.overallConfidence, without.photoQuality.overallConfidence)
     }
+
+    func testFrontOnlyOfflineAssessSucceedsWithNilBackPhotoId() async throws {
+        let service = OfflinePhysiqueAssessmentService()
+        let request = FixtureBuilders.makePhysiqueAssessmentRequest(includeBack: false, includeSide: false)
+        let result = try await service.assess(request)
+        let withBack = try await service.assess(FixtureBuilders.makePhysiqueAssessmentRequest(includeBack: true))
+        XCTAssertNil(result.backPhotoId)
+        XCTAssertEqual(result.photoQuality.anglesAvailable, ["front"])
+        XCTAssertTrue(result.limitations.contains { $0.localizedCaseInsensitiveContains("back") })
+        XCTAssertLessThan(result.photoQuality.overallConfidence, withBack.photoQuality.overallConfidence)
+    }
 }
 
 final class HybridPhysiqueAssessmentServiceTests: XCTestCase {

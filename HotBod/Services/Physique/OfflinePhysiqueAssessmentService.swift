@@ -16,7 +16,11 @@ struct OfflinePhysiqueAssessmentService: PhysiqueAssessmentServing {
         let summary = Self.buildSummary(ratio: ratio)
         let priorities = Self.developmentPriorities(for: priorityMuscles)
 
+        let hasBack = request.backMetrics != nil
         var limitations = [Self.visualOnlyDisclaimer]
+        if !hasBack {
+            limitations.append("Back photo missing; posterior detail may be less reliable.")
+        }
         if !hasSide {
             limitations.append("Side photo missing; rear detail may be less reliable.")
         }
@@ -28,7 +32,7 @@ struct OfflinePhysiqueAssessmentService: PhysiqueAssessmentServing {
             backPhotoId: request.selection.back?.id,
             sidePhotoId: request.selection.side?.id,
             photoQuality: PhysiquePhotoQuality(
-                anglesAvailable: Self.anglesAvailable(hasSide: hasSide),
+                anglesAvailable: Self.anglesAvailable(hasBack: hasBack, hasSide: hasSide),
                 lightingQuality: Self.lightingQuality(
                     front: request.frontMetrics,
                     back: request.backMetrics,
@@ -98,8 +102,11 @@ struct OfflinePhysiqueAssessmentService: PhysiqueAssessmentServing {
         )
     }
 
-    private static func anglesAvailable(hasSide: Bool) -> [String] {
-        var angles = ["front", "back"]
+    private static func anglesAvailable(hasBack: Bool, hasSide: Bool) -> [String] {
+        var angles = ["front"]
+        if hasBack {
+            angles.append("back")
+        }
         if hasSide {
             angles.append("side")
         }
@@ -108,10 +115,13 @@ struct OfflinePhysiqueAssessmentService: PhysiqueAssessmentServing {
 
     private static func lightingQuality(
         front: BodyPhotoAnalysis,
-        back: BodyPhotoAnalysis,
+        back: BodyPhotoAnalysis?,
         side: BodyPhotoAnalysis?
     ) -> String {
-        var scores = [front.lightingScore, back.lightingScore]
+        var scores = [front.lightingScore]
+        if let back {
+            scores.append(back.lightingScore)
+        }
         if let side {
             scores.append(side.lightingScore)
         }
@@ -123,14 +133,21 @@ struct OfflinePhysiqueAssessmentService: PhysiqueAssessmentServing {
 
     private static func overallConfidence(
         front: BodyPhotoAnalysis,
-        back: BodyPhotoAnalysis,
+        back: BodyPhotoAnalysis?,
         side: BodyPhotoAnalysis?
     ) -> Double {
-        let frontBackScores = [
+        var scores = [
             front.poseConfidence, front.lightingScore, front.framingScore,
-            back.poseConfidence, back.lightingScore, back.framingScore
         ]
-        let base = frontBackScores.reduce(0, +) / Double(frontBackScores.count)
+        if let back {
+            scores.append(contentsOf: [
+                back.poseConfidence, back.lightingScore, back.framingScore,
+            ])
+        }
+        var base = scores.reduce(0, +) / Double(scores.count)
+        if back == nil {
+            base = max(0, min(1, base * 0.92))
+        }
         if side != nil {
             return min(1.0, max(base + 0.12, 0.82))
         }

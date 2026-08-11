@@ -44,16 +44,30 @@ final class AppEnvironmentPhysiqueOrchestrationTests: XCTestCase {
         XCTAssertEqual(env.activePhysiqueAssessment?.id, result?.id)
     }
 
-    func testAssessPhysiqueBlockedWithoutBackPhoto() async throws {
+    func testRegression_assessPhysiqueFrontOnlySucceeds() async throws {
         let repos = TestRepositories.empty()
-        let profile = UserProfile.empty()
+        var profile = UserProfile.empty()
+        profile.photoTrackingEnabled = true
+        try await repos.userProfile.saveProfile(profile)
+        try await repos.userProfile.setOnboardingComplete(true)
+
         let front = FixtureBuilders.makeBodyPhoto(pose: .frontRelaxed, userId: profile.id)
         try await repos.bodyProgress.savePhoto(front)
-        let env = AppEnvironment.makeForTests(repos: repos)
+
+        let env = AppEnvironment.makeForTests(
+            repos: repos,
+            physiqueAssessmentService: HybridPhysiqueAssessmentService(
+                remote: UnavailablePhysiqueAssessmentService(),
+                offline: OfflinePhysiqueAssessmentService(),
+                analyzer: MockBodyPhotoAnalyzer()
+            )
+        )
         env.userProfile = profile
         env.hasCompletedOnboarding = true
+
         let result = await env.assessPhysique(photos: [front])
-        XCTAssertNil(result)
+        XCTAssertNotNil(result)
+        XCTAssertNil(result?.backPhotoId)
     }
 
     func testRegression_physiqueDirectionsDoNotChangeTrainingBias() async throws {

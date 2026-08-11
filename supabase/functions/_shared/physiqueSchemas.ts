@@ -70,7 +70,7 @@ export interface PhysiqueDirectionLike {
 export interface PhysiqueAssessRequest {
   metrics: {
     front: BodyPhotoAnalysisLike;
-    back: BodyPhotoAnalysisLike;
+    back?: BodyPhotoAnalysisLike;
     side?: BodyPhotoAnalysisLike;
   };
   anglesAvailable: ("front" | "back" | "side")[];
@@ -271,14 +271,17 @@ export function buildPhysiqueSystemPrompt(): string {
 }
 
 export function validatePhysiqueRequest(body: PhysiqueAssessRequest): string | null {
-  if (!body.metrics?.front || !body.metrics?.back) {
-    return "metrics.front and metrics.back are required.";
+  if (!body.metrics?.front) {
+    return "metrics.front is required.";
   }
   if (!Array.isArray(body.anglesAvailable) || body.anglesAvailable.length === 0) {
     return "anglesAvailable is required.";
   }
-  if (!body.anglesAvailable.includes("front") || !body.anglesAvailable.includes("back")) {
-    return "anglesAvailable must include front and back.";
+  if (!body.anglesAvailable.includes("front")) {
+    return "anglesAvailable must include front.";
+  }
+  if (body.anglesAvailable.includes("back") && !body.metrics?.back) {
+    return "metrics.back is required when anglesAvailable includes back.";
   }
   if (!body.profile?.goal?.trim() || !body.profile?.experienceLevel?.trim()) {
     return "profile.goal and profile.experienceLevel are required.";

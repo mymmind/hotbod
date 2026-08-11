@@ -85,7 +85,7 @@ struct PhysiqueAssessInvokeRequest: Codable {
 
 struct PhysiqueAssessMetricsPayload: Codable {
     let front: BodyPhotoAnalysis
-    let back: BodyPhotoAnalysis
+    let back: BodyPhotoAnalysis?
     let side: BodyPhotoAnalysis?
 }
 
@@ -139,7 +139,10 @@ actor RemotePhysiqueAssessmentService: PhysiqueAssessmentServing {
     }
 
     private static func makeInvokeRequest(from request: PhysiqueAssessmentRequest) -> PhysiqueAssessInvokeRequest {
-        var angles = ["front", "back"]
+        var angles = ["front"]
+        if request.backMetrics != nil {
+            angles.append("back")
+        }
         if request.sideMetrics != nil {
             angles.append("side")
         }

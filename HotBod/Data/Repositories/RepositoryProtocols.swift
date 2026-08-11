@@ -120,7 +120,7 @@ protocol WorkoutGenerationService: Sendable {
 struct PhysiqueAssessmentRequest: Sendable {
     var selection: PhysiquePhotoSelection
     var frontMetrics: BodyPhotoAnalysis
-    var backMetrics: BodyPhotoAnalysis
+    var backMetrics: BodyPhotoAnalysis?
     var sideMetrics: BodyPhotoAnalysis?
     var profile: UserProfile
 }
