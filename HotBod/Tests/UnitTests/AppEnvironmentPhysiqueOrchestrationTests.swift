@@ -16,6 +16,74 @@ private struct FixedPhysiqueAssessmentService: PhysiqueAssessmentServing, Sendab
 
 @MainActor
 final class AppEnvironmentPhysiqueOrchestrationTests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+        PhysiqueSplitSuggestionPreferences.clear()
+    }
+
+    override func tearDown() {
+        PhysiqueSplitSuggestionPreferences.clear()
+        super.tearDown()
+    }
+
+    func testPhysiqueSplitSuggestionAppearsForMismatchedFullBody() async throws {
+        let setup = try await makeSplitSuggestionSetup()
+        let suggestion = setup.env.physiqueSplitSuggestion(
+            for: setup.assessment,
+            profile: setup.profile
+        )
+        XCTAssertEqual(suggestion?.to, .pushPullLegs)
+        XCTAssertEqual(suggestion?.from, .fullBody)
+    }
+
+    func testDismissPhysiqueSplitSuggestionHidesCard() async throws {
+        let setup = try await makeSplitSuggestionSetup()
+        let suggestion = setup.env.physiqueSplitSuggestion(
+            for: setup.assessment,
+            profile: setup.profile
+        )
+        XCTAssertNotNil(suggestion)
+        setup.env.dismissPhysiqueSplitSuggestion(assessmentId: setup.assessment.id)
+        XCTAssertNil(
+            setup.env.physiqueSplitSuggestion(for: setup.assessment, profile: setup.profile)
+        )
+    }
+
+    func testApplyPhysiqueSplitSuggestionUpdatesSplitResetsIndexAndHandles() async throws {
+        let setup = try await makeSplitSuggestionSetup(
+            workoutGenerationService: FixedMockWorkoutGenerationService(
+                workout: FixtureBuilders.makeGeneratedWorkout()
+            )
+        )
+        setup.env.programState.splitDayIndex = 2
+        try await setup.repos.programState.saveState(setup.env.programState)
+
+        guard let suggestion = setup.env.physiqueSplitSuggestion(
+            for: setup.assessment,
+            profile: setup.profile
+        ) else {
+            return XCTFail("expected suggestion")
+        }
+        let ok = await setup.env.applyPhysiqueSplitSuggestion(suggestion)
+        XCTAssertTrue(ok)
+        XCTAssertEqual(setup.env.userProfile?.preferredSplit, .pushPullLegs)
+        XCTAssertEqual(setup.env.programState.splitDayIndex, 0)
+        XCTAssertNil(
+            setup.env.physiqueSplitSuggestion(
+                for: setup.assessment,
+                profile: setup.env.userProfile!
+            )
+        )
+    }
+
+    func testRegression_wipeClearsPhysiqueSplitSuggestionDismissal() async throws {
+        PhysiqueSplitSuggestionPreferences.markHandled(assessmentId: UUID())
+        XCTAssertNotNil(PhysiqueSplitSuggestionPreferences.dismissedAssessmentId)
+        let env = AppEnvironment.makeForTests()
+        try await env.wipeAllLocalUserData(clearAuthSession: false)
+        XCTAssertNil(PhysiqueSplitSuggestionPreferences.dismissedAssessmentId)
+    }
+
     func testAssessPhysiquePersistsOnDeviceWhenRemoteUnavailable() async throws {
         let repos = TestRepositories.empty()
         var profile = UserProfile.empty()
@@ -448,6 +516,47 @@ final class AppEnvironmentPhysiqueOrchestrationTests: XCTestCase {
         await env.rescheduleAllLocalReminders()
         XCTAssertEqual(recorder.rescheduleCalls.last?.enabled, false)
     }
+}
+
+@MainActor
+private struct SplitSuggestionSetup {
+    let repos: TestRepositories
+    let env: AppEnvironment
+    let profile: UserProfile
+    let assessment: PhysiqueAssessment
+}
+
+@MainActor
+private func makeSplitSuggestionSetup(
+    workoutGenerationService: (any WorkoutGenerationService)? = nil
+) async throws -> SplitSuggestionSetup {
+    let repos = TestRepositories.empty()
+    var profile = UserProfile.empty()
+    profile.preferredSplit = .fullBody
+    profile.reminderTrainingDays = [
+        .monday, .tuesday, .wednesday, .thursday, .friday, .saturday
+    ]
+    try await repos.userProfile.saveProfile(profile)
+
+    var assessment = FixtureBuilders.makePhysiqueAssessment()
+    assessment.trainingBias = PhysiqueTrainingBias(
+        preferredMuscleGroups: [.shoulders, .back],
+        rationale: "test"
+    )
+    try await repos.physiqueAssessment.saveActive(assessment)
+
+    let env = AppEnvironment.makeForTests(
+        repos: repos,
+        workoutGenerationService: workoutGenerationService
+    )
+    env.userProfile = profile
+    env.activePhysiqueAssessment = assessment
+    return SplitSuggestionSetup(
+        repos: repos,
+        env: env,
+        profile: profile,
+        assessment: assessment
+    )
 }
 
 private func writeBodyPhotoFile(for photo: BodyProgressPhoto) throws {

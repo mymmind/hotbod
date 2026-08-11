@@ -181,4 +181,56 @@ extension AppEnvironment {
         }
         return trimmed
     }
+
+    func physiqueSplitSuggestion(
+        for assessment: PhysiqueAssessment,
+        profile: UserProfile
+    ) -> PhysiqueSplitSuggestion? {
+        PhysiqueSplitSuggestionEvaluator.evaluate(
+            assessmentId: assessment.id,
+            currentSplit: profile.preferredSplit,
+            daysPerWeek: profile.trainingDaysPerWeek,
+            preferredMuscleGroups: assessment.trainingBias.preferredMuscleGroups,
+            avoidedMuscleGroups: profile.avoidedMuscleGroups ?? [],
+            dismissedAssessmentId: PhysiqueSplitSuggestionPreferences.dismissedAssessmentId
+        )
+    }
+
+    func dismissPhysiqueSplitSuggestion(assessmentId: UUID) {
+        PhysiqueSplitSuggestionPreferences.markHandled(assessmentId: assessmentId)
+    }
+
+    @discardableResult
+    func applyPhysiqueSplitSuggestion(_ suggestion: PhysiqueSplitSuggestion) async -> Bool {
+        guard var profile = userProfile, profile.preferredSplit == suggestion.from else {
+            return false
+        }
+        let previousSplit = profile.preferredSplit
+        let previousIndex = programState.splitDayIndex
+
+        profile.preferredSplit = suggestion.to
+        guard await updateUserProfile(profile, refreshWorkout: false) else {
+            return false
+        }
+
+        var state = programState
+        state.splitDayIndex = 0
+        programState = state
+        try? await programStateRepository.saveState(state)
+
+        let regenerated = await regenerateTodayWorkout(profile: profile)
+        if !regenerated {
+            var rolledBack = profile
+            rolledBack.preferredSplit = previousSplit
+            _ = await updateUserProfile(rolledBack, refreshWorkout: false)
+            var rolledState = programState
+            rolledState.splitDayIndex = previousIndex
+            programState = rolledState
+            try? await programStateRepository.saveState(rolledState)
+            return false
+        }
+
+        PhysiqueSplitSuggestionPreferences.markHandled(assessmentId: suggestion.assessmentId)
+        return true
+    }
 }

@@ -23,6 +23,7 @@ extension AppEnvironment {
         try await exerciseRepository.resetCustomExercises()
         try await physiqueIllustrationStore.clearAll()
         PersistenceHelper.clearAllPersistedData()
+        PhysiqueSplitSuggestionPreferences.clear()
         AppGroupSessionStore.clearAll()
         await physiqueReassessReminderScheduler.cancelAll()
         resetRuntimeStateAfterDataDeletion()
