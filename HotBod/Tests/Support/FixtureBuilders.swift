@@ -174,7 +174,7 @@ enum FixtureBuilders {
     id: UUID = UUID(),
     createdAt: Date = Date(),
     frontPhotoId: UUID = UUID(),
-    backPhotoId: UUID = UUID(),
+    backPhotoId: UUID? = UUID(),
     sidePhotoId: UUID? = nil,
     physique: PhysiqueBuildSummary? = nil,
     developmentPriorities: [PhysiqueDevelopmentPriority]? = nil,

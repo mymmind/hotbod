@@ -6,7 +6,7 @@ enum PhysiquePhotoAngle: String, Codable {
 
 struct PhysiquePhotoSelection: Equatable {
     var front: BodyProgressPhoto
-    var back: BodyProgressPhoto
+    var back: BodyProgressPhoto?
     var side: BodyProgressPhoto?
 }
 
@@ -40,65 +40,42 @@ enum PhysiquePhotoGate {
         minimumPoseConfidence: Double = BodyPhotoVisionMetrics.minimumPoseConfidence,
         minimumFramingScore: Double = BodyPhotoVisionMetrics.minimumFramingScore
     ) -> PhysiquePhotoGateResult {
-        var missing: [PhysiquePhotoAngle] = []
-
-        let front = latest(matching: frontPoses, in: photos)
-        if front == nil {
-            missing.append(.front)
+        guard let front = latest(matching: frontPoses, in: photos) else {
+            return .missingAngles([.front])
         }
 
-        let back = latest(matching: backPoses, in: photos)
-        if back == nil {
-            missing.append(.back)
-        }
-
-        if !missing.isEmpty {
-            return .missingAngles(missing)
-        }
-
-        guard let front, let back else {
-            return .missingAngles([.front, .back])
-        }
-
-        let side = latest(matching: sidePoses, in: photos)
-
-        var qualityFailures: [(angle: PhysiquePhotoAngle, reason: String)] = []
         if let failure = qualityIssue(
             for: front,
             angle: .front,
             minimumPoseConfidence: minimumPoseConfidence,
             minimumFramingScore: minimumFramingScore
         ) {
-            qualityFailures.append(failure)
-        }
-        if let failure = qualityIssue(
-            for: back,
-            angle: .back,
-            minimumPoseConfidence: minimumPoseConfidence,
-            minimumFramingScore: minimumFramingScore
-        ) {
-            qualityFailures.append(failure)
-        }
-        if let side, let failure = qualityIssue(
-            for: side,
-            angle: .side,
-            minimumPoseConfidence: minimumPoseConfidence,
-            minimumFramingScore: minimumFramingScore
-        ) {
-            qualityFailures.append(failure)
+            return .qualityFailed([failure])
         }
 
-        let requiredFailures = qualityFailures.filter { $0.angle == .front || $0.angle == .back }
-        if !requiredFailures.isEmpty {
-            return .qualityFailed(requiredFailures)
+        var back = latest(matching: backPoses, in: photos)
+        if let candidate = back,
+           qualityIssue(
+               for: candidate,
+               angle: .back,
+               minimumPoseConfidence: minimumPoseConfidence,
+               minimumFramingScore: minimumFramingScore
+           ) != nil {
+            back = nil
         }
 
-        var sidePhoto = side
-        if qualityFailures.contains(where: { $0.angle == .side }) {
-            sidePhoto = nil
+        var side = latest(matching: sidePoses, in: photos)
+        if let candidate = side,
+           qualityIssue(
+               for: candidate,
+               angle: .side,
+               minimumPoseConfidence: minimumPoseConfidence,
+               minimumFramingScore: minimumFramingScore
+           ) != nil {
+            side = nil
         }
 
-        return .ready(PhysiquePhotoSelection(front: front, back: back, side: sidePhoto))
+        return .ready(PhysiquePhotoSelection(front: front, back: back, side: side))
     }
 
     static func regate(
@@ -106,27 +83,24 @@ enum PhysiquePhotoGate {
         minimumPoseConfidence: Double = BodyPhotoVisionMetrics.minimumPoseConfidence,
         minimumFramingScore: Double = BodyPhotoVisionMetrics.minimumFramingScore
     ) -> PhysiquePhotoGateResult {
-        var requiredFailures: [(angle: PhysiquePhotoAngle, reason: String)] = []
-
         if let failure = qualityIssue(
             for: selection.front,
             angle: .front,
             minimumPoseConfidence: minimumPoseConfidence,
             minimumFramingScore: minimumFramingScore
         ) {
-            requiredFailures.append(failure)
-        }
-        if let failure = qualityIssue(
-            for: selection.back,
-            angle: .back,
-            minimumPoseConfidence: minimumPoseConfidence,
-            minimumFramingScore: minimumFramingScore
-        ) {
-            requiredFailures.append(failure)
+            return .qualityFailed([failure])
         }
 
-        if !requiredFailures.isEmpty {
-            return .qualityFailed(requiredFailures)
+        var backPhoto = selection.back
+        if let back = selection.back,
+           qualityIssue(
+               for: back,
+               angle: .back,
+               minimumPoseConfidence: minimumPoseConfidence,
+               minimumFramingScore: minimumFramingScore
+           ) != nil {
+            backPhoto = nil
         }
 
         var sidePhoto = selection.side
@@ -141,7 +115,7 @@ enum PhysiquePhotoGate {
         }
 
         return .ready(
-            PhysiquePhotoSelection(front: selection.front, back: selection.back, side: sidePhoto)
+            PhysiquePhotoSelection(front: selection.front, back: backPhoto, side: sidePhoto)
         )
     }
 
@@ -154,7 +128,8 @@ enum PhysiquePhotoGate {
            latestFront.date > active.createdAt {
             return true
         }
-        if let latestBack = latest(matching: backPoses, in: photos),
+        if active.backPhotoId != nil,
+           let latestBack = latest(matching: backPoses, in: photos),
            latestBack.date > active.createdAt {
             return true
         }

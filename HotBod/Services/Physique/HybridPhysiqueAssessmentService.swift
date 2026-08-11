@@ -76,11 +76,14 @@ struct HybridPhysiqueAssessmentService: Sendable {
         in photos: [BodyProgressPhoto]
     ) async throws -> PreparedMetrics {
         let front = try await ensureAnalysis(for: selection.front, in: photos)
-        let back = try await ensureAnalysis(for: selection.back, in: photos)
+        let back = try await selection.back.asyncMap { try await ensureAnalysis(for: $0, in: photos) }
         let side = try await selection.side.asyncMap { try await ensureAnalysis(for: $0, in: photos) }
 
-        guard let frontMetrics = front.analysis, let backMetrics = back.analysis else {
+        guard let frontMetrics = front.analysis else {
             throw PhysiqueAssessmentError.qualityFailed([(.front, "Analysis unavailable")])
+        }
+        guard let back, let backMetrics = back.analysis else {
+            throw PhysiqueAssessmentError.qualityFailed([(.back, "Analysis unavailable")])
         }
 
         return PreparedMetrics(
@@ -100,14 +103,16 @@ struct HybridPhysiqueAssessmentService: Sendable {
                 failures.map { ($0.angle, $0.reason) }
             )
         case .ready(let selection):
-            guard let frontMetrics = selection.front.analysis,
-                  let backMetrics = selection.back.analysis else {
+            guard let frontMetrics = selection.front.analysis else {
                 throw PhysiqueAssessmentError.qualityFailed([(.front, "Analysis unavailable")])
+            }
+            guard let back = selection.back, let backMetrics = back.analysis else {
+                throw PhysiqueAssessmentError.qualityFailed([(.back, "Analysis unavailable")])
             }
 
             if let bodyProgress {
                 try await persistAnalysisIfNeeded(for: selection.front, using: bodyProgress)
-                try await persistAnalysisIfNeeded(for: selection.back, using: bodyProgress)
+                try await persistAnalysisIfNeeded(for: back, using: bodyProgress)
                 if let side = selection.side {
                     try await persistAnalysisIfNeeded(for: side, using: bodyProgress)
                 }

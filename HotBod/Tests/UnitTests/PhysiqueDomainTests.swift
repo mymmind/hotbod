@@ -22,16 +22,59 @@ final class PhysiqueFocusMuscleMappingTests: XCTestCase {
         XCTAssertEqual(decoded.trainingBias.preferredMuscleGroups, [.shoulders, .back, .chest])
         XCTAssertFalse(decoded.limitations.contains { $0.localizedCaseInsensitiveContains("body fat %") })
     }
+
+    func testPhysiqueAssessmentDecodesMissingBackPhotoIdAsNil() throws {
+        var assessment = FixtureBuilders.makePhysiqueAssessment(backPhotoId: nil)
+        let data = try JSONEncoder().encode(assessment)
+        guard var object = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return XCTFail("Expected encoded assessment to be a JSON object")
+        }
+        object.removeValue(forKey: "backPhotoId")
+        let stripped = try JSONSerialization.data(withJSONObject: object)
+        let decoded = try JSONDecoder().decode(PhysiqueAssessment.self, from: stripped)
+        XCTAssertNil(decoded.backPhotoId)
+    }
 }
 
 final class PhysiquePhotoGateTests: XCTestCase {
-    func testRequiresFrontAndBack() {
+    func testFrontOnlyIsReady() {
         let front = FixtureBuilders.makeBodyPhoto(pose: .frontRelaxed)
-        let result = PhysiquePhotoGate.evaluate(photos: [front])
+        guard case .ready(let selection) = PhysiquePhotoGate.evaluate(photos: [front]) else {
+            return XCTFail("expected ready")
+        }
+        XCTAssertEqual(selection.front.id, front.id)
+        XCTAssertNil(selection.back)
+        XCTAssertNil(selection.side)
+    }
+
+    func testMissingFrontOnly() {
+        let back = FixtureBuilders.makeBodyPhoto(pose: .backRelaxed)
+        let result = PhysiquePhotoGate.evaluate(photos: [back])
         guard case .missingAngles(let missing) = result else {
             return XCTFail("expected missingAngles")
         }
-        XCTAssertTrue(missing.contains(.back))
+        XCTAssertEqual(missing, [.front])
+    }
+
+    func testBackQualityFailureOmitsBackButStaysReady() {
+        let front = FixtureBuilders.makeBodyPhoto(pose: .frontRelaxed)
+        var back = FixtureBuilders.makeBodyPhoto(pose: .backRelaxed)
+        back.analysis?.poseConfidence = 0.1
+        guard case .ready(let selection) = PhysiquePhotoGate.evaluate(photos: [front, back]) else {
+            return XCTFail("expected ready")
+        }
+        XCTAssertNil(selection.back)
+    }
+
+    func testStaleIgnoresBackWhenAssessmentHasNoBackPhotoId() {
+        var assessment = FixtureBuilders.makePhysiqueAssessment(backPhotoId: nil)
+        assessment.createdAt = Date().addingTimeInterval(-1000)
+        let front = FixtureBuilders.makeBodyPhoto(
+            pose: .frontRelaxed,
+            date: assessment.createdAt.addingTimeInterval(-10)
+        )
+        let back = FixtureBuilders.makeBodyPhoto(pose: .backRelaxed, date: Date())
+        XCTAssertFalse(PhysiquePhotoGate.isStale(active: assessment, photos: [front, back]))
     }
 
     func testSideOptionalWhenFrontAndBackPresent() {
@@ -69,7 +112,7 @@ final class PhysiquePhotoGateTests: XCTestCase {
         }
 
         XCTAssertEqual(selection.front.id, front.id)
-        XCTAssertEqual(selection.back.id, back.id)
+        XCTAssertEqual(selection.back?.id, back.id)
         XCTAssertNil(selection.side)
     }
 }

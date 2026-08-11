@@ -44,7 +44,7 @@ struct PhysiqueAssessment: Identifiable, Hashable {
     let id: UUID
     var createdAt: Date
     var frontPhotoId: UUID
-    var backPhotoId: UUID
+    var backPhotoId: UUID?
     var sidePhotoId: UUID?
     var photoQuality: PhysiquePhotoQuality
     var physique: PhysiqueBuildSummary
@@ -62,7 +62,7 @@ struct PhysiqueAssessment: Identifiable, Hashable {
         id: UUID,
         createdAt: Date,
         frontPhotoId: UUID,
-        backPhotoId: UUID,
+        backPhotoId: UUID?,
         sidePhotoId: UUID?,
         photoQuality: PhysiquePhotoQuality,
         physique: PhysiqueBuildSummary,
@@ -120,7 +120,7 @@ extension PhysiqueAssessment: Codable {
         id = try container.decode(UUID.self, forKey: .id)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         frontPhotoId = try container.decode(UUID.self, forKey: .frontPhotoId)
-        backPhotoId = try container.decode(UUID.self, forKey: .backPhotoId)
+        backPhotoId = try container.decodeIfPresent(UUID.self, forKey: .backPhotoId)
         sidePhotoId = try container.decodeIfPresent(UUID.self, forKey: .sidePhotoId)
         photoQuality = try container.decode(PhysiquePhotoQuality.self, forKey: .photoQuality)
         physique = try container.decode(PhysiqueBuildSummary.self, forKey: .physique)
@@ -142,5 +142,25 @@ extension PhysiqueAssessment: Codable {
             PhysiqueTrendAdaptation.self,
             forKey: .trendAdaptation
         )
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(frontPhotoId, forKey: .frontPhotoId)
+        try container.encodeIfPresent(backPhotoId, forKey: .backPhotoId)
+        try container.encodeIfPresent(sidePhotoId, forKey: .sidePhotoId)
+        try container.encode(photoQuality, forKey: .photoQuality)
+        try container.encode(physique, forKey: .physique)
+        try container.encode(muscleEntries, forKey: .muscleEntries)
+        try container.encode(developmentPriorities, forKey: .developmentPriorities)
+        try container.encode(trainingBias, forKey: .trainingBias)
+        try container.encode(limitations, forKey: .limitations)
+        try container.encode(confidenceBands, forKey: .confidenceBands)
+        try container.encode(source, forKey: .source)
+        try container.encode(whyTodaySummary, forKey: .whyTodaySummary)
+        try container.encode(physiqueDirections, forKey: .physiqueDirections)
+        try container.encodeIfPresent(trendAdaptation, forKey: .trendAdaptation)
     }
 }

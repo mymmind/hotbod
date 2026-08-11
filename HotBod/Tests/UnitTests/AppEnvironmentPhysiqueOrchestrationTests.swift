@@ -8,7 +8,7 @@ private struct FixedPhysiqueAssessmentService: PhysiqueAssessmentServing, Sendab
     func assess(_ request: PhysiqueAssessmentRequest) async throws -> PhysiqueAssessment {
         var result = assessment
         result.frontPhotoId = request.selection.front.id
-        result.backPhotoId = request.selection.back.id
+        result.backPhotoId = request.selection.back?.id
         result.sidePhotoId = request.selection.side?.id
         return result
     }

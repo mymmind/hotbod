@@ -171,7 +171,7 @@ enum PhysiqueAssessmentSanitizer {
             id: UUID(),
             createdAt: Date(),
             frontPhotoId: request.selection.front.id,
-            backPhotoId: request.selection.back.id,
+            backPhotoId: request.selection.back?.id,
             sidePhotoId: request.selection.side?.id,
             photoQuality: PhysiquePhotoQuality(
                 anglesAvailable: payload.photoQuality.anglesAvailable,
