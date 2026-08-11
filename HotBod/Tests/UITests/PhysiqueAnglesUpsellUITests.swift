@@ -17,7 +17,7 @@ final class PhysiqueAnglesUpsellUITests: BaseUITestCase {
 final class PhysiqueAnglesUpsellHiddenUITests: BaseUITestCase {
   override func setUpWithError() throws {
     launchTab = "physique"
-    seedPhysiqueHistory = true // existing seed has front+back
+    seedPhysiqueHistory = true // seed stubs front+back+side so upsell can hide
     try super.setUpWithError()
   }
 

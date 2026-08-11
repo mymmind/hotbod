@@ -77,7 +77,7 @@ struct HybridPhysiqueAssessmentService: Sendable {
     ) async throws -> PreparedMetrics {
         let front = try await ensureAnalysis(for: selection.front, in: photos)
         let back = await optionalAnalysis(for: selection.back, in: photos)
-        let side = try await selection.side.asyncMap { try await ensureAnalysis(for: $0, in: photos) }
+        let side = await optionalAnalysis(for: selection.side, in: photos)
 
         guard let frontMetrics = front.analysis else {
             throw PhysiqueAssessmentError.qualityFailed([(.front, "Analysis unavailable")])
@@ -104,12 +104,13 @@ struct HybridPhysiqueAssessmentService: Sendable {
                 throw PhysiqueAssessmentError.qualityFailed([(.front, "Analysis unavailable")])
             }
 
-            // Optional back with nil analysis is omitted, not fatal.
+            // Optional back/side with nil analysis are omitted, not fatal.
             let back = selection.back.flatMap { $0.analysis != nil ? $0 : nil }
+            let side = selection.side.flatMap { $0.analysis != nil ? $0 : nil }
             let resolved = PhysiquePhotoSelection(
                 front: selection.front,
                 back: back,
-                side: selection.side
+                side: side
             )
 
             if let bodyProgress {
@@ -165,16 +166,5 @@ struct HybridPhysiqueAssessmentService: Sendable {
         var updated = photo
         updated.analysis = try await analyzer.analyze(photo: photo, previous: previous)
         return updated
-    }
-}
-
-private extension Optional {
-    func asyncMap<T>(_ transform: (Wrapped) async throws -> T) async rethrows -> T? {
-        switch self {
-        case .none:
-            return nil
-        case .some(let value):
-            return try await transform(value)
-        }
     }
 }

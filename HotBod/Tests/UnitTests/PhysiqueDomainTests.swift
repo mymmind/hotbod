@@ -77,6 +77,22 @@ final class PhysiquePhotoGateTests: XCTestCase {
         XCTAssertFalse(PhysiquePhotoGate.isStale(active: assessment, photos: [front, back]))
     }
 
+    func testStaleTrueWhenLinkedBackPhotoIsNewer() {
+        let backId = UUID()
+        var assessment = FixtureBuilders.makePhysiqueAssessment(backPhotoId: backId)
+        assessment.createdAt = Date().addingTimeInterval(-3600)
+        let front = FixtureBuilders.makeBodyPhoto(
+            pose: .frontRelaxed,
+            date: assessment.createdAt.addingTimeInterval(-10)
+        )
+        let back = FixtureBuilders.makeBodyPhoto(
+            pose: .backRelaxed,
+            date: Date()
+        )
+        // isStale keys off latest back pose date vs createdAt when backPhotoId != nil.
+        XCTAssertTrue(PhysiquePhotoGate.isStale(active: assessment, photos: [front, back]))
+    }
+
     func testSideOptionalWhenFrontAndBackPresent() {
         let photos = [
             FixtureBuilders.makeBodyPhoto(pose: .frontRelaxed),
@@ -258,6 +274,23 @@ final class HybridPhysiqueAssessmentServiceTests: XCTestCase {
         XCTAssertEqual(result.frontPhotoId, front.id)
     }
 
+    func testRegression_unanalyzableSideDoesNotBlockAssess() async throws {
+        let front = FixtureBuilders.makeBodyPhoto(pose: .frontRelaxed, analysis: nil)
+        let side = FixtureBuilders.makeBodyPhoto(pose: .sideRelaxed, analysis: nil)
+        let service = HybridPhysiqueAssessmentService(
+            remote: UnavailablePhysiqueAssessmentService(),
+            offline: OfflinePhysiqueAssessmentService(),
+            analyzer: ConfigurableBodyPhotoAnalyzer(failSide: true)
+        )
+        let result = try await service.assess(
+            photos: [front, side],
+            profile: UserProfile.empty()
+        )
+        XCTAssertNil(result.sidePhotoId)
+        XCTAssertEqual(result.source, .onDevice)
+        XCTAssertEqual(result.frontPhotoId, front.id)
+    }
+
     func testPersistsFreshAnalysisToBodyProgressRepository() async throws {
         let repos = TestRepositories.empty()
         var front = FixtureBuilders.makeBodyPhoto(pose: .frontRelaxed, analysis: nil)
@@ -287,6 +320,7 @@ private struct ConfigurableBodyPhotoAnalyzer: BodyPhotoAnalyzer, Sendable {
     var backPoseConfidence: Double = 0.82
     var sidePoseConfidence: Double = 0.82
     var failBack: Bool = false
+    var failSide: Bool = false
 
     func analyze(photo: BodyProgressPhoto, previous: BodyProgressPhoto?) async throws -> BodyPhotoAnalysis {
         let poseConfidence: Double
@@ -303,6 +337,13 @@ private struct ConfigurableBodyPhotoAnalyzer: BodyPhotoAnalyzer, Sendable {
             }
             poseConfidence = backPoseConfidence
         case .sideRelaxed, .sideFlexed:
+            if failSide {
+                throw NSError(
+                    domain: "ConfigurableBodyPhotoAnalyzer",
+                    code: 2,
+                    userInfo: [NSLocalizedDescriptionKey: "Side analysis unavailable"]
+                )
+            }
             poseConfidence = sidePoseConfidence
         }
 

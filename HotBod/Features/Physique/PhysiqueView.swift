@@ -309,10 +309,8 @@ struct PhysiqueView: View {
     }
 
     private func emptyMessage(missingAngles: [PhysiquePhotoAngle]) -> String {
-        if missingAngles.contains(.front) {
-            return "Add a front photo to get a focus plan."
-        }
-        return "Add back and side photos for a fuller read."
+        _ = missingAngles
+        return "Add a front photo to get a focus plan."
     }
 
     private func presentAddPhoto(for angle: PhysiquePhotoAngle) {
