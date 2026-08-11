@@ -34,6 +34,18 @@ final class PhysiqueFocusMuscleMappingTests: XCTestCase {
         let decoded = try JSONDecoder().decode(PhysiqueAssessment.self, from: stripped)
         XCTAssertNil(decoded.backPhotoId)
     }
+
+    func testWorkoutGenerationInputDecodesMissingPhysiquePreferredAsEmpty() throws {
+        let input = FixtureBuilders.makeValidationInput()
+        let data = try JSONEncoder().encode(input)
+        guard var object = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return XCTFail("Expected encoded input to be a JSON object")
+        }
+        object.removeValue(forKey: "physiquePreferredMuscleGroups")
+        let stripped = try JSONSerialization.data(withJSONObject: object)
+        let decoded = try JSONDecoder().decode(WorkoutGenerationInput.self, from: stripped)
+        XCTAssertEqual(decoded.physiquePreferredMuscleGroups, [])
+    }
 }
 
 final class PhysiquePhotoGateTests: XCTestCase {
@@ -642,5 +654,21 @@ final class PhysiqueTrainingBiasMergerTests: XCTestCase {
             from: [.lateralDelts, .lats, .upperChest, .rearDelts]
         )
         XCTAssertEqual(groups, [.shoulders, .back, .chest])
+    }
+
+    func testPhysiquePreferredFiltersAvoidedPreservesOrderAndDedupes() {
+        let groups = PhysiqueTrainingBiasMerger.physiquePreferredMuscleGroups(
+            assessmentBias: [.shoulders, .chest, .back, .shoulders],
+            avoided: [.chest]
+        )
+        XCTAssertEqual(groups, [.shoulders, .back])
+    }
+
+    func testPhysiquePreferredEmptyWhenAllAvoided() {
+        let groups = PhysiqueTrainingBiasMerger.physiquePreferredMuscleGroups(
+            assessmentBias: [.chest, .shoulders],
+            avoided: [.chest, .shoulders]
+        )
+        XCTAssertEqual(groups, [])
     }
 }

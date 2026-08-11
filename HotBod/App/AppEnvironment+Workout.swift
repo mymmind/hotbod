@@ -323,10 +323,16 @@ extension AppEnvironment {
         let exercises = (try? await exerciseRepository.fetchAll()) ?? []
         let favoriteIds = exercises.filter(\.isFavorite).map(\.id)
 
+        let avoided = profile.avoidedMuscleGroups ?? []
+        let assessmentBias = activePhysiqueAssessment?.trainingBias.preferredMuscleGroups ?? []
         let preferredMuscleGroups = PhysiqueTrainingBiasMerger.mergePreferredMuscleGroups(
             profilePreferred: profile.preferredMuscleGroups ?? [],
-            assessmentBias: activePhysiqueAssessment?.trainingBias.preferredMuscleGroups ?? [],
-            avoided: profile.avoidedMuscleGroups ?? []
+            assessmentBias: assessmentBias,
+            avoided: avoided
+        )
+        let physiquePreferred = PhysiqueTrainingBiasMerger.physiquePreferredMuscleGroups(
+            assessmentBias: assessmentBias,
+            avoided: avoided
         )
 
         return WorkoutGenerationInput(
@@ -336,7 +342,8 @@ extension AppEnvironment {
             availableEquipment: profile.availableEquipment,
             targetDurationMinutes: options.targetDurationMinutes ?? profile.preferredSessionLengthMinutes,
             preferredMuscleGroups: preferredMuscleGroups,
-            avoidedMuscleGroups: profile.avoidedMuscleGroups ?? [],
+            physiquePreferredMuscleGroups: physiquePreferred,
+            avoidedMuscleGroups: avoided,
             injuries: profile.limitations,
             recentWorkouts: summaries,
             muscleRecovery: recovery,

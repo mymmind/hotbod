@@ -68,6 +68,7 @@ extension WorkoutGenerationInput {
       availableEquipment: equipment ?? availableEquipment,
       targetDurationMinutes: targetDurationMinutes,
       preferredMuscleGroups: preferredMuscleGroups,
+      physiquePreferredMuscleGroups: physiquePreferredMuscleGroups,
       avoidedMuscleGroups: avoidedMuscleGroups,
       injuries: injuries ?? self.injuries,
       recentWorkouts: recentWorkouts,

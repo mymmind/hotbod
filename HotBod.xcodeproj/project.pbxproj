@@ -76,6 +76,7 @@
 		40ABEFEC4B949EDC4F77E02A /* ProgressiveOverloadPropertyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67072FAB81659EAFCF803FC1 /* ProgressiveOverloadPropertyTests.swift */; };
 		43D454A0D1AECF6F5F2577CB /* CoreFinisherPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9264F0FE066E3E63A4978D8A /* CoreFinisherPlannerTests.swift */; };
 		43F25597B0FC6900EA6F7279 /* DomainModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E3CF277C66BA2B75CAC2C0 /* DomainModels.swift */; };
+		1CD65B26A4D74170A5C95829 /* FoodModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECC5F38050347668E3870EB /* FoodModels.swift */; };
 		4425542B1EA97C36CF5B6959 /* BaseUITestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D292E7D74CB14D8598831288 /* BaseUITestCase.swift */; };
 		451EB1F65715D1528D695F71 /* SessionExercisePlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6683A51B444E5C78CBAFD6FD /* SessionExercisePlannerTests.swift */; };
 		4727CCB7DBA6B07A31DD2A35 /* EquipmentConstraintPropertyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27BFD735736D76623C14D1ED /* EquipmentConstraintPropertyTests.swift */; };
@@ -600,6 +601,7 @@
 		D68931BC6C00F6390E5A8796 /* ProgressDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressDashboardView.swift; sourceTree = "<group>"; };
 		D8825A3F7DDEB9D5DCA567DC /* ProgressiveOverloadDomainTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressiveOverloadDomainTests.swift; sourceTree = "<group>"; };
 		D8E3CF277C66BA2B75CAC2C0 /* DomainModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainModels.swift; sourceTree = "<group>"; };
+		5ECC5F38050347668E3870EB /* FoodModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodModels.swift; sourceTree = "<group>"; };
 		DA0311702D879E345825DCDB /* PhysiqueAssessmentReportContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueAssessmentReportContent.swift; sourceTree = "<group>"; };
 		DA5B2619AAAFF79753671A60 /* ExerciseContent.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ExerciseContent.json; sourceTree = "<group>"; };
 		DA66D99CC20282BFD8855463 /* SettingsView+Training.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsView+Training.swift"; sourceTree = "<group>"; };
@@ -722,6 +724,7 @@
 				1FE22F5C0839DDB1527DD519 /* ExerciseCatalogModels.swift */,
 				3D3A7E90FFB16B998541C992 /* ExerciseMetadataResolver.swift */,
 				B4BE3BB0CA701FC903DAB8C3 /* ExercisePrescriptionOverrides.swift */,
+				5ECC5F38050347668E3870EB /* FoodModels.swift */,
 				10085DA343F28F6CFF91AA7F /* MuscleRecoveryState.swift */,
 				9224CB899B2DF1831FCD0D5F /* PhysiqueArchetypeCatalog.swift */,
 				570A353760744D5E246AF7EE /* PhysiqueAssessment.swift */,
@@ -1655,6 +1658,7 @@
 				3FAC48D97FF1F213D012C142 /* ExerciseSwapResolver.swift in Sources */,
 				3F9DA1C1CD28E42B7AAF41FD /* ExerciseThumbnailView.swift in Sources */,
 				E2C0950910306C29091CD7EB /* FoodAPIConfig.swift in Sources */,
+				1CD65B26A4D74170A5C95829 /* FoodModels.swift in Sources */,
 				377F0EA5B5F4ECFCF7B828A9 /* ForgeButton.swift in Sources */,
 				693DFF3C6B56DA8D414480B5 /* ForgeCard.swift in Sources */,
 				B79FABD08EEAF6047BDA77D2 /* ForgeColors.swift in Sources */,

@@ -777,7 +777,6 @@ struct WorkoutSessionSummary: Identifiable, Codable, Hashable {
     var muscleGroups: [MuscleGroup]
 }
 
-
 struct UserExerciseStats: Identifiable, Codable, Hashable {
     let exerciseId: String
     var lastWeightKg: Double?
@@ -1027,6 +1026,7 @@ struct WorkoutGenerationInput: Codable {
     let availableEquipment: [Equipment]
     let targetDurationMinutes: Int
     let preferredMuscleGroups: [MuscleGroup]
+    let physiquePreferredMuscleGroups: [MuscleGroup]
     let avoidedMuscleGroups: [MuscleGroup]
     let injuries: [BodyLimitation]
     let recentWorkouts: [WorkoutSessionSummary]
@@ -1044,6 +1044,7 @@ struct WorkoutGenerationInput: Codable {
         availableEquipment: [Equipment],
         targetDurationMinutes: Int,
         preferredMuscleGroups: [MuscleGroup],
+        physiquePreferredMuscleGroups: [MuscleGroup] = [],
         avoidedMuscleGroups: [MuscleGroup],
         injuries: [BodyLimitation],
         recentWorkouts: [WorkoutSessionSummary],
@@ -1060,6 +1061,7 @@ struct WorkoutGenerationInput: Codable {
         self.availableEquipment = availableEquipment
         self.targetDurationMinutes = targetDurationMinutes
         self.preferredMuscleGroups = preferredMuscleGroups
+        self.physiquePreferredMuscleGroups = physiquePreferredMuscleGroups
         self.avoidedMuscleGroups = avoidedMuscleGroups
         self.injuries = injuries
         self.recentWorkouts = recentWorkouts
@@ -1079,6 +1081,10 @@ struct WorkoutGenerationInput: Codable {
         availableEquipment = try container.decode([Equipment].self, forKey: .availableEquipment)
         targetDurationMinutes = try container.decode(Int.self, forKey: .targetDurationMinutes)
         preferredMuscleGroups = try container.decode([MuscleGroup].self, forKey: .preferredMuscleGroups)
+        physiquePreferredMuscleGroups = try container.decodeIfPresent(
+            [MuscleGroup].self,
+            forKey: .physiquePreferredMuscleGroups
+        ) ?? []
         avoidedMuscleGroups = try container.decode([MuscleGroup].self, forKey: .avoidedMuscleGroups)
         injuries = try container.decode([BodyLimitation].self, forKey: .injuries)
         recentWorkouts = try container.decode([WorkoutSessionSummary].self, forKey: .recentWorkouts)
@@ -1184,17 +1190,3 @@ struct CoachContext: Codable {
     let targetDurationMinutes: Int
 }
 
-struct FoodSearchResult: Identifiable, Codable, Hashable {
-    let id: String
-    var name: String
-    var brand: String?
-    var proteinPer100g: Double?
-}
-
-struct FoodNutritionDetails: Codable, Hashable {
-    let id: String
-    var name: String
-    var proteinGrams: Double
-    var calories: Double?
-    var servingSize: String?
-}

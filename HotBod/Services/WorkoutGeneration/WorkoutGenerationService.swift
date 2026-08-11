@@ -92,6 +92,7 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             availableEquipment: input.availableEquipment,
             targetDurationMinutes: input.targetDurationMinutes,
             preferredMuscleGroups: input.preferredMuscleGroups,
+            physiquePreferredMuscleGroups: input.physiquePreferredMuscleGroups,
             avoidedMuscleGroups: input.avoidedMuscleGroups,
             injuries: input.injuries,
             recentWorkouts: input.recentWorkouts,
