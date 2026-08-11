@@ -76,6 +76,35 @@ final class AppEnvironmentPhysiqueOrchestrationTests: XCTestCase {
         )
     }
 
+    func testRegression_applyPhysiqueSplitSuggestionRollsBackOnRegenerateFailure() async throws {
+        let setup = try await makeSplitSuggestionSetup(
+            workoutGenerationService: FailingMockWorkoutGenerationService()
+        )
+        setup.env.programState.splitDayIndex = 2
+        try await setup.repos.programState.saveState(setup.env.programState)
+
+        guard let suggestion = setup.env.physiqueSplitSuggestion(
+            for: setup.assessment,
+            profile: setup.profile
+        ) else {
+            return XCTFail("expected suggestion")
+        }
+        let ok = await setup.env.applyPhysiqueSplitSuggestion(suggestion)
+        XCTAssertFalse(ok)
+        XCTAssertEqual(setup.env.userProfile?.preferredSplit, .fullBody)
+        XCTAssertEqual(setup.env.programState.splitDayIndex, 2)
+        XCTAssertNotEqual(
+            PhysiqueSplitSuggestionPreferences.dismissedAssessmentId,
+            setup.assessment.id
+        )
+        XCTAssertNotNil(
+            setup.env.physiqueSplitSuggestion(
+                for: setup.assessment,
+                profile: setup.env.userProfile!
+            )
+        )
+    }
+
     func testRegression_wipeClearsPhysiqueSplitSuggestionDismissal() async throws {
         PhysiqueSplitSuggestionPreferences.markHandled(assessmentId: UUID())
         XCTAssertNotNil(PhysiqueSplitSuggestionPreferences.dismissedAssessmentId)
