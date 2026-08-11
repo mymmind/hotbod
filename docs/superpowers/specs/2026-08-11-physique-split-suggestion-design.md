@@ -52,23 +52,26 @@ All must hold:
 
 If preferred muscles are empty after avoided filtering → no card.
 
-### Coverage score
+### Coverage score (concentration)
 
-Pure function over one “week” of `trainingDaysPerWeek` sessions:
+Pure function over one “week” of `trainingDaysPerWeek` sessions. **Do not** use raw hit counts — `fullBody` lists every muscle every day and would always beat PPL/UL.
 
 1. Let `preferred` = assessment `trainingBias.preferredMuscleGroups` filtered by profile avoided muscles only (same avoid list as generation bias merge). Do not invent a second injury filter here.
 2. Build `N = max(1, trainingDaysPerWeek)` session focuses:
    - If `TrainingSchedule.splitSequence(for: split)` is non-empty: `focus_i = sequence[i % sequence.count]` for `i in 0..<N`.
-   - If sequence is empty (`.adaptive`): each of the `N` days is treated as able to hit any muscle in the upper∪lower working set (union of `muscles(for: .upper)` and `muscles(for: .lower)`). Equivalently: every preferred muscle in that union scores `+N`; preferred muscles outside it score `0`.
-3. For each session focus, take `TrainingSchedule.muscles(for: focus)` (adaptive day → upper∪lower set).
-4. Score = sum over `m in preferred` of (number of sessions whose muscle set contains `m`).
+   - If sequence is empty (`.adaptive`): each of the `N` days uses the upper∪lower working set (union of `muscles(for: .upper)` and `muscles(for: .lower)`).
+3. For each session focus, let `M = TrainingSchedule.muscles(for: focus)` (adaptive → upper∪lower set).
+4. For each preferred muscle `m` contained in `M`, add concentration weight  
+   `weight = 1000 / max(M.count, 1)`  
+   (integer millipoints so Full Body spreads thin; a Pull day concentrates on fewer muscles).
+5. `coverageScore` = sum of all such weights across the `N` days (Int).
 
 Ties (`<=`) → no card. Candidate equal to current → no card (gate 3).
 
 ### Card copy
 
 - Title: “Better split for your focus”
-- Body: `\(current.displayName) → \(candidate.displayName)` plus a short line naming `highlightMuscles`: for each preferred muscle, `delta = sessionsHit(candidate) - sessionsHit(current)`; take up to two muscles with the highest positive delta (stable tie-break: earlier in preferred order). If no positive deltas (shouldn’t happen when scoreCandidate > scoreCurrent, but if aggregate win is diffuse), fall back to the first two preferred.
+- Body: `\(current.displayName) → \(candidate.displayName)` plus a short line naming `highlightMuscles`: for each preferred muscle, `delta = muscleScore(candidate, m) - muscleScore(current, m)` using the same concentration weights; take up to two muscles with the highest positive delta (stable tie-break: earlier in preferred order). If no positive deltas, fall back to the first two preferred.
 - No guarantee / destiny language.
 - Actions: **Apply** / **Not now**
 - Apply opens `confirmationDialog`: switching split regenerates today’s workout from day one of the new split.
@@ -109,10 +112,12 @@ struct PhysiqueSplitSuggestion: Equatable {
 
 enum PhysiqueSplitSuggestionEvaluator {
   static func suggestedSplit(forDaysPerWeek: Int) -> TrainingSplit
-  static func coverageScore(split:daysPerWeek:preferred: ) -> Int
+  static func coverageScore(split:daysPerWeek:preferred:) -> Int  // millipoints
   static func evaluate(...) -> PhysiqueSplitSuggestion?
 }
 ```
+
+Scores use integer millipoints: per preferred muscle on a day, add `1000 / max(dayMuscleCount, 1)`.
 
 Extract days/week heuristic into Domain (same rules as today):
 
@@ -154,7 +159,7 @@ No Today / Settings surfaces in this slice.
 
 ## 3. Testing
 
-- Unit: coverage — e.g. shoulders/back prefer PPL over UL at 5–6 days when current is UL and candidate is PPL; score math for fullBody vs UL; adaptive empty-sequence rule; tie → nil; dismissed id → nil; candidate == current → nil; empty preferred → nil.
+- Unit: coverage — e.g. at 6 days, shoulders/back: PPL concentration score > fullBody and > UL; UL vs PPL when current is UL; adaptive empty-sequence uses upper∪lower set; tie → nil; dismissed id → nil; candidate == current → nil; empty preferred → nil.
 - Unit: Domain `suggestedSplit(forDaysPerWeek:)` matches existing onboarding cases; onboarding wrapper still green.
 - Integration: `applyPhysiqueSplitSuggestion` updates split, resets `splitDayIndex`, marks handled; failure path does not mark handled.
 - UITest with seeded mismatch fixture under `-UITesting`, **or** explicit exemption comment if fixture cost is disproportionate — prefer UITest when a mock assessment + profile override is already easy in UI testing launch args.
