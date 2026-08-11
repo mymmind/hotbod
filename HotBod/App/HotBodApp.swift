@@ -15,6 +15,7 @@ struct HotBodApp: App {
                 .environment(\.forgeFeedback, environment.feedbackService)
                 .onAppear {
                     appDelegate.router = router
+                    appDelegate.flushPendingNavigation()
                 }
                 .onChange(of: scenePhase) { _, phase in
                     switch phase {

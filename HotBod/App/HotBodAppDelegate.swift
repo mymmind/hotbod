@@ -3,6 +3,7 @@ import UserNotifications
 
 final class HotBodAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     weak var router: AppRouter?
+    private var pendingOpenPhysique = false
 
     func application(
         _ application: UIApplication,
@@ -28,10 +29,22 @@ final class HotBodAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificati
         await openPhysiqueTab()
     }
 
+    /// Opens Physique, or queues the intent when `router` is not yet wired (cold-start tap).
     @MainActor
-    private func openPhysiqueTab() {
-        guard let router else { return }
+    func openPhysiqueTab() {
+        guard let router else {
+            pendingOpenPhysique = true
+            return
+        }
         router.showMain()
         router.selectedTab = .physique
+    }
+
+    /// Flushes a queued Physique open after `router` is assigned (e.g. from `HotBodApp.onAppear`).
+    @MainActor
+    func flushPendingNavigation() {
+        guard pendingOpenPhysique, router != nil else { return }
+        pendingOpenPhysique = false
+        openPhysiqueTab()
     }
 }

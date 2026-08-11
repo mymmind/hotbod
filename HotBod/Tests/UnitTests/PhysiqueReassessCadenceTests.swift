@@ -119,4 +119,20 @@ final class PhysiqueReassessCadenceTests: XCTestCase {
             identifier: PhysiqueReassessReminderPlanner.identifier
         ))
     }
+
+    @MainActor
+    func testRegression_coldStartNotificationQueuesPhysiqueUntilRouterAssigned() {
+        let delegate = HotBodAppDelegate()
+        delegate.openPhysiqueTab()
+
+        let router = AppRouter(initialRoute: .onboarding)
+        XCTAssertEqual(router.selectedTab, .today)
+        XCTAssertEqual(router.route, .onboarding)
+
+        delegate.router = router
+        delegate.flushPendingNavigation()
+
+        XCTAssertEqual(router.route, .main)
+        XCTAssertEqual(router.selectedTab, .physique)
+    }
 }
