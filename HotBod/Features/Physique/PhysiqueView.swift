@@ -10,6 +10,7 @@ struct PhysiqueView: View {
     @State private var addPhotoPose: BodyPhotoPoseType = .frontRelaxed
     @State private var isImporting = false
     @State private var importError: String?
+    @State private var splitSuggestionRevision = 0
 
     private var assessment: PhysiqueAssessment? {
         environment.activePhysiqueAssessment
@@ -235,7 +236,25 @@ struct PhysiqueView: View {
 
             PhysiqueAssessmentReportContent(
                 assessment: assessment,
-                sinceLastDiff: environment.sinceLastPhysiqueDiff(photos: photos)
+                sinceLastDiff: environment.sinceLastPhysiqueDiff(photos: photos),
+                splitSuggestion: {
+                    _ = splitSuggestionRevision
+                    guard let profile = environment.userProfile else { return nil }
+                    return environment.physiqueSplitSuggestion(for: assessment, profile: profile)
+                }(),
+                onApplySplitSuggestion: { suggestion in
+                    Task {
+                        let ok = await environment.applyPhysiqueSplitSuggestion(suggestion)
+                        splitSuggestionRevision &+= 1
+                        if !ok {
+                            // existing syncMessage / generation failure surface is enough
+                        }
+                    }
+                },
+                onDismissSplitSuggestion: { id in
+                    environment.dismissPhysiqueSplitSuggestion(assessmentId: id)
+                    splitSuggestionRevision &+= 1
+                }
             )
 
             PhysiqueIllustrationSection(

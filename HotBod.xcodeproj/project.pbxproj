@@ -100,6 +100,7 @@
 		52B4483242F079EC45CAFC42 /* PersistenceTestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A0119641CEFAC6F550CD0C /* PersistenceTestHelpers.swift */; };
 		52B716FE066981356D5FFBE2 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 47F98C557E3F8F2D463D7772 /* PrivacyInfo.xcprivacy */; };
 		54929D1139972E448FAFF02D /* PhysiqueHistoryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEBCE4E64DC6B93D27C4190A /* PhysiqueHistoryUITests.swift */; };
+		A0335041FA3090CEA2ACA624 /* PhysiqueSplitSuggestionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F38C9FD6DD6DDAE277081F43 /* PhysiqueSplitSuggestionUITests.swift */; };
 		5E8AE5C76AFC5A651F935227 /* PhysiqueCadenceUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4258ACACF3B964F8E2FD9A5 /* PhysiqueCadenceUITests.swift */; };
 		55ABDEC1B271BB1BB8B07CC0 /* PropertyTestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F48E4C6753F2AE94FD608607 /* PropertyTestHelpers.swift */; };
 		55B6641F94FC018825E3ED9D /* HealthKitWorkoutExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55A2B232F50E8B1CD9E1699D /* HealthKitWorkoutExportService.swift */; };
@@ -577,6 +578,7 @@
 		BE74B04B97A4A4E866564C15 /* LoggedWeightSanity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggedWeightSanity.swift; sourceTree = "<group>"; };
 		B4258ACACF3B964F8E2FD9A5 /* PhysiqueCadenceUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueCadenceUITests.swift; sourceTree = "<group>"; };
 		BEBCE4E64DC6B93D27C4190A /* PhysiqueHistoryUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueHistoryUITests.swift; sourceTree = "<group>"; };
+		F38C9FD6DD6DDAE277081F43 /* PhysiqueSplitSuggestionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueSplitSuggestionUITests.swift; sourceTree = "<group>"; };
 		BEEB2CCD0B8C0ACEE41F9301 /* deadlift_demo.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = deadlift_demo.mp4; sourceTree = "<group>"; };
 		C027017511EEF5AF0C633125 /* OnboardingProfileEditingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingProfileEditingTests.swift; sourceTree = "<group>"; };
 		C1273B5F82410DEAE0BA7348 /* PhoneWatchSessionBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneWatchSessionBridge.swift; sourceTree = "<group>"; };
@@ -1328,6 +1330,7 @@
 				B208FCB9300EA0A1A43D079D /* PhysiqueAnglesUpsellUITests.swift */,
 				B4258ACACF3B964F8E2FD9A5 /* PhysiqueCadenceUITests.swift */,
 				BEBCE4E64DC6B93D27C4190A /* PhysiqueHistoryUITests.swift */,
+				F38C9FD6DD6DDAE277081F43 /* PhysiqueSplitSuggestionUITests.swift */,
 				AAC28B7D6F3AAF219DAC2889 /* PhysiqueIllustrationUITests.swift */,
 				FD5460A7AD26DD3580365D96 /* PhysiqueUITests.swift */,
 				EE9C1C91ED87B69C491C6A06 /* ProteinTrackerUITests.swift */,
@@ -1832,6 +1835,7 @@
 				9C734A99C2ECEF5FF4FE581F /* PhysiqueAnglesUpsellUITests.swift in Sources */,
 				5E8AE5C76AFC5A651F935227 /* PhysiqueCadenceUITests.swift in Sources */,
 				54929D1139972E448FAFF02D /* PhysiqueHistoryUITests.swift in Sources */,
+				A0335041FA3090CEA2ACA624 /* PhysiqueSplitSuggestionUITests.swift in Sources */,
 				E116A8C46394F1F62A57BE1C /* PhysiqueIllustrationUITests.swift in Sources */,
 				5EA92A562444EA56E555F8F5 /* PhysiqueUITests.swift in Sources */,
 				9018A132ACECB9211BFF62AA /* ProteinTrackerUITests.swift in Sources */,

@@ -3,6 +3,10 @@ import SwiftUI
 struct PhysiqueAssessmentReportContent: View {
     let assessment: PhysiqueAssessment
     var sinceLastDiff: PhysiqueAssessmentDiff?
+    var splitSuggestion: PhysiqueSplitSuggestion? = nil
+    var onApplySplitSuggestion: ((PhysiqueSplitSuggestion) -> Void)? = nil
+    var onDismissSplitSuggestion: ((UUID) -> Void)? = nil
+    @State private var confirmApply = false
 
     private var resolvedDirections: [(match: PhysiqueArchetypeMatch, entry: PhysiqueArchetypeCatalogEntry)] {
         PhysiqueDirectionResolve.resolved(
@@ -25,6 +29,9 @@ struct PhysiqueAssessmentReportContent: View {
                 physiqueDirectionsSection(resolvedDirections)
             }
             whyTodayCard
+            if let splitSuggestion {
+                splitSuggestionCard(splitSuggestion)
+            }
         }
     }
 
@@ -128,6 +135,57 @@ struct PhysiqueAssessmentReportContent: View {
                         .foregroundStyle(ForgeColors.muted)
                 }
             }
+        }
+    }
+
+    private func splitSuggestionCard(_ suggestion: PhysiqueSplitSuggestion) -> some View {
+        ForgeCard {
+            VStack(alignment: .leading, spacing: ForgeSpacing.s3) {
+                ForgeSectionHeader(title: "Better split for your focus", subtitle: nil)
+                Text("\(suggestion.from.displayName) → \(suggestion.to.displayName)")
+                    .font(ForgeTypography.body.weight(.semibold))
+                Text(highlightCopy(suggestion.highlightMuscles))
+                    .font(ForgeTypography.caption)
+                    .foregroundStyle(ForgeColors.muted)
+                HStack(spacing: ForgeSpacing.s3) {
+                    ForgeButton(
+                        title: "Not now",
+                        style: .secondary,
+                        accessibilityIdentifier: "physique.splitSuggestion.dismiss"
+                    ) {
+                        onDismissSplitSuggestion?(suggestion.assessmentId)
+                    }
+                    ForgeButton(
+                        title: "Apply",
+                        style: .accent,
+                        accessibilityIdentifier: "physique.splitSuggestion.apply"
+                    ) {
+                        confirmApply = true
+                    }
+                }
+            }
+        }
+        .accessibilityIdentifier("physique.splitSuggestion")
+        .confirmationDialog(
+            "Switch to \(suggestion.to.displayName)?",
+            isPresented: $confirmApply,
+            titleVisibility: .visible
+        ) {
+            Button("Switch and regenerate") {
+                onApplySplitSuggestion?(suggestion)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Today’s workout will regenerate from day one of the new split.")
+        }
+    }
+
+    private func highlightCopy(_ muscles: [MuscleGroup]) -> String {
+        let names = muscles.map(\.displayName)
+        switch names.count {
+        case 0: return "Better fit for your current focus."
+        case 1: return "More focused weekly work for \(names[0])."
+        default: return "More focused weekly work for \(names[0]) and \(names[1])."
         }
     }
 

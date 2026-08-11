@@ -99,6 +99,10 @@ enum UITestConfiguration {
         isUITesting && ProcessInfo.processInfo.arguments.contains("-SeedPhysiqueFrontOnly")
     }
 
+    static var shouldSeedPhysiqueSplitSuggestion: Bool {
+        isUITesting && ProcessInfo.processInfo.arguments.contains("-SeedPhysiqueSplitSuggestion")
+    }
+
     static func applyLaunchConfiguration() {
         if shouldResetState {
             PersistenceHelper.clearAllPersistedData()
@@ -140,6 +144,7 @@ enum UITestConfiguration {
         await seedPhysiqueIllustrationReadyIfNeeded(in: environment)
         await seedPhysiqueCadenceDueIfNeeded(in: environment)
         await seedPhysiqueFrontOnlyIfNeeded(in: environment)
+        await seedPhysiqueSplitSuggestionIfNeeded(in: environment)
         await environment.loadActivePhysiqueAssessment()
 
         if shouldStartWorkout {
@@ -519,5 +524,79 @@ enum UITestConfiguration {
         )
 
         await environment.saveActivePhysiqueAssessment(assessment)
+    }
+
+    @MainActor
+    static func seedPhysiqueSplitSuggestionIfNeeded(in environment: AppEnvironment) async {
+        guard shouldSeedPhysiqueSplitSuggestion else { return }
+        guard var profile = environment.userProfile else { return }
+
+        PhysiqueSplitSuggestionPreferences.clear()
+
+        profile.preferredSplit = .fullBody
+        profile.reminderTrainingDays = [
+            .monday, .tuesday, .wednesday, .thursday, .friday, .saturday
+        ]
+        _ = await environment.updateUserProfile(profile, refreshWorkout: false)
+
+        let frontPhotoId = UUID(uuidString: "00000000-0000-0000-0000-0000000000D1")!
+        let backPhotoId = UUID(uuidString: "00000000-0000-0000-0000-0000000000D2")!
+        let assessmentId = UUID(uuidString: "00000000-0000-0000-0000-0000000000D3")!
+
+        await seedStubBodyPhoto(id: frontPhotoId, pose: .frontRelaxed, in: environment)
+        await seedStubBodyPhoto(id: backPhotoId, pose: .backRelaxed, in: environment)
+
+        let assessment = PhysiqueAssessment(
+            id: assessmentId,
+            createdAt: Date(),
+            frontPhotoId: frontPhotoId,
+            backPhotoId: backPhotoId,
+            sidePhotoId: nil,
+            photoQuality: PhysiquePhotoQuality(
+                anglesAvailable: ["front", "back"],
+                lightingQuality: "Even",
+                overallConfidence: 0.72
+            ),
+            physique: PhysiqueBuildSummary(
+                overallArchetype: "Athletic build with moderate shoulder-to-waist contrast",
+                frameSize: "Medium",
+                shoulderToWaist: "Moderate contrast",
+                waist: "Defined",
+                torso: "Balanced",
+                muscularity: "Moderate",
+                leanness: "Moderate"
+            ),
+            muscleEntries: [
+                PhysiqueMuscleEntry(
+                    muscle: .lateralDelts,
+                    current: "Moderate side delt development",
+                    priorityRank: 1,
+                    notes: "Visible from front angle",
+                    confidence: .high
+                )
+            ],
+            developmentPriorities: [
+                PhysiqueDevelopmentPriority(muscle: .lateralDelts, reason: "Caps"),
+                PhysiqueDevelopmentPriority(muscle: .lats, reason: "Width")
+            ],
+            trainingBias: PhysiqueTrainingBias(
+                preferredMuscleGroups: [.shoulders, .back],
+                rationale: "Prioritize shoulder width and back width for frame balance."
+            ),
+            limitations: [
+                "Visual estimate only — not a medical assessment."
+            ],
+            confidenceBands: PhysiqueConfidenceBands(
+                high: ["Front shoulder line"],
+                medium: ["Back lat spread"],
+                low: []
+            ),
+            source: .onDevice,
+            whyTodaySummary: "Bias shoulders and back to improve visual frame balance."
+        )
+
+        environment.activePhysiqueAssessment = assessment
+        await environment.saveActivePhysiqueAssessment(assessment)
+        await environment.loadActivePhysiqueAssessment()
     }
 }

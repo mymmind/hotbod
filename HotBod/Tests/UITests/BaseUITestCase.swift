@@ -12,6 +12,7 @@ class BaseUITestCase: XCTestCase {
   var seedPhysiqueIllustrationReady = false
   var seedPhysiqueCadenceDue = false
   var seedPhysiqueFrontOnly = false
+  var seedPhysiqueSplitSuggestion = false
 
   private let tabOrder = ["today", "train", "protein", "progress", "physique"]
 
@@ -48,6 +49,9 @@ class BaseUITestCase: XCTestCase {
     }
     if seedPhysiqueFrontOnly {
       app.launchArguments.append("-SeedPhysiqueFrontOnly")
+    }
+    if seedPhysiqueSplitSuggestion {
+      app.launchArguments.append("-SeedPhysiqueSplitSuggestion")
     }
     app.launch()
 
