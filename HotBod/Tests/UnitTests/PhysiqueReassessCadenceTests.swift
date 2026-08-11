@@ -113,4 +113,10 @@ final class PhysiqueReassessCadenceTests: XCTestCase {
             "Capture updated photos and refresh your Physique focus."
         )
     }
+
+    func testSchedulerIdentifierIsRoutable() {
+        XCTAssertTrue(PhysiqueNotificationRouting.shouldOpenPhysique(
+            identifier: PhysiqueReassessReminderPlanner.identifier
+        ))
+    }
 }

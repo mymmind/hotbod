@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct HotBodApp: App {
+    @UIApplicationDelegateAdaptor(HotBodAppDelegate.self) private var appDelegate
     @State private var environment = HotBodApp.makeEnvironment()
     @State private var router = AppRouter(initialRoute: LaunchRouteResolver.initialRoute())
     @Environment(\.scenePhase) private var scenePhase
@@ -12,6 +13,9 @@ struct HotBodApp: App {
                 .environment(environment)
                 .environment(router)
                 .environment(\.forgeFeedback, environment.feedbackService)
+                .onAppear {
+                    appDelegate.router = router
+                }
                 .onChange(of: scenePhase) { _, phase in
                     switch phase {
                     case .active:
