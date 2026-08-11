@@ -26,6 +26,7 @@ final class AppEnvironment {
     let feedbackService: ForgeFeedbackService
     let subscriptionService: ForgeSubscriptionService
     let workoutReminderScheduler: any WorkoutReminderScheduling
+    let physiqueReassessReminderScheduler: any PhysiqueReassessReminderScheduling
 
     var userProfile: UserProfile?
     var todayWorkout: GeneratedWorkout?
@@ -96,7 +97,8 @@ final class AppEnvironment {
         cloudSyncService: (any CloudSyncService)? = nil,
         feedbackService: ForgeFeedbackService = ForgeFeedbackService(),
         subscriptionService: ForgeSubscriptionService = ForgeSubscriptionService(),
-        workoutReminderScheduler: (any WorkoutReminderScheduling)? = nil
+        workoutReminderScheduler: (any WorkoutReminderScheduling)? = nil,
+        physiqueReassessReminderScheduler: (any PhysiqueReassessReminderScheduling)? = nil
     ) {
         self.repositories = repositories
         self.workoutGenerationService = workoutGenerationService
@@ -127,6 +129,10 @@ final class AppEnvironment {
         self.subscriptionService = subscriptionService
         self.workoutReminderScheduler = workoutReminderScheduler
             ?? (UITestConfiguration.isUITesting ? NoOpWorkoutReminderScheduler() : LocalWorkoutReminderScheduler())
+        self.physiqueReassessReminderScheduler = physiqueReassessReminderScheduler
+            ?? (UITestConfiguration.isUITesting
+                ? NoOpPhysiqueReassessReminderScheduler()
+                : LocalPhysiqueReassessReminderScheduler())
     }
 
     convenience init(
@@ -240,7 +246,7 @@ final class AppEnvironment {
         await subscriptionService.bootstrap()
 
         await revalidateTodayPlanForCurrentDay()
-        await rescheduleWorkoutReminders()
+        await rescheduleAllLocalReminders()
     }
 
     /// Re-validates today's plan for the current calendar day: clears stale completion
@@ -378,6 +384,22 @@ final class AppEnvironment {
         }
         let focusHint = currentSplitFocus?.displayName
         await workoutReminderScheduler.reschedule(profile: profile, focusHint: focusHint)
+    }
+
+    func reschedulePhysiqueReassessReminder() async {
+        guard let profile = userProfile else {
+            await physiqueReassessReminderScheduler.cancelAll()
+            return
+        }
+        await physiqueReassessReminderScheduler.reschedule(
+            profile: profile,
+            assessmentCreatedAt: activePhysiqueAssessment?.createdAt
+        )
+    }
+
+    func rescheduleAllLocalReminders() async {
+        await rescheduleWorkoutReminders()
+        await reschedulePhysiqueReassessReminder()
     }
 
     func cloudSyncIfSignedIn(_ action: () async throws -> Void) async {

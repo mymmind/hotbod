@@ -15,7 +15,7 @@ private struct FixedPhysiqueAssessmentService: PhysiqueAssessmentServing, Sendab
 }
 
 @MainActor
-final class AppEnvironmentOrchestrationTests: XCTestCase {
+final class AppEnvironmentPhysiqueOrchestrationTests: XCTestCase {
     func testAssessPhysiquePersistsOnDeviceWhenRemoteUnavailable() async throws {
         let repos = TestRepositories.empty()
         var profile = UserProfile.empty()
@@ -308,6 +308,63 @@ final class AppEnvironmentOrchestrationTests: XCTestCase {
             let fetched = try await env.physiqueIllustrationStore.fetch(assessmentId: assessmentId)
             XCTAssertNil(fetched)
         }
+    }
+
+    func testRegression_assessPhysiqueReschedulesReassessReminder() async throws {
+        let recorder = RecordingPhysiqueReassessReminderScheduler()
+        let repos = TestRepositories.empty()
+        var profile = UserProfile.empty()
+        profile.photoTrackingEnabled = true
+        profile.workoutRemindersEnabled = true
+        try await repos.userProfile.saveProfile(profile)
+        try await repos.userProfile.setOnboardingComplete(true)
+
+        let front = FixtureBuilders.makeBodyPhoto(pose: .frontRelaxed, userId: profile.id)
+        let back = FixtureBuilders.makeBodyPhoto(pose: .backRelaxed, userId: profile.id)
+        try await repos.bodyProgress.savePhoto(front)
+        try await repos.bodyProgress.savePhoto(back)
+
+        let assessment = FixtureBuilders.makePhysiqueAssessment(
+            frontPhotoId: front.id,
+            backPhotoId: back.id
+        )
+        let env = AppEnvironment.makeForTests(
+            repos: repos,
+            physiqueAssessmentService: HybridPhysiqueAssessmentService(
+                remote: FixedPhysiqueAssessmentService(assessment: assessment),
+                offline: OfflinePhysiqueAssessmentService(),
+                analyzer: MockBodyPhotoAnalyzer()
+            ),
+            physiqueReassessReminderScheduler: recorder
+        )
+        env.userProfile = profile
+        env.hasCompletedOnboarding = true
+
+        _ = await env.assessPhysique(photos: [front, back])
+        XCTAssertFalse(recorder.rescheduleCalls.isEmpty)
+        XCTAssertNotNil(recorder.rescheduleCalls.last?.createdAt)
+    }
+
+    func testRegression_clearAccountCancelsPhysiqueReassessReminder() async throws {
+        let recorder = RecordingPhysiqueReassessReminderScheduler()
+        let env = AppEnvironment.makeForTests(physiqueReassessReminderScheduler: recorder)
+        env.activePhysiqueAssessment = FixtureBuilders.makePhysiqueAssessment()
+        env.physiqueAssessmentHistory = [env.activePhysiqueAssessment!]
+
+        try await env.wipeAllLocalUserData(clearAuthSession: false)
+        XCTAssertGreaterThan(recorder.cancelCount, 0)
+    }
+
+    func testRegression_remindersDisabledCancelsPhysiqueReassessOnReschedule() async throws {
+        let recorder = RecordingPhysiqueReassessReminderScheduler()
+        var profile = UserProfile.empty()
+        profile.workoutRemindersEnabled = false
+        let env = AppEnvironment.makeForTests(physiqueReassessReminderScheduler: recorder)
+        env.userProfile = profile
+        env.activePhysiqueAssessment = FixtureBuilders.makePhysiqueAssessment()
+
+        await env.rescheduleAllLocalReminders()
+        XCTAssertEqual(recorder.rescheduleCalls.last?.enabled, false)
     }
 }
 

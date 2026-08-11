@@ -10,6 +10,7 @@ extension AppEnvironment {
     func saveActivePhysiqueAssessment(_ assessment: PhysiqueAssessment) async {
         try? await physiqueAssessmentRepository.saveActive(assessment)
         await loadActivePhysiqueAssessment()
+        await reschedulePhysiqueReassessReminder()
     }
 
     func sinceLastPhysiqueDiff(photos: [BodyProgressPhoto]) -> PhysiqueAssessmentDiff? {

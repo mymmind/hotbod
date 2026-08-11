@@ -24,6 +24,7 @@ extension AppEnvironment {
         try await physiqueIllustrationStore.clearAll()
         PersistenceHelper.clearAllPersistedData()
         AppGroupSessionStore.clearAll()
+        await physiqueReassessReminderScheduler.cancelAll()
         resetRuntimeStateAfterDataDeletion()
         if clearAuthSession, authService.isAvailable {
             try await authService.signOut()

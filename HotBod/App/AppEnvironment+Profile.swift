@@ -11,7 +11,7 @@ extension AppEnvironment {
             await cloudSyncIfSignedIn {
                 try await cloudSyncService.pushProfile(updated)
             }
-            await rescheduleWorkoutReminders()
+            await rescheduleAllLocalReminders()
             if refreshWorkout {
                 _ = await regenerateTodayWorkout(profile: updated)
             }
@@ -53,7 +53,7 @@ extension AppEnvironment {
         }
 
         await normalizeProgramStateForToday(profile: updated)
-        await rescheduleWorkoutReminders()
+        await rescheduleAllLocalReminders()
         guard await ensureTodayWorkoutOnLaunch(profile: updated),
               let workout = todayWorkout else {
             if todayWorkout == nil {

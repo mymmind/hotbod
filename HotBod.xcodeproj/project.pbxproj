@@ -243,6 +243,8 @@
 		D2E5E676268CA43E47AB07BF /* WorkoutSessionView+ExerciseActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C77F3E0E22040B97C3D325B6 /* WorkoutSessionView+ExerciseActions.swift */; };
 		D37F09C44A6BB4001BD84B78 /* RestTimerFeedbackPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0B81BF2A1210A831762B4E /* RestTimerFeedbackPlanner.swift */; };
 		D3D6BC378EEF85134165F961 /* WorkoutReminderScheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2AF4D0C7C02D44FC90EC1B8 /* WorkoutReminderScheduling.swift */; };
+		8B1C4D5E6F708192A3B4C5D6 /* PhysiqueReassessReminderScheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0B3C4D5E6F708192A3B4C5 /* PhysiqueReassessReminderScheduling.swift */; };
+		6F9A2B3C4D5E6F708192A3B4 /* LocalPhysiqueReassessReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E8F1A2B3C4D5E6F708192A3 /* LocalPhysiqueReassessReminderScheduler.swift */; };
 		D4DBC185ACCA7AD08AB1A26D /* TodayMetricTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 003177D369F352DDA5C5CC85 /* TodayMetricTile.swift */; };
 		D68BE424EAD85CF1B1D0E583 /* AppEnvironment+Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = E66A3E5C228BE0F6A4F6AC87 /* AppEnvironment+Profile.swift */; };
 		D6B4473C7CBCFCF6D1626742 /* BodyProgressPhoto+Timeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C893A267C1E03740A65C2BE /* BodyProgressPhoto+Timeline.swift */; };
@@ -414,6 +416,8 @@
 		43682DD9B6A2659B92C376C0 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		44B98495CB22D8A88B17439E /* ForgeRPEPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgeRPEPicker.swift; sourceTree = "<group>"; };
 		44F76172501ED06E0942566C /* LocalWorkoutReminderScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalWorkoutReminderScheduler.swift; sourceTree = "<group>"; };
+		5E8F1A2B3C4D5E6F708192A3 /* LocalPhysiqueReassessReminderScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalPhysiqueReassessReminderScheduler.swift; sourceTree = "<group>"; };
+		7A0B3C4D5E6F708192A3B4C5 /* PhysiqueReassessReminderScheduling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueReassessReminderScheduling.swift; sourceTree = "<group>"; };
 		45719676AAE0BA4CA2E5D28E /* SettingsView+SessionStructure.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsView+SessionStructure.swift"; sourceTree = "<group>"; };
 		46534E73D53D45E985F4C232 /* SessionSetEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSetEditorTests.swift; sourceTree = "<group>"; };
 		46973687C99E6D27C8CADBB6 /* squat_demo.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = squat_demo.mp4; sourceTree = "<group>"; };
@@ -897,7 +901,9 @@
 		740910BBC6889DE1D994CE9A /* Notifications */ = {
 			isa = PBXGroup;
 			children = (
+				5E8F1A2B3C4D5E6F708192A3 /* LocalPhysiqueReassessReminderScheduler.swift */,
 				44F76172501ED06E0942566C /* LocalWorkoutReminderScheduler.swift */,
+				7A0B3C4D5E6F708192A3B4C5 /* PhysiqueReassessReminderScheduling.swift */,
 				B2AF4D0C7C02D44FC90EC1B8 /* WorkoutReminderScheduling.swift */,
 			);
 			path = Notifications;
@@ -1679,6 +1685,7 @@
 				977EA027229138BB95B93746 /* LocalPhysiqueAssessmentRepository.swift in Sources */,
 				BA666C74A08716CF27834AA5 /* LocalPhysiqueIllustrationStore.swift in Sources */,
 				7A0EF4046D9C89C7D1480851 /* LocalRepositories.swift in Sources */,
+				6F9A2B3C4D5E6F708192A3B4 /* LocalPhysiqueReassessReminderScheduler.swift in Sources */,
 				E34164AC2986013F07291CF7 /* LocalWorkoutReminderScheduler.swift in Sources */,
 				2A15FF52C88A0869E8E6BAE2 /* LoggedWeightSanity.swift in Sources */,
 				8CBCAD121460E4A386C5EF82 /* MainTabView.swift in Sources */,
@@ -1768,6 +1775,7 @@
 				F0E956BEEF1A3E5C9AD09036 /* WorkoutGenerationService.swift in Sources */,
 				C25AEC288D848619004D1900 /* WorkoutHeroRefresh.swift in Sources */,
 				5B6B311B3BD148BE7D92D81C /* WorkoutPreviewViews.swift in Sources */,
+				8B1C4D5E6F708192A3B4C5D6 /* PhysiqueReassessReminderScheduling.swift in Sources */,
 				D3D6BC378EEF85134165F961 /* WorkoutReminderScheduling.swift in Sources */,
 				632E07914DF479C990168E55 /* WorkoutSelectionRationale.swift in Sources */,
 				0C7D02D57925535191028B91 /* WorkoutSessionHeaderView.swift in Sources */,

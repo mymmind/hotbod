@@ -104,4 +104,13 @@ final class PhysiqueReassessCadenceTests: XCTestCase {
             identifier: "hotbod.workout.2.7.0"
         ))
     }
+
+    func testPlannerCopyAndIdentifier() {
+        XCTAssertEqual(PhysiqueReassessReminderPlanner.identifier, "hotbod.physique.reassess")
+        XCTAssertEqual(PhysiqueReassessReminderPlanner.title(), "Time to reassess")
+        XCTAssertEqual(
+            PhysiqueReassessReminderPlanner.body(),
+            "Capture updated photos and refresh your Physique focus."
+        )
+    }
 }
