@@ -94,12 +94,7 @@ enum OnboardingProfileEditing {
     }
 
     static func suggestedSplit(for daysPerWeek: Int) -> TrainingSplit {
-        switch daysPerWeek {
-        case ...3: .fullBody
-        case 4: .upperLower
-        case 5...6: .pushPullLegs
-        default: .adaptive
-        }
+        PhysiqueSplitSuggestionEvaluator.suggestedSplit(forDaysPerWeek: daysPerWeek)
     }
 
     static func suggestedProteinGoal(for profile: UserProfile) -> Double {

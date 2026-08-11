@@ -93,6 +93,7 @@
 		50796B2D2F900340E0B63A2F /* ForgeFeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9554682ABD825507C0CE9F4 /* ForgeFeedbackService.swift */; };
 		51B8DEDB61748F63A3331418 /* SupabaseDTOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900BB3864A53F42D80F66988 /* SupabaseDTOs.swift */; };
 		51C587A6F1136EEC6A286B35 /* PhysiqueTrainingBiasMerger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5447BD286FA59A7DBFF79478 /* PhysiqueTrainingBiasMerger.swift */; };
+		77FED6F253124446A7966DC0 /* PhysiqueSplitSuggestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984F5372EC8E4AA3BC9B788E /* PhysiqueSplitSuggestion.swift */; };
 		5207C29D48C8546C2381C77D /* WorkoutValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9701AE782509CF3A35C879D3 /* WorkoutValidator.swift */; };
 		5233DE0958A80FD6479B0BE1 /* ForgeFeedbackPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8C021A6679AD84CDDCEAD0 /* ForgeFeedbackPreferences.swift */; };
 		5260E7243192476C178D86BC /* ForgeSoundEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D293D2F27F20E2B7CD8DE162 /* ForgeSoundEngine.swift */; };
@@ -142,6 +143,7 @@
 		73B24E0A90F5E87535F81F85 /* EffortFeedbackMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E7E4C879A0DFA601CBA139C /* EffortFeedbackMapping.swift */; };
 		74D9E4649F4754D4FE71902A /* L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD68C7C4F3885F67382BBDD /* L10n.swift */; };
 		7603366EC18C8676EAD74D7E /* PhysiqueReassessCadenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73F578A0462E2A7E7D3A4B7B /* PhysiqueReassessCadenceTests.swift */; };
+		1BA3AFD694C2475B975EDAF8 /* PhysiqueSplitSuggestionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E80C39A5A6E74185AA2C8538 /* PhysiqueSplitSuggestionTests.swift */; };
 		767E5313D91EECF652FC04CC /* ProteinCompliancePropertyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B223C53918C56269F4CD2D52 /* ProteinCompliancePropertyTests.swift */; };
 		769F770B4AA148CE3545D181 /* TodayPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A41004D5DA04ED3018F117 /* TodayPage.swift */; };
 		783563910C782F2E7BFD70F6 /* LaunchRouteResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01C3807E7861035E628DBA3 /* LaunchRouteResolver.swift */; };
@@ -444,6 +446,7 @@
 		523A9D12AE459B0DF08DBCCE /* TrainingStreakCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingStreakCalculatorTests.swift; sourceTree = "<group>"; };
 		53FC0582E1CD1CF49573F011 /* CreateExerciseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateExerciseView.swift; sourceTree = "<group>"; };
 		5447BD286FA59A7DBFF79478 /* PhysiqueTrainingBiasMerger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueTrainingBiasMerger.swift; sourceTree = "<group>"; };
+		984F5372EC8E4AA3BC9B788E /* PhysiqueSplitSuggestion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueSplitSuggestion.swift; sourceTree = "<group>"; };
 		5449F4FA939BD86993B44D9D /* WorkoutSessionView+Metrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkoutSessionView+Metrics.swift"; sourceTree = "<group>"; };
 		54BD62C597438B0443F9B7ED /* CameraImagePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraImagePicker.swift; sourceTree = "<group>"; };
 		54D8500342F5F3DAFFF6FCD0 /* OfflinePhysiqueAssessmentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflinePhysiqueAssessmentService.swift; sourceTree = "<group>"; };
@@ -484,6 +487,7 @@
 		6FFB4C1206E2D21A249ACADA /* HotBod.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HotBod.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		701C8AB3B6F5D6CD75189A37 /* ForgeMotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgeMotion.swift; sourceTree = "<group>"; };
 		73F578A0462E2A7E7D3A4B7B /* PhysiqueReassessCadenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueReassessCadenceTests.swift; sourceTree = "<group>"; };
+		E80C39A5A6E74185AA2C8538 /* PhysiqueSplitSuggestionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueSplitSuggestionTests.swift; sourceTree = "<group>"; };
 		753D3DAEBC129DB329655A69 /* WorkoutReminderPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutReminderPlannerTests.swift; sourceTree = "<group>"; };
 		78A53CF21EEB5B61591313D5 /* ProteinTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProteinTrackerView.swift; sourceTree = "<group>"; };
 		799A72BE9ACE996037B05827 /* WorkoutStartCountdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutStartCountdownView.swift; sourceTree = "<group>"; };
@@ -1148,6 +1152,7 @@
 				6670ACBCC22BDECFD2C7B6D8 /* PhysiqueFocusCopyTests.swift */,
 				DCCB708C2CD8E1195F2B3CDC /* PhysiqueIllustrationDomainTests.swift */,
 				73F578A0462E2A7E7D3A4B7B /* PhysiqueReassessCadenceTests.swift */,
+				E80C39A5A6E74185AA2C8538 /* PhysiqueSplitSuggestionTests.swift */,
 				936482ADA7CEBAF4E20C04A0 /* PhysiqueTrendAdaptationDecodeTests.swift */,
 				28989E88D68204C700307FA8 /* PhysiqueTrendBiasAdapterTests.swift */,
 				F6751FFF4C16DEB7BCAA3714 /* PostSetActionPlannerTests.swift */,
@@ -1191,6 +1196,7 @@
 				B68DEFC3EAE1A174C396BA21 /* PhysiquePhotoGate.swift */,
 				2A2DE63208D5D857F2D36532 /* PhysiqueReassessCadence.swift */,
 				5447BD286FA59A7DBFF79478 /* PhysiqueTrainingBiasMerger.swift */,
+				984F5372EC8E4AA3BC9B788E /* PhysiqueSplitSuggestion.swift */,
 				2E25A6FDEE92771140C39A77 /* PhysiqueTrendBiasAdapter.swift */,
 			);
 			path = Physique;
@@ -1570,6 +1576,7 @@
 				E0A1DD66EFD34BC09DEF3BA6 /* PhysiqueFocusCopyTests.swift in Sources */,
 				685D3C96D7DAC35DA0DFA21D /* PhysiqueIllustrationDomainTests.swift in Sources */,
 				7603366EC18C8676EAD74D7E /* PhysiqueReassessCadenceTests.swift in Sources */,
+				1BA3AFD694C2475B975EDAF8 /* PhysiqueSplitSuggestionTests.swift in Sources */,
 				819721CC876480D6597E8A8B /* PhysiqueTrendAdaptationDecodeTests.swift in Sources */,
 				B81937CE180145D8B83226FA /* PhysiqueTrendBiasAdapterTests.swift in Sources */,
 				F429619D5D0382CEA0572A03 /* PostSetActionPlannerTests.swift in Sources */,
@@ -1737,6 +1744,7 @@
 				3D637A000A24B48979E0A84B /* PhysiquePhotoGate.swift in Sources */,
 				0C0D0192B91D4A96C7AB2B3E /* PhysiqueReassessCadence.swift in Sources */,
 				51C587A6F1136EEC6A286B35 /* PhysiqueTrainingBiasMerger.swift in Sources */,
+				77FED6F253124446A7966DC0 /* PhysiqueSplitSuggestion.swift in Sources */,
 				7894BC899C18413EE3994FF5 /* PhysiqueTrendAdaptation.swift in Sources */,
 				7C79B98CF53DC025BCFAE2B4 /* PhysiqueTrendBiasAdapter.swift in Sources */,
 				F9C6BEC8A55FA78D4C6827F0 /* PhysiqueView.swift in Sources */,
