@@ -149,6 +149,7 @@ enum GenerationConstants {
         static let beginnerDifficultyBonus = 2.0
         static let intermediateDifficultyBonus = 1.0
         static let advancedDifficultyPenalty = -2.0
+        static let physiqueReservedSlots = 1
     }
 
     enum Scoring {
@@ -226,6 +227,7 @@ enum GenerationConstants {
         static let flatAdvancedDumbbellWeightKg = 28.0
         static let defaultBodyweightKgFallback = 80.0
         static let preferredSessionLengthOptions = [20, 30, 45, 60, 75, 90]
+        static let physiqueReservedSlots = 2
     }
 
     enum Warmup {

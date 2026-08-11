@@ -259,6 +259,7 @@
 		D6F50D5158A3C716E597CF8F /* AppEnvironmentPhysiqueOrchestrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55B32A81CC561283349180A3 /* AppEnvironmentPhysiqueOrchestrationTests.swift */; };
 		D729182CE6B0F8873D2546AA /* ExerciseSeed.json in Resources */ = {isa = PBXBuildFile; fileRef = 20B5378CE5FD9CD9351FB447 /* ExerciseSeed.json */; };
 		D97C597C7F47304796E2665B /* ExerciseVarietyScoringTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEF6E8C1BB94D6D35D3E5F1D /* ExerciseVarietyScoringTests.swift */; };
+		CAA4CABF0B012D7E6D828679 /* PhysiqueReserveSlotsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F60252D6A2BD86A0412C0B4 /* PhysiqueReserveSlotsTests.swift */; };
 		DAC0CF91731F72D5FEFEFCDB /* MuscleVolumePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A685FD73AD99DD342DE86B77 /* MuscleVolumePlanner.swift */; };
 		DAE544B992519E3ADB2C6F8F /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 43682DD9B6A2659B92C376C0 /* Localizable.xcstrings */; };
 		DB20055CEC918EC080743493 /* CatalogIntegrity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331F170C77AFB60DB11F288F /* CatalogIntegrity.swift */; };
@@ -560,6 +561,7 @@
 		AE9EA356C4C50934104BC158 /* ForgeTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgeTypography.swift; sourceTree = "<group>"; };
 		AECC0C9A9B3F9B78734CFCD1 /* P1ParityFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P1ParityFeatureTests.swift; sourceTree = "<group>"; };
 		AEF6E8C1BB94D6D35D3E5F1D /* ExerciseVarietyScoringTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseVarietyScoringTests.swift; sourceTree = "<group>"; };
+		8F60252D6A2BD86A0412C0B4 /* PhysiqueReserveSlotsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueReserveSlotsTests.swift; sourceTree = "<group>"; };
 		AF814F9C739A3046CF362D00 /* PhysiqueTrendAdaptation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueTrendAdaptation.swift; sourceTree = "<group>"; };
 		B08FEBE2BACDEDC26D217362 /* SwapExerciseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwapExerciseSheet.swift; sourceTree = "<group>"; };
 		B223C53918C56269F4CD2D52 /* ProteinCompliancePropertyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProteinCompliancePropertyTests.swift; sourceTree = "<group>"; };
@@ -1156,6 +1158,7 @@
 				6670ACBCC22BDECFD2C7B6D8 /* PhysiqueFocusCopyTests.swift */,
 				DCCB708C2CD8E1195F2B3CDC /* PhysiqueIllustrationDomainTests.swift */,
 				73F578A0462E2A7E7D3A4B7B /* PhysiqueReassessCadenceTests.swift */,
+				8F60252D6A2BD86A0412C0B4 /* PhysiqueReserveSlotsTests.swift */,
 				E80C39A5A6E74185AA2C8538 /* PhysiqueSplitSuggestionTests.swift */,
 				936482ADA7CEBAF4E20C04A0 /* PhysiqueTrendAdaptationDecodeTests.swift */,
 				28989E88D68204C700307FA8 /* PhysiqueTrendBiasAdapterTests.swift */,
@@ -1582,6 +1585,7 @@
 				E0A1DD66EFD34BC09DEF3BA6 /* PhysiqueFocusCopyTests.swift in Sources */,
 				685D3C96D7DAC35DA0DFA21D /* PhysiqueIllustrationDomainTests.swift in Sources */,
 				7603366EC18C8676EAD74D7E /* PhysiqueReassessCadenceTests.swift in Sources */,
+				CAA4CABF0B012D7E6D828679 /* PhysiqueReserveSlotsTests.swift in Sources */,
 				1BA3AFD694C2475B975EDAF8 /* PhysiqueSplitSuggestionTests.swift in Sources */,
 				819721CC876480D6597E8A8B /* PhysiqueTrendAdaptationDecodeTests.swift in Sources */,
 				B81937CE180145D8B83226FA /* PhysiqueTrendBiasAdapterTests.swift in Sources */,

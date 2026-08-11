@@ -115,11 +115,34 @@ enum WorkoutGenerationAlgorithms {
         ranked: [(Exercise, Double)],
         targetMuscles: [MuscleGroup],
         maxExercises: Int,
-        minExercises: Int
+        minExercises: Int,
+        physiquePreferredMuscles: [MuscleGroup] = [],
+        reservedPhysiqueSlots: Int = 0
     ) -> ExerciseSelectionResult {
         var selected: [(Exercise, Double)] = []
         var usedPatterns: Set<MovementPattern> = []
         var usedIds = Set<String>()
+
+        let reserveCount = min(max(0, reservedPhysiqueSlots), maxExercises)
+        if reserveCount > 0, !physiquePreferredMuscles.isEmpty {
+            let physiqueSet = Set(physiquePreferredMuscles)
+            let targetSet = Set(targetMuscles)
+            for item in ranked where selected.count < reserveCount {
+                let exercise = item.0
+                guard !usedIds.contains(exercise.id) else { continue }
+                let primaries = Set(exercise.primaryMuscles)
+                guard !primaries.isDisjoint(with: physiqueSet) else { continue }
+                guard !primaries.isDisjoint(with: targetSet) else { continue }
+                guard !blocksDuplicatePattern(
+                    exercise.movementPattern,
+                    used: usedPatterns,
+                    selectedCount: selected.count
+                ) else { continue }
+                selected.append(item)
+                usedIds.insert(exercise.id)
+                usedPatterns.insert(exercise.movementPattern)
+            }
+        }
 
         for muscle in targetMuscles {
             guard selected.count < maxExercises else { break }
