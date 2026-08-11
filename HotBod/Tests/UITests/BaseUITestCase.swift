@@ -10,6 +10,7 @@ class BaseUITestCase: XCTestCase {
   var onboardingStartStep: Int?
   var seedPhysiqueHistory = false
   var seedPhysiqueIllustrationReady = false
+  var seedPhysiqueCadenceDue = false
 
   private let tabOrder = ["today", "train", "protein", "progress", "physique"]
 
@@ -40,6 +41,9 @@ class BaseUITestCase: XCTestCase {
     }
     if seedPhysiqueIllustrationReady {
       app.launchArguments.append("-SeedPhysiqueIllustrationReady")
+    }
+    if seedPhysiqueCadenceDue {
+      app.launchArguments.append("-SeedPhysiqueCadenceDue")
     }
     app.launch()
 

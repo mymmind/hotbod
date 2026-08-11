@@ -20,6 +20,11 @@ struct PhysiqueView: View {
         return assessment.source == .cloud ? "Online" : "On-device estimate"
     }
 
+    private var isCadenceDue: Bool {
+        guard let assessment else { return false }
+        return PhysiqueReassessCadence.isDue(assessmentCreatedAt: assessment.createdAt)
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -33,6 +38,9 @@ struct PhysiqueView: View {
                     VStack(spacing: ForgeSpacing.s4) {
                         if hasStalePhotos {
                             staleBanner
+                        }
+                        if isCadenceDue {
+                            cadenceDueBanner
                         }
 
                         if let status = environment.physiqueStatusMessage {
@@ -93,6 +101,15 @@ struct PhysiqueView: View {
                 .font(ForgeTypography.body)
                 .foregroundStyle(ForgeColors.muted)
         }
+    }
+
+    private var cadenceDueBanner: some View {
+        ForgeCard {
+            Text("6 weeks since last assessment — reassess to refresh your focus.")
+                .font(ForgeTypography.body)
+                .foregroundStyle(ForgeColors.muted)
+        }
+        .accessibilityIdentifier("physique.cadenceDue")
     }
 
     private func statusBanner(_ message: String) -> some View {

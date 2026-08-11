@@ -91,6 +91,10 @@ enum UITestConfiguration {
         isUITesting && ProcessInfo.processInfo.arguments.contains("-SeedPhysiqueIllustrationReady")
     }
 
+    static var shouldSeedPhysiqueCadenceDue: Bool {
+        isUITesting && ProcessInfo.processInfo.arguments.contains("-SeedPhysiqueCadenceDue")
+    }
+
     static func applyLaunchConfiguration() {
         if shouldResetState {
             PersistenceHelper.clearAllPersistedData()
@@ -130,6 +134,7 @@ enum UITestConfiguration {
 
         await seedPhysiqueHistoryIfNeeded(in: environment)
         await seedPhysiqueIllustrationReadyIfNeeded(in: environment)
+        await seedPhysiqueCadenceDueIfNeeded(in: environment)
         await environment.loadActivePhysiqueAssessment()
 
         if shouldStartWorkout {
@@ -307,6 +312,67 @@ enum UITestConfiguration {
         let assessment = PhysiqueAssessment(
             id: assessmentId,
             createdAt: Date(),
+            frontPhotoId: frontPhotoId,
+            backPhotoId: backPhotoId,
+            sidePhotoId: nil,
+            photoQuality: PhysiquePhotoQuality(
+                anglesAvailable: ["front", "back"],
+                lightingQuality: "Even",
+                overallConfidence: 0.72
+            ),
+            physique: PhysiqueBuildSummary(
+                overallArchetype: "Athletic build with moderate shoulder-to-waist contrast",
+                frameSize: "Medium",
+                shoulderToWaist: "Moderate contrast",
+                waist: "Defined",
+                torso: "Balanced",
+                muscularity: "Moderate",
+                leanness: "Moderate"
+            ),
+            muscleEntries: [
+                PhysiqueMuscleEntry(
+                    muscle: .lateralDelts,
+                    current: "Moderate side delt development",
+                    priorityRank: 1,
+                    notes: "Visible from front angle",
+                    confidence: .high
+                )
+            ],
+            developmentPriorities: [
+                PhysiqueDevelopmentPriority(muscle: .lateralDelts, reason: "Caps"),
+                PhysiqueDevelopmentPriority(muscle: .lats, reason: "Width")
+            ],
+            trainingBias: PhysiqueTrainingBias(
+                preferredMuscleGroups: [.shoulders, .back, .chest],
+                rationale: "Prioritize shoulder width, back width, and upper chest for frame balance."
+            ),
+            limitations: [
+                "Visual estimate only — not a medical assessment."
+            ],
+            confidenceBands: PhysiqueConfidenceBands(
+                high: ["Front shoulder line"],
+                medium: ["Back lat spread"],
+                low: []
+            ),
+            source: .onDevice,
+            whyTodaySummary: "Bias shoulders, back, and chest to improve visual frame balance."
+        )
+
+        await environment.saveActivePhysiqueAssessment(assessment)
+    }
+
+    @MainActor
+    static func seedPhysiqueCadenceDueIfNeeded(in environment: AppEnvironment) async {
+        guard shouldSeedPhysiqueCadenceDue else { return }
+
+        let createdAt = Calendar.current.date(byAdding: .day, value: -49, to: Date())
+            ?? Date().addingTimeInterval(-49 * 24 * 3600)
+        let frontPhotoId = UUID()
+        let backPhotoId = UUID()
+
+        let assessment = PhysiqueAssessment(
+            id: UUID(uuidString: "00000000-0000-0000-0000-0000000000C1")!,
+            createdAt: createdAt,
             frontPhotoId: frontPhotoId,
             backPhotoId: backPhotoId,
             sidePhotoId: nil,
