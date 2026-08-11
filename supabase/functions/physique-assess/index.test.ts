@@ -1,10 +1,12 @@
 import {
   assertEquals,
   assertMatch,
+  assertStringIncludes,
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { stub } from "https://deno.land/std@0.224.0/testing/mock.ts";
 import { handlePhysiqueAssessRequest, json } from "./index.ts";
 import {
+  buildPhysiqueSystemPrompt,
   type PhysiqueAssessRequest,
   PHYSIQUE_ASSESS_RESPONSE_SCHEMA,
 } from "../_shared/physiqueSchemas.ts";
@@ -528,4 +530,9 @@ Deno.test("handlePhysiqueAssessRequest returns generic 500 on handler failure", 
   } finally {
     fetchStub.restore();
   }
+});
+
+Deno.test("buildPhysiqueSystemPrompt forbids inventing back metrics without back angle", () => {
+  const prompt = buildPhysiqueSystemPrompt();
+  assertStringIncludes(prompt, 'anglesAvailable lacks "back"');
 });

@@ -256,6 +256,7 @@ export function buildPhysiqueSystemPrompt(): string {
     "- Include confidence on every muscleEntries item.",
     "- Rank developmentPriorities by visual return for this frame (highest first).",
     "- Keep limitations practical (visibility, angle gaps, visual-estimate disclaimer).",
+    '- When anglesAvailable lacks "back", do not invent posterior or back-photo musculature metrics or claim back-photo evidence.',
     "- whyTodaySummary: 3-5 lines linking priorities to today's training bias.",
     "",
     "Physique directions (physiqueDirections):",
