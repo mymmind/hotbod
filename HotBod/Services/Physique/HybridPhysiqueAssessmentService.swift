@@ -76,14 +76,11 @@ struct HybridPhysiqueAssessmentService: Sendable {
         in photos: [BodyProgressPhoto]
     ) async throws -> PreparedMetrics {
         let front = try await ensureAnalysis(for: selection.front, in: photos)
-        let back = try await selection.back.asyncMap { try await ensureAnalysis(for: $0, in: photos) }
+        let back = await optionalAnalysis(for: selection.back, in: photos)
         let side = try await selection.side.asyncMap { try await ensureAnalysis(for: $0, in: photos) }
 
         guard let frontMetrics = front.analysis else {
             throw PhysiqueAssessmentError.qualityFailed([(.front, "Analysis unavailable")])
-        }
-        if let back, back.analysis == nil {
-            throw PhysiqueAssessmentError.qualityFailed([(.back, "Analysis unavailable")])
         }
 
         return PreparedMetrics(
@@ -106,26 +103,45 @@ struct HybridPhysiqueAssessmentService: Sendable {
             guard let frontMetrics = selection.front.analysis else {
                 throw PhysiqueAssessmentError.qualityFailed([(.front, "Analysis unavailable")])
             }
-            if let back = selection.back, back.analysis == nil {
-                throw PhysiqueAssessmentError.qualityFailed([(.back, "Analysis unavailable")])
-            }
+
+            // Optional back with nil analysis is omitted, not fatal.
+            let back = selection.back.flatMap { $0.analysis != nil ? $0 : nil }
+            let resolved = PhysiquePhotoSelection(
+                front: selection.front,
+                back: back,
+                side: selection.side
+            )
 
             if let bodyProgress {
-                try await persistAnalysisIfNeeded(for: selection.front, using: bodyProgress)
-                if let back = selection.back {
+                try await persistAnalysisIfNeeded(for: resolved.front, using: bodyProgress)
+                if let back = resolved.back {
                     try await persistAnalysisIfNeeded(for: back, using: bodyProgress)
                 }
-                if let side = selection.side {
+                if let side = resolved.side {
                     try await persistAnalysisIfNeeded(for: side, using: bodyProgress)
                 }
             }
 
             return PreparedMetrics(
-                selection: selection,
+                selection: resolved,
                 frontMetrics: frontMetrics,
-                backMetrics: selection.back?.analysis,
-                sideMetrics: selection.side?.analysis
+                backMetrics: resolved.back?.analysis,
+                sideMetrics: resolved.side?.analysis
             )
+        }
+    }
+
+    /// Optional angles that fail analysis are dropped rather than failing assess.
+    private func optionalAnalysis(
+        for photo: BodyProgressPhoto?,
+        in photos: [BodyProgressPhoto]
+    ) async -> BodyProgressPhoto? {
+        guard let photo else { return nil }
+        do {
+            let analyzed = try await ensureAnalysis(for: photo, in: photos)
+            return analyzed.analysis != nil ? analyzed : nil
+        } catch {
+            return nil
         }
     }
 

@@ -183,9 +183,11 @@ struct PhysiqueView: View {
                     .font(ForgeTypography.body)
                     .foregroundStyle(ForgeColors.muted)
 
-                Text("Add back and side photos for a fuller read.")
-                    .font(ForgeTypography.caption)
-                    .foregroundStyle(ForgeColors.muted)
+                if !hasBackPhoto || !hasSidePhoto {
+                    Text("Add back and side photos for a fuller read.")
+                        .font(ForgeTypography.caption)
+                        .foregroundStyle(ForgeColors.muted)
+                }
 
                 if !hasBackPhoto {
                     ForgeButton(title: "Add Back Photo", style: .secondary) {

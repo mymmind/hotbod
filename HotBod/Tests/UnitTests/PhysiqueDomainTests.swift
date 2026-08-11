@@ -184,6 +184,16 @@ final class OfflinePhysiqueAssessmentTests: XCTestCase {
         XCTAssertEqual(result.photoQuality.anglesAvailable, ["front"])
         XCTAssertTrue(result.limitations.contains { $0.localizedCaseInsensitiveContains("back") })
         XCTAssertLessThan(result.photoQuality.overallConfidence, withBack.photoQuality.overallConfidence)
+
+        let notes = result.muscleEntries.map(\.notes).joined(separator: " ")
+        XCTAssertFalse(notes.localizedCaseInsensitiveContains("inferred from back photo"))
+        XCTAssertFalse(result.confidenceBands.high.contains("Back lat spread"))
+        XCTAssertFalse(result.confidenceBands.medium.contains("Back lat spread"))
+
+        let traps = result.muscleEntries.first { $0.muscle == .traps }
+        XCTAssertEqual(traps?.confidence, .uncertain)
+        let lats = result.muscleEntries.first { $0.muscle == .lats }
+        XCTAssertNotEqual(lats?.confidence, .high)
     }
 }
 
@@ -229,6 +239,25 @@ final class HybridPhysiqueAssessmentServiceTests: XCTestCase {
         XCTAssertEqual(result.source, .onDevice)
     }
 
+    func testRegression_unanalyzableBackDoesNotBlockFrontOnlyAssess() async throws {
+        let front = FixtureBuilders.makeBodyPhoto(pose: .frontRelaxed, analysis: nil)
+        let back = FixtureBuilders.makeBodyPhoto(pose: .backRelaxed, analysis: nil)
+        let service = HybridPhysiqueAssessmentService(
+            remote: UnavailablePhysiqueAssessmentService(),
+            offline: OfflinePhysiqueAssessmentService(),
+            analyzer: ConfigurableBodyPhotoAnalyzer(failBack: true)
+        )
+
+        let result = try await service.assess(
+            photos: [front, back],
+            profile: UserProfile.empty()
+        )
+
+        XCTAssertNil(result.backPhotoId)
+        XCTAssertEqual(result.source, .onDevice)
+        XCTAssertEqual(result.frontPhotoId, front.id)
+    }
+
     func testPersistsFreshAnalysisToBodyProgressRepository() async throws {
         let repos = TestRepositories.empty()
         var front = FixtureBuilders.makeBodyPhoto(pose: .frontRelaxed, analysis: nil)
@@ -257,6 +286,7 @@ private struct ConfigurableBodyPhotoAnalyzer: BodyPhotoAnalyzer, Sendable {
     var frontPoseConfidence: Double = 0.82
     var backPoseConfidence: Double = 0.82
     var sidePoseConfidence: Double = 0.82
+    var failBack: Bool = false
 
     func analyze(photo: BodyProgressPhoto, previous: BodyProgressPhoto?) async throws -> BodyPhotoAnalysis {
         let poseConfidence: Double
@@ -264,6 +294,13 @@ private struct ConfigurableBodyPhotoAnalyzer: BodyPhotoAnalyzer, Sendable {
         case .frontRelaxed, .frontFlexed:
             poseConfidence = frontPoseConfidence
         case .backRelaxed, .backFlexed:
+            if failBack {
+                throw NSError(
+                    domain: "ConfigurableBodyPhotoAnalyzer",
+                    code: 1,
+                    userInfo: [NSLocalizedDescriptionKey: "Back analysis unavailable"]
+                )
+            }
             poseConfidence = backPoseConfidence
         case .sideRelaxed, .sideFlexed:
             poseConfidence = sidePoseConfidence

@@ -5,6 +5,7 @@ struct OfflinePhysiqueAssessmentService: PhysiqueAssessmentServing {
 
     func assess(_ request: PhysiqueAssessmentRequest) async throws -> PhysiqueAssessment {
         let hasSide = request.sideMetrics != nil
+        let hasBack = request.backMetrics != nil
         let ratio = request.frontMetrics.shoulderWaistRatio
         let priorityMuscles = Self.priorityMuscles(hasSide: hasSide)
         let preferredGroups = PhysiqueTrainingBiasMerger.preferredGroups(from: priorityMuscles)
@@ -16,7 +17,6 @@ struct OfflinePhysiqueAssessmentService: PhysiqueAssessmentServing {
         let summary = Self.buildSummary(ratio: ratio)
         let priorities = Self.developmentPriorities(for: priorityMuscles)
 
-        let hasBack = request.backMetrics != nil
         var limitations = [Self.visualOnlyDisclaimer]
         if !hasBack {
             limitations.append("Back photo missing; posterior detail may be less reliable.")
@@ -41,14 +41,18 @@ struct OfflinePhysiqueAssessmentService: PhysiqueAssessmentServing {
                 overallConfidence: overallConfidence
             ),
             physique: summary,
-            muscleEntries: Self.muscleEntries(priorityMuscles: priorityMuscles, hasSide: hasSide),
+            muscleEntries: Self.muscleEntries(
+                priorityMuscles: priorityMuscles,
+                hasBack: hasBack,
+                hasSide: hasSide
+            ),
             developmentPriorities: priorities,
             trainingBias: PhysiqueTrainingBias(
                 preferredMuscleGroups: preferredGroups,
                 rationale: Self.trainingRationale(for: preferredGroups)
             ),
             limitations: limitations,
-            confidenceBands: Self.confidenceBands(hasSide: hasSide),
+            confidenceBands: Self.confidenceBands(hasBack: hasBack, hasSide: hasSide),
             source: .onDevice,
             whyTodaySummary: Self.whyTodaySummary(from: preferredGroups),
             physiqueDirections: PhysiqueArchetypeMatcher.match(
@@ -156,6 +160,7 @@ struct OfflinePhysiqueAssessmentService: PhysiqueAssessmentServing {
 
     private static func muscleEntries(
         priorityMuscles: [PhysiqueFocusMuscle],
+        hasBack: Bool,
         hasSide: Bool
     ) -> [PhysiqueMuscleEntry] {
         var entries = priorityMuscles.enumerated().map { index, muscle in
@@ -163,8 +168,8 @@ struct OfflinePhysiqueAssessmentService: PhysiqueAssessmentServing {
                 muscle: muscle,
                 current: "Moderate \(muscle.displayName.lowercased()) development",
                 priorityRank: index + 1,
-                notes: notes(for: muscle, hasSide: hasSide),
-                confidence: confidence(for: muscle, hasSide: hasSide)
+                notes: notes(for: muscle, hasBack: hasBack, hasSide: hasSide),
+                confidence: confidence(for: muscle, hasBack: hasBack, hasSide: hasSide)
             )
         }
 
@@ -183,31 +188,45 @@ struct OfflinePhysiqueAssessmentService: PhysiqueAssessmentServing {
         return entries
     }
 
-    private static func confidence(for muscle: PhysiqueFocusMuscle, hasSide: Bool) -> PhysiqueObservationConfidence {
+    private static func confidence(
+        for muscle: PhysiqueFocusMuscle,
+        hasBack: Bool,
+        hasSide: Bool
+    ) -> PhysiqueObservationConfidence {
         switch muscle {
-        case .lateralDelts, .lats, .upperChest:
+        case .lateralDelts, .upperChest:
             return .high
+        case .lats:
+            return hasBack ? .high : .medium
         case .rearDelts:
             return hasSide ? .medium : .uncertain
         case .traps:
-            return .medium
+            return hasBack ? .medium : .uncertain
         default:
             return .medium
         }
     }
 
-    private static func notes(for muscle: PhysiqueFocusMuscle, hasSide: Bool) -> String {
+    private static func notes(
+        for muscle: PhysiqueFocusMuscle,
+        hasBack: Bool,
+        hasSide: Bool
+    ) -> String {
         switch muscle {
         case .lateralDelts:
             return "Visible from front angle"
         case .lats:
-            return "Back width supports V-taper balance"
+            return hasBack
+                ? "Back width supports V-taper balance"
+                : "Limited without back photo"
         case .upperChest:
             return "Upper chest fills the clavicular line"
         case .rearDelts:
             return hasSide ? "Side angle improves rear delt visibility" : "Limited without side photo"
         case .traps:
-            return "Upper back detail inferred from back photo"
+            return hasBack
+                ? "Upper back detail inferred from back photo"
+                : "Limited without back photo"
         default:
             return "Visual estimate from available angles"
         }
@@ -267,18 +286,32 @@ struct OfflinePhysiqueAssessmentService: PhysiqueAssessmentServing {
         }
     }
 
-    private static func confidenceBands(hasSide: Bool) -> PhysiqueConfidenceBands {
-        if hasSide {
+    private static func confidenceBands(hasBack: Bool, hasSide: Bool) -> PhysiqueConfidenceBands {
+        if hasBack && hasSide {
             return PhysiqueConfidenceBands(
                 high: ["Front shoulder line", "Back lat spread"],
                 medium: ["Rear delt detail", "Upper chest line"],
                 low: ["Lower body detail from photos"]
             )
         }
+        if hasBack {
+            return PhysiqueConfidenceBands(
+                high: ["Front shoulder line"],
+                medium: ["Back lat spread"],
+                low: ["Rear delt detail without side photo"]
+            )
+        }
+        if hasSide {
+            return PhysiqueConfidenceBands(
+                high: ["Front shoulder line"],
+                medium: ["Rear delt detail", "Upper chest line"],
+                low: ["Back lat spread without back photo"]
+            )
+        }
         return PhysiqueConfidenceBands(
             high: ["Front shoulder line"],
-            medium: ["Back lat spread"],
-            low: ["Rear delt detail without side photo"]
+            medium: ["Upper chest line"],
+            low: ["Back lat spread without back photo", "Rear delt detail without side photo"]
         )
     }
 }
