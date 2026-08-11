@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9C734A99C2ECEF5FF4FE581F /* PhysiqueAnglesUpsellUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B208FCB9300EA0A1A43D079D /* PhysiqueAnglesUpsellUITests.swift */; };
 		0195CDD3403F1F8F073350A4 /* SupabaseCloudSyncService+Pull.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40CD8C2896CCE58F89AD3884 /* SupabaseCloudSyncService+Pull.swift */; };
 		030100A42324E07EEAA89F72 /* LoggedWeightSanityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A257082329840730B4414CEB /* LoggedWeightSanityTests.swift */; };
 		0324C5CEAB8F1E7AA823662A /* PhysiqueArchetypeCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9224CB899B2DF1831FCD0D5F /* PhysiqueArchetypeCatalog.swift */; };
@@ -344,6 +345,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B208FCB9300EA0A1A43D079D /* PhysiqueAnglesUpsellUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueAnglesUpsellUITests.swift; sourceTree = "<group>"; };
 		003177D369F352DDA5C5CC85 /* TodayMetricTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayMetricTile.swift; sourceTree = "<group>"; };
 		0297C29F7822EFFADBD72FC3 /* ForgeFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgeFeedback.swift; sourceTree = "<group>"; };
 		04CE2EF7888A57AD1AAAAB58 /* WorkoutSessionHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSessionHeaderView.swift; sourceTree = "<group>"; };
@@ -1311,6 +1313,7 @@
 				6A92DFA4940B0D66D1876B9F /* ExerciseLibraryUITests.swift */,
 				C930138FDFE5B5BF0D9255CE /* LaunchUITests.swift */,
 				65CD63F84E23AA7A77B1DE11 /* OnboardingUITests.swift */,
+				B208FCB9300EA0A1A43D079D /* PhysiqueAnglesUpsellUITests.swift */,
 				B4258ACACF3B964F8E2FD9A5 /* PhysiqueCadenceUITests.swift */,
 				BEBCE4E64DC6B93D27C4190A /* PhysiqueHistoryUITests.swift */,
 				AAC28B7D6F3AAF219DAC2889 /* PhysiqueIllustrationUITests.swift */,
@@ -1810,6 +1813,7 @@
 				3F96F7E7C0E0843B97B247F2 /* ExerciseLibraryUITests.swift in Sources */,
 				A2DCCBC4A99C7903BAC3F1C6 /* LaunchUITests.swift in Sources */,
 				7F55DFAF877CD73C09922CB7 /* OnboardingUITests.swift in Sources */,
+				9C734A99C2ECEF5FF4FE581F /* PhysiqueAnglesUpsellUITests.swift in Sources */,
 				5E8AE5C76AFC5A651F935227 /* PhysiqueCadenceUITests.swift in Sources */,
 				54929D1139972E448FAFF02D /* PhysiqueHistoryUITests.swift in Sources */,
 				E116A8C46394F1F62A57BE1C /* PhysiqueIllustrationUITests.swift in Sources */,

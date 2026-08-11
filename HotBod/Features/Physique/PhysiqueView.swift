@@ -142,7 +142,7 @@ struct PhysiqueView: View {
         case .ready:
             readyToAssessSection
         case nil:
-            emptySection(missingAngles: [.front, .back])
+            emptySection(missingAngles: [.front])
         }
     }
 
@@ -179,12 +179,22 @@ struct PhysiqueView: View {
     private var readyToAssessSection: some View {
         ForgeCard {
             VStack(alignment: .leading, spacing: ForgeSpacing.s3) {
-                Text("Front and back photos are ready.")
+                Text("Front photo ready.")
                     .font(ForgeTypography.body)
                     .foregroundStyle(ForgeColors.muted)
 
+                Text("Add back and side photos for a fuller read.")
+                    .font(ForgeTypography.caption)
+                    .foregroundStyle(ForgeColors.muted)
+
+                if !hasBackPhoto {
+                    ForgeButton(title: "Add Back Photo", style: .secondary) {
+                        presentAddPhoto(for: .back)
+                    }
+                }
+
                 if !hasSidePhoto {
-                    ForgeButton(title: "Add side for higher confidence", style: .secondary) {
+                    ForgeButton(title: "Add Side Photo", style: .secondary) {
                         presentAddPhoto(for: .side)
                     }
                 }
@@ -231,10 +241,8 @@ struct PhysiqueView: View {
                 photos: photos
             )
 
-            if !hasSidePhoto {
-                ForgeButton(title: "Add side for higher confidence", style: .secondary) {
-                    presentAddPhoto(for: .side)
-                }
+            if !hasBackPhoto || !hasSidePhoto {
+                anglesUpsellCard
             }
 
             ForgeButton(
@@ -246,6 +254,23 @@ struct PhysiqueView: View {
                 Task { await runAssessment() }
             }
         }
+    }
+
+    private var anglesUpsellCard: some View {
+        ForgeCard {
+            VStack(alignment: .leading, spacing: ForgeSpacing.s3) {
+                Text("Add back and side photos for better results.")
+                    .font(ForgeTypography.body)
+                    .foregroundStyle(ForgeColors.muted)
+                if !hasBackPhoto {
+                    ForgeButton(title: "Add Back Photo", style: .secondary) { presentAddPhoto(for: .back) }
+                }
+                if !hasSidePhoto {
+                    ForgeButton(title: "Add Side Photo", style: .secondary) { presentAddPhoto(for: .side) }
+                }
+            }
+        }
+        .accessibilityIdentifier("physique.anglesUpsell")
     }
 
     @ViewBuilder
@@ -260,8 +285,8 @@ struct PhysiqueView: View {
                 presentAddPhoto(for: .back)
             }
         }
-        if hasFrontPhoto && hasBackPhoto && !hasSidePhoto {
-            ForgeButton(title: "Add side for higher confidence", style: .secondary, isLoading: isImporting) {
+        if !hasSidePhoto {
+            ForgeButton(title: "Add Side Photo", style: .secondary, isLoading: isImporting) {
                 presentAddPhoto(for: .side)
             }
         }
@@ -282,10 +307,10 @@ struct PhysiqueView: View {
     }
 
     private func emptyMessage(missingAngles: [PhysiquePhotoAngle]) -> String {
-        if missingAngles == [.back] {
-            return "Add a back photo to unlock a full assessment."
+        if missingAngles.contains(.front) {
+            return "Add a front photo to get a focus plan."
         }
-        return "Add front and back photos to get a focus plan."
+        return "Add back and side photos for a fuller read."
     }
 
     private func presentAddPhoto(for angle: PhysiquePhotoAngle) {

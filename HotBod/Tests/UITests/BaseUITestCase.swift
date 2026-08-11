@@ -11,6 +11,7 @@ class BaseUITestCase: XCTestCase {
   var seedPhysiqueHistory = false
   var seedPhysiqueIllustrationReady = false
   var seedPhysiqueCadenceDue = false
+  var seedPhysiqueFrontOnly = false
 
   private let tabOrder = ["today", "train", "protein", "progress", "physique"]
 
@@ -44,6 +45,9 @@ class BaseUITestCase: XCTestCase {
     }
     if seedPhysiqueCadenceDue {
       app.launchArguments.append("-SeedPhysiqueCadenceDue")
+    }
+    if seedPhysiqueFrontOnly {
+      app.launchArguments.append("-SeedPhysiqueFrontOnly")
     }
     app.launch()
 
@@ -134,7 +138,7 @@ class BaseUITestCase: XCTestCase {
     case "physique", "coach":
       return app.otherElements["physique.root"].waitForExistence(timeout: timeout)
         || app.staticTexts["Physique"].waitForExistence(timeout: 2)
-        || app.staticTexts["Add front and back photos to get a focus plan."].waitForExistence(timeout: 2)
+        || app.staticTexts["Add a front photo to get a focus plan."].waitForExistence(timeout: 2)
     default:
       return app.buttons["tab.\(tab)"].waitForExistence(timeout: timeout)
     }

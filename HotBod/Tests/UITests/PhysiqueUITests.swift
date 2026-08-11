@@ -10,7 +10,7 @@ final class PhysiqueUITests: BaseUITestCase {
     XCTAssertTrue(app.otherElements["physique.root"].waitForExistence(timeout: 10)
       || app.staticTexts["Physique"].waitForExistence(timeout: 10))
     XCTAssertTrue(
-      app.staticTexts["Add front and back photos to get a focus plan."].waitForExistence(timeout: 8)
+      app.staticTexts["Add a front photo to get a focus plan."].waitForExistence(timeout: 8)
     )
     XCTAssertFalse(app.staticTexts["Ask your coach"].exists)
   }

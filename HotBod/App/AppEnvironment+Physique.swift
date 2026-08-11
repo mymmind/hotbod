@@ -78,17 +78,8 @@ extension AppEnvironment {
 
     private func physiqueStatusMessage(for error: PhysiqueAssessmentError) -> String {
         switch error {
-        case .missingAngles(let angles):
-            if angles == [.back] {
-                return "Add a back photo to unlock a full assessment."
-            }
-            if angles.contains(.front), angles.contains(.back) {
-                return "Add front and back photos to get a focus plan."
-            }
-            if angles.contains(.front) {
-                return "Add a front photo to unlock assessment."
-            }
-            return "Add front and back photos to get a focus plan."
+        case .missingAngles:
+            return "Add a front photo to get a focus plan."
         case .qualityFailed(let failures):
             if let first = failures.first {
                 return "\(first.0.rawValue.capitalized) photo: \(first.1)"

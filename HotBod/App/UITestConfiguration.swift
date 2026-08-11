@@ -95,6 +95,10 @@ enum UITestConfiguration {
         isUITesting && ProcessInfo.processInfo.arguments.contains("-SeedPhysiqueCadenceDue")
     }
 
+    static var shouldSeedPhysiqueFrontOnly: Bool {
+        isUITesting && ProcessInfo.processInfo.arguments.contains("-SeedPhysiqueFrontOnly")
+    }
+
     static func applyLaunchConfiguration() {
         if shouldResetState {
             PersistenceHelper.clearAllPersistedData()
@@ -135,6 +139,7 @@ enum UITestConfiguration {
         await seedPhysiqueHistoryIfNeeded(in: environment)
         await seedPhysiqueIllustrationReadyIfNeeded(in: environment)
         await seedPhysiqueCadenceDueIfNeeded(in: environment)
+        await seedPhysiqueFrontOnlyIfNeeded(in: environment)
         await environment.loadActivePhysiqueAssessment()
 
         if shouldStartWorkout {
@@ -163,13 +168,44 @@ enum UITestConfiguration {
     }
 
     @MainActor
+    private static func seedStubBodyPhoto(
+        id: UUID,
+        pose: BodyPhotoPoseType,
+        in environment: AppEnvironment
+    ) async {
+        guard let profile = environment.userProfile else { return }
+        let dir = environment.bodyPhotosDirectory()
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let filename = "\(id.uuidString).jpg"
+        let fileURL = dir.appendingPathComponent(filename)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 8, height: 8)).image { _ in }
+        if let jpeg = image.jpegData(compressionQuality: 0.85) {
+            try? jpeg.write(to: fileURL, options: .atomic)
+        }
+        let photo = BodyProgressPhoto(
+            id: id,
+            userId: profile.id,
+            date: Date(),
+            poseType: pose,
+            localImagePath: filename
+        )
+        try? await environment.bodyProgressRepository.savePhoto(photo)
+        environment.bumpBodyPhotoRevision()
+    }
+
+    @MainActor
     static func seedPhysiqueHistoryIfNeeded(in environment: AppEnvironment) async {
         guard shouldSeedPhysiqueHistory else { return }
 
         let olderId = UUID(uuidString: "00000000-0000-0000-0000-0000000000A1")!
         let newerId = UUID(uuidString: "00000000-0000-0000-0000-0000000000A2")!
-        let frontPhotoId = UUID()
-        let backPhotoId = UUID()
+        let frontPhotoId = UUID(uuidString: "00000000-0000-0000-0000-0000000000B1")!
+        let backPhotoId = UUID(uuidString: "00000000-0000-0000-0000-0000000000B2")!
+        let sidePhotoId = UUID(uuidString: "00000000-0000-0000-0000-0000000000B3")!
+
+        await seedStubBodyPhoto(id: frontPhotoId, pose: .frontRelaxed, in: environment)
+        await seedStubBodyPhoto(id: backPhotoId, pose: .backRelaxed, in: environment)
+        await seedStubBodyPhoto(id: sidePhotoId, pose: .sideRelaxed, in: environment)
 
         let older = PhysiqueAssessment(
             id: olderId,
@@ -414,6 +450,69 @@ enum UITestConfiguration {
                 high: ["Front shoulder line"],
                 medium: ["Back lat spread"],
                 low: []
+            ),
+            source: .onDevice,
+            whyTodaySummary: "Bias shoulders, back, and chest to improve visual frame balance."
+        )
+
+        await environment.saveActivePhysiqueAssessment(assessment)
+    }
+
+    @MainActor
+    static func seedPhysiqueFrontOnlyIfNeeded(in environment: AppEnvironment) async {
+        guard shouldSeedPhysiqueFrontOnly else { return }
+        guard environment.userProfile != nil else { return }
+
+        let frontPhotoId = UUID(uuidString: "00000000-0000-0000-0000-0000000000F1")!
+        let assessmentId = UUID(uuidString: "00000000-0000-0000-0000-0000000000F2")!
+
+        await seedStubBodyPhoto(id: frontPhotoId, pose: .frontRelaxed, in: environment)
+
+        let assessment = PhysiqueAssessment(
+            id: assessmentId,
+            createdAt: Date(),
+            frontPhotoId: frontPhotoId,
+            backPhotoId: nil,
+            sidePhotoId: nil,
+            photoQuality: PhysiquePhotoQuality(
+                anglesAvailable: ["front"],
+                lightingQuality: "Even",
+                overallConfidence: 0.58
+            ),
+            physique: PhysiqueBuildSummary(
+                overallArchetype: "Athletic build with moderate shoulder-to-waist contrast",
+                frameSize: "Medium",
+                shoulderToWaist: "Moderate contrast",
+                waist: "Defined",
+                torso: "Balanced",
+                muscularity: "Moderate",
+                leanness: "Moderate"
+            ),
+            muscleEntries: [
+                PhysiqueMuscleEntry(
+                    muscle: .lateralDelts,
+                    current: "Moderate side delt development",
+                    priorityRank: 1,
+                    notes: "Visible from front angle",
+                    confidence: .medium
+                )
+            ],
+            developmentPriorities: [
+                PhysiqueDevelopmentPriority(muscle: .lateralDelts, reason: "Caps"),
+                PhysiqueDevelopmentPriority(muscle: .lats, reason: "Width")
+            ],
+            trainingBias: PhysiqueTrainingBias(
+                preferredMuscleGroups: [.shoulders, .back, .chest],
+                rationale: "Prioritize shoulder width, back width, and upper chest for frame balance."
+            ),
+            limitations: [
+                "Visual estimate only — not a medical assessment.",
+                "Front-only photos; back and side detail may be less reliable."
+            ],
+            confidenceBands: PhysiqueConfidenceBands(
+                high: ["Front shoulder line"],
+                medium: [],
+                low: ["Rear and side detail without additional angles"]
             ),
             source: .onDevice,
             whyTodaySummary: "Bias shoulders, back, and chest to improve visual frame balance."
