@@ -11,6 +11,7 @@ struct PhysiqueView: View {
     @State private var isImporting = false
     @State private var importError: String?
     @State private var splitSuggestionRevision = 0
+    @State private var showSplitApplyFailureAlert = false
 
     private var assessment: PhysiqueAssessment? {
         environment.activePhysiqueAssessment
@@ -91,6 +92,19 @@ struct PhysiqueView: View {
         }
         .onAppear {
             Task { await environment.loadActivePhysiqueAssessment() }
+        }
+        .alert(
+            "Couldn't Update Split",
+            isPresented: $showSplitApplyFailureAlert
+        ) {
+            Button("OK", role: .cancel) {
+                environment.lastGenerationFailure = nil
+            }
+        } message: {
+            Text(
+                environment.lastGenerationFailure?.userMessage
+                    ?? "Couldn't update your split. Try again."
+            )
         }
     }
 
@@ -247,7 +261,7 @@ struct PhysiqueView: View {
                         let ok = await environment.applyPhysiqueSplitSuggestion(suggestion)
                         splitSuggestionRevision &+= 1
                         if !ok {
-                            // existing syncMessage / generation failure surface is enough
+                            showSplitApplyFailureAlert = true
                         }
                     }
                 },

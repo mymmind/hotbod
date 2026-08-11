@@ -218,6 +218,13 @@ extension AppEnvironment {
         programState = state
         try? await programStateRepository.saveState(state)
 
+        // Completed today: split + rotation take effect on the next workout.
+        // Do not call regenerate (it returns false when today is completed).
+        if isTodayWorkoutCompleted {
+            PhysiqueSplitSuggestionPreferences.markHandled(assessmentId: suggestion.assessmentId)
+            return true
+        }
+
         let regenerated = await regenerateTodayWorkout(profile: profile)
         if !regenerated {
             var rolledBack = profile

@@ -105,6 +105,40 @@ final class AppEnvironmentPhysiqueOrchestrationTests: XCTestCase {
         )
     }
 
+    func testApplyPhysiqueSplitSuggestionWhenTodayCompletedUpdatesSplitWithoutRegenerate() async throws {
+        // Failing generator proves regenerate is skipped when today is already completed.
+        let setup = try await makeSplitSuggestionSetup(
+            workoutGenerationService: FailingMockWorkoutGenerationService()
+        )
+        setup.env.programState.splitDayIndex = 2
+        setup.env.programState.todayCompletedOn = TrainingSchedule.startOfDay(Date())
+        setup.env.programState.todayCompletedSessionId = UUID()
+        try await setup.repos.programState.saveState(setup.env.programState)
+        XCTAssertTrue(setup.env.isTodayWorkoutCompleted)
+
+        guard let suggestion = setup.env.physiqueSplitSuggestion(
+            for: setup.assessment,
+            profile: setup.profile
+        ) else {
+            return XCTFail("expected suggestion")
+        }
+        let ok = await setup.env.applyPhysiqueSplitSuggestion(suggestion)
+        XCTAssertTrue(ok)
+        XCTAssertEqual(setup.env.userProfile?.preferredSplit, .pushPullLegs)
+        XCTAssertEqual(setup.env.programState.splitDayIndex, 0)
+        XCTAssertTrue(setup.env.isTodayWorkoutCompleted)
+        XCTAssertNil(
+            setup.env.physiqueSplitSuggestion(
+                for: setup.assessment,
+                profile: setup.env.userProfile!
+            )
+        )
+        XCTAssertEqual(
+            PhysiqueSplitSuggestionPreferences.dismissedAssessmentId,
+            setup.assessment.id
+        )
+    }
+
     func testRegression_wipeClearsPhysiqueSplitSuggestionDismissal() async throws {
         PhysiqueSplitSuggestionPreferences.markHandled(assessmentId: UUID())
         XCTAssertNotNil(PhysiqueSplitSuggestionPreferences.dismissedAssessmentId)
