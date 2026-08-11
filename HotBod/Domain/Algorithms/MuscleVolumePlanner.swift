@@ -49,13 +49,21 @@ enum MuscleVolumePlanner {
         experience: ExperienceLevel,
         goal: TrainingGoal,
         soreness: SorenessLevel = .none,
-        preferredMuscles: [MuscleGroup] = []
+        preferredMuscles: [MuscleGroup] = [],
+        physiquePreferredMuscles: [MuscleGroup] = []
     ) -> [MuscleGroup: Double] {
         let landing = weeklyLanding(experience: experience, goal: goal, soreness: soreness)
-        let preferredBoost = preferredMuscles.isEmpty ? 0.0 : 2.0
         var remaining: [MuscleGroup: Double] = [:]
         for muscle in targetMuscles {
-            let target = landing + (preferredMuscles.contains(muscle) ? preferredBoost : 0)
+            let boost: Double
+            if physiquePreferredMuscles.contains(muscle) {
+                boost = GenerationConstants.Volume.physiquePreferredBoost
+            } else if preferredMuscles.contains(muscle) {
+                boost = GenerationConstants.Volume.profilePreferredBoost
+            } else {
+                boost = 0
+            }
+            let target = landing + boost
             let done = completed[muscle] ?? 0
             remaining[muscle] = max(0, target - done)
         }

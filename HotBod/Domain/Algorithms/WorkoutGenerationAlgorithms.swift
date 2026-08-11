@@ -17,7 +17,8 @@ enum WorkoutGenerationAlgorithms {
         stats: [UserExerciseStats],
         recoveryBias: Bool,
         favoriteIds: Set<String> = [],
-        ignoreDifficultyPenalty: Bool = false
+        ignoreDifficultyPenalty: Bool = false,
+        physiquePreferredMuscles: [MuscleGroup] = []
     ) -> [(Exercise, Double)] {
         exercises.map { exercise in
             let primaryMatches = exercise.primaryMuscles.filter { targetMuscles.contains($0) }.count
@@ -54,6 +55,9 @@ enum WorkoutGenerationAlgorithms {
                 case .advanced: recoveryBonus += GenerationConstants.RecoverySession.advancedDifficultyPenalty
                 }
             }
+            let physiqueBonus = exercise.primaryMuscles.contains(where: physiquePreferredMuscles.contains)
+                ? GenerationConstants.Scoring.physiquePreferredPrimaryBonus
+                : 0.0
             var recentUsePenalty = 0.0
             if let latest = matchingStats?.recentSets.map(\.completedAt).max() {
                 let days = Date().timeIntervalSince(latest) / 86_400
@@ -64,7 +68,7 @@ enum WorkoutGenerationAlgorithms {
                 }
             }
             let score = muscleScore + secondaryScore + statBonus + favoriteBonus + lessPenalty
-                + difficultyPenalty + recoveryBonus - recentUsePenalty
+                + difficultyPenalty + recoveryBonus + physiqueBonus - recentUsePenalty
             return (exercise, score)
         }
     }

@@ -2,6 +2,35 @@ import XCTest
 @testable import HotBod
 
 final class ExerciseVarietyScoringTests: XCTestCase {
+    func testPhysiquePreferredPrimaryBonusRaisesScore() {
+        let exercise = makeTestExercise(
+            id: "ohp",
+            primaryMuscles: [.shoulders],
+            pattern: .verticalPush
+        )
+        let base = WorkoutGenerationAlgorithms.scoreExercises(
+            [exercise],
+            targetMuscles: [.shoulders],
+            experience: .intermediate,
+            stats: [],
+            recoveryBias: false,
+            physiquePreferredMuscles: []
+        )[0].1
+        let boosted = WorkoutGenerationAlgorithms.scoreExercises(
+            [exercise],
+            targetMuscles: [.shoulders],
+            experience: .intermediate,
+            stats: [],
+            recoveryBias: false,
+            physiquePreferredMuscles: [.shoulders]
+        )[0].1
+        XCTAssertEqual(
+            boosted - base,
+            GenerationConstants.Scoring.physiquePreferredPrimaryBonus,
+            accuracy: 0.001
+        )
+    }
+
     func testAdditionalPrimaryMusclesUseSecondaryWeight() {
         let dualPrimary = makeTestExercise(
             id: "dual_primary",

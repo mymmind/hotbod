@@ -172,7 +172,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                 avoidIds: Set(input.userPreferences.avoidExerciseIds),
                 variability: input.userPreferences.exerciseVariability,
                 favoriteIds: favoriteIds,
-                relaxDifficultyPenalty: filterOptions.relaxDifficultyPenalty
+                relaxDifficultyPenalty: filterOptions.relaxDifficultyPenalty,
+                physiquePreferredMuscles: input.physiquePreferredMuscleGroups
             )
             : selectExercises(
                 from: available,
@@ -183,7 +184,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                 avoidIds: Set(input.userPreferences.avoidExerciseIds),
                 variability: input.userPreferences.exerciseVariability,
                 favoriteIds: favoriteIds,
-                relaxDifficultyPenalty: filterOptions.relaxDifficultyPenalty
+                relaxDifficultyPenalty: filterOptions.relaxDifficultyPenalty,
+                physiquePreferredMuscles: input.physiquePreferredMuscleGroups
             )
 
         let exerciseMap = ExerciseCatalog.indexedById(allExercises)
@@ -200,7 +202,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                 experience: input.experienceLevel,
                 goal: input.goal,
                 soreness: input.readiness?.soreness ?? .none,
-                preferredMuscles: input.preferredMuscleGroups
+                preferredMuscles: input.preferredMuscleGroups,
+                physiquePreferredMuscles: input.physiquePreferredMuscleGroups
             )
             let baseCounts = selection.exercises.map { exercise in
                 ExercisePrescriptionOverrides.effectiveSetCount(
@@ -375,6 +378,10 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         var recovery = input.muscleRecovery
         applySleepRecoveryPenalty(readiness: input.readiness, recovery: &recovery)
 
+        let recoveryPreferred = input.physiquePreferredMuscleGroups.isEmpty
+            ? input.preferredMuscleGroups
+            : input.physiquePreferredMuscleGroups
+
         var avoidedOverride = false
 
         if let focus = input.splitDayFocus {
@@ -385,14 +392,14 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                 .filter {
                     GenerationConstants.Recovery.recovery(for: $0, in: recovery) >= GenerationConstants.Recovery.splitMuscleMinRecovery
                 }
-                .sorted { recoverySortKey($0, recovery: recovery, preferred: input.preferredMuscleGroups) >
-                    recoverySortKey($1, recovery: recovery, preferred: input.preferredMuscleGroups) }
+                .sorted { recoverySortKey($0, recovery: recovery, preferred: recoveryPreferred) >
+                    recoverySortKey($1, recovery: recovery, preferred: recoveryPreferred) }
             if ready.count >= 2 {
                 return (Array(ready.prefix(4)), avoidedOverride)
             }
             let fallback = eligibleSplit.sorted {
-                recoverySortKey($0, recovery: recovery, preferred: input.preferredMuscleGroups) >
-                recoverySortKey($1, recovery: recovery, preferred: input.preferredMuscleGroups)
+                recoverySortKey($0, recovery: recovery, preferred: recoveryPreferred) >
+                recoverySortKey($1, recovery: recovery, preferred: recoveryPreferred)
             }
             return (Array(fallback.prefix(4)), avoidedOverride)
         }
@@ -409,8 +416,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                     && !recentlyTrained.contains($0)
             }
             .sorted {
-                recoverySortKey($0, recovery: recovery, preferred: input.preferredMuscleGroups) >
-                recoverySortKey($1, recovery: recovery, preferred: input.preferredMuscleGroups)
+                recoverySortKey($0, recovery: recovery, preferred: recoveryPreferred) >
+                recoverySortKey($1, recovery: recovery, preferred: recoveryPreferred)
             }
 
         if ready.count >= 3 {
@@ -424,8 +431,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                 let (eligibleChosen, chosenOverride) = applyAvoidedMuscles(chosen, avoided: input.avoidedMuscleGroups)
                 avoidedOverride = avoidedOverride || chosenOverride
                 let sorted = eligibleChosen.sorted {
-                    recoverySortKey($0, recovery: recovery, preferred: input.preferredMuscleGroups) >
-                    recoverySortKey($1, recovery: recovery, preferred: input.preferredMuscleGroups)
+                    recoverySortKey($0, recovery: recovery, preferred: recoveryPreferred) >
+                    recoverySortKey($1, recovery: recovery, preferred: recoveryPreferred)
                 }
                 return (Array(sorted.prefix(3)), avoidedOverride)
             default:
@@ -434,8 +441,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         }
 
         let fallback = eligibleMuscles.sorted {
-            recoverySortKey($0, recovery: recovery, preferred: input.preferredMuscleGroups) >
-            recoverySortKey($1, recovery: recovery, preferred: input.preferredMuscleGroups)
+            recoverySortKey($0, recovery: recovery, preferred: recoveryPreferred) >
+            recoverySortKey($1, recovery: recovery, preferred: recoveryPreferred)
         }
         return (Array(fallback.prefix(4)), avoidedOverride)
     }
@@ -482,7 +489,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         avoidIds: Set<String>,
         variability: ExerciseVariabilityLevel = .balanced,
         favoriteIds: Set<String> = [],
-        relaxDifficultyPenalty: Bool = false
+        relaxDifficultyPenalty: Bool = false,
+        physiquePreferredMuscles: [MuscleGroup] = []
     ) -> ExerciseSelectionResult {
         let maxExercises = min(
             GenerationConstants.Session.maxExercisesCap,
@@ -496,7 +504,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             stats: stats,
             recoveryBias: false,
             favoriteIds: favoriteIds,
-            ignoreDifficultyPenalty: relaxDifficultyPenalty
+            ignoreDifficultyPenalty: relaxDifficultyPenalty,
+            physiquePreferredMuscles: physiquePreferredMuscles
         )
         let ranked = WorkoutGenerationAlgorithms.rankScored(
             scored,
@@ -518,7 +527,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         avoidIds: Set<String>,
         variability: ExerciseVariabilityLevel,
         favoriteIds: Set<String> = [],
-        relaxDifficultyPenalty: Bool = false
+        relaxDifficultyPenalty: Bool = false,
+        physiquePreferredMuscles: [MuscleGroup] = []
     ) -> ExerciseSelectionResult {
         let filtered = available.filter { !avoidIds.contains($0.id) }
         let scored = WorkoutGenerationAlgorithms.scoreExercises(
@@ -528,7 +538,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             stats: stats,
             recoveryBias: true,
             favoriteIds: favoriteIds,
-            ignoreDifficultyPenalty: relaxDifficultyPenalty
+            ignoreDifficultyPenalty: relaxDifficultyPenalty,
+            physiquePreferredMuscles: physiquePreferredMuscles
         )
         let ranked = WorkoutGenerationAlgorithms.rankScored(
             scored,

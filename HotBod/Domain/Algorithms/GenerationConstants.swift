@@ -43,6 +43,10 @@ enum GenerationConstants {
         /// Keep recent sets long enough for the current + previous rolling week.
         static let recentSetsRetentionSeconds: TimeInterval = 14 * 24 * 60 * 60
         static let maxRecentSetsStored = 64
+        /// Extra weekly hard-set landing for profile-preferred muscles.
+        static let profilePreferredBoost = 2.0
+        /// Extra weekly hard-set landing for physique-assessment preferred muscles (wins over profile).
+        static let physiquePreferredBoost = 4.0
 
         static func weeklyLandingSets(
             experience: ExperienceLevel,
@@ -159,6 +163,8 @@ enum GenerationConstants {
         static let variationJitterMagnitude = 1.5
         static let recentUsePenaltyUnder3Days = 6.0
         static let recentUsePenaltyUnder7Days = 3.0
+        /// Bonus when an exercise's primary muscles intersect physique-preferred groups.
+        static let physiquePreferredPrimaryBonus = 6.0
     }
 
     enum Progression {

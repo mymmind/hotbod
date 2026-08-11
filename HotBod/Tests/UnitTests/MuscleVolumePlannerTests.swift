@@ -73,6 +73,23 @@ final class MuscleVolumePlannerTests: XCTestCase {
         XCTAssertLessThanOrEqual(allocated[1], 3)
     }
 
+    func testPhysiquePreferredGetsLargerLandingBoostThanProfilePreferred() {
+        let landing = MuscleVolumePlanner.weeklyLanding(
+            experience: .intermediate, goal: .buildMuscle, soreness: .none
+        )
+        let remaining = MuscleVolumePlanner.remainingBudget(
+            targetMuscles: [.shoulders, .quads, .chest],
+            completed: [:],
+            experience: .intermediate,
+            goal: .buildMuscle,
+            preferredMuscles: [.quads, .shoulders],
+            physiquePreferredMuscles: [.shoulders]
+        )
+        XCTAssertEqual(remaining[.shoulders], landing + 4) // physique wins
+        XCTAssertEqual(remaining[.quads], landing + 2)     // profile only
+        XCTAssertEqual(remaining[.chest], landing)         // neither
+    }
+
     func testPrimaryCompletionFractionAtLandingHoldsOverload() {
         let exercise = makeTestExercise(
             id: "squat",
