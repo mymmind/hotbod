@@ -2,6 +2,11 @@ import XCTest
 @testable import HotBod
 
 final class PhysiqueReserveSlotsTests: XCTestCase {
+    func testConstantsMatchSpec() {
+        XCTAssertEqual(GenerationConstants.Session.physiqueReservedSlots, 2)
+        XCTAssertEqual(GenerationConstants.RecoverySession.physiqueReservedSlots, 1)
+    }
+
     func testReserveTwoOnFocusPhysiquePrimariesWhenEligible() {
         // Ranked: two shoulders/back Physique∩target isolations first would be
         // skipped by coverage if we only relied on soft score — force lower

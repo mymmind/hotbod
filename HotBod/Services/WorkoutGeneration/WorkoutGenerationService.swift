@@ -516,7 +516,9 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             ranked: ranked,
             targetMuscles: targetMuscles,
             maxExercises: maxExercises,
-            minExercises: GenerationConstants.Session.minStandardExercises
+            minExercises: GenerationConstants.Session.minStandardExercises,
+            physiquePreferredMuscles: physiquePreferredMuscles,
+            reservedPhysiqueSlots: GenerationConstants.Session.physiqueReservedSlots
         )
     }
 
@@ -550,7 +552,9 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             ranked: ranked,
             targetMuscles: targetMuscles,
             maxExercises: GenerationConstants.RecoverySession.maxExercises,
-            minExercises: GenerationConstants.RecoverySession.minExercises
+            minExercises: GenerationConstants.RecoverySession.minExercises,
+            physiquePreferredMuscles: physiquePreferredMuscles,
+            reservedPhysiqueSlots: GenerationConstants.RecoverySession.physiqueReservedSlots
         )
     }
 
