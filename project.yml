@@ -2,7 +2,7 @@ name: HotBod
 options:
   bundleIdPrefix: com.hotbod
   deploymentTarget:
-    iOS: "17.0"
+    iOS: "27.0"
   # Xcode 16+ embeds watch apps in PlugIns/ (not Watch/). Matches local Xcode 26.x.
   xcodeVersion: "16.0"
   createIntermediateGroups: true
