@@ -7,7 +7,7 @@
 
 ## Goal
 
-Make HotBod **exclusively Apple** for intelligence: on-device Foundation Models for coach, Private Cloud Compute (PCC) for Physique assessment, no OpenAI/Gemini/image APIs. End state is also **fully local** — no USDA, no Supabase. Cut illustrative direction. Raise the OS floor so Apple Intelligence / Foundation Models / PCC are first-class.
+Make HotBod **exclusively Apple** for intelligence: on-device Foundation Models for coach, Private Cloud Compute (PCC) for Physique assessment, no OpenAI/Gemini/image APIs. End state is also **fully local** — no USDA, no Supabase. Cut illustrative direction. Raise the OS floor to **iOS 26.0** for Foundation Models; PCC remains first-class when available via `#available(iOS 27.0, *)`.
 
 ## Constraints
 
@@ -33,7 +33,7 @@ Make HotBod **exclusively Apple** for intelligence: on-device Foundation Models 
 |-------|--------|
 | Exclusivity | Hard cut — delete non-Apple LLM/image paths |
 | Docs shape | Umbrella roadmap + per-phase design/plan |
-| OS floor | Raise to OS supporting Foundation Models **and** PCC (set exact `IPHONEOS_DEPLOYMENT_TARGET` in Phase 1 against current Xcode SDK) |
+| OS floor | Raise to **iOS 26.0** for on-device Foundation Models (set in Phase 1 against current Xcode SDK). PCC APIs are iOS 27+ and stay behind `#available(iOS 27.0, *)` until an iOS 27 SDK/runtime is available |
 | Coach | On-device `LanguageModelSession` |
 | Physique assess | PCC + Vision metrics + offline heuristic fallback |
 | Illustration | Delete |

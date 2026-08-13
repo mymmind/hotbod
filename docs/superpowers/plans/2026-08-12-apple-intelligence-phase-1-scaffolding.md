@@ -4,7 +4,7 @@
 
 **Goal:** Raise HotBod’s iOS floor for Apple Intelligence / Foundation Models / PCC and add a thin protocol wrapper + UITest mock — without cutting OpenAI/Gemini product paths yet.
 
-**Architecture:** Bump `deploymentTarget` to **iOS 27.0** (PCC API floor; on-device FM is 26.0+). Introduce `AppleLanguageModeling` protocol with availability + session factories. Production client wraps `FoundationModels` behind `#if canImport(FoundationModels)`; UITesting / tests use `MockAppleLanguageModeling`. Inject into `AppEnvironment` for later phases; leave `BackendServices` AI factories unchanged in Phase 1.
+**Architecture:** Bump `deploymentTarget` to **iOS 26.0** (on-device Foundation Models floor). PCC APIs remain behind `#available(iOS 27.0, *)` when used in later phases. Introduce `AppleLanguageModeling` protocol with availability + session factories. Production client wraps `FoundationModels` behind `#if canImport(FoundationModels)`; UITesting / tests use `MockAppleLanguageModeling`. Inject into `AppEnvironment` for later phases; leave `BackendServices` AI factories unchanged in Phase 1.
 
 **Tech Stack:** Swift 6, SwiftUI, FoundationModels (system), XCTest, XcodeGen (`project.yml`).
 
@@ -13,7 +13,7 @@
 
 ## Global Constraints
 
-- iOS **27.0+** after this phase (was 17.0).
+- iOS **26.0+** after this phase (was 17.0). PCC stays availability-gated at iOS 27.0+.
 - Prefer: “on-device,” “Apple Intelligence.”
 - Avoid: medical claims, destiny/lookalike copy, “guaranteed AI.”
 - Soft: do **not** delete Gemini/OpenAI/edges/illustration/USDA/Supabase in this phase.
@@ -26,8 +26,8 @@
 
 | File | Responsibility |
 |------|----------------|
-| `project.yml` | `deploymentTarget.iOS: "27.0"` |
-| `AGENTS.md` | Stack line iOS 27+ |
+| `project.yml` | `deploymentTarget.iOS: "26.0"` |
+| `AGENTS.md` | Stack line iOS 26+ |
 | `HotBod/Services/AI/AppleLanguageModeling.swift` | Protocol + availability enums + errors |
 | `HotBod/Services/AI/MockAppleLanguageModeling.swift` | Deterministic fake for tests / UITesting |
 | `HotBod/Services/AI/SystemAppleLanguageModeling.swift` | FoundationModels-backed client |
@@ -42,32 +42,33 @@
 
 **Files:**
 - Modify: `project.yml` (`deploymentTarget.iOS`)
-- Modify: `AGENTS.md` (Stack → iOS 27+)
-- Modify: umbrella note is already iOS-flexible; optional one-line in Phase 1 plan only (no extra md files)
+- Modify: `AGENTS.md` (Stack → iOS 26+)
+- Modify: umbrella / plan floor language → **26.0**; note PCC is `#available(iOS 27.0, *)`
 
 **Interfaces:**
-- Produces: app / test targets build with iOS 27.0 deployment target
+- Produces: app / test targets build with iOS 26.0 deployment target
 
 - [ ] **Step 1: Change project.yml**
 
 ```yaml
 deploymentTarget:
-  iOS: "27.0"
+  iOS: "26.0"
 ```
 
 (Keep watch deployment as-is unless xcodegen requires alignment — do not raise watch unless compile forces it.)
 
 - [ ] **Step 2: Update AGENTS.md**
 
-Replace stack bullet `iOS 17+` with `iOS 27+` (Apple Intelligence / Foundation Models / PCC).
+Replace stack bullet with `iOS 26+` (Apple Intelligence / Foundation Models; PCC when SDK/OS allows).
 
 - [ ] **Step 3: Regenerate project + build**
 
 ```bash
 xcodegen generate
 # restore objectVersion / DEVELOPMENT_TEAM if churned
+# Prefer a real iOS 26 simulator; else generic/platform=iOS Simulator
 xcodebuild build -project HotBod.xcodeproj -scheme HotBod \
-  -destination 'platform=iOS Simulator,id=EB7BE0BD-179B-4A37-9202-69D87FC47B75'
+  -destination 'platform=iOS Simulator,id=<iOS-26-sim-id>'
 ```
 
 Expected: BUILD SUCCEEDED (or fix only deployment-related compile breaks — no AI cut).
@@ -77,7 +78,7 @@ Expected: BUILD SUCCEEDED (or fix only deployment-related compile breaks — no 
 ```bash
 git add project.yml AGENTS.md HotBod.xcodeproj/project.pbxproj
 git commit -m "$(cat <<'EOF'
-chore: raise deployment target to iOS 27 for Apple Intelligence
+chore: set deployment target to iOS 26 for Foundation Models
 
 EOF
 )"
@@ -326,6 +327,6 @@ EOF
 
 ## Plan self-review notes
 
-- Floor is **27.0** because PCC APIs are documented iOS 27+; on-device alone would be 26.0.
+- Floor is **26.0** for on-device Foundation Models (matches current Xcode SDK). PCC APIs stay behind `#available(iOS 27.0, *)` — do not raise the app floor to 27 until an iOS 27 SDK/runtime is available.
 - Phase 1 `complete(prompt:)` is a scaffolding probe, not production coach/assess.
 - OpenAI/Gemini paths intentionally remain until Phases 2–3.
