@@ -4,8 +4,8 @@ Native iOS strength-training app.
 
 ## Requirements
 
-- Xcode 15+
-- iOS 17+ Simulator
+- Xcode 26+
+- iOS 26+ Simulator
 
 ## Open & Run
 
@@ -19,7 +19,7 @@ Or from CLI:
 
 ```bash
 xcodegen generate
-xcodebuild -scheme HotBod -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.3.1' build
+xcodebuild -scheme HotBod -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' build
 ```
 
 ## Project Structure
