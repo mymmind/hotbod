@@ -206,6 +206,7 @@
 		A9DBFECAF946D5A9403B7AEE /* ExerciseCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90FCC5370E053FD4555EF8BA /* ExerciseCatalog.swift */; };
 		AA5A0FBCDF191E464AC94739 /* RepositoryDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47E97FF16DA04E22F3230FA8 /* RepositoryDomainTests.swift */; };
 		AA6D04F891B44E9EC90FB2C5 /* RemoteAIWorkoutService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF6D7AE1043FAFDE70FC5C34 /* RemoteAIWorkoutService.swift */; };
+		AACB5EFEEB2CDCDFF19DBB85 /* SystemAppleLanguageModeling.swift in Sources */ = {isa = PBXBuildFile; fileRef = C112F5148FBA81A518F9F92C /* SystemAppleLanguageModeling.swift */; };
 		AB46D2F0E6CFC67092C96D6C /* GenerationValidationPropertyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 251050F7DCEDEB0A8FCE2BF1 /* GenerationValidationPropertyTests.swift */; };
 		AC9526E98C09F3E55985FCB9 /* InjurySafetyPropertyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F7B60B2EAFD5DF4003B7E8E /* InjurySafetyPropertyTests.swift */; };
 		AD02E2305975C80ECED5E504 /* HealthKitReadinessService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4FA4C3F59443781B4F934BE /* HealthKitReadinessService.swift */; };
@@ -583,6 +584,7 @@
 		BEBCE4E64DC6B93D27C4190A /* PhysiqueHistoryUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueHistoryUITests.swift; sourceTree = "<group>"; };
 		BEEB2CCD0B8C0ACEE41F9301 /* deadlift_demo.mp4 */ = {isa = PBXFileReference; path = deadlift_demo.mp4; sourceTree = "<group>"; };
 		C027017511EEF5AF0C633125 /* OnboardingProfileEditingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingProfileEditingTests.swift; sourceTree = "<group>"; };
+		C112F5148FBA81A518F9F92C /* SystemAppleLanguageModeling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemAppleLanguageModeling.swift; sourceTree = "<group>"; };
 		C1273B5F82410DEAE0BA7348 /* PhoneWatchSessionBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneWatchSessionBridge.swift; sourceTree = "<group>"; };
 		C208ABCC786A179AA158D348 /* AppleLanguageModeling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleLanguageModeling.swift; sourceTree = "<group>"; };
 		C24FA49A76D12302130B4FC3 /* ForgePill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgePill.swift; sourceTree = "<group>"; };
@@ -842,6 +844,7 @@
 				D3BB3466ECD9B84EEFD3AF66 /* MockAIWorkoutService.swift */,
 				A63A94EC5A64DC86808C32A1 /* MockAppleLanguageModeling.swift */,
 				EF6D7AE1043FAFDE70FC5C34 /* RemoteAIWorkoutService.swift */,
+				C112F5148FBA81A518F9F92C /* SystemAppleLanguageModeling.swift */,
 			);
 			path = AI;
 			sourceTree = "<group>";
@@ -1812,6 +1815,7 @@
 				51B8DEDB61748F63A3331418 /* SupabaseDTOs.swift in Sources */,
 				A646BC245484CEA466197A5E /* SwapExerciseSheet.swift in Sources */,
 				AF050014ED8AAD4DB1D267A0 /* SyncProtocols.swift in Sources */,
+				AACB5EFEEB2CDCDFF19DBB85 /* SystemAppleLanguageModeling.swift in Sources */,
 				2D516B0464E3A3563AA0A219 /* TodayDisclosureSection.swift in Sources */,
 				964948E371F00B12F547554D /* TodayExerciseStrip.swift in Sources */,
 				D4DBC185ACCA7AD08AB1A26D /* TodayMetricTile.swift in Sources */,
@@ -1895,8 +1899,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = HotBodWatch/HotBodWatch.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = D62S83A4Z2;
+				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = HotBod;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.hotbod.app;
@@ -1972,8 +1976,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = HotBodWatch/HotBodWatch.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = D62S83A4Z2;
+				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = HotBod;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.hotbod.app;
@@ -2026,9 +2030,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = HotBod/HotBod.entitlements;
+				DEVELOPMENT_TEAM = D62S83A4Z2;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = D62S83A4Z2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = HotBod;
 				INFOPLIST_KEY_NSCameraUsageDescription = "HotBod uses the camera to take progress photos.";
@@ -2136,9 +2140,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = HotBod/HotBod.entitlements;
+				DEVELOPMENT_TEAM = D62S83A4Z2;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = D62S83A4Z2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = HotBod;
 				INFOPLIST_KEY_NSCameraUsageDescription = "HotBod uses the camera to take progress photos.";

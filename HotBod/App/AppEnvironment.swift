@@ -12,6 +12,7 @@ final class AppEnvironment {
     private let repositories: AppEnvironmentRepositories
     let workoutGenerationService: any WorkoutGenerationService
     let aiWorkoutService: any AIWorkoutService
+    let appleLanguageModeling: any AppleLanguageModeling
     let foodSearchService: any FoodSearchService
     let exerciseMediaProvider: any ExerciseMediaProvider
     let bodyPhotoAnalyzer: any BodyPhotoAnalyzer
@@ -84,6 +85,7 @@ final class AppEnvironment {
         repositories: AppEnvironmentRepositories = AppEnvironmentRepositories(),
         workoutGenerationService: any WorkoutGenerationService = RulesWorkoutGenerationService(),
         aiWorkoutService: (any AIWorkoutService)? = nil,
+        appleLanguageModeling: (any AppleLanguageModeling)? = nil,
         foodSearchService: (any FoodSearchService)? = nil,
         exerciseMediaProvider: any ExerciseMediaProvider = LocalExerciseMediaProvider(),
         bodyPhotoAnalyzer: any BodyPhotoAnalyzer = VisionBodyPhotoAnalyzer(),
@@ -109,6 +111,7 @@ final class AppEnvironment {
             auth: auth,
             exerciseRepository: repositories.exercise
         )
+        self.appleLanguageModeling = appleLanguageModeling ?? BackendServices.makeAppleLanguageModeling()
         self.foodSearchService = foodSearchService ?? BackendServices.makeFoodSearchService()
         self.exerciseMediaProvider = exerciseMediaProvider
         self.bodyPhotoAnalyzer = bodyPhotoAnalyzer
@@ -148,6 +151,7 @@ final class AppEnvironment {
         physiqueAssessmentRepository: any PhysiqueAssessmentRepository = LocalPhysiqueAssessmentRepository(),
         workoutGenerationService: any WorkoutGenerationService = RulesWorkoutGenerationService(),
         aiWorkoutService: (any AIWorkoutService)? = nil,
+        appleLanguageModeling: (any AppleLanguageModeling)? = nil,
         foodSearchService: (any FoodSearchService)? = nil,
         exerciseMediaProvider: any ExerciseMediaProvider = LocalExerciseMediaProvider(),
         bodyPhotoAnalyzer: any BodyPhotoAnalyzer = VisionBodyPhotoAnalyzer(),
@@ -177,6 +181,7 @@ final class AppEnvironment {
             ),
             workoutGenerationService: workoutGenerationService,
             aiWorkoutService: aiWorkoutService,
+            appleLanguageModeling: appleLanguageModeling,
             foodSearchService: foodSearchService,
             exerciseMediaProvider: exerciseMediaProvider,
             bodyPhotoAnalyzer: bodyPhotoAnalyzer,

@@ -290,6 +290,7 @@ extension AppEnvironment {
     repos: TestRepositories = .empty(),
     workoutGenerationService: (any WorkoutGenerationService)? = nil,
     aiWorkoutService: (any AIWorkoutService)? = nil,
+    appleLanguageModeling: (any AppleLanguageModeling)? = nil,
     foodSearchService: (any FoodSearchService)? = nil,
     authService: (any AuthService)? = nil,
     cloudSyncService: (any CloudSyncService)? = nil,
@@ -316,6 +317,7 @@ extension AppEnvironment {
         exerciseRepository: repos.exercise
       ),
       aiWorkoutService: aiWorkoutService ?? MockAIWorkoutService(),
+      appleLanguageModeling: appleLanguageModeling ?? MockAppleLanguageModeling(),
       foodSearchService: foodSearchService ?? MockFoodSearchService(),
       bodyPhotoAnalyzer: analyzer,
       physiqueAssessmentService: physiqueAssessmentService ?? HybridPhysiqueAssessmentService(

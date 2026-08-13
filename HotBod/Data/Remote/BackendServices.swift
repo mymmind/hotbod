@@ -108,4 +108,12 @@ enum BackendServices {
 
         return UnavailablePhysiqueIllustrationService()
     }
+
+    @MainActor
+    static func makeAppleLanguageModeling() -> any AppleLanguageModeling {
+        if UITestConfiguration.isUITesting || UITestConfiguration.shouldMockAI {
+            return MockAppleLanguageModeling()
+        }
+        return SystemAppleLanguageModeling()
+    }
 }

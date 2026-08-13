@@ -31,4 +31,9 @@ final class AppleLanguageModelingTests: XCTestCase {
         XCTAssertEqual(mock.quota(for: .privateCloudCompute)?.isLimitReached, true)
         XCTAssertNil(mock.quota(for: .onDevice))
     }
+
+    func testMakeForTestsUsesMockAppleLanguageModelingByDefault() async {
+        let env = AppEnvironment.makeForTests()
+        XCTAssertTrue(env.appleLanguageModeling is MockAppleLanguageModeling)
+    }
 }
