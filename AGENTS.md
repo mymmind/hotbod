@@ -18,7 +18,7 @@ Build a native iOS SwiftUI strength-training app inspired by Fitbod, but differe
 
 ## Stack
 
-- iOS 27+ (Apple Intelligence / Foundation Models / PCC)
+- iOS 26+ (Apple Intelligence / Foundation Models; PCC when SDK/OS allows)
 - SwiftUI
 - SwiftData
 - MVVM + Services + Repositories
