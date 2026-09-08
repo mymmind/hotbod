@@ -29,7 +29,7 @@ extension AppEnvironment {
         let recovery = fetchedRecovery.isEmpty ? recoveryStates : fetchedRecovery
         let exerciseStats = (try? await exerciseStatsRepository.fetchStats()) ?? []
         let exercises = (try? await exerciseRepository.fetchAll()) ?? []
-        let exerciseNames = Dictionary(uniqueKeysWithValues: exercises.map { ($0.id, $0.name) })
+        let exerciseNames = Dictionary(exercises.map { ($0.id, $0.name) }, uniquingKeysWith: { _, new in new })
 
         let snapshot = TrainingDataExportSnapshot(
             profile: profile,

@@ -57,11 +57,17 @@ enum TrainingDataMarkdownExporter {
         var lines: [String] = [
             "- Goal: \(profile.goal.displayName) | Experience: \(profile.experienceLevel.displayName)",
             "- Location: \(profile.trainingLocation.displayName) | Split: \(profile.preferredSplit.displayName)"
-                + " | Session: \(profile.preferredSessionLengthMinutes) min",
-            "- Days: \(profile.reminderTrainingDays.map(\.shortName).joined(separator: ", "))",
-            "- Equipment: \(profile.availableEquipment.map(\.displayName).joined(separator: ", "))",
-            "- Limitations: \(profile.limitations.map(\.displayName).joined(separator: ", "))"
+                + " | Session: \(profile.preferredSessionLengthMinutes) min"
         ]
+        if !profile.reminderTrainingDays.isEmpty {
+            lines.append("- Days: \(profile.reminderTrainingDays.map(\.shortName).joined(separator: ", "))")
+        }
+        if !profile.availableEquipment.isEmpty {
+            lines.append("- Equipment: \(profile.availableEquipment.map(\.displayName).joined(separator: ", "))")
+        }
+        if !profile.limitations.isEmpty {
+            lines.append("- Limitations: \(profile.limitations.map(\.displayName).joined(separator: ", "))")
+        }
         if let notes = profile.limitationNotes, !notes.isEmpty {
             lines.append("- Notes: \(notes)")
         }

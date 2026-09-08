@@ -76,6 +76,31 @@ final class TrainingDataMarkdownExporterTests: XCTestCase {
         XCTAssertFalse(markdown.contains("HealthKit"))
     }
 
+    func testOmitsEmptyDaysEquipmentAndLimitationsBullets() {
+        var profile = UserProfile.empty()
+        profile.reminderTrainingDays = []
+        profile.availableEquipment = []
+        profile.limitations = []
+        let markdown = TrainingDataMarkdownExporter.render(
+            TrainingDataExportSnapshot(
+                profile: profile,
+                sessions: [],
+                exerciseStats: [],
+                proteinEntries: [],
+                recovery: [],
+                exerciseNames: [:],
+                proteinGoalGrams: 145
+            ),
+            generatedAt: generatedAt,
+            calendar: calendar
+        )
+        XCTAssertFalse(markdown.contains("- Days:"))
+        XCTAssertFalse(markdown.contains("- Equipment:"))
+        XCTAssertFalse(markdown.contains("- Limitations:"))
+        XCTAssertTrue(markdown.contains("- Goal: Build Muscle | Experience: Intermediate"))
+        XCTAssertTrue(markdown.contains("- Protein goal: 145 g"))
+    }
+
     func testIncludesBodyLineWhenPresent() {
         var profile = UserProfile.empty()
         profile.name = "Hidden"

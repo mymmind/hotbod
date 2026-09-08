@@ -34,6 +34,7 @@ final class TrainingDataExportIntegrationTests: XCTestCase {
         XCTAssertTrue(export.markdown.contains("Export Upper"))
         XCTAssertFalse(export.markdown.contains("Zara Export"))
         XCTAssertFalse(export.markdown.contains("Ghost Session"))
+        XCTAssertTrue(export.markdown.contains("40 g (goal 145)"))
         XCTAssertTrue(export.filename.hasPrefix("hotbod-training-"))
         XCTAssertTrue(export.filename.hasSuffix(".md"))
         XCTAssertEqual(export.fileURL.lastPathComponent, export.filename)
