@@ -579,6 +579,18 @@ final class AppEnvironmentPhysiqueOrchestrationTests: XCTestCase {
         await env.rescheduleAllLocalReminders()
         XCTAssertEqual(recorder.rescheduleCalls.last?.enabled, false)
     }
+
+    func testIllustrationNotConfiguredCopyIsNotSignIn() {
+        let env = AppEnvironment.makeForTests()
+        XCTAssertEqual(
+            env.physiqueIllustrationStatusMessage(for: .notConfigured),
+            "Illustration unavailable."
+        )
+        XCTAssertFalse(
+            env.physiqueIllustrationStatusMessage(for: .notConfigured)
+                .localizedCaseInsensitiveContains("sign in")
+        )
+    }
 }
 
 @MainActor

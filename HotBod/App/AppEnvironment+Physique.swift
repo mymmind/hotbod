@@ -156,10 +156,10 @@ extension AppEnvironment {
         }
     }
 
-    private func physiqueIllustrationStatusMessage(for error: PhysiqueIllustrationError) -> String {
+    func physiqueIllustrationStatusMessage(for error: PhysiqueIllustrationError) -> String {
         switch error {
         case .notConfigured:
-            return "Sign in to generate."
+            return "Illustration unavailable."
         case .unavailable, .invalidResponse:
             return "Illustration unavailable."
         case .serverMessage(let message):
