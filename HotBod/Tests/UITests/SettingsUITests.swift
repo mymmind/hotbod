@@ -51,6 +51,15 @@ final class SettingsUITests: BaseUITestCase {
     XCTAssertTrue(app.buttons["Delete All Data"].waitForExistence(timeout: 5))
   }
 
+  func testExportTrainingDataRowExists() {
+    openSettings()
+    let exportButton = app.buttons["settings.exportTrainingData"]
+    for _ in 0..<8 where !exportButton.exists {
+      app.swipeUp()
+    }
+    XCTAssertTrue(exportButton.waitForExistence(timeout: 8))
+  }
+
   // MARK: - Helpers
 
   private func scrollToDeleteAllData() {

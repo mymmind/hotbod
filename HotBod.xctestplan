@@ -35,7 +35,8 @@
             "PhysiqueUITests/testPhysiqueTabEmptyState",
             "PhysiqueUITests/testRegression_coachChatEntryPointsRemovedFromPhysiqueTab",
             "WorkoutSessionUITests/testRegression_exerciseCompleteIsFullScreen",
-            "WorkoutSessionUITests/testRegression_finishingLastExerciseWithIncompleteShowsConfirmAndKeepTraining"
+            "WorkoutSessionUITests/testRegression_finishingLastExerciseWithIncompleteShowsConfirmAndKeepTraining",
+            "SettingsUITests/testExportTrainingDataRowExists"
           ]
         }
       ]
