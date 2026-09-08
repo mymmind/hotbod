@@ -234,7 +234,9 @@ final class AppEnvironment {
         let localDecayReference = programState.lastRecoveryDecayAppliedAt
         await refreshHealthReadiness()
 
-        if authService.isAvailable, await authService.restoreSession() {
+        if !PersonalUseConfig.isEnabled,
+           authService.isAvailable,
+           await authService.restoreSession() {
             isSignedIn = true
             authEmail = await authService.currentEmail()
             photoCloudBackupEnabled = (try? await cloudSyncService.fetchPhotoBackupEnabled()) ?? false
