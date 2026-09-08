@@ -53,6 +53,15 @@ final class MockAIWorkoutServiceTests: XCTestCase {
     XCTAssertEqual(intent, .generateWorkout)
   }
 
+  func testGenerateWorkoutReplyDoesNotAskUserToSignIn() async throws {
+    let result = try await service.respond(
+      to: "Generate a new workout",
+      context: makeCoachStubContext()
+    )
+
+    XCTAssertFalse(result.message.content.localizedCaseInsensitiveContains("sign in"))
+  }
+
   func testClassifyProteinIntent() async {
     let intent = await service.classifyIntent("How much protein today?")
     XCTAssertEqual(intent, .proteinHelp)

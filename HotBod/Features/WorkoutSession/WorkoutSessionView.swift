@@ -233,12 +233,17 @@ struct WorkoutSessionView: View {
         ) {
             Button("End & Save Progress") { finishWorkout() }
                 .accessibilityIdentifier("session.endWorkout.save")
+            // iOS 26 can drop cancel-role buttons from popover confirmation dialogs.
             Button("Keep Training") {
                 keepTrainingAfterEndConfirmation()
             }
             .accessibilityIdentifier("session.endWorkout.keepTraining")
         } message: {
             Text(endConfirmationCopy.message)
+        }
+        .onChange(of: showEndConfirmation) { wasPresented, isPresented in
+            guard wasPresented, !isPresented, !showCompletion else { return }
+            keepTrainingAfterEndConfirmation()
         }
         .confirmationDialog("Cancel Workout?", isPresented: $showCancelConfirmation, titleVisibility: .visible) {
             Button("Cancel Workout", role: .destructive) {

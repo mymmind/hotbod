@@ -32,7 +32,7 @@ struct MockAIWorkoutService: AIWorkoutService, Sendable {
             }
             content = "I can compress this session by reducing accessories and tightening rest. Main compounds stay. Confirm and I'll regenerate."
         case .generateWorkout:
-            content = "Sign in with cloud coach enabled to generate a structured workout from AI. Offline mode uses the rules engine via Today → Regenerate."
+            content = "Use Today → Regenerate to build a structured workout with the rules engine."
         case .proteinHelp:
             let gap = max(0, context.proteinSummary.goalGrams - context.proteinSummary.todayGrams)
             content = """

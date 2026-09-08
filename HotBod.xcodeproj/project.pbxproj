@@ -175,6 +175,7 @@
 		9018A132ACECB9211BFF62AA /* ProteinTrackerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9C1C91ED87B69C491C6A06 /* ProteinTrackerUITests.swift */; };
 		90AC7E0A123FC8E02451F37F /* VolumeDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40FB0D3ABA5F01E9F2E6639D /* VolumeDomainTests.swift */; };
 		90B2C6009A0B536AE2A68CD7 /* AppEnvironmentOrchestrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED165C0AC40987BAB9DE61CF /* AppEnvironmentOrchestrationTests.swift */; };
+		A11B22C33D44E55F66778899 /* AppEnvironmentPersonalUseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B11B22C33D44E55F66778899 /* AppEnvironmentPersonalUseTests.swift */; };
 		92AEEBE60AB28DD9C67FE4E0 /* ExerciseLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64DB0A3483E52FAFD8000E9E /* ExerciseLibraryView.swift */; };
 		9369A5F5C99E306B569FDEEE /* SleepScoreGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A83394D5931867666A1BCA6 /* SleepScoreGenerationTests.swift */; };
 		93B5CAB6B99F8F9AA481E6FC /* P2ParityFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67D9C9D0FD13286A0220F18D /* P2ParityFeatureTests.swift */; };
@@ -653,6 +654,7 @@
 		EAF2261265DE5AE33F9FB02C /* PhysiqueDirectionCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueDirectionCopy.swift; sourceTree = "<group>"; };
 		EB1DF9354C90972341F78A1C /* BodyPhotoDomainTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyPhotoDomainTests.swift; sourceTree = "<group>"; };
 		ED165C0AC40987BAB9DE61CF /* AppEnvironmentOrchestrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironmentOrchestrationTests.swift; sourceTree = "<group>"; };
+		B11B22C33D44E55F66778899 /* AppEnvironmentPersonalUseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironmentPersonalUseTests.swift; sourceTree = "<group>"; };
 		ED4794EB8C87A814FD5B4B7A /* HotBodAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotBodAppDelegate.swift; sourceTree = "<group>"; };
 		EE9C1C91ED87B69C491C6A06 /* ProteinTrackerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProteinTrackerUITests.swift; sourceTree = "<group>"; };
 		EECBA500DD98D6BAF02753A7 /* ForgeProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgeProgressBar.swift; sourceTree = "<group>"; };
@@ -1163,6 +1165,7 @@
 				F7CEE326A90CE11B17DA5DA2 /* AIWorkoutServiceSelectionTests.swift */,
 				D3180C017213CB0430E3BEE0 /* AppEnvironmentDayRolloverTests.swift */,
 				ED165C0AC40987BAB9DE61CF /* AppEnvironmentOrchestrationTests.swift */,
+				B11B22C33D44E55F66778899 /* AppEnvironmentPersonalUseTests.swift */,
 				55B32A81CC561283349180A3 /* AppEnvironmentPhysiqueOrchestrationTests.swift */,
 				92F101C20E8CBB007B54E246 /* AppleLanguageModelingTests.swift */,
 				EB1DF9354C90972341F78A1C /* BodyPhotoDomainTests.swift */,
@@ -1591,6 +1594,7 @@
 				392462B4F4CE831112183E29 /* AIWorkoutServiceSelectionTests.swift in Sources */,
 				71CEE18AE080038DFB373C44 /* AppEnvironmentDayRolloverTests.swift in Sources */,
 				90B2C6009A0B536AE2A68CD7 /* AppEnvironmentOrchestrationTests.swift in Sources */,
+				A11B22C33D44E55F66778899 /* AppEnvironmentPersonalUseTests.swift in Sources */,
 				D6F50D5158A3C716E597CF8F /* AppEnvironmentPhysiqueOrchestrationTests.swift in Sources */,
 				40063A9E9822B7BE0833A64E /* AppleLanguageModelingTests.swift in Sources */,
 				F667B4439DDC421E94C9FEC4 /* BodyPhotoDomainTests.swift in Sources */,
