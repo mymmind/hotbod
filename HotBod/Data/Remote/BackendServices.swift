@@ -53,17 +53,28 @@ enum BackendServices {
         auth: AuthService,
         exerciseRepository: any ExerciseRepository = LocalExerciseRepository()
     ) -> AIWorkoutService {
-        #if canImport(Supabase)
-        if SupabaseConfig.isConfigured, let client = SupabaseClientProvider.shared {
-            return RemoteAIWorkoutService(client: client, auth: auth)
-        }
-        #endif
+        let selection = AIWorkoutServiceSelection.preferred(
+            personalUse: PersonalUseConfig.isEnabled,
+            supabaseConfigured: SupabaseConfig.isConfigured,
+            geminiConfigured: GeminiConfig.isConfigured
+        )
 
-        if GeminiConfig.isConfigured {
+        switch selection {
+        case .remote:
+            #if canImport(Supabase)
+            if let client = SupabaseClientProvider.shared {
+                return RemoteAIWorkoutService(client: client, auth: auth)
+            }
+            #endif
+            if GeminiConfig.isConfigured {
+                return GeminiAIWorkoutService(exerciseRepository: exerciseRepository)
+            }
+            return MockAIWorkoutService()
+        case .gemini:
             return GeminiAIWorkoutService(exerciseRepository: exerciseRepository)
+        case .mock:
+            return MockAIWorkoutService()
         }
-
-        return MockAIWorkoutService()
     }
 
     static func makeFoodSearchService() -> FoodSearchService {
@@ -74,6 +85,9 @@ enum BackendServices {
     }
 
     static func makeRemotePhysiqueAssessmentService(auth: AuthService) -> any PhysiqueAssessmentServing {
+        guard PersonalUseConfig.shouldUseRemoteIntelligence else {
+            return UnavailablePhysiqueAssessmentService()
+        }
         #if canImport(Supabase)
         if SupabaseConfig.isConfigured, let client = SupabaseClientProvider.shared {
             return RemotePhysiqueAssessmentService(client: client, auth: auth)
@@ -98,6 +112,10 @@ enum BackendServices {
     static func makePhysiqueIllustrationService(auth: AuthService = makeAuthService()) -> any PhysiqueIllustrationService {
         if UITestConfiguration.isUITesting || UITestConfiguration.shouldMockAI {
             return MockPhysiqueIllustrationService()
+        }
+
+        guard PersonalUseConfig.shouldUseRemoteIntelligence else {
+            return UnavailablePhysiqueIllustrationService()
         }
 
         #if canImport(Supabase)
