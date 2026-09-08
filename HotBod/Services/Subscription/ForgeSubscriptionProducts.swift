@@ -19,7 +19,7 @@ enum SubscriptionConfig {
     nonisolated(unsafe) static var unrestrictedAccessOverride: Bool?
 
     static var unrestrictedAccess: Bool {
-        unrestrictedAccessOverride ?? defaultUnrestrictedAccess
+        unrestrictedAccessOverride ?? (PersonalUseConfig.isEnabled || defaultUnrestrictedAccess)
     }
 }
 

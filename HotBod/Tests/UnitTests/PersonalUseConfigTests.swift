@@ -28,4 +28,18 @@ final class PersonalUseConfigTests: XCTestCase {
         XCTAssertFalse(PersonalUseConfig.shouldShowCloudAccountUI(supabaseConfigured: true))
         XCTAssertFalse(PersonalUseConfig.shouldShowCloudAccountUI(supabaseConfigured: false))
     }
+
+    func testUnrestrictedAccessTrueWhenPersonalUseEnabled() {
+        PersonalUseConfig.isEnabledOverride = true
+        SubscriptionConfig.unrestrictedAccessOverride = nil
+        defer { SubscriptionConfig.unrestrictedAccessOverride = nil }
+        XCTAssertTrue(SubscriptionConfig.unrestrictedAccess)
+    }
+
+    func testUnrestrictedAccessOverrideFalseWinsOverPersonalUse() {
+        PersonalUseConfig.isEnabledOverride = true
+        SubscriptionConfig.unrestrictedAccessOverride = false
+        defer { SubscriptionConfig.unrestrictedAccessOverride = nil }
+        XCTAssertFalse(SubscriptionConfig.unrestrictedAccess)
+    }
 }

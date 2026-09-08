@@ -1,3 +1,4 @@
+// swiftlint:disable file_length
 import XCTest
 @testable import HotBod
 
@@ -558,6 +559,21 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
         )
         XCTAssertNotEqual(env.todayWorkout?.id, originalId)
         XCTAssertNotEqual(env.todayWorkout?.exercises.map(\.exerciseId), originalExerciseIds)
+    }
+
+    func testPresentPaywallNoOpWhenPersonalUseEnabled() {
+        PersonalUseConfig.isEnabledOverride = true
+        SubscriptionConfig.unrestrictedAccessOverride = nil
+        defer {
+            PersonalUseConfig.isEnabledOverride = nil
+            SubscriptionConfig.unrestrictedAccessOverride = nil
+        }
+        let env = AppEnvironment.makeForTests()
+        env.presentPaywall(for: .unlimitedGeneration)
+        XCTAssertNil(env.paywallFeature)
+        XCTAssertTrue(env.canAccess(.coachWorkoutApply))
+        XCTAssertTrue(env.canAccess(.bodyPhotoHistory))
+        XCTAssertTrue(env.canAccess(.workoutExport))
     }
 
     func testRegression_nonPreferredDayUserRegenerateUsesStandardQuotaPath() async throws {
