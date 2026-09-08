@@ -225,6 +225,7 @@
 		B4D8F0542178A5DC0FB51826 /* MuscleRecoveryState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10085DA343F28F6CFF91AA7F /* MuscleRecoveryState.swift */; };
 		B4E24001AD25A6988DB6AE6D /* WorkoutGenerationAlgorithms.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF02642F042C58D4650CC126 /* WorkoutGenerationAlgorithms.swift */; };
 		B4FC5C810D9251D541FA026D /* PhysiqueAssessmentDiffEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94879435624903CEC6C1B91E /* PhysiqueAssessmentDiffEngine.swift */; };
+		B67FED7DC615846030E5A37E /* PersonalUseConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 471D6AC8E6E2D1192CC7FE07 /* PersonalUseConfigTests.swift */; };
 		B6FB7EB5D8795E30CC6334C0 /* TrainingSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26A58478E2D91B4F6C4FC25E /* TrainingSchedule.swift */; };
 		B717A927625814645875E7BF /* deadlift_demo.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = BEEB2CCD0B8C0ACEE41F9301 /* deadlift_demo.mp4 */; };
 		B79FABD08EEAF6047BDA77D2 /* ForgeColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DC06118A9CA23FA6D415758 /* ForgeColors.swift */; };
@@ -316,6 +317,7 @@
 		F8EAC0630836E7C0E74285EC /* ForceRecoverySessionGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A4B3817B9ADD791B519812 /* ForceRecoverySessionGenerationTests.swift */; };
 		F9B148E6C7492202AF3BA748 /* AddExerciseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E6FEE1E6ED011D28473B18A /* AddExerciseSheet.swift */; };
 		F9C6BEC8A55FA78D4C6827F0 /* PhysiqueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A61500446F5813949D0CEF2 /* PhysiqueView.swift */; };
+		FC15648901B493BAB7881F14 /* PersonalUseConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF44C281BA5C1D4FE53106C0 /* PersonalUseConfig.swift */; };
 		FC4131D73DDD4C19A1DB6A94 /* CoachAIResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = A781D9E564697E7C093A6EB4 /* CoachAIResult.swift */; };
 		FEAC950D49387FF85E118B55 /* AppEnvironment+BodyProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D2FB17189E5DA7EA8C0437 /* AppEnvironment+BodyProgress.swift */; };
 /* End PBXBuildFile section */
@@ -438,6 +440,7 @@
 		46534E73D53D45E985F4C232 /* SessionSetEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSetEditorTests.swift; sourceTree = "<group>"; };
 		46973687C99E6D27C8CADBB6 /* squat_demo.mp4 */ = {isa = PBXFileReference; path = squat_demo.mp4; sourceTree = "<group>"; };
 		46B09D3F151CC01F67CD1B8F /* LocalPhysiqueIllustrationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalPhysiqueIllustrationStore.swift; sourceTree = "<group>"; };
+		471D6AC8E6E2D1192CC7FE07 /* PersonalUseConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalUseConfigTests.swift; sourceTree = "<group>"; };
 		4751AB7CBFCF82A06C77ADD5 /* ServiceStubTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceStubTests.swift; sourceTree = "<group>"; };
 		47E97FF16DA04E22F3230FA8 /* RepositoryDomainTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryDomainTests.swift; sourceTree = "<group>"; };
 		47F98C557E3F8F2D463D7772 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -651,6 +654,7 @@
 		EE9C1C91ED87B69C491C6A06 /* ProteinTrackerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProteinTrackerUITests.swift; sourceTree = "<group>"; };
 		EECBA500DD98D6BAF02753A7 /* ForgeProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgeProgressBar.swift; sourceTree = "<group>"; };
 		EEF8F08447D6C1D180AD90D8 /* WorkoutSessionSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSessionSheets.swift; sourceTree = "<group>"; };
+		EF44C281BA5C1D4FE53106C0 /* PersonalUseConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalUseConfig.swift; sourceTree = "<group>"; };
 		EF6D7AE1043FAFDE70FC5C34 /* RemoteAIWorkoutService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteAIWorkoutService.swift; sourceTree = "<group>"; };
 		EFD0E03EE10266F16BE93CC0 /* FoodModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodModels.swift; sourceTree = "<group>"; };
 		F236A4511BBDA77AA466FC60 /* CoachModificationSafety.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachModificationSafety.swift; sourceTree = "<group>"; };
@@ -1140,6 +1144,7 @@
 				311F3C3CED44B71094990401 /* HotBodApp.swift */,
 				ED4794EB8C87A814FD5B4B7A /* HotBodAppDelegate.swift */,
 				A01C3807E7861035E628DBA3 /* LaunchRouteResolver.swift */,
+				EF44C281BA5C1D4FE53106C0 /* PersonalUseConfig.swift */,
 				CB66D18C1466BEF7B5D1FF5E /* PlistSecrets.swift */,
 				ABFF4AB31DEC595FF13B88DF /* SupabaseConfig.swift */,
 				1A6E43B462E7918DE4F6D010 /* UITestConfiguration.swift */,
@@ -1172,6 +1177,7 @@
 				AECC0C9A9B3F9B78734CFCD1 /* P1ParityFeatureTests.swift */,
 				67D9C9D0FD13286A0220F18D /* P2ParityFeatureTests.swift */,
 				2A05BDCC6B9A250A63D9C065 /* P3ParityFeatureTests.swift */,
+				471D6AC8E6E2D1192CC7FE07 /* PersonalUseConfigTests.swift */,
 				3B8F1113071F16F825F749A5 /* Phase2AlgorithmsTests.swift */,
 				FF084D9F72EAB6E308214FA9 /* PhysiqueArchetypeTests.swift */,
 				37233FBA802AE701E8DDF1D3 /* PhysiqueAssessmentDiffTests.swift */,
@@ -1608,6 +1614,7 @@
 				93B5CAB6B99F8F9AA481E6FC /* P2ParityFeatureTests.swift in Sources */,
 				59C06829B5FB77D4651E637F /* P3ParityFeatureTests.swift in Sources */,
 				52B4483242F079EC45CAFC42 /* PersistenceTestHelpers.swift in Sources */,
+				B67FED7DC615846030E5A37E /* PersonalUseConfigTests.swift in Sources */,
 				CD714A74BCF9CEDA7699C92F /* Phase2AlgorithmsTests.swift in Sources */,
 				F400186AFF545E5920EE805A /* PhysiqueArchetypeTests.swift in Sources */,
 				E1AE32CFA9C80858AFF29C37 /* PhysiqueAssessmentDiffTests.swift in Sources */,
@@ -1767,6 +1774,7 @@
 				58EEF1F7250E14E7E70D9492 /* OnboardingProfileEditing.swift in Sources */,
 				3E8622E62A543ADBD97C37E4 /* OnboardingViews.swift in Sources */,
 				3B74429D4DF706DF7E0775DE /* PersistenceHelper.swift in Sources */,
+				FC15648901B493BAB7881F14 /* PersonalUseConfig.swift in Sources */,
 				4020743C737A392DD8EF4890 /* Phase2Algorithms.swift in Sources */,
 				64BA55FDC84429DFC9374E33 /* PhoneWatchSessionBridge.swift in Sources */,
 				0324C5CEAB8F1E7AA823662A /* PhysiqueArchetypeCatalog.swift in Sources */,
