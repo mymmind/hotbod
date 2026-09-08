@@ -79,21 +79,11 @@ struct SettingsView: View {
                             .foregroundStyle(ForgeColors.destructive)
                     }
 
-                    if environment.isSupabaseConfigured {
+                    if PersonalUseConfig.shouldShowCloudAccountUI(
+                        supabaseConfigured: environment.isSupabaseConfigured
+                    ) {
                         accountSection
                         cloudSection
-                    } else {
-                        SettingsComponents.section(title: "Cloud", subtitle: "Optional sync") {
-#if DEBUG
-                            Text("Copy SupabaseConfig.plist.example to SupabaseConfig.plist and add your project URL + anon key.")
-                                .font(ForgeTypography.caption)
-                                .foregroundStyle(ForgeColors.textSecondary)
-#else
-                            Text("Cloud sync is not available in this build.")
-                                .font(ForgeTypography.caption)
-                                .foregroundStyle(ForgeColors.textSecondary)
-#endif
-                        }
                     }
 
                     trainingSection

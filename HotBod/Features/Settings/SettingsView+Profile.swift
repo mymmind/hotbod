@@ -69,7 +69,7 @@ extension SettingsView {
             SettingsComponents.valueRow(
                 label: "Plan",
                 value: SubscriptionConfig.unrestrictedAccess
-                    ? "Full access (dev)"
+                    ? "Full access"
                     : (environment.isPro ? "Pro" : "Free (\(environment.remainingFreeRegenerations) regen left)")
             )
             if !SubscriptionConfig.unrestrictedAccess, !environment.isPro {
@@ -114,7 +114,9 @@ extension SettingsView {
                     .font(ForgeTypography.caption)
                     .foregroundStyle(ForgeColors.destructive)
             }
-            if !environment.isSupabaseConfigured {
+            if !PersonalUseConfig.shouldShowCloudAccountUI(
+                supabaseConfigured: environment.isSupabaseConfigured
+            ) {
                 SettingsComponents.divider
                 deleteDataActionRow(title: "Delete All Data", identifier: "settings.deleteAllData")
                 if let deleteError {
