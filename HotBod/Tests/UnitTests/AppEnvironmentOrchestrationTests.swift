@@ -54,10 +54,13 @@ final class AppEnvironmentBootstrapTests: XCTestCase {
         XCTAssertEqual(env.activePhysiqueAssessment?.id, assessment.id)
     }
 
-    func testBootstrapLoadsRecoveryStates() async throws {
+    func testRegression_bootstrapLoadsPersistedRecoveryStates() async throws {
         var repos = TestRepositories.empty()
         var states = RecoveryCalculator.defaultStates()
-        states[0].recoveryPercentage = 55
+        states[0] = MuscleRecoveryState(
+            muscleGroup: states[0].muscleGroup,
+            recoveryPercentage: 55
+        )
         try await repos.recovery.saveRecoveryStates(states)
 
         let env = AppEnvironment.makeForTests(repos: repos)
