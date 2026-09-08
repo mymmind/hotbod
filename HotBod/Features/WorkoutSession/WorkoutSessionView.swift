@@ -233,7 +233,7 @@ struct WorkoutSessionView: View {
         ) {
             Button("End & Save Progress") { finishWorkout() }
                 .accessibilityIdentifier("session.endWorkout.save")
-            Button("Keep Training", role: .cancel) {
+            Button("Keep Training") {
                 keepTrainingAfterEndConfirmation()
             }
             .accessibilityIdentifier("session.endWorkout.keepTraining")

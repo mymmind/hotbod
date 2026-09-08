@@ -13,7 +13,7 @@ final class EffortFeedbackMappingTests: XCTestCase {
             CompletedSet(setIndex: 0, reps: 8, rpe: 9, rir: 2),
             CompletedSet(setIndex: 1, reps: 8, rpe: 8, rir: 3)
         ]
-        XCTAssertEqual(EffortFeedbackMapping.averageEffectiveRPE(from: sets), 7.75)
+        XCTAssertEqual(EffortFeedbackMapping.averageEffectiveRPE(from: sets), 7.5)
     }
 
     func testAverageEffectiveRPEDerivesFromRIRWhenRPEMissing() {

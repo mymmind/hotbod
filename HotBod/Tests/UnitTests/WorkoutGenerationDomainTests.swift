@@ -581,14 +581,15 @@ final class FatigueAwareValidationTests: XCTestCase {
     }
 
     func testHighVolumeSoftCap() {
-        let catalog = (0..<8).map { i in
+        let catalog = (0..<14).map { i in
             let muscle: MuscleGroup = i % 2 == 0 ? .chest : .back
             return makeTestExercise(id: "exercise_\(i)", primaryMuscles: [muscle])
         }
         let manyExercises = catalog.enumerated().map { index, exercise in
             PlannedExercise(
                 exerciseId: exercise.id, orderIndex: index,
-                targetSets: (0..<20).map { _ in PlannedSet(targetRepsMin: 8, targetRepsMax: 10) }
+                targetSets: (0..<GenerationConstants.Validation.maxSetsPerExercise)
+                    .map { _ in PlannedSet(targetRepsMin: 8, targetRepsMax: 10) }
             )
         }
         

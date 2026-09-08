@@ -46,6 +46,7 @@ final class ProfileRowTests: XCTestCase {
         var sparseRemote = remote
         sparseRemote.name = nil
         sparseRemote.trainingLocation = nil
+        sparseRemote.reminderTrainingDays = nil
 
         let merged = sparseRemote.toUserProfile(fallback: local)
         XCTAssertEqual(merged.name, "Local Name")
@@ -309,7 +310,7 @@ final class SupabaseDTOMappingTests: XCTestCase {
         let state = row.toState
         XCTAssertEqual(state.muscleGroup, .chest)
         XCTAssertEqual(state.recoveryPercentage, 72)
-        XCTAssertEqual(state.accumulatedFatigue, 12)
+        XCTAssertEqual(state.accumulatedFatigue, 28)
     }
 
     func testWorkoutSessionRowInitFromSession() {

@@ -276,8 +276,8 @@ final class IntegrationFlowTests: XCTestCase {
     XCTAssertTrue(applied)
     XCTAssertEqual(env.todayWorkout?.exercises.count, proposed.exercises.count)
     XCTAssertLessThan(
-      env.todayWorkout?.exercises.first?.targetSets.count ?? 0,
-      current.exercises.first?.targetSets.count ?? 0
+      VolumeCalculator.totalSets(exercises: env.todayWorkout?.exercises ?? []),
+      VolumeCalculator.totalSets(exercises: current.exercises)
     )
     XCTAssertEqual(env.coachWorkoutUpdateMessage, "Workout updated")
   }
@@ -708,12 +708,13 @@ final class IntegrationFlowTests: XCTestCase {
   }
 
   private func makeShorterCoachWorkout(from current: GeneratedWorkout) -> GeneratedWorkout {
-    let trimmedExercises = current.exercises.map { exercise -> PlannedExercise in
-      var copy = exercise
-      if copy.targetSets.count > 1 {
-        copy.targetSets = Array(copy.targetSets.dropLast())
-      }
-      return copy
+    var trimmedExercises = current.exercises
+    if let exerciseIndex = trimmedExercises.firstIndex(where: {
+      $0.targetSets.filter { !$0.isWarmup }.count > GenerationConstants.Validation.minSetsPerExercise
+    }), let setIndex = trimmedExercises[exerciseIndex].targetSets.lastIndex(where: { !$0.isWarmup }) {
+      trimmedExercises[exerciseIndex].targetSets.remove(at: setIndex)
+    } else if trimmedExercises.count > GenerationConstants.Session.minStandardExercises {
+      trimmedExercises.removeLast()
     }
     return GeneratedWorkout(
       id: UUID(),

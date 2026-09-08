@@ -60,9 +60,9 @@ struct WorkoutSessionPage {
     return app.buttons["End & Save Progress"]
   }
   var keepTrainingButton: XCUIElement {
-    let byId = app.buttons["session.endWorkout.keepTraining"]
+    let byId = app.buttons["session.endWorkout.keepTraining"].firstMatch
     if byId.exists { return byId }
-    return app.buttons["Keep Training"]
+    return app.buttons["Keep Training"].firstMatch
   }
 
   var exerciseComplete: XCUIElement {

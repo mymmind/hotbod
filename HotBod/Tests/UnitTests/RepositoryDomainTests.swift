@@ -199,11 +199,14 @@ final class LocalRecoveryRepositoryTests: XCTestCase {
         }
     }
 
-    func testSaveAndFetchRecoveryStates() async throws {
+    func testRegression_saveAndFetchCanonicalRecoveryStates() async throws {
         try await PersistenceTestHelpers.withIsolatedPersistence {
             let repo = LocalRecoveryRepository()
             var states = RecoveryCalculator.defaultStates()
-            states[0].recoveryPercentage = 42
+            states[0] = MuscleRecoveryState(
+                muscleGroup: states[0].muscleGroup,
+                recoveryPercentage: 42
+            )
             try await repo.saveRecoveryStates(states)
             let fetched = try await repo.fetchRecoveryStates()
             XCTAssertEqual(fetched.first?.recoveryPercentage, 42)
