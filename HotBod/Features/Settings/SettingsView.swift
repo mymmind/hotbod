@@ -30,6 +30,10 @@ struct SettingsView: View {
     @State var showDeleteDataConfirmation = false
     @State var isDeletingAccount = false
     @State var deleteError: String?
+    @State var isExporting = false
+    @State var exportError: String?
+    @State var showExportShareSheet = false
+    @State var exportShareItems: [Any] = []
 
     let sessionLengths = GenerationConstants.Session.preferredSessionLengthOptions
 
@@ -121,6 +125,9 @@ struct SettingsView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text(deleteConfirmationMessage)
+        }
+        .sheet(isPresented: $showExportShareSheet) {
+            ShareSheet(items: exportShareItems)
         }
         .onAppear(perform: loadDraft)
         .accessibilityIdentifier("settings.root")

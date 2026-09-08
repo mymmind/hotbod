@@ -98,6 +98,22 @@ extension SettingsView {
             SettingsComponents.valueRow(label: "Version", value: "1.0.0")
             SettingsComponents.divider
             SettingsComponents.valueRow(label: "Name", value: AppConfig.appName)
+            SettingsComponents.divider
+            SettingsComponents.actionRow(
+                title: isExporting ? L10n.Settings.exportTrainingDataExporting : L10n.Settings.exportTrainingData
+            ) {
+                Task { await exportTrainingData() }
+            }
+            .disabled(isExporting)
+            .accessibilityIdentifier("settings.exportTrainingData")
+            Text(L10n.Settings.exportTrainingDataHint)
+                .font(ForgeTypography.caption)
+                .foregroundStyle(ForgeColors.muted)
+            if let exportError {
+                Text(exportError)
+                    .font(ForgeTypography.caption)
+                    .foregroundStyle(ForgeColors.destructive)
+            }
             if !environment.isSupabaseConfigured {
                 SettingsComponents.divider
                 deleteDataActionRow(title: "Delete All Data", identifier: "settings.deleteAllData")
@@ -178,6 +194,20 @@ extension SettingsView {
             dismiss()
         case .routerOverlay:
             router.dismissRoute()
+        }
+    }
+
+    func exportTrainingData() async {
+        guard !isExporting else { return }
+        exportError = nil
+        isExporting = true
+        defer { isExporting = false }
+        do {
+            let export = try await environment.makeTrainingDataExport()
+            exportShareItems = [export.markdown, export.fileURL]
+            showExportShareSheet = true
+        } catch {
+            exportError = L10n.Settings.exportTrainingDataFailed
         }
     }
 

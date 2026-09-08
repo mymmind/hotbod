@@ -411,6 +411,50 @@
     "SETS" : {
 
     },
+    "settings.exportTrainingData" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export training data"
+          }
+        }
+      }
+    },
+    "settings.exportTrainingData.exporting" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exporting…"
+          }
+        }
+      }
+    },
+    "settings.exportTrainingData.failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export could not be created. Try again."
+          }
+        }
+      }
+    },
+    "settings.exportTrainingData.hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Workouts, protein, and recovery as markdown. Copy or share the file."
+          }
+        }
+      }
+    },
     "settings.integrations.healthExport" : {
       "extractionState" : "manual",
       "localizations" : {

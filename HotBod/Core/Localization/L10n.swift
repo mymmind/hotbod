@@ -9,6 +9,10 @@ enum L10n {
         static let healthExportHint = String(localized: "settings.integrations.healthExport.hint")
         static let stravaTitle = String(localized: "settings.integrations.strava")
         static let stravaComingSoon = String(localized: "settings.integrations.strava.comingSoon")
+        static let exportTrainingData = String(localized: "settings.exportTrainingData")
+        static let exportTrainingDataHint = String(localized: "settings.exportTrainingData.hint")
+        static let exportTrainingDataExporting = String(localized: "settings.exportTrainingData.exporting")
+        static let exportTrainingDataFailed = String(localized: "settings.exportTrainingData.failed")
     }
 
     enum Workout {
