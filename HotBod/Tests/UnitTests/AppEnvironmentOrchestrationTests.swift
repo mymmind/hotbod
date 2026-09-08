@@ -602,7 +602,6 @@ final class AppEnvironmentLifecycleTests: XCTestCase {
             subscriptionService: ForgeSubscriptionService(grantProForTesting: false)
         )
         try await env.seedOnboardedProfile(profile)
-        await env.bootstrap()
         env.programState.weeklyRegenerationCount = FreeTierLimits.weeklyRegenerations
         try await env.programStateRepository.saveState(env.programState)
         XCTAssertFalse(env.isPro)
