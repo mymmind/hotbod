@@ -341,6 +341,7 @@ enum GenerationConstants {
         static let minPreviousWindowSets = 10
         static let minCurrentWindowSetsForDrop = 5
         static let volumeDropThreshold = 0.3
+        static let loadMultiplier = 0.9
         static let reEntryWeightMultiplier = 0.9
         static let reEntryRPETarget = 7.0
         /// Schoenfeld-style scheduled reduced-volume week after sustained high-volume compliance.
