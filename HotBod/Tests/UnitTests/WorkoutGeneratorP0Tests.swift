@@ -230,4 +230,56 @@ final class WorkoutGeneratorP0Tests: XCTestCase {
         let decoded = try JSONDecoder().decode(CompletedSet.self, from: stripped)
         XCTAssertEqual(decoded.effortFeedbackStatus, .unknown)
     }
+
+    func testRegression_skippedEffortHighEffortDeloadTrust() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        func makeStats(status: EffortFeedbackStatus) -> UserExerciseStats {
+            var stats = UserExerciseStats(
+                exerciseId: "bench_press",
+                recentSets: (0..<3).map { index in
+                    CompletedSet(
+                        setIndex: index,
+                        weightKg: 100,
+                        reps: 10,
+                        rpe: 10,
+                        rir: 0,
+                        completedAt: now,
+                        effortFeedbackStatus: status
+                    )
+                },
+                preferredRepRangeMin: 8,
+                preferredRepRangeMax: 10
+            )
+            stats.weeklyVolume = []
+            stats.consecutiveHighVolumeWeeks = 0
+            return stats
+        }
+
+        let explicitUntrusted = DeloadDetector.analyzeDeloadNeed(
+            stats: makeStats(status: .explicit),
+            volumeHistory: [],
+            consecutiveWeeks: 0,
+            now: now,
+            trustHistoricEffortFeedback: false
+        )
+        XCTAssertTrue(explicitUntrusted.isDeloadRecommended)
+
+        let unknownUntrusted = DeloadDetector.analyzeDeloadNeed(
+            stats: makeStats(status: .unknown),
+            volumeHistory: [],
+            consecutiveWeeks: 0,
+            now: now,
+            trustHistoricEffortFeedback: false
+        )
+        XCTAssertFalse(unknownUntrusted.isDeloadRecommended)
+
+        let unknownTrusted = DeloadDetector.analyzeDeloadNeed(
+            stats: makeStats(status: .unknown),
+            volumeHistory: [],
+            consecutiveWeeks: 0,
+            now: now,
+            trustHistoricEffortFeedback: true
+        )
+        XCTAssertTrue(unknownTrusted.isDeloadRecommended)
+    }
 }
