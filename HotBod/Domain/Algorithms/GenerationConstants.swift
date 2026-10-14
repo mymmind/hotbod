@@ -208,7 +208,6 @@ enum GenerationConstants {
         static let deloadSetMultiplier = 0.6
         static let durationWorkSecondsPerSet = 45
         static let transitionSecondsPerExercise = 120
-        static let durationWarmupSeconds = 300
         static let durationOverTargetFraction = 1.10
         static let durationWorkMinutesPerSet = 2
         static let durationWarmupMinutes = 5

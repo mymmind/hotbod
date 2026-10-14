@@ -309,6 +309,7 @@
 		F042CB7CC0A48FE4C5CC3C10 /* PhysiqueDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD01D4C38E0E9636ECD81278 /* PhysiqueDomainTests.swift */; };
 		F0E956BEEF1A3E5C9AD09036 /* WorkoutGenerationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C85EC33D4FB65D2E8D1E237 /* WorkoutGenerationService.swift */; };
 		F15AE925FAD3635186F56B54 /* PhysiqueAssessment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 570A353760744D5E246AF7EE /* PhysiqueAssessment.swift */; };
+		F2276DE9B9240C5DA991E13C /* SessionDurationBudget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D6204F2FDC6E3BCA8FD61EC /* SessionDurationBudget.swift */; };
 		F28F65E6F3FAC9DFCDAE90D4 /* CoachSafetyPropertyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 347255710E36AD87F59F7E67 /* CoachSafetyPropertyTests.swift */; };
 		F3ED84E0965DAF164F66617F /* WorkoutStartCountdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD61BFA8A6A8D4233D37191 /* WorkoutStartCountdown.swift */; };
 		F400186AFF545E5920EE805A /* PhysiqueArchetypeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF084D9F72EAB6E308214FA9 /* PhysiqueArchetypeTests.swift */; };
@@ -378,6 +379,7 @@
 		0A61500446F5813949D0CEF2 /* PhysiqueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueView.swift; sourceTree = "<group>"; };
 		0A8FEDCEA0F1A883B4A18E12 /* PhysiqueAssessmentHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueAssessmentHistoryView.swift; sourceTree = "<group>"; };
 		0AD61BFA8A6A8D4233D37191 /* WorkoutStartCountdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutStartCountdown.swift; sourceTree = "<group>"; };
+		0D6204F2FDC6E3BCA8FD61EC /* SessionDurationBudget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDurationBudget.swift; sourceTree = "<group>"; };
 		0E0F5C77050501D0C2C545A5 /* MaxEffortPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaxEffortPlanner.swift; sourceTree = "<group>"; };
 		0F975C2BC1E3FF1291E88CA7 /* ForgeSpacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgeSpacing.swift; sourceTree = "<group>"; };
 		10085DA343F28F6CFF91AA7F /* MuscleRecoveryState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleRecoveryState.swift; sourceTree = "<group>"; };
@@ -1055,6 +1057,7 @@
 				4B17727FD0F7A1FE271C8D25 /* Phase2Algorithms.swift */,
 				49235F6A74C62C94E9C66D3F /* PostSetActionPlanner.swift */,
 				5A0B81BF2A1210A831762B4E /* RestTimerFeedbackPlanner.swift */,
+				0D6204F2FDC6E3BCA8FD61EC /* SessionDurationBudget.swift */,
 				A21CC6DF27C54FE6517B0EC6 /* SessionExercisePlanner.swift */,
 				D7986BB6C8625990B6DCD808 /* SessionLoadPlanner.swift */,
 				9C7631B7AC59FA75C89FFA26 /* SessionSetEditor.swift */,
@@ -1835,6 +1838,7 @@
 				CE6F67CB9F94B9563062B7DA /* RemotePhysiqueIllustrationService.swift in Sources */,
 				AE2313D59B0460D21719F269 /* RepositoryProtocols.swift in Sources */,
 				D37F09C44A6BB4001BD84B78 /* RestTimerFeedbackPlanner.swift in Sources */,
+				F2276DE9B9240C5DA991E13C /* SessionDurationBudget.swift in Sources */,
 				23DED7644F2AD97FCCCE10CB /* SessionExercisePlanner.swift in Sources */,
 				FF61336BF82D36CD6CA25967 /* SessionLoadPlanner.swift in Sources */,
 				959E70C3D3A41172ADD08B24 /* SessionSetEditor.swift in Sources */,

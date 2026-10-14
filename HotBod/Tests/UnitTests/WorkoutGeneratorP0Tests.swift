@@ -322,4 +322,123 @@ final class WorkoutGeneratorP0Tests: XCTestCase {
         XCTAssertEqual(skipped.effortFeedbackStatus, .explicit)
         XCTAssertEqual(skipped.rpe, 9)
     }
+
+    func testRegression_durationBudget() {
+        let squatA = makeTestExercise(id: "squat_a", primaryMuscles: [.quads], pattern: .squat, mechanics: .compound, equipment: [.barbell])
+        let squatB = makeTestExercise(id: "squat_b", primaryMuscles: [.quads], pattern: .squat, mechanics: .compound, equipment: [.barbell])
+        let curl = makeTestExercise(id: "leg_curl", primaryMuscles: [.hamstrings], pattern: .isolation, mechanics: .isolation, equipment: [.machine])
+        let core = makeTestExercise(id: "plank", primaryMuscles: [.abs], pattern: .isolation, mechanics: .isolation, equipment: [.bodyweight])
+        let map = [squatA.id: squatA, squatB.id: squatB, curl.id: curl, core.id: core]
+
+        func workingSets(_ count: Int, warmup: Bool) -> [PlannedSet] {
+            var sets: [PlannedSet] = []
+            if warmup {
+                sets.append(PlannedSet(targetRepsMin: 5, targetRepsMax: 8, isWarmup: true))
+            }
+            sets.append(contentsOf: (0..<count).map { _ in
+                PlannedSet(targetRepsMin: 8, targetRepsMax: 12)
+            })
+            return sets
+        }
+
+        var full: [PlannedExercise] = [
+            PlannedExercise(exerciseId: squatA.id, orderIndex: 0, targetSets: workingSets(6, warmup: true), restSeconds: 120),
+            PlannedExercise(exerciseId: squatB.id, orderIndex: 1, targetSets: workingSets(6, warmup: true), restSeconds: 120),
+            PlannedExercise(exerciseId: curl.id, orderIndex: 2, targetSets: workingSets(5, warmup: true), restSeconds: 75)
+        ]
+        let beforeOptional = WorkoutGenerationAlgorithms.estimateDurationMinutes(planned: full)
+        XCTAssertGreaterThanOrEqual(beforeOptional, 45)
+
+        full.append(PlannedExercise(
+            exerciseId: core.id, orderIndex: 3,
+            targetSets: (0..<4).map { _ in PlannedSet(targetRepsMin: 10, targetRepsMax: 15) },
+            restSeconds: 30
+        ))
+        full[0].targetSets.append(PlannedSet(targetRepsMin: 10, targetRepsMax: 15, isCooldown: true))
+
+        let result = SessionDurationBudget.apply(
+            SessionDurationBudget.Input(
+                planned: full,
+                scores: [squatA.id: 10, squatB.id: 10, curl.id: 4, core.id: 1],
+                targetMuscles: [.quads, .hamstrings],
+                exerciseMap: map,
+                targetDurationMinutes: 45,
+                coreFinisherExerciseId: core.id,
+                conditioningExerciseId: nil
+            )
+        )
+        XCTAssertFalse(result.planned.contains(where: { $0.exerciseId == core.id }))
+        XCTAssertFalse(result.planned.contains(where: { $0.targetSets.contains(where: \.isCooldown) }))
+        let firstWarmups = result.planned[0].targetSets.filter(\.isWarmup).count
+        XCTAssertGreaterThan(firstWarmups, 0)
+        if result.planned.count > 1 {
+            XCTAssertFalse(result.planned[1].targetSets.contains(where: \.isWarmup))
+        }
+        let minutes = WorkoutGenerationAlgorithms.estimateDurationMinutes(planned: result.planned)
+        let suffix = SessionDurationBudget.rationaleSuffix(
+            removedCooldown: result.removedCooldown,
+            removedConditioning: result.removedConditioning,
+            removedCore: result.removedCore,
+            removedExtraWarmups: result.removedExtraWarmups,
+            removedAccessory: result.removedAccessory,
+            targetMinutes: 45,
+            estimatedMinutes: minutes
+        )
+        if minutes > 45 {
+            XCTAssertTrue(suffix?.contains("Priority work exceeds the 45 min target.") == true)
+        } else {
+            XCTAssertLessThanOrEqual(minutes, 45)
+        }
+        XCTAssertTrue(suffix?.contains("core finisher") == true)
+
+        let again = SessionDurationBudget.apply(
+            SessionDurationBudget.Input(
+                planned: result.planned,
+                scores: [squatA.id: 10, squatB.id: 10, curl.id: 4],
+                targetMuscles: [.quads, .hamstrings],
+                exerciseMap: map,
+                targetDurationMinutes: 45,
+                coreFinisherExerciseId: nil,
+                conditioningExerciseId: nil
+            )
+        )
+        XCTAssertEqual(again.planned.map(\.exerciseId), result.planned.map(\.exerciseId))
+        XCTAssertFalse(again.removedCooldown)
+        XCTAssertFalse(again.removedCore)
+
+        var oneSet = [PlannedExercise(
+            exerciseId: squatA.id, orderIndex: 0,
+            targetSets: [PlannedSet(targetRepsMin: 8, targetRepsMax: 12, isWarmup: true)],
+            restSeconds: 30
+        )]
+        let withPad = WorkoutGenerationAlgorithms.estimateDurationMinutes(planned: oneSet)
+        oneSet[0].targetSets.removeAll(where: \.isWarmup)
+        let without = WorkoutGenerationAlgorithms.estimateDurationMinutes(planned: oneSet)
+        XCTAssertLessThan(without, withPad)
+
+        XCTAssertEqual(
+            SessionDurationBudget.rationaleSuffix(
+                removedCooldown: true, removedConditioning: false, removedCore: false,
+                removedExtraWarmups: false, removedAccessory: false,
+                targetMinutes: 45, estimatedMinutes: 40
+            ),
+            "Adjusted to fit 45 min by removing cooldown."
+        )
+        XCTAssertEqual(
+            SessionDurationBudget.rationaleSuffix(
+                removedCooldown: true, removedConditioning: true, removedCore: true,
+                removedExtraWarmups: false, removedAccessory: false,
+                targetMinutes: 45, estimatedMinutes: 40
+            ),
+            "Adjusted to fit 45 min by removing cooldown, conditioning, and core finisher."
+        )
+        XCTAssertEqual(
+            SessionDurationBudget.rationaleSuffix(
+                removedCooldown: false, removedConditioning: false, removedCore: false,
+                removedExtraWarmups: false, removedAccessory: false,
+                targetMinutes: 45, estimatedMinutes: 52
+            ),
+            "Estimated 52 min. Priority work exceeds the 45 min target."
+        )
+    }
 }

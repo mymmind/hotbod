@@ -317,7 +317,7 @@ enum WorkoutGenerationAlgorithms {
             return partial + betweenSets
         }
         let transitionSeconds = max(0, planned.count - 1) * GenerationConstants.Session.transitionSecondsPerExercise
-        let totalSeconds = workSeconds + restSeconds + transitionSeconds + GenerationConstants.Session.durationWarmupSeconds
+        let totalSeconds = workSeconds + restSeconds + transitionSeconds
         return Int(ceil(Double(totalSeconds) / 60.0))
     }
 
@@ -342,7 +342,7 @@ enum WorkoutGenerationAlgorithms {
         }
     }
 
-    private static func indexOfLowestScoredIsolationToDrop(
+    static func indexOfLowestScoredIsolationToDrop(
         planned: [PlannedExercise],
         scores: [String: Double],
         targetMuscles: [MuscleGroup],
