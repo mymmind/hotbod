@@ -263,7 +263,10 @@ final class WorkoutGenerationFeedbackTests: XCTestCase {
             profile.includeCooldown = false
             profile.cardioBlockPlacement = .none
 
-            let workout = try await service.generate(input: makeGenerationInput(profile: profile, focus: .push))
+            // Long target keeps the finisher inside the budget.
+            let workout = try await service.generate(
+                input: makeGenerationInput(profile: profile, focus: .push, targetDurationMinutes: 120)
+            )
             let finishers = workout.exercises.filter { CoreFinisherPlanner.allowlist.contains($0.exerciseId) }
             XCTAssertEqual(finishers.count, 1)
             XCTAssertEqual(workout.exercises.last?.exerciseId, finishers.first?.exerciseId)
@@ -272,13 +275,17 @@ final class WorkoutGenerationFeedbackTests: XCTestCase {
         }
     }
 
-    private func makeGenerationInput(profile: UserProfile, focus: SplitDayFocus) -> WorkoutGenerationInput {
+    private func makeGenerationInput(
+        profile: UserProfile,
+        focus: SplitDayFocus,
+        targetDurationMinutes: Int = 45
+    ) -> WorkoutGenerationInput {
         WorkoutGenerationInput(
             userProfile: profile,
             goal: profile.goal,
             experienceLevel: .intermediate,
             availableEquipment: Equipment.allCases,
-            targetDurationMinutes: 45,
+            targetDurationMinutes: targetDurationMinutes,
             preferredMuscleGroups: [],
             avoidedMuscleGroups: [],
             injuries: [],
