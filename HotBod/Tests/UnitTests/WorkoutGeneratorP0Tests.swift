@@ -61,4 +61,95 @@ final class WorkoutGeneratorP0Tests: XCTestCase {
         cold.lastWeightKg = nil
         XCTAssertEqual(SessionLoadPlanner.plannedWeightKg(cold), 20)
     }
+
+    func testRegression_doubleProgressionGeneratedWorkoutMatchesPlanner() async throws {
+        let catalog = try await LocalExerciseRepository().fetchAll()
+        let stats = catalog.map { exercise in
+            var stat = UserExerciseStats(
+                exerciseId: exercise.id,
+                lastWeightKg: 65,
+                suggestedNextWeightKg: 67.5,
+                preferredRepRangeMin: 8,
+                preferredRepRangeMax: 12
+            )
+            stat.volumeTrend = .increasing
+            return stat
+        }
+        let profile = UserProfile.empty()
+        let input = WorkoutGenerationInput(
+            userProfile: profile,
+            goal: profile.goal,
+            experienceLevel: profile.experienceLevel,
+            availableEquipment: profile.availableEquipment,
+            targetDurationMinutes: 45,
+            preferredMuscleGroups: [],
+            avoidedMuscleGroups: [],
+            injuries: [],
+            recentWorkouts: [],
+            muscleRecovery: Dictionary(uniqueKeysWithValues: MuscleGroup.allCases.map { ($0, 100.0) }),
+            exerciseStats: stats,
+            userPreferences: WorkoutPreferences(exerciseVariability: .consistent),
+            readiness: ReadinessInput(soreness: .none),
+            splitDayFocus: .push
+        )
+        let service = RulesWorkoutGenerationService()
+        let first = try await service.generate(input: input)
+        let second = try await service.generate(input: input)
+        let map = ExerciseCatalog.indexedById(catalog)
+
+        func assertMatchesPlanner(_ workout: GeneratedWorkout) {
+            for planned in workout.exercises {
+                guard let exercise = map[planned.exerciseId],
+                      let stat = stats.first(where: { $0.exerciseId == exercise.id }) else { continue }
+                let expected = SessionLoadPlanner.plannedWeightKg(
+                    SessionLoadPlanner.Input(
+                        suggestedNextWeightKg: stat.suggestedNextWeightKg,
+                        lastWeightKg: stat.lastWeightKg,
+                        sessionMode: workout.sessionMode,
+                        isInDeloadWeek: stat.isInDeloadWeek,
+                        returningFromBreak: stat.returningFromBreak,
+                        equipment: exercise.equipment,
+                        ceilings: profile.maxAvailableWeightKg,
+                        fallbackWeightKg: 0
+                    )
+                )
+                for set in planned.targetSets where !set.isWarmup && !set.isCooldown {
+                    guard let weight = set.targetWeightKg else { continue }
+                    XCTAssertEqual(weight, expected, accuracy: 0.01, "\(exercise.id)")
+                }
+            }
+        }
+
+        assertMatchesPlanner(first)
+        assertMatchesPlanner(second)
+        let firstWeights = first.exercises.flatMap { $0.targetSets.compactMap(\.targetWeightKg) }
+        let secondWeights = second.exercises.flatMap { $0.targetSets.compactMap(\.targetWeightKg) }
+        XCTAssertEqual(firstWeights, secondWeights)
+
+        let bench = try XCTUnwrap(map["bench_press"])
+        let benchStats = try XCTUnwrap(stats.first { $0.exerciseId == "bench_press" })
+        let manual = SessionExercisePlanner.makeWorkoutExercise(
+            exercise: bench,
+            orderIndex: 0,
+            experience: .intermediate,
+            goal: .buildMuscle,
+            bodyWeightKg: 80,
+            stats: benchStats,
+            sessionMode: .standard
+        )
+        let manualWeight = try XCTUnwrap(manual.plannedSets.first { !$0.isWarmup }?.targetWeightKg)
+        let expected = SessionLoadPlanner.plannedWeightKg(
+            SessionLoadPlanner.Input(
+                suggestedNextWeightKg: 67.5,
+                lastWeightKg: 65,
+                sessionMode: .standard,
+                isInDeloadWeek: false,
+                returningFromBreak: false,
+                equipment: bench.equipment,
+                ceilings: [:],
+                fallbackWeightKg: 0
+            )
+        )
+        XCTAssertEqual(manualWeight, expected, accuracy: 0.01)
+    }
 }

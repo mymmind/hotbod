@@ -8,6 +8,7 @@ enum SessionExercisePlanner {
         goal: TrainingGoal,
         bodyWeightKg: Double,
         stats: UserExerciseStats?,
+        sessionMode: SessionMode = .standard,
         weightCeilings: [Equipment: Double] = [:]
     ) -> WorkoutExercise {
         let prescription = exercise.resolvedPrescriptionType
@@ -44,16 +45,21 @@ enum SessionExercisePlanner {
             )
         )
 
-        var weight = stats?.planningWeightKg
-            ?? ProgressiveOverload.suggestedStartWeight(
-                for: exercise,
-                bodyweight: bodyWeightKg,
-                experience: experience
+        let weight = SessionLoadPlanner.plannedWeightKg(
+            SessionLoadPlanner.Input(
+                suggestedNextWeightKg: stats?.suggestedNextWeightKg,
+                lastWeightKg: stats?.lastWeightKg,
+                sessionMode: sessionMode,
+                isInDeloadWeek: stats?.isInDeloadWeek == true,
+                returningFromBreak: stats?.returningFromBreak == true,
+                equipment: exercise.equipment,
+                ceilings: weightCeilings,
+                fallbackWeightKg: ProgressiveOverload.suggestedStartWeight(
+                    for: exercise,
+                    bodyweight: bodyWeightKg,
+                    experience: experience
+                )
             )
-        weight = GenerationConstants.Weight.roundToAvailable(
-            weight,
-            equipment: exercise.equipment,
-            ceilings: weightCeilings
         )
         let loadMode = exercise.resolvedLoadTrackingMode
         let plannedWeight: Double? = loadMode.allowsExternalLoadPlanning ? weight : nil
@@ -84,6 +90,7 @@ enum SessionExercisePlanner {
         goal: TrainingGoal,
         bodyWeightKg: Double,
         stats: UserExerciseStats?,
+        sessionMode: SessionMode = .standard,
         weightCeilings: [Equipment: Double] = [:]
     ) -> PlannedExercise {
         let workoutExercise = makeWorkoutExercise(
@@ -93,6 +100,7 @@ enum SessionExercisePlanner {
             goal: goal,
             bodyWeightKg: bodyWeightKg,
             stats: stats,
+            sessionMode: sessionMode,
             weightCeilings: weightCeilings
         )
         return PlannedExercise(

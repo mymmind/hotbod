@@ -706,13 +706,14 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
     var perceivedDifficulty: Int?
     var status: WorkoutStatus
     var splitDayFocus: SplitDayFocus?
+    var sessionMode: SessionMode = .standard
     var activeRestEndAt: Date?
     var activeRestTotalSeconds: Int?
     var activeRestAdvancesExercise: Bool?
 
     enum CodingKeys: String, CodingKey {
         case id, userId, title, startedAt, completedAt, estimatedDurationMinutes
-        case exercises, notes, perceivedDifficulty, status, splitDayFocus
+        case exercises, notes, perceivedDifficulty, status, splitDayFocus, sessionMode
         case activeRestEndAt, activeRestTotalSeconds, activeRestAdvancesExercise
     }
 
@@ -728,6 +729,7 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
         perceivedDifficulty: Int? = nil,
         status: WorkoutStatus = .planned,
         splitDayFocus: SplitDayFocus? = nil,
+        sessionMode: SessionMode = .standard,
         activeRestEndAt: Date? = nil,
         activeRestTotalSeconds: Int? = nil,
         activeRestAdvancesExercise: Bool? = nil
@@ -743,6 +745,7 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
         self.perceivedDifficulty = perceivedDifficulty
         self.status = status
         self.splitDayFocus = splitDayFocus
+        self.sessionMode = sessionMode
         self.activeRestEndAt = activeRestEndAt
         self.activeRestTotalSeconds = activeRestTotalSeconds
         self.activeRestAdvancesExercise = activeRestAdvancesExercise
@@ -761,6 +764,7 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
         perceivedDifficulty = try container.decodeIfPresent(Int.self, forKey: .perceivedDifficulty)
         status = try container.decode(WorkoutStatus.self, forKey: .status)
         splitDayFocus = try container.decodeIfPresent(SplitDayFocus.self, forKey: .splitDayFocus)
+        sessionMode = try container.decodeIfPresent(SessionMode.self, forKey: .sessionMode) ?? .standard
         activeRestEndAt = try container.decodeIfPresent(Date.self, forKey: .activeRestEndAt)
         activeRestTotalSeconds = try container.decodeIfPresent(Int.self, forKey: .activeRestTotalSeconds)
         activeRestAdvancesExercise = try container.decodeIfPresent(Bool.self, forKey: .activeRestAdvancesExercise)

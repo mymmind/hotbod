@@ -68,7 +68,8 @@ extension AppEnvironment {
             estimatedDurationMinutes: workout.estimatedDurationMinutes,
             exercises: exercises,
             status: .inProgress,
-            splitDayFocus: splitFocus
+            splitDayFocus: splitFocus,
+            sessionMode: workout.sessionMode
         )
         do {
             try await workoutRepository.saveSession(session)

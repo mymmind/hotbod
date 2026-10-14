@@ -593,37 +593,21 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             soreness: soreness
         )
 
-        var weight: Double
-        if sessionMode == .recovery {
-            if let stats, let planning = stats.planningWeightKg {
-                weight = planning * GenerationConstants.RecoverySession.weightMultiplier
-            } else {
-                weight = defaultWeight(
+        let weight = SessionLoadPlanner.plannedWeightKg(
+            SessionLoadPlanner.Input(
+                suggestedNextWeightKg: stats?.suggestedNextWeightKg,
+                lastWeightKg: stats?.lastWeightKg,
+                sessionMode: sessionMode,
+                isInDeloadWeek: stats?.isInDeloadWeek == true,
+                returningFromBreak: stats?.returningFromBreak == true,
+                equipment: exercise.equipment,
+                ceilings: input.userProfile.maxAvailableWeightKg,
+                fallbackWeightKg: defaultWeight(
                     for: exercise,
                     experience: input.experienceLevel,
                     bodyweightKg: input.userProfile.weightKg
-                ) * GenerationConstants.RecoverySession.weightMultiplier
-            }
-        } else if let stats, let lastWeight = stats.planningWeightKg {
-            weight = ProgressiveOverload.nextWeight(
-                current: lastWeight,
-                stats: stats,
-                muscleVolumeCompletion: muscleCompletion,
-                bodyweight: input.userProfile.weightKg ?? GenerationConstants.Session.defaultBodyweightKgFallback,
-                equipment: exercise.equipment
+                )
             )
-        } else {
-            weight = defaultWeight(
-                for: exercise,
-                experience: input.experienceLevel,
-                bodyweightKg: input.userProfile.weightKg
-            )
-        }
-
-        weight = GenerationConstants.Weight.roundToAvailable(
-            weight,
-            equipment: exercise.equipment,
-            ceilings: input.userProfile.maxAvailableWeightKg
         )
         let loadMode = exercise.resolvedLoadTrackingMode
         let canPlanExternalLoad: Bool = switch loadMode {

@@ -351,6 +351,7 @@ enum ProgressiveOverload {
         return GenerationConstants.Weight.roundToAvailable(raw, equipment: equipment)
     }
 
+    /// Historical volume-trend formula. Workout planning uses SessionLoadPlanner.
     static func nextWeight(
         current: Double,
         stats: UserExerciseStats,

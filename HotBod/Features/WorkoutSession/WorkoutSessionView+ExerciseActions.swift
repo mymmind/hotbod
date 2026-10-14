@@ -440,6 +440,7 @@ extension WorkoutSessionView {
             goal: profile?.goal ?? .buildMuscle,
             bodyWeightKg: bodyWeightKg,
             stats: exerciseStatsById[exercise.id],
+            sessionMode: session.sessionMode,
             weightCeilings: profile?.maxAvailableWeightKg ?? [:]
         )
         SessionExercisePlanner.insert(newExercise, into: &session.exercises, afterIndex: currentExerciseIndex)
