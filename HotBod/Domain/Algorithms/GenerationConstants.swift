@@ -386,9 +386,9 @@ enum GenerationConstants {
 
     /// Movement-pattern blocks for reported body limitations.
     static let injuryRiskyPatterns: [BodyLimitation: [MovementPattern]] = [
-        .shoulder: [.verticalPush, .horizontalPush],
+        .shoulder: [.verticalPush, .horizontalPush, .verticalPull],
         .lowerBack: [.hinge, .squat],
-        .knee: [.squat, .lunge],
+        .knee: [.squat, .lunge, .hinge],
         .elbow: [.verticalPush, .horizontalPush],
         .wrist: [.verticalPush, .horizontalPush],
         .hip: [.hinge, .squat, .lunge],

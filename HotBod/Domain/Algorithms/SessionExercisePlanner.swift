@@ -36,7 +36,7 @@ enum SessionExercisePlanner {
                         goal: goal,
                         experience: experience,
                         mechanics: exercise.resolvedMechanics,
-                        sessionMode: .standard,
+                        sessionMode: sessionMode,
                         isDeload: stats?.isInDeloadWeek == true,
                         returningFromBreak: stats?.returningFromBreak == true,
                         sleepScore: nil
@@ -62,7 +62,9 @@ enum SessionExercisePlanner {
             )
         )
         let loadMode = exercise.resolvedLoadTrackingMode
-        let plannedWeight: Double? = loadMode.allowsExternalLoadPlanning ? weight : nil
+        let plannedWeight: Double? = loadMode.plansExternalLoad(
+            hasLoggedWeight: stats?.planningWeightKg != nil
+        ) ? weight : nil
 
         let sets = (0..<setCount).map { _ in
             plannedSet(

@@ -170,6 +170,30 @@ final class ProgressiveOverloadTests: XCTestCase {
         XCTAssertFalse(stats.preferVariation)
     }
 
+    func testRegression_loadIncreaseReopensRepRange() {
+        let existing = UserExerciseStats(
+            exerciseId: "bench_press",
+            lastWeightKg: 100,
+            lastReps: 10,
+            suggestedNextWeightKg: 100,
+            preferredRepRangeMin: 10,
+            preferredRepRangeMax: 10
+        )
+        let updated = ProgressiveOverload.updateStats(
+            existing: existing,
+            exerciseId: "bench_press",
+            completedSets: [CompletedSet(setIndex: 0, weightKg: 100, reps: 10)],
+            plannedSets: [PlannedSet(targetRepsMin: 10, targetRepsMax: 10)],
+            experienceLevel: .intermediate,
+            goal: .buildMuscle,
+            equipment: [.barbell]
+        )
+        let range = GenerationConstants.Prescription.repRange(for: .buildMuscle, experience: .intermediate)
+        XCTAssertEqual(updated.preferredRepRangeMin, range.min)
+        XCTAssertEqual(updated.preferredRepRangeMax, range.max)
+        XCTAssertEqual(updated.suggestedNextWeightKg, 102.5)
+    }
+
     func testRegression_preferVariationSetsFlagOnStall() {
         let now = Date()
         let day: TimeInterval = 24 * 3600

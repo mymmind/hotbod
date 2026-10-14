@@ -32,10 +32,29 @@ enum UITestConfiguration {
         ProcessInfo.processInfo.arguments.contains("-ForceRestDay")
     }
 
+    /// Release builds ignore launch arguments. Debug builds still honor them for UI tests.
+    static func grantsPro(
+        allowsTestOverrides: Bool,
+        arguments: [String],
+        environment: [String: String]
+    ) -> Bool {
+        guard allowsTestOverrides else { return false }
+        return arguments.contains("-UITesting")
+            || arguments.contains("-GrantPro")
+            || environment["GRANT_PRO"] == "1"
+    }
+
     static var shouldGrantPro: Bool {
-        isUITesting
-            || ProcessInfo.processInfo.arguments.contains("-GrantPro")
-            || ProcessInfo.processInfo.environment["GRANT_PRO"] == "1"
+        #if DEBUG
+        let allowsTestOverrides = true
+        #else
+        let allowsTestOverrides = false
+        #endif
+        return grantsPro(
+            allowsTestOverrides: allowsTestOverrides,
+            arguments: ProcessInfo.processInfo.arguments,
+            environment: ProcessInfo.processInfo.environment
+        )
     }
 
     static var shouldOpenSettings: Bool {

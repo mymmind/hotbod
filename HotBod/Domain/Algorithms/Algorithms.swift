@@ -415,7 +415,8 @@ enum ProgressiveOverload {
         goal: TrainingGoal? = nil,
         equipment: [Equipment] = [],
         weightCeilings: [Equipment: Double] = [:],
-        trustHistoricEffortFeedback: Bool = true
+        trustHistoricEffortFeedback: Bool = true,
+        sessionMode: SessionMode = .standard
     ) -> UserExerciseStats {
         let working = completedSets.filter {
             !$0.isWarmup && !$0.isCooldown
@@ -430,7 +431,7 @@ enum ProgressiveOverload {
         }()
         let bestVolume = working.map { ($0.weightKg ?? 0) * Double($0.reps) }.max()
 
-        let workingPlanned = plannedSets.filter { !$0.isWarmup }
+        let workingPlanned = plannedSets.filter { !$0.isWarmup && !$0.isCooldown }
         let hitTop = working.count == workingPlanned.count && zip(working, workingPlanned).allSatisfy { set, planned in
             EffortFeedbackMapping.metPrescription(completed: set, planned: planned).hitTop
         }
@@ -465,6 +466,26 @@ enum ProgressiveOverload {
             stats.goalAtLastUpdate = existing.goalAtLastUpdate
             stats.lastMaxEffortAt = existing.lastMaxEffortAt
             stats.sessionsSinceMaxEffort = existing.sessionsSinceMaxEffort + 1
+        }
+        stats.updatedAt = Date()
+
+        let loadWasReduced = sessionMode == .recovery
+            || existing?.isInDeloadWeek == true
+            || existing?.returningFromBreak == true
+        if loadWasReduced {
+            stats.suggestedNextWeightKg = existing?.suggestedNextWeightKg
+            if let goal {
+                stats.goalAtLastUpdate = goal
+            }
+            VolumeTracker.recordSession(on: &stats)
+            DeloadDetector.updateDeloadState(
+                stats: &stats,
+                trustHistoricEffortFeedback: trustHistoricEffortFeedback
+            )
+            if stats.returningFromBreak, existing?.returningFromBreak == true {
+                stats.returningFromBreak = false
+            }
+            return stats
         }
 
         var maxEffortSet: CompletedSet?
@@ -516,10 +537,11 @@ enum ProgressiveOverload {
                 hitTopOfRepRange: hitTop,
                 missedMinimumReps: missedMin,
                 goal: goal ?? .buildMuscle,
-                equipment: equipment,
-                weightCeilings: weightCeilings,
-                trustHistoric: trustHistoricEffortFeedback
-            )
+            equipment: equipment,
+            weightCeilings: weightCeilings,
+            trustHistoric: trustHistoricEffortFeedback,
+            experience: experienceLevel
+        )
         }
 
         return stats
@@ -551,7 +573,8 @@ enum ProgressiveOverload {
             goal: stats.goalAtLastUpdate ?? .buildMuscle,
             equipment: [],
             weightCeilings: [:],
-            trustHistoric: trustHistoric
+            trustHistoric: trustHistoric,
+            experience: .intermediate
         )
     }
 
@@ -564,7 +587,8 @@ enum ProgressiveOverload {
         goal: TrainingGoal,
         equipment: [Equipment],
         weightCeilings: [Equipment: Double],
-        trustHistoric: Bool = true
+        trustHistoric: Bool = true,
+        experience: ExperienceLevel = .intermediate
     ) {
         let avgRPE = averageLoggedRPE(from: workingSets, trustHistoric: trustHistoric)
         let action = ProgressionPolicy.action(
@@ -576,6 +600,9 @@ enum ProgressiveOverload {
         switch action {
         case .increaseLoad:
             stats.preferVariation = false
+            let range = GenerationConstants.Prescription.repRange(for: goal, experience: experience)
+            stats.preferredRepRangeMin = range.min
+            stats.preferredRepRangeMax = range.max
             stats.suggestedNextWeightKg = nextWeight(
                 currentWeight: lastWeight,
                 completedAllSetsAtTopRange: true,

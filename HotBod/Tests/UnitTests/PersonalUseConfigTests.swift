@@ -42,4 +42,22 @@ final class PersonalUseConfigTests: XCTestCase {
         defer { SubscriptionConfig.unrestrictedAccessOverride = nil }
         XCTAssertFalse(SubscriptionConfig.unrestrictedAccess)
     }
+
+    func testRegression_releaseLaunchArgsDoNotGrantPro() {
+        XCTAssertTrue(PersonalUseConfig.defaultIsEnabled)
+        XCTAssertFalse(
+            UITestConfiguration.grantsPro(
+                allowsTestOverrides: false,
+                arguments: ["-UITesting", "-GrantPro"],
+                environment: ["GRANT_PRO": "1"]
+            )
+        )
+        XCTAssertTrue(
+            UITestConfiguration.grantsPro(
+                allowsTestOverrides: true,
+                arguments: ["-GrantPro"],
+                environment: [:]
+            )
+        )
+    }
 }

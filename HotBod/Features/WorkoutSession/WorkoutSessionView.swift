@@ -392,7 +392,8 @@ struct WorkoutSessionView: View {
         .sheet(isPresented: $showAddExercise) {
             AddExerciseSheet(
                 exercises: allExercises,
-                usedExerciseIds: Set(session.exercises.map(\.exerciseId))
+                usedExerciseIds: Set(session.exercises.map(\.exerciseId)),
+                injuries: environment.userProfile?.limitations ?? []
             ) { selected in
                 appendExercise(selected)
             }
@@ -429,12 +430,7 @@ struct WorkoutSessionView: View {
                         .buttonStyle(.bordered)
                         .accessibilityIdentifier("session.ui.exitWorkout")
                     Button("End Workout") {
-                        showExerciseComplete = false
-                        showRIRPrompt = false
-                        showCompletion = true
-                        session.status = .completed
-                        session.completedAt = Date()
-                        Task { await persistWorkoutCompletion() }
+                        finishWorkout()
                     }
                     .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("session.ui.endWorkout")

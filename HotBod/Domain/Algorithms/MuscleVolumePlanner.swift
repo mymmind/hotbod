@@ -1,6 +1,11 @@
 import Foundation
 
 /// Schoenfeld-style per-muscle hard-set volume planning.
+struct SessionSetAllocation: Equatable {
+    var setCounts: [Int]
+    var notes: [String]
+}
+
 enum MuscleVolumePlanner {
     /// Credits one working set toward each muscle the exercise trains.
     static func hardSetCredits(for exercise: Exercise) -> [MuscleGroup: Double] {
@@ -86,43 +91,90 @@ enum MuscleVolumePlanner {
         return fractions.reduce(0, +) / Double(fractions.count)
     }
 
-    /// Allocates working-set counts so session credits stay near remaining weekly budgets.
+    /// Allocates working-set counts from the per-session share of the weekly landing.
+    /// An exercise is capped by the target muscle it was chosen for. A count of 0 means drop it.
     static func allocateSessionSetCounts(
         exercises: [Exercise],
         baseSetCounts: [Int],
         remaining: [MuscleGroup: Double],
+        weeklyLanding: Double? = nil,
+        exposuresPerWeek: Int = 1,
+        targetMuscles: [MuscleGroup] = [],
         softCeiling: Double = Double(GenerationConstants.Volume.softCeilingSetsPerMuscle)
-    ) -> [Int] {
+    ) -> SessionSetAllocation {
         precondition(exercises.count == baseSetCounts.count)
-        var leftover = remaining
-        var allocated = Array(repeating: 1, count: exercises.count)
+        var allowance = remaining
+        if let weeklyLanding {
+            let perSession = weeklyLanding / Double(max(1, exposuresPerWeek))
+            let muscles = Set(remaining.keys).union(targetMuscles)
+            for muscle in muscles {
+                allowance[muscle] = min(remaining[muscle] ?? 0, perSession)
+            }
+        }
+
+        func coveredMuscle(for exercise: Exercise, using budget: [MuscleGroup: Double]) -> MuscleGroup? {
+            let pool = targetMuscles.isEmpty
+                ? exercise.primaryMuscles
+                : exercise.primaryMuscles.filter { targetMuscles.contains($0) }
+            let candidates = pool.isEmpty ? exercise.primaryMuscles : pool
+            return candidates.max { lhs, rhs in
+                (budget[lhs] ?? 0) < (budget[rhs] ?? 0)
+            }
+        }
+
+        let covered = exercises.map { coveredMuscle(for: $0, using: allowance) }
+        var allocated = Array(repeating: 0, count: exercises.count)
+        var dropped: [MuscleGroup] = []
+        var reduced: [MuscleGroup] = []
 
         for (index, exercise) in exercises.enumerated() {
             let base = max(1, baseSetCounts[index])
-            let primaries = exercise.primaryMuscles
-            guard let limiting = primaries.map({ leftover[$0] ?? 0 }).min() else {
+            guard let muscle = covered[index] else {
                 allocated[index] = base
                 continue
             }
-
-            let coveringCount = max(1, exercises.suffix(from: index).filter { candidate in
-                !Set(candidate.primaryMuscles).isDisjoint(with: Set(primaries))
-            }.count)
-
-            let budgetShare = limiting / Double(coveringCount)
-            let ceilingShare = softCeiling / Double(max(1, coveringCount))
-            // Floor at 1 set so selected exercises remain loggable; soft-shrink +
-            // validator warnings absorb weekly overshoot when budget is already spent.
-            let desired = min(Double(base), max(1, budgetShare), ceilingShare)
-            let sets = max(1, Int(desired.rounded()))
+            let left = allowance[muscle] ?? 0
+            let later = covered.suffix(from: index + 1).filter { $0 == muscle }.count
+            let share = left / Double(later + 1)
+            let ceilingShare = softCeiling / Double(later + 1)
+            let sets: Int
+            if left < 2 {
+                sets = 0
+            } else if share < 2 {
+                sets = min(base, Int(left.rounded()))
+            } else {
+                sets = min(base, Int(share.rounded()), Int(ceilingShare.rounded()))
+            }
+            guard sets >= 2 else {
+                allocated[index] = 0
+                dropped.append(muscle)
+                continue
+            }
+            if sets < base {
+                reduced.append(muscle)
+            }
             allocated[index] = sets
-
-            let credits = hardSetCredits(for: exercise)
-            for (muscle, credit) in credits {
-                leftover[muscle] = max(0, (leftover[muscle] ?? 0) - Double(sets) * credit)
+            for (credited, credit) in hardSetCredits(for: exercise) {
+                allowance[credited] = max(0, (allowance[credited] ?? 0) - Double(sets) * credit)
             }
         }
-        return allocated
+
+        return SessionSetAllocation(
+            setCounts: allocated,
+            notes: volumeNotes(dropped: dropped, reduced: reduced)
+        )
+    }
+
+    private static func volumeNotes(dropped: [MuscleGroup], reduced: [MuscleGroup]) -> [String] {
+        var notes: [String] = []
+        var seen = Set<MuscleGroup>()
+        for muscle in dropped where seen.insert(muscle).inserted {
+            notes.append("\(muscle.displayName) is full for this week, so that work was left out.")
+        }
+        for muscle in reduced where !dropped.contains(muscle) && seen.insert(muscle).inserted {
+            notes.append("\(muscle.displayName) volume is full, so this session uses fewer sets.")
+        }
+        return notes
     }
 
     /// Planned session hard-set credits by muscle.

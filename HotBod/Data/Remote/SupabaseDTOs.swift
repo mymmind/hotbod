@@ -482,7 +482,13 @@ struct UserExerciseStatsRow: Codable {
     var returningFromBreak: Bool
     var goalAtLastUpdate: String?
     var consecutiveHighVolumeWeeks: Int
+    var isOrphaned: Bool
+    var lastMaxEffortAt: Date?
+    var sessionsSinceMaxEffort: Int
+    var preferVariation: Bool
     var updatedAt: Date?
+    /// False when a pull payload predates the local-only columns.
+    var carriesLocalOnlyFields: Bool
 
     enum CodingKeys: String, CodingKey {
         case userId = "user_id"
@@ -502,6 +508,10 @@ struct UserExerciseStatsRow: Codable {
         case returningFromBreak = "returning_from_break"
         case goalAtLastUpdate = "goal_at_last_update"
         case consecutiveHighVolumeWeeks = "consecutive_high_volume_weeks"
+        case isOrphaned = "is_orphaned"
+        case lastMaxEffortAt = "last_max_effort_at"
+        case sessionsSinceMaxEffort = "sessions_since_max_effort"
+        case preferVariation = "prefer_variation"
         case updatedAt = "updated_at"
         case legacyIsInDeloadWeek = "is_in_deload_week"
         case legacyLastDeloadDate = "last_deload_date"
@@ -525,7 +535,12 @@ struct UserExerciseStatsRow: Codable {
         returningFromBreak = stat.returningFromBreak
         goalAtLastUpdate = stat.goalAtLastUpdate?.rawValue
         consecutiveHighVolumeWeeks = stat.consecutiveHighVolumeWeeks
-        updatedAt = Date()
+        isOrphaned = stat.isOrphaned
+        lastMaxEffortAt = stat.lastMaxEffortAt
+        sessionsSinceMaxEffort = stat.sessionsSinceMaxEffort
+        preferVariation = stat.preferVariation
+        updatedAt = stat.updatedAt ?? Date()
+        carriesLocalOnlyFields = true
     }
 
     init(from decoder: Decoder) throws {
@@ -551,6 +566,22 @@ struct UserExerciseStatsRow: Codable {
         returningFromBreak = try container.decodeIfPresent(Bool.self, forKey: .returningFromBreak) ?? false
         goalAtLastUpdate = try container.decodeIfPresent(String.self, forKey: .goalAtLastUpdate)
         consecutiveHighVolumeWeeks = try container.decodeIfPresent(Int.self, forKey: .consecutiveHighVolumeWeeks) ?? 0
+        let decodedOrphaned = try container.decodeIfPresent(Bool.self, forKey: .isOrphaned)
+        let decodedMaxEffort = try container.decodeIfPresent(Date.self, forKey: .lastMaxEffortAt)
+        let decodedSessions = try container.decodeIfPresent(Int.self, forKey: .sessionsSinceMaxEffort)
+        let decodedVariation = try container.decodeIfPresent(Bool.self, forKey: .preferVariation)
+        isOrphaned = decodedOrphaned ?? false
+        lastMaxEffortAt = decodedMaxEffort
+        sessionsSinceMaxEffort = decodedSessions ?? 0
+        preferVariation = decodedVariation ?? false
+        carriesLocalOnlyFields = decodedOrphaned != nil
+            || decodedMaxEffort != nil
+            || decodedSessions != nil
+            || decodedVariation != nil
+            || container.contains(.isOrphaned)
+            || container.contains(.lastMaxEffortAt)
+            || container.contains(.sessionsSinceMaxEffort)
+            || container.contains(.preferVariation)
         updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt)
     }
 
@@ -573,6 +604,10 @@ struct UserExerciseStatsRow: Codable {
         try container.encode(returningFromBreak, forKey: .returningFromBreak)
         try container.encodeIfPresent(goalAtLastUpdate, forKey: .goalAtLastUpdate)
         try container.encode(consecutiveHighVolumeWeeks, forKey: .consecutiveHighVolumeWeeks)
+        try container.encode(isOrphaned, forKey: .isOrphaned)
+        try container.encodeIfPresent(lastMaxEffortAt, forKey: .lastMaxEffortAt)
+        try container.encode(sessionsSinceMaxEffort, forKey: .sessionsSinceMaxEffort)
+        try container.encode(preferVariation, forKey: .preferVariation)
         try container.encodeIfPresent(updatedAt, forKey: .updatedAt)
     }
 
@@ -595,6 +630,76 @@ struct UserExerciseStatsRow: Codable {
         stats.weeklyMaxSets = weeklyMaxSets
         stats.volumeTrend = TrendDirection(rawValue: volumeTrend) ?? .stable
         stats.consecutiveHighVolumeWeeks = consecutiveHighVolumeWeeks
+        stats.isOrphaned = isOrphaned
+        stats.lastMaxEffortAt = lastMaxEffortAt
+        stats.sessionsSinceMaxEffort = sessionsSinceMaxEffort
+        stats.preferVariation = preferVariation
+        stats.updatedAt = updatedAt
         return stats
+    }
+}
+
+enum ExerciseStatsSyncMerge {
+    struct Remote {
+        var stats: UserExerciseStats
+        var updatedAt: Date?
+        var carriesLocalOnlyFields: Bool
+    }
+
+    static func merged(local: [UserExerciseStats], remote: [Remote]) -> [UserExerciseStats] {
+        var byId = Dictionary(uniqueKeysWithValues: local.map { ($0.exerciseId, $0) })
+        for row in remote {
+            guard let existing = byId[row.stats.exerciseId] else {
+                byId[row.stats.exerciseId] = row.stats
+                continue
+            }
+            let remoteAt = row.updatedAt ?? row.stats.updatedAt ?? .distantPast
+            let localAt = existing.updatedAt ?? .distantPast
+            if localAt >= remoteAt { continue }
+            var chosen = row.stats
+            if !row.carriesLocalOnlyFields {
+                chosen.isOrphaned = existing.isOrphaned
+                chosen.lastMaxEffortAt = existing.lastMaxEffortAt
+                chosen.sessionsSinceMaxEffort = existing.sessionsSinceMaxEffort
+                chosen.preferVariation = existing.preferVariation
+            }
+            byId[row.stats.exerciseId] = chosen
+        }
+        return byId.values.sorted { $0.exerciseId < $1.exerciseId }
+    }
+}
+
+enum WorkoutSessionSyncMerge {
+    static func resolved(local: WorkoutSession?, remote: WorkoutSession) -> WorkoutSession {
+        guard let local else { return remote }
+        let localStamp = local.progressionAppliedAt ?? local.completedAt ?? local.startedAt ?? .distantPast
+        let remoteStamp = remote.progressionAppliedAt ?? remote.completedAt ?? remote.startedAt ?? .distantPast
+        if localStamp >= remoteStamp {
+            return local
+        }
+        var chosen = remote
+        if chosen.progressionAppliedAt == nil {
+            chosen.progressionAppliedAt = local.progressionAppliedAt
+        }
+        if chosen.sessionMode == .standard, local.sessionMode != .standard {
+            chosen.sessionMode = local.sessionMode
+        }
+        return chosen
+    }
+}
+
+enum ProgramStateSyncMerge {
+    static func merged(local: TrainingProgramState, remote: TrainingProgramState) -> TrainingProgramState {
+        var result = remote
+        if let active = local.activeSessionId {
+            result.activeSessionId = active
+        }
+        let localDay = local.todayCompletedOn ?? .distantPast
+        let remoteDay = remote.todayCompletedOn ?? .distantPast
+        if localDay >= remoteDay, local.todayCompletedOn != nil {
+            result.todayCompletedOn = local.todayCompletedOn
+            result.todayCompletedSessionId = local.todayCompletedSessionId
+        }
+        return result
     }
 }

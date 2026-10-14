@@ -150,7 +150,7 @@ enum MuscleGroup: String, Codable, CaseIterable, Identifiable, Hashable {
 enum Equipment: String, Codable, CaseIterable, Identifiable, Hashable {
     case bodyweight, dumbbell, barbell, kettlebell, cable, machine
     case smithMachine, bench, squatRack, pullUpBar, resistanceBand
-    case medicineBall, cardioMachine
+    case medicineBall, cardioMachine, sled
 
     var id: String { rawValue }
 
@@ -169,6 +169,7 @@ enum Equipment: String, Codable, CaseIterable, Identifiable, Hashable {
         case .resistanceBand: "Resistance Bands"
         case .medicineBall: "Medicine Ball"
         case .cardioMachine: "Cardio Equipment"
+        case .sled: "Sled"
         }
     }
 }
@@ -247,6 +248,18 @@ extension LoadTrackingMode {
             true
         case .none, .optional:
             false
+        }
+    }
+
+    /// Optional movements stay bodyweight until the user has logged external load.
+    func plansExternalLoad(hasLoggedWeight: Bool) -> Bool {
+        switch self {
+        case .none:
+            false
+        case .optional:
+            hasLoggedWeight
+        case .supported, .required:
+            true
         }
     }
 

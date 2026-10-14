@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct WorkoutStartCountdownView: View {
+    let openingLine: String
     let onComplete: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -17,7 +18,13 @@ struct WorkoutStartCountdownView: View {
     @State private var flashOpacity: Double = 0
     @State private var sweepOffset: CGFloat = -1
 
-    private let rallyMessage = WorkoutStartCountdown.randomMessage()
+    private let rallyMessage: String
+
+    init(openingLine: String, onComplete: @escaping () -> Void) {
+        self.openingLine = openingLine
+        self.onComplete = onComplete
+        rallyMessage = openingLine
+    }
 
     private enum Phase: Equatable {
         case count(Int)
@@ -221,5 +228,5 @@ struct WorkoutStartCountdownView: View {
 }
 
 #Preview("Countdown") {
-    WorkoutStartCountdownView(onComplete: {})
+    WorkoutStartCountdownView(openingLine: "Bench Press\n4 sets · 80 kg", onComplete: {})
 }

@@ -68,9 +68,9 @@ final class MuscleVolumePlannerTests: XCTestCase {
             baseSetCounts: [4, 3],
             remaining: [.chest: 3]
         )
-        XCTAssertEqual(allocated.reduce(0, +), 3)
-        XCTAssertLessThanOrEqual(allocated[0], 4)
-        XCTAssertLessThanOrEqual(allocated[1], 3)
+        XCTAssertEqual(allocated.setCounts.reduce(0, +), 3)
+        XCTAssertLessThanOrEqual(allocated.setCounts[0], 4)
+        XCTAssertLessThanOrEqual(allocated.setCounts[1], 3)
     }
 
     func testPhysiquePreferredGetsLargerLandingBoostThanProfilePreferred() {
@@ -116,5 +116,41 @@ final class MuscleVolumePlannerTests: XCTestCase {
             equipment: [.barbell]
         )
         XCTAssertEqual(held, 95)
+    }
+
+    func testRegression_coPrimaryDoesNotFloorCompound() {
+        let squat = makeTestExercise(
+            id: "squat",
+            primaryMuscles: [.quads, .glutes],
+            pattern: .squat
+        )
+        let allocated = MuscleVolumePlanner.allocateSessionSetCounts(
+            exercises: [squat],
+            baseSetCounts: [4],
+            remaining: [.quads: 14, .glutes: 0],
+            weeklyLanding: 14,
+            exposuresPerWeek: 2,
+            targetMuscles: [.quads, .hamstrings, .glutes, .calves]
+        )
+        XCTAssertGreaterThanOrEqual(allocated.setCounts[0], 2)
+    }
+
+    func testRegression_fullMuscleDropsSingleSet() {
+        let curl = makeTestExercise(
+            id: "leg_curl",
+            primaryMuscles: [.hamstrings],
+            pattern: .isolation,
+            mechanics: .isolation
+        )
+        let allocated = MuscleVolumePlanner.allocateSessionSetCounts(
+            exercises: [curl],
+            baseSetCounts: [3],
+            remaining: [.hamstrings: 0],
+            weeklyLanding: 14,
+            exposuresPerWeek: 2,
+            targetMuscles: [.hamstrings]
+        )
+        XCTAssertEqual(allocated.setCounts, [0])
+        XCTAssertTrue(allocated.notes.contains { $0.contains("Hamstrings") })
     }
 }

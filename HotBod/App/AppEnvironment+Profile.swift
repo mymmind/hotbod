@@ -4,7 +4,13 @@ extension AppEnvironment {
     @discardableResult
     func updateUserProfile(_ profile: UserProfile, refreshWorkout: Bool = false) async -> Bool {
         if userProfile?.trustHistoricEffortFeedback != profile.trustHistoricEffortFeedback {
-            let stats = (try? await exerciseStatsRepository.fetchStats()) ?? []
+            let stats: [UserExerciseStats]
+            do {
+                stats = try await exerciseStatsRepository.fetchStats()
+            } catch {
+                syncMessage = error.localizedDescription
+                return false
+            }
             let updatedStats = stats.map { stat in
                 var copy = stat
                 ProgressiveOverload.reapplyEffortTrust(

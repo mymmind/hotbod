@@ -267,6 +267,14 @@ final class InjuryBlocklistTests: XCTestCase {
         XCTAssertFalse(GenerationConstants.violatesInjuries(exercise(pattern: .horizontalPush), injuries: [.neck]))
     }
 
+    func testRegression_shoulderBlocksVerticalPull() {
+        XCTAssertTrue(GenerationConstants.violatesInjuries(exercise(pattern: .verticalPull), injuries: [.shoulder]))
+    }
+
+    func testRegression_kneeBlocksHinge() {
+        XCTAssertTrue(GenerationConstants.violatesInjuries(exercise(pattern: .hinge), injuries: [.knee]))
+    }
+
     func testContraindicationTextBlocksExerciseForMatchingLimitation() {
         var exercise = makeTestExercise(id: "knee_sensitive_row", pattern: .horizontalPull)
         exercise.contraindications = ["Not recommended with knee pain flare-ups."]
@@ -638,7 +646,7 @@ final class FatigueAwareValidationTests: XCTestCase {
         let result = WorkoutValidator.validate(workout: workout, input: input, exercises: chestWorkoutExercises)
         XCTAssertFalse(result.isValid)
         XCTAssertTrue(result.errors.contains(where: { $0.contains("Severe soreness") }))
-        XCTAssertTrue(result.suggestions.contains(where: { $0.localizedCaseInsensitiveContains("swap") }))
+        XCTAssertFalse(result.suggestions.contains(where: { $0.localizedCaseInsensitiveContains("swap") }))
     }
 
     func testHighIntensityLowRecoveryWarning() {

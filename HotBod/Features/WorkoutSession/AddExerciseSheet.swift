@@ -4,12 +4,17 @@ struct AddExerciseSheet: View {
     @Environment(\.dismiss) private var dismiss
     let exercises: [Exercise]
     let usedExerciseIds: Set<String>
+    var injuries: [BodyLimitation] = []
     let onSelect: (Exercise) -> Void
 
     @State private var query = ""
 
     private var filtered: [Exercise] {
-        let base = exercises.filter { !usedExerciseIds.contains($0.id) && $0.preference != .excluded }
+        let base = exercises.filter {
+            !usedExerciseIds.contains($0.id)
+                && $0.preference != .excluded
+                && !GenerationConstants.violatesInjuries($0, injuries: injuries)
+        }
         guard !query.isEmpty else { return base.sorted { $0.name < $1.name } }
         let q = query.lowercased()
         return base.filter {

@@ -6,6 +6,37 @@ struct ExerciseSelectionResult {
     let uncoveredMuscles: [MuscleGroup]
 }
 
+enum SessionSlot {
+    static func isKneeFlexion(_ exercise: Exercise) -> Bool {
+        exercise.id.contains("leg_curl")
+    }
+
+    static func isLateralRaise(_ exercise: Exercise) -> Bool {
+        exercise.id == "lateral_raise"
+    }
+
+    static func isRearDelt(_ exercise: Exercise) -> Bool {
+        ["face_pull", "rear_delt_fly", "reverse_pec_deck"].contains(exercise.id)
+    }
+
+    static func isCurl(_ exercise: Exercise) -> Bool {
+        exercise.id.hasSuffix("curl")
+            && !exercise.id.contains("leg")
+            && !exercise.id.contains("wrist")
+    }
+
+    static func isProtected(_ exercise: Exercise) -> Bool {
+        isKneeFlexion(exercise) || isLateralRaise(exercise) || isRearDelt(exercise)
+    }
+
+    /// Side-delt work outranks front raise and rear-delt movements that share the shoulder label.
+    static func scoreAdjustment(for exercise: Exercise) -> Double {
+        if isLateralRaise(exercise) { return 6 }
+        if exercise.id == "front_raise" || isRearDelt(exercise) { return -4 }
+        return 0
+    }
+}
+
 enum WorkoutGenerationAlgorithms {
 
     // MARK: - Scoring
@@ -59,7 +90,9 @@ enum WorkoutGenerationAlgorithms {
                 ? GenerationConstants.Scoring.physiquePreferredPrimaryBonus
                 : 0.0
             var recentUsePenalty = 0.0
-            if let latest = matchingStats?.recentSets.map(\.completedAt).max() {
+            let isAnchorCompound = exercise.resolvedMechanics == .compound
+                && GenerationConstants.Session.bigMovementPatterns.contains(exercise.movementPattern)
+            if !isAnchorCompound, let latest = matchingStats?.recentSets.map(\.completedAt).max() {
                 let days = Date().timeIntervalSince(latest) / 86_400
                 if days < 3 {
                     recentUsePenalty = GenerationConstants.Scoring.recentUsePenaltyUnder3Days
@@ -68,7 +101,9 @@ enum WorkoutGenerationAlgorithms {
                 }
             }
             let score = muscleScore + secondaryScore + statBonus + favoriteBonus + lessPenalty
-                + difficultyPenalty + recoveryBonus + physiqueBonus - recentUsePenalty
+                + difficultyPenalty + recoveryBonus + physiqueBonus
+                + SessionSlot.scoreAdjustment(for: exercise)
+                - recentUsePenalty
             return (exercise, score)
         }
     }
@@ -117,7 +152,8 @@ enum WorkoutGenerationAlgorithms {
         maxExercises: Int,
         minExercises: Int,
         physiquePreferredMuscles: [MuscleGroup] = [],
-        reservedPhysiqueSlots: Int = 0
+        reservedPhysiqueSlots: Int = 0,
+        focus: SplitDayFocus? = nil
     ) -> ExerciseSelectionResult {
         var selected: [(Exercise, Double)] = []
         var usedPatterns: Set<MovementPattern> = []
@@ -157,9 +193,14 @@ enum WorkoutGenerationAlgorithms {
             usedPatterns.insert(pick.0.movementPattern)
         }
 
+        ensureReservedSlot(focus, ranked: ranked, selected: &selected, usedIds: &usedIds, usedPatterns: &usedPatterns, maxExercises: maxExercises)
+
         for item in ranked where selected.count < maxExercises {
             if usedIds.contains(item.0.id) { continue }
             if blocksDuplicatePattern(item.0.movementPattern, used: usedPatterns, selectedCount: selected.count) {
+                continue
+            }
+            if focus == .pull, SessionSlot.isCurl(item.0), selected.contains(where: { SessionSlot.isCurl($0.0) }) {
                 continue
             }
             if item.0.primaryMuscles.contains(where: { targetMuscles.contains($0) }) {
@@ -187,6 +228,42 @@ enum WorkoutGenerationAlgorithms {
             scores: scores,
             uncoveredMuscles: uncovered
         )
+    }
+
+    private static func ensureReservedSlot(
+        _ focus: SplitDayFocus?,
+        ranked: [(Exercise, Double)],
+        selected: inout [(Exercise, Double)],
+        usedIds: inout Set<String>,
+        usedPatterns: inout Set<MovementPattern>,
+        maxExercises: Int
+    ) {
+        let matches: (Exercise) -> Bool
+        switch focus {
+        case .legs:
+            matches = SessionSlot.isKneeFlexion
+        case .push:
+            matches = SessionSlot.isLateralRaise
+        case .pull:
+            matches = SessionSlot.isRearDelt
+        default:
+            return
+        }
+        guard !selected.contains(where: { matches($0.0) }) else { return }
+        guard let pick = ranked.first(where: { matches($0.0) && !usedIds.contains($0.0.id) }) else { return }
+        if selected.count >= maxExercises,
+           let replace = selected.indices.last(where: {
+               selected[$0].0.resolvedMechanics == .isolation && !SessionSlot.isProtected(selected[$0].0)
+           }) {
+            usedIds.remove(selected[replace].0.id)
+            selected[replace] = pick
+        } else if selected.count < maxExercises {
+            selected.append(pick)
+        } else {
+            return
+        }
+        usedIds.insert(pick.0.id)
+        usedPatterns.insert(pick.0.movementPattern)
     }
 
     /// Compound/pattern diversity from the second pick; isolation accessories may repeat.
@@ -358,7 +435,7 @@ enum WorkoutGenerationAlgorithms {
                   exercise.resolvedMechanics == .isolation else { return nil }
             let coveredMuscles = Set(exercise.primaryMuscles).intersection(Set(targetMuscles))
             let removable = coveredMuscles.allSatisfy { coverage[$0, default: 0] > 1 }
-            guard removable else { return nil }
+            guard removable, !SessionSlot.isProtected(exercise) else { return nil }
             return (index, scores[plannedExercise.exerciseId] ?? 0)
         }
         return candidates.min(by: { $0.score < $1.score })?.index

@@ -155,14 +155,13 @@ final class GeminiAIWorkoutService: AIWorkoutService, Sendable {
             throw NSError(domain: "GeminiConfig", code: -1, userInfo: [NSLocalizedDescriptionKey: "Gemini API key not configured"])
         }
 
-        guard let url = URLBuilder.httpsURL(
-            "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(apiKey)"
-        ) else {
+        guard let url = GeminiRequest.url(model: model) else {
             throw NSError(domain: "GeminiConfig", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid Gemini API URL"])
         }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiKey, forHTTPHeaderField: GeminiRequest.apiKeyHeader)
 
         let requestBody: [String: Any] = [
             "contents": [
@@ -216,7 +215,7 @@ final class GeminiAIWorkoutService: AIWorkoutService, Sendable {
 
     // MARK: - Prompt Builders
 
-    private func buildWorkoutGenerationPrompt(message: String, context: CoachContext) -> String {
+    func buildWorkoutGenerationPrompt(message: String, context: CoachContext) -> String {
         let equipment = context.availableEquipment.map { $0.rawValue }.joined(separator: ", ")
         let duration = context.targetDurationMinutes
         let goal = context.userProfile.goal.rawValue
@@ -257,10 +256,11 @@ final class GeminiAIWorkoutService: AIWorkoutService, Sendable {
         - exerciseId must match catalog IDs exactly (lowercase with underscores, e.g. "bench_press")
         - Include 4-8 exercises for balanced development
         - Respect \(duration) minute target
+        \(CoachPromptBounds.appendix(limitations: context.limitations))
         """
     }
 
-    private func buildWorkoutModificationPrompt(
+    func buildWorkoutModificationPrompt(
         message: String,
         context: CoachContext,
         currentWorkout: GeneratedWorkout
@@ -300,10 +300,11 @@ final class GeminiAIWorkoutService: AIWorkoutService, Sendable {
         - Return ONLY valid JSON
         - Keep exercises safe and practical
         - Respect the user's modification request
+        \(CoachPromptBounds.appendix(limitations: context.limitations))
         """
     }
 
-    private func buildExplanationPrompt(
+    func buildExplanationPrompt(
         message: String,
         context: CoachContext,
         workout: GeneratedWorkout
@@ -326,6 +327,33 @@ final class GeminiAIWorkoutService: AIWorkoutService, Sendable {
         - Explains the goal of the workout
         - Addresses the user's specific question
         - Is encouraging but not cheesy
+        \(CoachPromptBounds.appendix(limitations: context.limitations))
+        """
+    }
+}
+
+enum GeminiRequest {
+    static let apiKeyHeader = "x-goog-api-key"
+
+    static func url(model: String) -> URL? {
+        URLBuilder.httpsURL(
+            "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent"
+        )
+    }
+}
+
+enum CoachPromptBounds {
+    static func appendix(limitations: [BodyLimitation]) -> String {
+        let reported = limitations
+            .filter { $0 != .none }
+            .map(\.displayName)
+            .joined(separator: ", ")
+        return """
+        RULES:
+        - Never diagnose injuries or prescribe medical rehab.
+        - Never claim exact body fat from photos.
+        - No steroid or drug advice.
+        Reported limitations: \(reported.isEmpty ? "none" : reported)
         """
     }
 }

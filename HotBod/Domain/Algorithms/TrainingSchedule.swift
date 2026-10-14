@@ -161,6 +161,17 @@ enum TrainingSchedule {
         return sequence[state.splitDayIndex % sequence.count]
     }
 
+    /// How many times this split day is expected inside the user's training week.
+    static func exposuresPerWeek(daysPerWeek: Int, split: TrainingSplit, focus: SplitDayFocus?) -> Int {
+        guard let focus else { return 1 }
+        let sequence = splitSequence(for: split)
+        let hits = sequence.filter { $0 == focus }.count
+        guard hits > 0, !sequence.isEmpty else { return 1 }
+        let days = max(daysPerWeek, sequence.count)
+        let cycles = Double(days) / Double(sequence.count)
+        return max(1, Int((cycles * Double(hits)).rounded()))
+    }
+
     /// Adaptive focus: bias toward the fresher of upper vs lower musculature from recovery state.
     static func adaptiveFocus(recoveryStates: [MuscleRecoveryState]) -> SplitDayFocus {
         let upper: Set<MuscleGroup> = [.chest, .back, .shoulders, .biceps, .triceps]

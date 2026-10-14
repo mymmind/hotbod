@@ -63,11 +63,20 @@ struct TodayExerciseStrip: View {
                 .multilineTextAlignment(.leading)
                 .frame(width: chipWidth, height: titleBlockHeight, alignment: .topLeading)
 
-            Text("\(planned.targetSets.count) sets")
+            Text(setCountLabel(for: planned))
                 .font(ForgeTypography.tabLabel.weight(.semibold).monospaced())
                 .foregroundStyle(ForgeColors.muted)
         }
         .frame(width: chipWidth, alignment: .topLeading)
+    }
+
+    private func setCountLabel(for planned: PlannedExercise) -> String {
+        let working = planned.targetSets.filter { !$0.isWarmup && !$0.isCooldown }.count
+        let warmups = planned.targetSets.filter(\.isWarmup).count
+        if warmups > 0 {
+            return "\(working) sets · \(warmups) warmup"
+        }
+        return "\(working) sets"
     }
 
     private var titleBlockHeight: CGFloat {

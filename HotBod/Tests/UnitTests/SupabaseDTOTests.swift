@@ -383,4 +383,149 @@ final class SupabaseDTOMappingTests: XCTestCase {
         let sessionRow = WorkoutSessionRow(session: session)
         XCTAssertEqual(sessionRow.sessionMode, SessionMode.recovery.rawValue)
     }
+
+    func testRegression_syncMergeKeepsNewerLocalStatsAndFlags() throws {
+        let older = Date(timeIntervalSince1970: 1_000)
+        let newer = Date(timeIntervalSince1970: 2_000)
+        var local = UserExerciseStats(
+            exerciseId: "bench_press",
+            suggestedNextWeightKg: 80,
+            preferredRepRangeMin: 6,
+            preferredRepRangeMax: 10,
+            lastMaxEffortAt: newer,
+            sessionsSinceMaxEffort: 3,
+            preferVariation: true
+        )
+        local.isOrphaned = true
+        local.updatedAt = newer
+
+        var remoteStats = local
+        remoteStats.suggestedNextWeightKg = 70
+        remoteStats.isOrphaned = false
+        remoteStats.preferVariation = false
+        remoteStats.sessionsSinceMaxEffort = 0
+        remoteStats.lastMaxEffortAt = nil
+        remoteStats.updatedAt = older
+
+        let kept = ExerciseStatsSyncMerge.merged(
+            local: [local],
+            remote: [
+                ExerciseStatsSyncMerge.Remote(
+                    stats: remoteStats,
+                    updatedAt: older,
+                    carriesLocalOnlyFields: true
+                )
+            ]
+        )
+        XCTAssertEqual(kept.first?.suggestedNextWeightKg, 80)
+        XCTAssertEqual(kept.first?.isOrphaned, true)
+        XCTAssertEqual(kept.first?.preferVariation, true)
+
+        var newerRemote = remoteStats
+        newerRemote.suggestedNextWeightKg = 90
+        newerRemote.updatedAt = Date(timeIntervalSince1970: 3_000)
+        let taken = ExerciseStatsSyncMerge.merged(
+            local: [local],
+            remote: [
+                ExerciseStatsSyncMerge.Remote(
+                    stats: newerRemote,
+                    updatedAt: newerRemote.updatedAt,
+                    carriesLocalOnlyFields: false
+                )
+            ]
+        )
+        XCTAssertEqual(taken.first?.suggestedNextWeightKg, 90)
+        XCTAssertEqual(taken.first?.isOrphaned, true)
+        XCTAssertEqual(taken.first?.preferVariation, true)
+        XCTAssertEqual(taken.first?.sessionsSinceMaxEffort, 3)
+        XCTAssertEqual(taken.first?.lastMaxEffortAt, newer)
+
+        let legacy = """
+        {
+          "user_id": "A1B2C3D4-E5F6-7890-ABCD-EF1234567890",
+          "exercise_id": "bench_press",
+          "preferred_rep_range_min": 5,
+          "preferred_rep_range_max": 8,
+          "recent_sets": [],
+          "is_orphaned": null
+        }
+        """.data(using: .utf8)!
+        let row = try JSONDecoder().decode(UserExerciseStatsRow.self, from: legacy)
+        XCTAssertTrue(row.carriesLocalOnlyFields)
+
+        let missing = """
+        {
+          "user_id": "A1B2C3D4-E5F6-7890-ABCD-EF1234567890",
+          "exercise_id": "bench_press",
+          "preferred_rep_range_min": 5,
+          "preferred_rep_range_max": 8,
+          "recent_sets": []
+        }
+        """.data(using: .utf8)!
+        let oldRow = try JSONDecoder().decode(UserExerciseStatsRow.self, from: missing)
+        XCTAssertFalse(oldRow.carriesLocalOnlyFields)
+    }
+
+    func testRegression_syncMergeKeepsLiveSessionAndCompletion() {
+        let sessionId = UUID()
+        let userId = UUID()
+        let localDay = Date(timeIntervalSince1970: 5_000)
+        let local = TrainingProgramState(
+            todayCompletedSessionId: sessionId,
+            todayCompletedOn: localDay,
+            activeSessionId: sessionId
+        )
+        let remote = TrainingProgramState(
+            splitDayIndex: 2,
+            todayCompletedOn: Date(timeIntervalSince1970: 1_000)
+        )
+        let state = ProgramStateSyncMerge.merged(local: local, remote: remote)
+        XCTAssertEqual(state.activeSessionId, sessionId)
+        XCTAssertEqual(state.todayCompletedSessionId, sessionId)
+        XCTAssertEqual(state.todayCompletedOn, localDay)
+        XCTAssertEqual(state.splitDayIndex, 2)
+
+        let started = Date(timeIntervalSince1970: 8_000)
+        let localSession = WorkoutSession(
+            id: sessionId,
+            userId: userId,
+            title: "Push",
+            startedAt: started,
+            estimatedDurationMinutes: 45,
+            exercises: [],
+            status: .inProgress,
+            sessionMode: .recovery,
+            progressionAppliedAt: started
+        )
+        let olderRemote = WorkoutSession(
+            id: sessionId,
+            userId: userId,
+            title: "Cloud",
+            startedAt: Date(timeIntervalSince1970: 1_000),
+            completedAt: Date(timeIntervalSince1970: 2_000),
+            estimatedDurationMinutes: 45,
+            exercises: [],
+            status: .completed,
+            sessionMode: .standard
+        )
+        let keptSession = WorkoutSessionSyncMerge.resolved(local: localSession, remote: olderRemote)
+        XCTAssertEqual(keptSession.status, .inProgress)
+        XCTAssertEqual(keptSession.sessionMode, .recovery)
+
+        let newerRemote = WorkoutSession(
+            id: sessionId,
+            userId: userId,
+            title: "Cloud",
+            startedAt: Date(timeIntervalSince1970: 9_000),
+            completedAt: Date(timeIntervalSince1970: 10_000),
+            estimatedDurationMinutes: 45,
+            exercises: [],
+            status: .completed,
+            sessionMode: .standard
+        )
+        let takenSession = WorkoutSessionSyncMerge.resolved(local: localSession, remote: newerRemote)
+        XCTAssertEqual(takenSession.status, .completed)
+        XCTAssertEqual(takenSession.progressionAppliedAt, started)
+        XCTAssertEqual(takenSession.sessionMode, .recovery)
+    }
 }

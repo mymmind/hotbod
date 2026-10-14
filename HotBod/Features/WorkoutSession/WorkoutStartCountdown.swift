@@ -5,50 +5,15 @@ enum WorkoutStartCountdown {
     static let messageHoldDuration: Duration = .milliseconds(1200)
     static let reducedMotionHoldDuration: Duration = .milliseconds(900)
 
-    /// Short rally lines after 3-2-1. Start energy only — no mid-session or finish copy.
-    static let rallyMessages: [String] = [
-        "Let's go!",
-        "Let's get it!",
-        "Lock in!",
-        "Work starts now.",
-        "Set the tone.",
-        "Start strong.",
-        "Here we go.",
-        "Time to work.",
-        "Get moving.",
-        "Focus up.",
-        "Train with intent.",
-        "Every rep counts.",
-        "Make it count.",
-        "Own this session.",
-        "Bring your best.",
-        "Show up strong.",
-        "Go hard!",
-        "You got this!",
-        "Hit it hard.",
-        "All gas.",
-        "Go all in.",
-        "Push the pace.",
-        "Bring the intensity.",
-        "Attack every rep.",
-        "Raise the standard.",
-        "Outwork yesterday.",
-        "Go earn it.",
-        "Put in the work.",
-        "Strength is earned.",
-        "Discipline over mood.",
-        "Nothing comes easy.",
-        "Control the weight.",
-        "Clean reps only.",
-        "Move with purpose.",
-        "Build from rep one.",
-        "Momentum starts now.",
-        "Stay locked in.",
-        "Get after it."
-    ]
-
-    static func randomMessage() -> String {
-        rallyMessages.randomElement() ?? rallyMessages[0]
+    static func openingLine(for session: WorkoutSession) -> String {
+        guard let first = session.exercises.first else { return "Start when ready." }
+        let working = first.plannedSets.filter { !$0.isWarmup && !$0.isCooldown }
+        let sets = working.isEmpty ? first.plannedSets.count : working.count
+        let name = first.exerciseId.replacingOccurrences(of: "_", with: " ").capitalized
+        if let weight = (working.first ?? first.plannedSets.first)?.targetWeightKg, weight > 0 {
+            return "\(name)\n\(sets) sets · \(Int(weight)) kg"
+        }
+        return "\(name)\n\(sets) sets"
     }
 }
 

@@ -21,11 +21,19 @@ extension SupabaseCloudSyncService {
             .execute()
             .value
         guard !rows.isEmpty else { return }
-        try await local.exerciseStats.saveStats(rows.map(\.toStats))
+        let localStats = (try? await local.exerciseStats.fetchStats()) ?? []
+        let remote = rows.map {
+            ExerciseStatsSyncMerge.Remote(
+                stats: $0.toStats,
+                updatedAt: $0.updatedAt,
+                carriesLocalOnlyFields: $0.carriesLocalOnlyFields
+            )
+        }
+        try await local.exerciseStats.saveStats(ExerciseStatsSyncMerge.merged(local: localStats, remote: remote))
     }
 
     func pullWorkoutSessions(userId: UUID, local: SyncLocalStores) async throws {
-        let rows: [WorkoutSessionRow] = try await client.from("workout_sessions")
+        let completedRows: [WorkoutSessionRow] = try await client.from("workout_sessions")
             .select()
             .eq("user_id", value: userId.uuidString)
             .eq("status", value: WorkoutStatus.completed.rawValue)
@@ -33,6 +41,20 @@ extension SupabaseCloudSyncService {
             .limit(50)
             .execute()
             .value
+
+        let activeRows: [WorkoutSessionRow] = try await client.from("workout_sessions")
+            .select()
+            .eq("user_id", value: userId.uuidString)
+            .eq("status", value: WorkoutStatus.inProgress.rawValue)
+            .limit(5)
+            .execute()
+            .value
+        let rows = completedRows + activeRows.filter { active in
+            !completedRows.contains(where: { $0.id == active.id })
+        }
+
+        let localSessions = (try? await local.workout.fetchSessions()) ?? []
+        let localById = Dictionary(uniqueKeysWithValues: localSessions.map { ($0.id, $0) })
 
         for row in rows {
             let exRows: [WorkoutExerciseRow] = try await client.from("workout_exercises")
@@ -66,7 +88,7 @@ extension SupabaseCloudSyncService {
                 ))
             }
 
-            let session = WorkoutSession(
+            let remoteSession = WorkoutSession(
                 id: row.id, userId: userId, title: row.title,
                 startedAt: row.startedAt, completedAt: row.completedAt,
                 estimatedDurationMinutes: row.estimatedDurationMinutes ?? 45,
@@ -75,6 +97,7 @@ extension SupabaseCloudSyncService {
                 status: WorkoutStatus(rawValue: row.status) ?? .completed,
                 sessionMode: SessionMode(rawValue: row.sessionMode ?? "") ?? .standard
             )
+            let session = WorkoutSessionSyncMerge.resolved(local: localById[row.id], remote: remoteSession)
             try await local.workout.saveSession(session)
         }
     }

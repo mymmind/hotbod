@@ -67,6 +67,63 @@ final class SessionExercisePlannerTests: XCTestCase {
         XCTAssertEqual(planned.plannedSets.first?.rpeTarget, expected)
     }
 
+    func testRegression_optionalLoadPlansLoggedWeight() {
+        var dip = makeTestExercise(
+            id: "weighted_dip",
+            primaryMuscles: [.chest],
+            pattern: .verticalPush,
+            equipment: [.bodyweight]
+        )
+        dip.loadTrackingMode = .optional
+        let withHistory = SessionExercisePlanner.makeWorkoutExercise(
+            exercise: dip,
+            orderIndex: 0,
+            experience: .intermediate,
+            goal: .buildMuscle,
+            bodyWeightKg: 80,
+            stats: UserExerciseStats(
+                exerciseId: "weighted_dip",
+                lastWeightKg: 20,
+                suggestedNextWeightKg: 20,
+                preferredRepRangeMin: 6,
+                preferredRepRangeMax: 10
+            )
+        )
+        XCTAssertEqual(withHistory.plannedSets.first?.targetWeightKg, 20)
+
+        let withoutHistory = SessionExercisePlanner.makeWorkoutExercise(
+            exercise: dip,
+            orderIndex: 0,
+            experience: .intermediate,
+            goal: .buildMuscle,
+            bodyWeightKg: 80,
+            stats: nil
+        )
+        XCTAssertNil(withoutHistory.plannedSets.first?.targetWeightKg)
+    }
+
+    func testRegression_manualAddUsesSessionEffortTarget() {
+        let isolation = makeTestExercise(
+            id: "cable_fly",
+            primaryMuscles: [.chest],
+            pattern: .isolation,
+            mechanics: .isolation
+        )
+        let planned = SessionExercisePlanner.makeWorkoutExercise(
+            exercise: isolation,
+            orderIndex: 0,
+            experience: .intermediate,
+            goal: .buildMuscle,
+            bodyWeightKg: 80,
+            stats: nil,
+            sessionMode: .recovery
+        )
+        XCTAssertEqual(
+            planned.plannedSets.first?.rpeTarget,
+            EffortPolicy.targetRPE(for: .recovery)
+        )
+    }
+
     private func workoutExercise(id: String, order: Int) -> WorkoutExercise {
         WorkoutExercise(
             exerciseId: id,

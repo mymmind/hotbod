@@ -99,7 +99,7 @@ struct ProgressDashboardView: View {
         ForgeCard {
             ForgeSectionHeader(
                 title: "E1RM Trend",
-                subtitle: "Last 12 weeks · \(viewModel.selectedLiftForChart.name)",
+                subtitle: "Recent sessions · \(viewModel.selectedLiftForChart.name)",
                 accent: ForgeColors.accent
             )
             if !viewModel.e1rmChartData.isEmpty {
@@ -154,7 +154,7 @@ struct ProgressDashboardView: View {
 
     private var topLiftsCard: some View {
         ForgeCard {
-            ForgeSectionHeader(title: "Top Lifts", subtitle: "Estimated 1RM")
+            ForgeSectionHeader(title: "Top Lifts", subtitle: "Best set and last exposure")
             if !viewModel.topLifts.isEmpty {
                 VStack(spacing: 12) {
                     ForEach(viewModel.topLifts.prefix(5), id: \.exercise.id) { item in
@@ -167,12 +167,12 @@ struct ProgressDashboardView: View {
                             }
                             Spacer()
                             VStack(alignment: .trailing, spacing: 2) {
-                                Text(String(format: "%.1f kg", item.e1rm))
+                                Text(String(format: "%.1f kg", item.bestSetKg))
                                     .font(ForgeTypography.monoMetric)
-                                if let changePercent = item.changePercent {
-                                    Text("\(changePercent > 0 ? "+" : "")\(String(format: "%.1f", changePercent))%")
+                                if let previous = item.previousSetKg {
+                                    Text(String(format: "last %.1f kg", previous))
                                         .font(ForgeTypography.caption)
-                                        .foregroundStyle(changePercent > 0 ? ForgeColors.accentGreen : ForgeColors.accent)
+                                        .foregroundStyle(ForgeColors.muted)
                                 }
                             }
                         }
@@ -344,8 +344,8 @@ struct ProgressDashboardView: View {
 
 struct TopLiftProgress: Identifiable {
     let exercise: Exercise
-    let e1rm: Double
-    let changePercent: Double?
+    let bestSetKg: Double
+    let previousSetKg: Double?
 
     var id: String { exercise.id }
 }
@@ -413,13 +413,12 @@ final class ProgressDashboardViewModel {
         avgSetsPerWeek = volumeChartData.map(\.totalSets).average()
 
         // Process top lifts
-        topLifts = StrengthHistory.topLifts(stats: stats, exercises: exercises).map { exercise, e1rm in
-            let previousAverage = stats.first(where: { $0.exerciseId == exercise.id })?
-                .recentSets.dropLast().map { $0.weightKg ?? 0 }.average() ?? 0
-            let changePercent = previousAverage > 0
-                ? ((e1rm - previousAverage) / previousAverage) * 100
-                : nil
-            return TopLiftProgress(exercise: exercise, e1rm: e1rm, changePercent: changePercent)
+        topLifts = StrengthHistory.topLifts(stats: stats, exercises: exercises).map { exercise, _ in
+            let sets = stats.first(where: { $0.exerciseId == exercise.id })?.recentSets
+                .filter { !$0.isWarmup && !$0.isCooldown && ($0.weightKg ?? 0) > 0 } ?? []
+            let best = sets.map { $0.weightKg ?? 0 }.max() ?? 0
+            let previous = sets.dropLast().map { $0.weightKg ?? 0 }.last
+            return TopLiftProgress(exercise: exercise, bestSetKg: best, previousSetKg: previous)
         }
 
         let bodyweightKg = environment.userProfile?.weightKg ?? 0
@@ -486,16 +485,16 @@ final class ProgressDashboardViewModel {
         var generatedInsights: [String] = []
 
         // Strength insight
-        if let topLift = stats.sorted(by: { ($0.estimatedOneRepMax ?? 0) > ($1.estimatedOneRepMax ?? 0) }).first,
+        if let topLift = stats.sorted(by: { ($0.lastWeightKg ?? 0) > ($1.lastWeightKg ?? 0) }).first,
            let exercise = exercises.first(where: { $0.id == topLift.exerciseId }),
-           let e1rm = topLift.estimatedOneRepMax,
            let lastWeight = topLift.lastWeightKg {
-            let gain = e1rm - lastWeight
-            if gain > 0 {
+            let previous = topLift.recentSets.dropLast().compactMap(\.weightKg).last
+            if let previous, previous > 0 {
                 generatedInsights.append(
-                    "\(exercise.name) E1RM at \(String(format: "%.1f", e1rm)) kg "
-                        + "(+\(String(format: "%.1f", gain)) kg)"
+                    "\(exercise.name) best set \(String(format: "%.1f", lastWeight)) kg, last \(String(format: "%.1f", previous)) kg"
                 )
+            } else {
+                generatedInsights.append("\(exercise.name) best set \(String(format: "%.1f", lastWeight)) kg")
             }
         }
 

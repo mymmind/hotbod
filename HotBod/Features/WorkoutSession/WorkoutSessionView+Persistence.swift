@@ -16,8 +16,9 @@ extension WorkoutSessionView {
 
     func persistWorkoutCompletion() async {
         persistMetricDrafts()
-        try? await environment.saveWorkoutSessionImmediately(session)
-        progressionNotes = await environment.applyWorkoutSessionCompletion(session)
+        let result = await environment.completeWorkoutSession(session)
+        session = result.session
+        progressionNotes = result.notes
         let sessions = await environment.fetchWorkoutSessions()
         completionWorkoutStreak = TrainingStreakCalculator.workoutStreak(sessions: sessions)
         feedback.play(.workoutComplete)

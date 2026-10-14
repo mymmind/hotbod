@@ -755,6 +755,8 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
     var status: WorkoutStatus
     var splitDayFocus: SplitDayFocus?
     var sessionMode: SessionMode = .standard
+    /// Set after fatigue, stats, and program advance have been applied for this session.
+    var progressionAppliedAt: Date?
     var activeRestEndAt: Date?
     var activeRestTotalSeconds: Int?
     var activeRestAdvancesExercise: Bool?
@@ -762,6 +764,7 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
     enum CodingKeys: String, CodingKey {
         case id, userId, title, startedAt, completedAt, estimatedDurationMinutes
         case exercises, notes, perceivedDifficulty, status, splitDayFocus, sessionMode
+        case progressionAppliedAt
         case activeRestEndAt, activeRestTotalSeconds, activeRestAdvancesExercise
     }
 
@@ -778,6 +781,7 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
         status: WorkoutStatus = .planned,
         splitDayFocus: SplitDayFocus? = nil,
         sessionMode: SessionMode = .standard,
+        progressionAppliedAt: Date? = nil,
         activeRestEndAt: Date? = nil,
         activeRestTotalSeconds: Int? = nil,
         activeRestAdvancesExercise: Bool? = nil
@@ -794,6 +798,7 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
         self.status = status
         self.splitDayFocus = splitDayFocus
         self.sessionMode = sessionMode
+        self.progressionAppliedAt = progressionAppliedAt
         self.activeRestEndAt = activeRestEndAt
         self.activeRestTotalSeconds = activeRestTotalSeconds
         self.activeRestAdvancesExercise = activeRestAdvancesExercise
@@ -813,6 +818,7 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
         status = try container.decode(WorkoutStatus.self, forKey: .status)
         splitDayFocus = try container.decodeIfPresent(SplitDayFocus.self, forKey: .splitDayFocus)
         sessionMode = try container.decodeIfPresent(SessionMode.self, forKey: .sessionMode) ?? .standard
+        progressionAppliedAt = try container.decodeIfPresent(Date.self, forKey: .progressionAppliedAt)
         activeRestEndAt = try container.decodeIfPresent(Date.self, forKey: .activeRestEndAt)
         activeRestTotalSeconds = try container.decodeIfPresent(Int.self, forKey: .activeRestTotalSeconds)
         activeRestAdvancesExercise = try container.decodeIfPresent(Bool.self, forKey: .activeRestAdvancesExercise)
@@ -855,6 +861,7 @@ struct UserExerciseStats: Identifiable, Codable, Hashable {
     var sessionsSinceMaxEffort: Int = 0
     /// Stall signal: next generate should bias away from this exercise.
     var preferVariation: Bool = false
+    var updatedAt: Date?
 
     var id: String { exerciseId }
 
@@ -884,7 +891,7 @@ struct UserExerciseStats: Identifiable, Codable, Hashable {
         case bestVolumeSet, recentSets, preferredRepRangeMin, preferredRepRangeMax
         case goalAtLastUpdate, deloadStartedAt, returningFromBreak
         case weeklyVolume, weeklyMaxSets, volumeTrend, consecutiveHighVolumeWeeks, isOrphaned
-        case lastMaxEffortAt, sessionsSinceMaxEffort, preferVariation
+        case lastMaxEffortAt, sessionsSinceMaxEffort, preferVariation, updatedAt
         case legacyIsInDeloadWeek = "isInDeloadWeek"
         case legacyLastDeloadDate = "lastDeloadDate"
     }
@@ -921,6 +928,7 @@ struct UserExerciseStats: Identifiable, Codable, Hashable {
         self.lastMaxEffortAt = lastMaxEffortAt
         self.sessionsSinceMaxEffort = sessionsSinceMaxEffort
         self.preferVariation = preferVariation
+        self.updatedAt = nil
     }
 
     init(from decoder: Decoder) throws {
@@ -949,6 +957,7 @@ struct UserExerciseStats: Identifiable, Codable, Hashable {
         lastMaxEffortAt = try container.decodeIfPresent(Date.self, forKey: .lastMaxEffortAt)
         sessionsSinceMaxEffort = try container.decodeIfPresent(Int.self, forKey: .sessionsSinceMaxEffort) ?? 0
         preferVariation = try container.decodeIfPresent(Bool.self, forKey: .preferVariation) ?? false
+        updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -973,6 +982,7 @@ struct UserExerciseStats: Identifiable, Codable, Hashable {
         try container.encodeIfPresent(lastMaxEffortAt, forKey: .lastMaxEffortAt)
         try container.encode(sessionsSinceMaxEffort, forKey: .sessionsSinceMaxEffort)
         try container.encode(preferVariation, forKey: .preferVariation)
+        try container.encodeIfPresent(updatedAt, forKey: .updatedAt)
     }
 }
 

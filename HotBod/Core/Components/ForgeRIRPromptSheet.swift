@@ -13,49 +13,50 @@ struct ForgeRIRPromptSheet: View {
     ]
 
     var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: ForgeSpacing.s5) {
-                Text("Could you have done more reps?")
-                    .font(ForgeTypography.heading)
-                    .foregroundStyle(ForgeColors.textPrimary)
+        VStack(alignment: .leading, spacing: ForgeSpacing.s3) {
+            Text("Could you have done more reps?")
+                .font(ForgeTypography.heading)
+                .foregroundStyle(ForgeColors.textPrimary)
 
-                Text("Reps in reserve helps calibrate your next session.")
-                    .font(ForgeTypography.body)
-                    .foregroundStyle(ForgeColors.textSecondary)
+            Text("Rest is already running. This only records effort.")
+                .font(ForgeTypography.body)
+                .foregroundStyle(ForgeColors.textSecondary)
 
-                VStack(spacing: ForgeSpacing.s2) {
-                    ForEach(options, id: \.value) { option in
-                        Button {
-                            onSelect(option.value)
-                            dismiss()
-                        } label: {
-                            Text(option.label)
-                                .font(ForgeTypography.body)
-                                .foregroundStyle(ForgeColors.textPrimary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(ForgeSpacing.s4)
-                                .background(ForgeColors.surface)
-                                .overlay(Rectangle().stroke(ForgeColors.border, lineWidth: ForgeBorder.hairline))
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("workout.rir.\(option.value)")
+            Spacer(minLength: ForgeSpacing.s4)
+
+            VStack(spacing: ForgeSpacing.s2) {
+                ForEach(options, id: \.value) { option in
+                    choiceButton(title: option.label, identifier: "workout.rir.\(option.value)") {
+                        onSelect(option.value)
+                        dismiss()
                     }
                 }
-
-                Button("Skip") {
+                choiceButton(title: "Skip", identifier: "workout.rir.skip") {
                     onSkip()
                     dismiss()
                 }
-                .font(ForgeTypography.label)
-                .foregroundStyle(ForgeColors.muted)
-                .frame(maxWidth: .infinity)
-                .accessibilityIdentifier("workout.rir.skip")
             }
-            .padding(ForgeSpacing.s5)
-            .background(ForgeColors.background)
-            .navigationBarTitleDisplayMode(.inline)
         }
+        .padding(ForgeSpacing.s5)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        .background(ForgeColors.background)
         .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func choiceButton(title: String, identifier: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(ForgeTypography.body)
+                .foregroundStyle(ForgeColors.textPrimary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(minHeight: ForgeTarget.min)
+                .padding(.horizontal, ForgeSpacing.s4)
+                .background(ForgeColors.surface)
+                .overlay(Rectangle().stroke(ForgeColors.border, lineWidth: ForgeBorder.hairline))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
     }
 }
 

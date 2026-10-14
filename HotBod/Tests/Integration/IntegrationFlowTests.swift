@@ -131,6 +131,54 @@ final class IntegrationFlowTests: XCTestCase {
     XCTAssertFalse(stats.isEmpty)
   }
 
+  func testRegression_sessionCompletionIdempotent() async throws {
+    let env = makeEnvironment()
+    try await env.seedOnboardedProfile()
+    await env.bootstrap()
+    guard let workout = env.todayWorkout,
+          var session = await env.resumeOrStartWorkout(from: workout) else {
+      XCTFail("Expected session")
+      return
+    }
+
+    logAllSets(in: &session)
+    let original = session
+    let first = await env.completeWorkoutSession(session)
+    let statsAfterFirst = await env.fetchExerciseStats()
+    let recoveryAfterFirst = env.recoveryStates
+    let completedId = env.programState.todayCompletedSessionId
+
+    let replay = await env.completeWorkoutSession(original)
+    let second = await env.completeWorkoutSession(first.session)
+    let statsAfterSecond = await env.fetchExerciseStats()
+    XCTAssertEqual(statsAfterSecond, statsAfterFirst)
+    XCTAssertEqual(env.recoveryStates, recoveryAfterFirst)
+    XCTAssertEqual(env.programState.todayCompletedSessionId, completedId)
+    XCTAssertNotNil(first.session.progressionAppliedAt)
+    XCTAssertEqual(replay.notes, [])
+    XCTAssertEqual(second.notes, [])
+  }
+
+  func testRegression_sorenessTapDoesNotCancelActiveSession() async {
+    let workout = FixtureBuilders.makeGeneratedWorkout()
+    let env = AppEnvironment.makeForTests(
+      workoutGenerationService: FixedMockWorkoutGenerationService(workout: workout)
+    )
+    var profile = UserProfile.empty()
+    profile.reminderTrainingDays = [TrainingSchedule.weekday(), .wednesday]
+    env.userProfile = profile
+    env.todayWorkout = workout
+    env.recoveryStates = RecoveryCalculator.defaultStates()
+    let session = await env.resumeOrStartWorkout(from: workout)
+    XCTAssertNotNil(session)
+
+    let refreshed = await env.refreshTodayWorkoutForReadinessChange(profile: profile)
+
+    XCTAssertFalse(refreshed)
+    XCTAssertEqual(env.programState.activeSessionId, session?.id)
+    XCTAssertEqual(env.todayWorkout?.exercises.map(\.exerciseId), workout.exercises.map(\.exerciseId))
+  }
+
   func testCompletionAdvancesSplitRotationOnMatchingFocus() async throws {
     let env = makeEnvironment()
     var profile = UserProfile.empty()

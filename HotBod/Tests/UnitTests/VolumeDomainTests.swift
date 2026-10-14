@@ -110,7 +110,7 @@ final class VolumeCapCalculatorTests: XCTestCase {
         let overCap = validate(projectedSets: 101)
         XCTAssertTrue(overCap.isValid)
         XCTAssertTrue(overCap.warnings.contains(where: { $0.contains("Projected weekly volume") }))
-        XCTAssertTrue(validate(projectedSets: 90).warnings.contains(where: { $0.contains("Weekly volume") }))
+        XCTAssertFalse(validate(projectedSets: 90).warnings.contains(where: { $0.localizedCaseInsensitiveContains("overtraining") }))
         XCTAssertTrue(validate(projectedSets: 80).warnings.isEmpty && validate(projectedSets: 80).errors.isEmpty)
     }
 

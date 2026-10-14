@@ -52,7 +52,8 @@ actor SupabaseCloudSyncService: CloudSyncService {
             }
         }
         if let pref = prefs.first, let state = pref.programStateJson {
-            try await local.programState.saveState(state)
+            let localState = (try? await local.programState.fetchState()) ?? TrainingProgramState()
+            try await local.programState.saveState(ProgramStateSyncMerge.merged(local: localState, remote: state))
         }
         if let pref = prefs.first, let preferences = pref.exercisePreferencesJson {
             try await local.exercise.applyPreferenceOverrides(preferences)
@@ -88,7 +89,7 @@ actor SupabaseCloudSyncService: CloudSyncService {
             try await pushTodayWorkout(workout)
         }
         let sessions = try await local.workout.fetchSessions()
-        for session in sessions where session.status == .completed {
+        for session in sessions where session.status == .completed || session.status == .inProgress {
             try await pushSession(session)
         }
         let start = Calendar.current.daysAgo(30)
@@ -141,14 +142,9 @@ actor SupabaseCloudSyncService: CloudSyncService {
         let row = WorkoutSessionRow(session: session, userId: userId)
         try await client.from("workout_sessions").upsert(row).execute()
 
-        try await client.from("workout_exercises")
-            .delete()
-            .eq("workout_session_id", value: session.id.uuidString)
-            .execute()
-
         for exercise in session.exercises {
             let exRow = WorkoutExerciseRow(exercise: exercise, sessionId: session.id)
-            try await client.from("workout_exercises").insert(exRow).execute()
+            try await client.from("workout_exercises").upsert(exRow).execute()
             for set in exercise.completedSets {
                 let setRow = CompletedSetRow(set: set, workoutExerciseId: exercise.id)
                 try await client.from("completed_sets").upsert(setRow).execute()

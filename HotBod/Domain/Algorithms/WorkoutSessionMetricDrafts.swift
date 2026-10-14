@@ -102,7 +102,10 @@ enum WorkoutSessionMetricDrafts {
         completedReps: Int?,
         plannedRepsMin: Int
     ) -> String {
-        if let draft, !draft.isEmpty { return draft }
+        if let draft {
+            if !draft.isEmpty { return draft }
+            if completedReps == nil { return "" }
+        }
         if let completedReps { return String(completedReps) }
         return String(plannedRepsMin)
     }
@@ -113,7 +116,10 @@ enum WorkoutSessionMetricDrafts {
         completedSeconds: Int?,
         plannedSeconds: Int?
     ) -> String {
-        if let draft, !draft.isEmpty { return draft }
+        if let draft {
+            if !draft.isEmpty { return draft }
+            if completedSeconds == nil { return "" }
+        }
         if let completedSeconds { return String(completedSeconds) }
         if let plannedSeconds { return String(plannedSeconds) }
         return ""

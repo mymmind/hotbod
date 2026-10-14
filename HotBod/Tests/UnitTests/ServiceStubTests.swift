@@ -297,10 +297,34 @@ private func makeCoachStubWorkout(rationale: String = "Balanced session.") -> Ge
   )
 }
 
+final class GeminiPromptBoundsTests: XCTestCase {
+  func testRegression_geminiPromptsCarryLimitationsAndBans() {
+    let service = GeminiAIWorkoutService(exerciseRepository: StubExerciseRepository(exercises: []))
+    let workout = makeCoachStubWorkout()
+    let context = makeCoachStubContext(currentWorkout: workout, limitations: [.knee, .shoulder])
+    let prompts = [
+      service.buildWorkoutGenerationPrompt(message: "push day", context: context),
+      service.buildWorkoutModificationPrompt(message: "shorter", context: context, currentWorkout: workout),
+      service.buildExplanationPrompt(message: "why this", context: context, workout: workout)
+    ]
+    let url = GeminiRequest.url(model: "gemini-2.5-flash")
+    XCTAssertEqual(GeminiRequest.apiKeyHeader, "x-goog-api-key")
+    XCTAssertFalse(url?.absoluteString.contains("key=") ?? true)
+    for prompt in prompts {
+      XCTAssertTrue(prompt.contains("Never diagnose injuries or prescribe medical rehab."))
+      XCTAssertTrue(prompt.contains("Never claim exact body fat from photos."))
+      XCTAssertTrue(prompt.contains("No steroid or drug advice."))
+      XCTAssertTrue(prompt.contains("Knee"))
+      XCTAssertTrue(prompt.contains("Shoulder"))
+    }
+  }
+}
+
 private func makeCoachStubContext(
   currentWorkout: GeneratedWorkout? = nil,
   proteinToday: Double = 0,
-  proteinGoal: Double = 160
+  proteinGoal: Double = 160,
+  limitations: [BodyLimitation] = []
 ) -> CoachContext {
   CoachContext(
     userProfile: UserProfileSummary(
@@ -314,7 +338,7 @@ private func makeCoachStubContext(
     proteinSummary: ProteinSummary(todayGrams: proteinToday, goalGrams: proteinGoal, streakDays: 0),
     bodyProgressSummary: BodyProgressSummary(photoCount: 0, latestPhotoDate: nil, averageLightingScore: nil),
     recovery: [:],
-    limitations: [],
+    limitations: limitations,
     allowedExerciseIds: ["bench_press"],
     availableEquipment: [.barbell],
     targetDurationMinutes: 45

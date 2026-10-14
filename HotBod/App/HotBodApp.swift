@@ -111,8 +111,8 @@ struct RootView: View {
         .tint(ForgeColors.accent)
         .preferredColorScheme(.dark)
         .overlay {
-            if router.workoutStartCountdownSession != nil {
-                WorkoutStartCountdownView {
+            if let session = router.workoutStartCountdownSession {
+                WorkoutStartCountdownView(openingLine: WorkoutStartCountdown.openingLine(for: session)) {
                     Task { await WorkoutStartFlow.finishCountdown(environment: environment, router: router) }
                 }
                 .transition(.opacity)

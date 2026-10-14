@@ -32,6 +32,7 @@ final class AppEnvironment {
     var userProfile: UserProfile?
     var todayWorkout: GeneratedWorkout?
     var programState: TrainingProgramState = TrainingProgramState()
+    var completionAppliedSessionIds: Set<UUID> = []
     var recoveryStates: [MuscleRecoveryState] = []
     var hasCompletedOnboarding: Bool = false
     var sorenessLevel: SorenessLevel = .none

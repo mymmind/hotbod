@@ -157,6 +157,25 @@ extension AppEnvironment {
         try await workoutRepository.saveSession(session)
     }
 
+    /// Saves the session, applies fatigue and progression, and advances the program.
+    /// A second call for the same session leaves stats, recovery, and program state unchanged.
+    func completeWorkoutSession(_ session: WorkoutSession) async -> (session: WorkoutSession, notes: [String]) {
+        if session.progressionAppliedAt != nil || completionAppliedSessionIds.contains(session.id) {
+            return (session, [])
+        }
+        completionAppliedSessionIds.insert(session.id)
+        var updated = session
+        if updated.completedAt == nil {
+            updated.completedAt = Date()
+        }
+        updated.status = .completed
+        let notes = await applyWorkoutSessionCompletion(updated)
+        updated.progressionAppliedAt = Date()
+        try? await saveWorkoutSessionImmediately(updated)
+        await refreshWorkoutAfterSession(updated)
+        return (updated, notes)
+    }
+
     func applyWorkoutSessionCompletion(_ session: WorkoutSession) async -> [String] {
         let allExercises = (try? await exerciseRepository.fetchAll()) ?? []
         let map = ExerciseCatalog.indexedById(allExercises)
@@ -191,7 +210,8 @@ extension AppEnvironment {
                 goal: goal,
                 equipment: exercise?.equipment ?? [],
                 weightCeilings: weightCeilings,
-                trustHistoricEffortFeedback: userProfile?.trustHistoricEffortFeedback ?? true
+                trustHistoricEffortFeedback: userProfile?.trustHistoricEffortFeedback ?? true,
+                sessionMode: session.sessionMode
             )
             if let name = map[we.exerciseId]?.name, let next = updated.suggestedNextWeightKg {
                 notes.append("\(name): try \(Int(next))kg next session.")

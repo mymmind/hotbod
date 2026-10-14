@@ -345,6 +345,38 @@ final class ExerciseSwapReplannerTests: XCTestCase {
         XCTAssertEqual(replanned[1].targetWeightKg, 30)
     }
 
+    func testRegression_swapAppliesSessionLoadModifier() {
+        let bench = makeStubExercise(
+            id: "bench_press",
+            muscles: [.chest],
+            pattern: .horizontalPush,
+            equipment: [.barbell, .bench]
+        )
+        var stats = UserExerciseStats(
+            exerciseId: "bench_press",
+            lastWeightKg: 65,
+            suggestedNextWeightKg: 67.5,
+            recentSets: [],
+            preferredRepRangeMin: 8,
+            preferredRepRangeMax: 10
+        )
+        stats.deloadStartedAt = Date()
+        let existing = [
+            PlannedSet(targetRepsMin: 8, targetRepsMax: 10, targetWeightKg: 80)
+        ]
+
+        let replanned = ExerciseSwapReplanner.replannedSets(
+            preservingStructureFrom: existing,
+            for: bench,
+            stats: stats,
+            bodyweightKg: 80,
+            experience: .intermediate,
+            sessionMode: .standard
+        )
+
+        XCTAssertEqual(replanned[0].targetWeightKg, 60)
+    }
+
     func testReplannedSetsClearWeightForBodyweightExercise() {
         var plank = makeStubExercise(
             id: "plank",

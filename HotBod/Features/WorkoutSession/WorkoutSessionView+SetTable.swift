@@ -218,6 +218,7 @@ extension WorkoutSessionView {
                         width: ForgeSetTableLayout.metricFieldWidth,
                         isActive: isActive,
                         keyboardType: .numberPad,
+                        selectAllOnFocus: true,
                         onFocusChange: { noteSetFieldFocus(setIndex: index, focused: $0) }
                     )
                 }
@@ -251,6 +252,7 @@ extension WorkoutSessionView {
                         width: ForgeSetTableLayout.repsFieldWidth,
                         isActive: isActive,
                         keyboardType: .numberPad,
+                        selectAllOnFocus: true,
                         onFocusChange: { noteSetFieldFocus(setIndex: index, focused: $0) }
                     )
                 }

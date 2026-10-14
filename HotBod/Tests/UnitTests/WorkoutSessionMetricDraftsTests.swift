@@ -202,6 +202,22 @@ final class WorkoutSessionMetricDraftsTests: XCTestCase {
             ),
             "8"
         )
+        XCTAssertEqual(
+            WorkoutSessionMetricDrafts.displayedRepsText(
+                draft: "",
+                completedReps: nil,
+                plannedRepsMin: 8
+            ),
+            ""
+        )
+        XCTAssertEqual(
+            WorkoutSessionMetricDrafts.displayedDurationText(
+                draft: "",
+                completedSeconds: nil,
+                plannedSeconds: 30
+            ),
+            ""
+        )
     }
 
     private func makeSession(plannedSets: [PlannedSet], completedCount: Int) -> WorkoutSession {

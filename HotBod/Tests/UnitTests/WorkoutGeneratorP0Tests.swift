@@ -556,6 +556,71 @@ final class WorkoutGeneratorP0Tests: XCTestCase {
         XCTAssertEqual(explicit.preferredRepRangeMin, 8)
     }
 
+    func testRegression_modifiedSessionWriteBack() {
+        var existing = UserExerciseStats(
+            exerciseId: "bench_press",
+            lastWeightKg: 65,
+            lastReps: 10,
+            suggestedNextWeightKg: 67.5,
+            preferredRepRangeMin: 8,
+            preferredRepRangeMax: 10
+        )
+        let planned = PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
+
+        let standard = ProgressiveOverload.updateStats(
+            existing: existing,
+            exerciseId: "bench_press",
+            completedSets: [CompletedSet(setIndex: 0, weightKg: 67.5, reps: 10)],
+            plannedSets: [planned],
+            equipment: [.barbell]
+        )
+        XCTAssertEqual(standard.suggestedNextWeightKg, 70)
+
+        let recovery = ProgressiveOverload.updateStats(
+            existing: existing,
+            exerciseId: "bench_press",
+            completedSets: [CompletedSet(setIndex: 0, weightKg: 47.5, reps: 10)],
+            plannedSets: [planned],
+            equipment: [.barbell],
+            sessionMode: .recovery
+        )
+        XCTAssertEqual(recovery.suggestedNextWeightKg, 67.5)
+        XCTAssertEqual(recovery.lastWeightKg, 47.5)
+
+        existing.deloadStartedAt = Date()
+        let deload = ProgressiveOverload.updateStats(
+            existing: existing,
+            exerciseId: "bench_press",
+            completedSets: [CompletedSet(setIndex: 0, weightKg: 60, reps: 10)],
+            plannedSets: [planned],
+            equipment: [.barbell]
+        )
+        XCTAssertEqual(deload.suggestedNextWeightKg, 67.5)
+        XCTAssertEqual(deload.lastWeightKg, 60)
+    }
+
+    func testRegression_cooldownBlocksProgression() {
+        let existing = UserExerciseStats(
+            exerciseId: "bench_press",
+            lastWeightKg: 65,
+            lastReps: 10,
+            suggestedNextWeightKg: 67.5,
+            preferredRepRangeMin: 8,
+            preferredRepRangeMax: 10
+        )
+        let updated = ProgressiveOverload.updateStats(
+            existing: existing,
+            exerciseId: "bench_press",
+            completedSets: [CompletedSet(setIndex: 0, weightKg: 67.5, reps: 10)],
+            plannedSets: [
+                PlannedSet(targetRepsMin: 8, targetRepsMax: 10),
+                PlannedSet(targetRepsMin: 8, targetRepsMax: 12, isCooldown: true)
+            ],
+            equipment: [.barbell]
+        )
+        XCTAssertEqual(updated.suggestedNextWeightKg, 70)
+    }
+
     private func minutes(in rationale: String) -> Int? {
         guard let range = rationale.range(of: #"Estimated (\d+) min"#, options: .regularExpression) else { return nil }
         let text = rationale[range]

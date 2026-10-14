@@ -80,7 +80,8 @@ enum ExerciseSwapReplanner {
         bodyweightKg: Double,
         experience: ExperienceLevel,
         weightCeilings: [Equipment: Double] = [:],
-        goal: TrainingGoal = .buildMuscle
+        goal: TrainingGoal = .buildMuscle,
+        sessionMode: SessionMode = .standard
     ) -> [PlannedSet] {
         guard substitute.resolvedLoadTrackingMode != .none else {
             return existing.map { set in
@@ -105,13 +106,25 @@ enum ExerciseSwapReplanner {
             }
         }
 
-        let workingWeight = stats?.suggestedNextWeightKg
-            ?? stats?.lastWeightKg
-            ?? ProgressiveOverload.suggestedStartWeight(
-                for: substitute,
-                bodyweight: bodyweightKg,
-                experience: experience
+        let plannedWeight = SessionLoadPlanner.plannedWeightKg(
+            SessionLoadPlanner.Input(
+                suggestedNextWeightKg: stats?.suggestedNextWeightKg,
+                lastWeightKg: stats?.lastWeightKg,
+                sessionMode: sessionMode,
+                isInDeloadWeek: stats?.isInDeloadWeek == true,
+                returningFromBreak: stats?.returningFromBreak == true,
+                equipment: substitute.equipment,
+                ceilings: weightCeilings,
+                fallbackWeightKg: ProgressiveOverload.suggestedStartWeight(
+                    for: substitute,
+                    bodyweight: bodyweightKg,
+                    experience: experience
+                )
             )
+        )
+        let canPlanExternalLoad = substitute.resolvedLoadTrackingMode.plansExternalLoad(
+            hasLoggedWeight: stats?.planningWeightKg != nil
+        )
 
         return existing.map { set in
             let targets = prescriptionTargets(
@@ -123,20 +136,16 @@ enum ExerciseSwapReplanner {
             )
 
             let weight: Double?
-            if set.isWarmup {
+            if !canPlanExternalLoad || set.isCooldown {
+                weight = nil
+            } else if set.isWarmup {
                 weight = WarmupSetPlanner.warmupSets(
-                    workingWeight: workingWeight,
+                    workingWeight: plannedWeight,
                     workingRepsMin: targets.repsMin,
                     rpeTarget: set.rpeTarget
                 ).last?.targetWeightKg
-            } else if set.isCooldown {
-                weight = nil
             } else {
-                weight = GenerationConstants.Weight.roundToAvailable(
-                    workingWeight,
-                    equipment: substitute.equipment,
-                    ceilings: weightCeilings
-                )
+                weight = plannedWeight
             }
 
             return PlannedSet(

@@ -203,8 +203,10 @@ struct TodayView: View {
                 bentoRow
                     .forgeStaggeredAppear(index: 1, isVisible: contentAppeared)
 
-                sorenessStrip
-                    .forgeStaggeredAppear(index: 2, isVisible: contentAppeared)
+                if activeSession == nil {
+                    sorenessStrip
+                        .forgeStaggeredAppear(index: 2, isVisible: contentAppeared)
+                }
 
                 physiqueFocusSection
                     .forgeStaggeredAppear(index: 3, isVisible: contentAppeared)
@@ -405,7 +407,9 @@ struct TodayView: View {
     }
 
     private func totalWorkingSets(for workout: GeneratedWorkout) -> Int {
-        workout.exercises.reduce(0) { $0 + $1.targetSets.count }
+        workout.exercises.reduce(0) { total, exercise in
+            total + exercise.targetSets.filter { !$0.isWarmup && !$0.isCooldown }.count
+        }
     }
 
     private func regenerateWorkout() {
@@ -448,6 +452,7 @@ struct TodayView: View {
 
     private func applySorenessChange(_ level: SorenessLevel) {
         guard environment.sorenessLevel != level else { return }
+        guard activeSession == nil else { return }
         environment.setSoreness(level)
         guard !environment.isTodayWorkoutCompleted else { return }
         guard !isRegenerating, !environment.isWorkoutGenerationInFlight else { return }

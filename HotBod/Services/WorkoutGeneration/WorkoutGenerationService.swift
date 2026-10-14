@@ -185,7 +185,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                 variability: input.userPreferences.exerciseVariability,
                 favoriteIds: favoriteIds,
                 relaxDifficultyPenalty: filterOptions.relaxDifficultyPenalty,
-                physiquePreferredMuscles: input.physiquePreferredMuscleGroups
+                physiquePreferredMuscles: input.physiquePreferredMuscleGroups,
+                focus: input.splitDayFocus
             )
 
         let exerciseMap = ExerciseCatalog.indexedById(allExercises)
@@ -195,6 +196,7 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         )
 
         let setOverrides: [Int?]
+        var volumeNotes: [String] = []
         if sessionMode == .standard {
             let remaining = MuscleVolumePlanner.remainingBudget(
                 targetMuscles: targetMuscles,
@@ -212,33 +214,64 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                     pattern: exercise.movementPattern
                 )
             }
-            setOverrides = MuscleVolumePlanner.allocateSessionSetCounts(
+            let allocation = MuscleVolumePlanner.allocateSessionSetCounts(
                 exercises: selection.exercises,
                 baseSetCounts: baseCounts,
-                remaining: remaining
-            ).enumerated().map { index, count in
+                remaining: remaining,
+                weeklyLanding: MuscleVolumePlanner.weeklyLanding(
+                    experience: input.experienceLevel,
+                    goal: input.goal,
+                    soreness: input.readiness?.soreness ?? .none
+                ),
+                exposuresPerWeek: TrainingSchedule.exposuresPerWeek(
+                    daysPerWeek: input.userProfile.trainingDaysPerWeek,
+                    split: input.userProfile.preferredSplit,
+                    focus: input.splitDayFocus
+                ),
+                targetMuscles: targetMuscles
+            )
+            volumeNotes = allocation.notes
+            var counts = allocation.setCounts.enumerated().map { index, count in
                 let exercise = selection.exercises[index]
+                guard count >= 2 else { return 0 }
                 let lowPrep = exercise.primaryMuscles.contains {
                     GenerationConstants.Recovery.recovery(for: $0, in: input.muscleRecovery)
                         < GenerationConstants.Recovery.softShrinkPreparednessThreshold
                 }
                 if lowPrep {
-                    return max(1, Int((Double(count) * GenerationConstants.Recovery.softShrinkSetMultiplier).rounded()))
+                    return max(2, Int((Double(count) * GenerationConstants.Recovery.softShrinkSetMultiplier).rounded()))
                 }
                 return count
-            }.map { Optional($0) }
+            }
+            let minimum = GenerationConstants.Session.minStandardExercises
+            let viable = counts.filter { $0 >= 2 }.count
+            if viable < minimum {
+                var needed = minimum - viable
+                for index in counts.indices where counts[index] < 2 && needed > 0 {
+                    counts[index] = 2
+                    needed -= 1
+                }
+            }
+            if !counts.contains(0) {
+                volumeNotes.removeAll { $0.contains("left out") }
+            }
+            setOverrides = counts.map { Optional($0) }
         } else {
             setOverrides = Array(repeating: nil, count: selection.exercises.count)
         }
 
-        var planned = selection.exercises.enumerated().map { index, exercise in
-            planExercise(
-                exercise,
-                orderIndex: index,
-                input: input,
-                sessionMode: sessionMode,
-                workingSetCountOverride: setOverrides[index],
-                completedMuscleVolume: completedVolume
+        var planned: [PlannedExercise] = []
+        for (index, exercise) in selection.exercises.enumerated() {
+            if let override = setOverrides[index], override < 2 { continue }
+            planned.append(
+                planExercise(
+                    exercise,
+                    orderIndex: planned.count,
+                    input: input,
+                    sessionMode: sessionMode,
+                    workingSetCountOverride: setOverrides[index],
+                    completedMuscleVolume: completedVolume
+                )
             )
         }
 
@@ -327,9 +360,16 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                 focus: input.splitDayFocus
             )
         let duration = WorkoutGenerationAlgorithms.estimateDurationMinutes(planned: planned)
-        var rationale = sessionMode == .recovery
-            ? "Recovery session — reduced volume and intensity based on soreness and fatigue."
-            : buildRationale(input: input, muscles: targetMuscles)
+        var rationale: String
+        if sessionMode == .recovery {
+            rationale = "Recovery session — reduced volume and intensity based on soreness and fatigue."
+        } else if volumeNotes.isEmpty {
+            rationale = buildRationale(input: input, muscles: targetMuscles)
+        } else {
+            let splitLabel = input.splitDayFocus?.displayName ?? input.userProfile.preferredSplit.displayName
+            let bias = targetMuscles.map(\.displayName).joined(separator: ", ")
+            rationale = volumeNotes.joined(separator: " ") + " Today's \(splitLabel) session biases \(bias)."
+        }
         if let suffix = SessionDurationBudget.rationaleSuffix(
             removedCooldown: budgeted.removedCooldown,
             removedConditioning: budgeted.removedConditioning,
@@ -360,7 +400,7 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             exercises: planned,
             rationale: rationale,
             selectionRationale: selectionRationale,
-            safetyNotes: input.injuries.filter { $0 != .none }.isEmpty ? [] : ["Movements adjusted for reported limitations."],
+            safetyNotes: injurySafetyNotes(allExercises: allExercises, input: input),
             generatedBy: .rulesEngine,
             createdAt: Date(),
             sessionMode: sessionMode,
@@ -541,7 +581,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         variability: ExerciseVariabilityLevel = .balanced,
         favoriteIds: Set<String> = [],
         relaxDifficultyPenalty: Bool = false,
-        physiquePreferredMuscles: [MuscleGroup] = []
+        physiquePreferredMuscles: [MuscleGroup] = [],
+        focus: SplitDayFocus? = nil
     ) -> ExerciseSelectionResult {
         let maxExercises = min(
             GenerationConstants.Session.maxExercisesCap,
@@ -569,7 +610,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             maxExercises: maxExercises,
             minExercises: GenerationConstants.Session.minStandardExercises,
             physiquePreferredMuscles: physiquePreferredMuscles,
-            reservedPhysiqueSlots: GenerationConstants.Session.physiqueReservedSlots
+            reservedPhysiqueSlots: GenerationConstants.Session.physiqueReservedSlots,
+            focus: focus
         )
     }
 
@@ -660,16 +702,9 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                 )
             )
         )
-        let loadMode = exercise.resolvedLoadTrackingMode
-        let canPlanExternalLoad: Bool = switch loadMode {
-        case .none:
-            false
-        case .optional:
-            // Optional exercises start planning with external load once the user has logged it before.
-            stats?.planningWeightKg != nil
-        case .supported, .required:
-            true
-        }
+        let canPlanExternalLoad = exercise.resolvedLoadTrackingMode.plansExternalLoad(
+            hasLoggedWeight: stats?.planningWeightKg != nil
+        )
         let plannedWeight: Double? = canPlanExternalLoad ? weight : nil
 
         var (intensity, adjustedSetCount) = deloadAdjustment(baseSetCount: setCount, stats: stats)
@@ -841,6 +876,16 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                 ? GenerationConstants.Session.flatAdvancedBarbellWeightKg
                 : GenerationConstants.Session.flatAdvancedDumbbellWeightKg
         }
+    }
+
+    private func injurySafetyNotes(allExercises: [Exercise], input: WorkoutGenerationInput) -> [String] {
+        let injuries = input.injuries.filter { $0 != .none }
+        guard !injuries.isEmpty else { return [] }
+        let excluded = allExercises.contains {
+            GenerationConstants.violatesInjuries($0, injuries: injuries)
+        }
+        guard excluded else { return [] }
+        return ["Some movements were left out because of reported limitations."]
     }
 
     private func buildRationale(input: WorkoutGenerationInput, muscles: [MuscleGroup]) -> String {

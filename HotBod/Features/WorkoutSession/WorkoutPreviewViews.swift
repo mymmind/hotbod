@@ -98,7 +98,8 @@ struct WorkoutPreviewView: View {
         .sheet(isPresented: $showAddExercise) {
             AddExerciseSheet(
                 exercises: libraryExercises,
-                usedExerciseIds: Set(orderedExercises.map(\.exerciseId))
+                usedExerciseIds: Set(orderedExercises.map(\.exerciseId)),
+                injuries: environment.userProfile?.limitations ?? []
             ) { selected in
                 appendExercise(selected)
             }
@@ -338,7 +339,8 @@ struct WorkoutPreviewView: View {
             bodyweightKg: bodyWeightKg,
             experience: experience,
             weightCeilings: environment.userProfile?.maxAvailableWeightKg ?? [:],
-            goal: environment.userProfile?.goal ?? .buildMuscle
+            goal: environment.userProfile?.goal ?? .buildMuscle,
+            sessionMode: workout.sessionMode
         )
         orderedExercises[idx] = PlannedExercise(
             id: planned.id,

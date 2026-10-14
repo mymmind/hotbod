@@ -60,10 +60,15 @@ final class ExerciseVarietyScoringTests: XCTestCase {
     }
 
     func testRegression_recentlyLoggedMainLiftIsDemoted() {
-        let exercise = makeTestExercise(id: "bench_press", primaryMuscles: [.chest])
+        let exercise = makeTestExercise(
+            id: "cable_fly",
+            primaryMuscles: [.chest],
+            pattern: .isolation,
+            mechanics: .isolation
+        )
         let recentStats = [
             UserExerciseStats(
-                exerciseId: "bench_press",
+                exerciseId: "cable_fly",
                 recentSets: [
                     CompletedSet(
                         setIndex: 0,
@@ -78,7 +83,7 @@ final class ExerciseVarietyScoringTests: XCTestCase {
         ]
         let staleStats = [
             UserExerciseStats(
-                exerciseId: "bench_press",
+                exerciseId: "cable_fly",
                 recentSets: [
                     CompletedSet(
                         setIndex: 0,
@@ -181,5 +186,90 @@ final class ExerciseVarietyScoringTests: XCTestCase {
         XCTAssertFalse(result.exercises.contains { $0.id == "landmine" })
         XCTAssertTrue(result.exercises.contains { $0.id == "lateral_raise" })
         XCTAssertTrue(result.exercises.contains { $0.id == "pushdown" })
+    }
+
+    func testRegression_anchorCompoundSkipsRecentUsePenalty() {
+        let bench = makeTestExercise(id: "bench_press", primaryMuscles: [.chest], pattern: .horizontalPush)
+        let recent = UserExerciseStats(
+            exerciseId: "bench_press",
+            recentSets: [CompletedSet(setIndex: 0, weightKg: 80, reps: 8, completedAt: Date().addingTimeInterval(-86_400))],
+            preferredRepRangeMin: 8,
+            preferredRepRangeMax: 10
+        )
+        let stale = UserExerciseStats(
+            exerciseId: "bench_press",
+            recentSets: [CompletedSet(setIndex: 0, weightKg: 80, reps: 8, completedAt: Date().addingTimeInterval(-30 * 86_400))],
+            preferredRepRangeMin: 8,
+            preferredRepRangeMax: 10
+        )
+        let recentScore = WorkoutGenerationAlgorithms.scoreExercises(
+            [bench], targetMuscles: [.chest], experience: .intermediate, stats: [recent], recoveryBias: false
+        ).first?.1
+        let staleScore = WorkoutGenerationAlgorithms.scoreExercises(
+            [bench], targetMuscles: [.chest], experience: .intermediate, stats: [stale], recoveryBias: false
+        ).first?.1
+        XCTAssertEqual(recentScore, staleScore)
+    }
+
+    func testRegression_legDayKeepsKneeFlexion() {
+        let squat = makeTestExercise(id: "squat", primaryMuscles: [.quads, .glutes], pattern: .squat)
+        let rdl = makeTestExercise(id: "romanian_deadlift", primaryMuscles: [.hamstrings, .glutes], pattern: .hinge)
+        let curl = makeTestExercise(
+            id: "leg_curl", primaryMuscles: [.hamstrings], pattern: .isolation, mechanics: .isolation
+        )
+        let ranked: [(Exercise, Double)] = [(squat, 20), (rdl, 18), (curl, 8)]
+        let result = WorkoutGenerationAlgorithms.selectExercises(
+            ranked: ranked,
+            targetMuscles: [.quads, .hamstrings, .glutes],
+            maxExercises: 4,
+            minExercises: 2,
+            focus: .legs
+        )
+        XCTAssertTrue(result.exercises.contains { $0.id == "leg_curl" })
+        XCTAssertTrue(result.exercises.contains { $0.id == "romanian_deadlift" })
+    }
+
+    func testRegression_pullKeepsOneRearDeltAndOneCurl() {
+        let row = makeTestExercise(id: "row", primaryMuscles: [.back], pattern: .horizontalPull)
+        let curl = makeTestExercise(id: "barbell_curl", primaryMuscles: [.biceps], pattern: .isolation, mechanics: .isolation)
+        let hammer = makeTestExercise(id: "hammer_curl", primaryMuscles: [.biceps], pattern: .isolation, mechanics: .isolation)
+        let rear = makeTestExercise(id: "rear_delt_fly", primaryMuscles: [.shoulders], pattern: .isolation, mechanics: .isolation)
+        let ranked: [(Exercise, Double)] = [(row, 20), (curl, 12), (hammer, 11), (rear, 4)]
+        let result = WorkoutGenerationAlgorithms.selectExercises(
+            ranked: ranked,
+            targetMuscles: [.back, .biceps],
+            maxExercises: 4,
+            minExercises: 2,
+            focus: .pull
+        )
+        XCTAssertTrue(result.exercises.contains { $0.id == "rear_delt_fly" })
+        XCTAssertEqual(result.exercises.filter(SessionSlot.isCurl).count, 1)
+    }
+
+    func testRegression_durationBudgetKeepsKneeFlexion() {
+        let curl = makeTestExercise(id: "leg_curl", primaryMuscles: [.hamstrings], pattern: .isolation, mechanics: .isolation)
+        let rdl = makeTestExercise(id: "romanian_deadlift", primaryMuscles: [.hamstrings, .glutes], pattern: .hinge)
+        let planned = [
+            PlannedExercise(exerciseId: "romanian_deadlift", orderIndex: 0, targetSets: [PlannedSet(targetRepsMin: 8, targetRepsMax: 10)]),
+            PlannedExercise(exerciseId: "leg_curl", orderIndex: 1, targetSets: [PlannedSet(targetRepsMin: 10, targetRepsMax: 12)])
+        ]
+        let drop = WorkoutGenerationAlgorithms.indexOfLowestScoredIsolationToDrop(
+            planned: planned,
+            scores: ["leg_curl": 1, "romanian_deadlift": 10],
+            targetMuscles: [.hamstrings, .glutes],
+            exerciseMap: ["leg_curl": curl, "romanian_deadlift": rdl]
+        )
+        XCTAssertNil(drop)
+    }
+
+    func testRegression_sledPushRequiresSled() {
+        let sled = makeTestExercise(
+            id: "sled_push",
+            primaryMuscles: [.quads, .glutes],
+            pattern: .carry,
+            equipment: [.sled]
+        )
+        XCTAssertFalse(EquipmentFilter.isExerciseAvailable(sled, availableEquipment: [.barbell, .dumbbell, .machine, .bodyweight]))
+        XCTAssertTrue(EquipmentFilter.isExerciseAvailable(sled, availableEquipment: [.sled]))
     }
 }

@@ -36,12 +36,7 @@ enum WorkoutValidator {
         let totalSets = VolumeCalculator.totalSets(exercises: workout.exercises)
         let weeklyVolume = VolumeCalculator.weeklyVolumeEstimate(recentWorkouts: input.recentWorkouts)
 
-        let soreness = input.readiness?.soreness ?? .none
         let volumeCap = adjustedWeeklySetCap(for: input)
-        let volumeWarningThreshold = GenerationConstants.Volume.warningThreshold(
-            experience: input.experienceLevel,
-            soreness: soreness
-        )
 
         validateSoreness(input: input, isRecovery: isRecovery, totalSets: totalSets, warnings: &warnings, errors: &errors, suggestions: &suggestions)
         validateGlobalRecovery(input: input, isRecovery: isRecovery, errors: &errors, warnings: &warnings, suggestions: &suggestions)
@@ -49,7 +44,6 @@ enum WorkoutValidator {
             totalSets: totalSets,
             weeklyVolume: weeklyVolume,
             volumeCap: volumeCap,
-            volumeWarningThreshold: volumeWarningThreshold,
             errors: &errors,
             warnings: &warnings,
             suggestions: &suggestions
@@ -131,7 +125,6 @@ enum WorkoutValidator {
             } else {
                 errors.append(message)
             }
-            suggestions.append("Swap 30% of compound exercises for isolation movements and reduce volume by 40%.")
         } else if soreness == .moderate {
             warnings.append("Moderate soreness reported — consider reducing volume by 20%.")
             suggestions.append(
@@ -169,7 +162,6 @@ enum WorkoutValidator {
         totalSets: Int,
         weeklyVolume: Int,
         volumeCap: Int,
-        volumeWarningThreshold: Int,
         errors: inout [String],
         warnings: inout [String],
         suggestions: inout [String]
@@ -181,9 +173,6 @@ enum WorkoutValidator {
                 "Projected weekly volume (\(projectedWeeklyVolume) sets) exceeds systemic guardrail (\(volumeCap)). Consider deload."
             )
             suggestions.append("Reduce total weekly sets or schedule a lighter week.")
-        } else if projectedWeeklyVolume > volumeWarningThreshold {
-            warnings.append("Weekly volume trending high (\(projectedWeeklyVolume) sets). Monitor for overtraining.")
-            suggestions.append("Consider reducing volume or extending recovery between sessions.")
         }
     }
 
@@ -238,8 +227,8 @@ enum WorkoutValidator {
         )
         if workoutIntensity > GenerationConstants.Validation.highIntensityThreshold
             && avgRecovery < GenerationConstants.Recovery.readyMuscleMinRecovery {
-            warnings.append("High intensity workout planned with low average recovery (\(Int(avgRecovery))%). Risk of overtraining.")
-            suggestions.append("Reduce intensity or defer high-intensity work. Replace heavy compounds with moderate-intensity accessory work.")
+            warnings.append("High intensity workout planned with low average recovery (\(Int(avgRecovery))%).")
+            suggestions.append("Reduce intensity or defer high-intensity work.")
         } else if adjustedIntensity > workoutIntensity * GenerationConstants.Validation.lowRecoveryAdjustedIntensityFraction
             && avgRecovery < GenerationConstants.Recovery.lowRecoveryWarningThreshold {
             suggestions.append(

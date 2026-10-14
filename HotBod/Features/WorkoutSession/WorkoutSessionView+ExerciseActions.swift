@@ -50,7 +50,8 @@ extension WorkoutSessionView {
             bodyweightKg: bodyWeightKg,
             experience: experience,
             weightCeilings: environment.userProfile?.maxAvailableWeightKg ?? [:],
-            goal: goal
+            goal: goal,
+            sessionMode: session.sessionMode
         )
         session.exercises[index] = WorkoutExercise(
             id: existing.id,
@@ -272,6 +273,7 @@ extension WorkoutSessionView {
             stickySetIndex = setIndex
         } else if focusedSetIndex == setIndex {
             focusedSetIndex = nil
+            stickySetIndex = nil
         }
     }
 
@@ -290,9 +292,25 @@ extension WorkoutSessionView {
         let weight: Double? = showWeightInput
             ? (Double(weightTexts[planned.id] ?? "") ?? planned.targetWeightKg)
             : nil
-        let reps = Int(repsTexts[planned.id] ?? "") ?? (planned.targetRepsMin > 0 ? planned.targetRepsMin : 1)
-        let durationSeconds = Int(durationTexts[planned.id] ?? "")
-            ?? planned.targetDurationSeconds
+        let repsDraft = repsTexts[planned.id]
+        let reps: Int
+        if let repsDraft {
+            guard let parsed = Int(repsDraft) else { return }
+            reps = parsed
+        } else {
+            reps = planned.targetRepsMin > 0 ? planned.targetRepsMin : 1
+        }
+        let durationSeconds: Int?
+        if usesDurationMetric(for: meta) {
+            if let durationDraft = durationTexts[planned.id] {
+                guard let parsed = Int(durationDraft) else { return }
+                durationSeconds = parsed
+            } else {
+                durationSeconds = planned.targetDurationSeconds
+            }
+        } else {
+            durationSeconds = Int(durationTexts[planned.id] ?? "") ?? planned.targetDurationSeconds
+        }
         let distanceMeters = Double(distanceTexts[planned.id] ?? "")
             ?? planned.targetDistanceMeters
         let loggedRPE = (planned.isWarmup || planned.isCooldown) ? nil : pendingRpeBySetId[planned.id]
@@ -350,8 +368,12 @@ extension WorkoutSessionView {
         if needsRIRPrompt {
             rirPromptExerciseIndex = idx
             rirPromptSetIndex = setIndex
-            pendingPostSetAction = postAction
             showRIRPrompt = true
+            if case .rest = postAction {
+                executePostSetAction(postAction)
+            } else {
+                pendingPostSetAction = postAction
+            }
         } else {
             executePostSetAction(postAction)
         }

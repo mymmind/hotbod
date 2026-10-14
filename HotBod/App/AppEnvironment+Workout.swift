@@ -72,13 +72,20 @@ extension AppEnvironment {
     @discardableResult
     func refreshTodayWorkoutForReadinessChange(profile: UserProfile) async -> Bool {
         guard !isTodayWorkoutCompleted else { return false }
-        return await regenerateTodayWorkout(profile: profile)
+        guard !hasActiveWorkoutSession else { return false }
+        return await regenerateTodayWorkout(
+            profile: profile,
+            options: WorkoutGenerationOptions(),
+            requiresProAccess: SubscriptionConfig.unrestrictedAccess ? false : true,
+            keepCurrentExercises: true
+        )
     }
 
     private func regenerateTodayWorkout(
         profile: UserProfile,
         options: WorkoutGenerationOptions,
-        requiresProAccess: Bool
+        requiresProAccess: Bool,
+        keepCurrentExercises: Bool = false
     ) async -> Bool {
         guard !isTodayWorkoutCompleted else { return false }
         cancelWorkoutGenerationIfNeeded()
@@ -92,7 +99,9 @@ extension AppEnvironment {
             }
         }
 
-        await cancelActiveWorkoutIfNeeded()
+        if !keepCurrentExercises {
+            await cancelActiveWorkoutIfNeeded()
+        }
         await applyRecoveryDecay()
 
         let splitFocus = TrainingSchedule.resolveGenerationFocus(
@@ -101,7 +110,9 @@ extension AppEnvironment {
             recoveryStates: recoveryStates
         )
         var effectiveOptions = options
-        if effectiveOptions.excludeExerciseIds.isEmpty, let current = todayWorkout {
+        if !keepCurrentExercises,
+           effectiveOptions.excludeExerciseIds.isEmpty,
+           let current = todayWorkout {
             effectiveOptions.excludeExerciseIds = current.exercises.map(\.exerciseId)
             effectiveOptions.preferVariation = true
         }
