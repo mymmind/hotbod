@@ -43,6 +43,7 @@ enum SettingsDraftEditing {
             || draft.preferredExerciseVariability != original.preferredExerciseVariability
             || draft.includeCoreFinisher != original.includeCoreFinisher
             || draft.includeConditioning != original.includeConditioning
+            || draft.trustHistoricEffortFeedback != original.trustHistoricEffortFeedback
             || draft.cardioBlockPlacement != original.cardioBlockPlacement
             || draft.maxAvailableWeightKg != original.maxAvailableWeightKg
     }

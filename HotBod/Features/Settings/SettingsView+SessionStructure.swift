@@ -7,6 +7,10 @@ extension SettingsView {
             SettingsComponents.divider
             SettingsComponents.toggleRow(title: "Core finisher", isOn: $draft.includeCoreFinisher)
             SettingsComponents.divider
+            SettingsComponents.toggleRow(title: "Ask for reps in reserve", isOn: $draft.promptForEffortFeedback)
+            SettingsComponents.divider
+            SettingsComponents.toggleRow(title: "Use older effort entries", isOn: $draft.trustHistoricEffortFeedback)
+            SettingsComponents.divider
             SettingsComponents.toggleRow(title: "Include conditioning", isOn: $draft.includeConditioning)
             SettingsComponents.divider
             SettingsComponents.menuRow(

@@ -3,6 +3,24 @@ import Foundation
 extension AppEnvironment {
     @discardableResult
     func updateUserProfile(_ profile: UserProfile, refreshWorkout: Bool = false) async -> Bool {
+        if userProfile?.trustHistoricEffortFeedback != profile.trustHistoricEffortFeedback {
+            let stats = (try? await exerciseStatsRepository.fetchStats()) ?? []
+            let updatedStats = stats.map { stat in
+                var copy = stat
+                ProgressiveOverload.reapplyEffortTrust(
+                    stats: &copy,
+                    trustHistoric: profile.trustHistoricEffortFeedback
+                )
+                return copy
+            }
+            do {
+                try await exerciseStatsRepository.saveStats(updatedStats)
+            } catch {
+                syncMessage = error.localizedDescription
+                return false
+            }
+        }
+
         var updated = profile
         updated.updatedAt = Date()
         do {

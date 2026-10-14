@@ -282,4 +282,27 @@ final class WorkoutGeneratorP0Tests: XCTestCase {
         )
         XCTAssertTrue(unknownTrusted.isDeloadRecommended)
     }
+
+    func testRegression_skippedEffortProfileDefaults() throws {
+        // Legacy JSON: encode a profile, strip the two new keys, decode without them.
+        let encoded = try JSONEncoder().encode(UserProfile.empty())
+        guard var object = try JSONSerialization.jsonObject(with: encoded) as? [String: Any] else {
+            XCTFail("Expected a JSON object for UserProfile")
+            return
+        }
+        object.removeValue(forKey: "promptForEffortFeedback")
+        object.removeValue(forKey: "trustHistoricEffortFeedback")
+        let stripped = try JSONSerialization.data(withJSONObject: object)
+        let decoded = try JSONDecoder().decode(UserProfile.self, from: stripped)
+        XCTAssertTrue(decoded.promptForEffortFeedback)
+        XCTAssertTrue(decoded.trustHistoricEffortFeedback)
+
+        let original = UserProfile.empty()
+        var draft = original
+        draft.trustHistoricEffortFeedback = false
+        XCTAssertTrue(SettingsDraftEditing.shouldRefreshWorkout(draft: draft, comparedTo: original))
+        draft = original
+        draft.promptForEffortFeedback = false
+        XCTAssertFalse(SettingsDraftEditing.shouldRefreshWorkout(draft: draft, comparedTo: original))
+    }
 }

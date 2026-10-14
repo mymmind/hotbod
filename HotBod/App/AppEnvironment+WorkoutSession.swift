@@ -190,7 +190,8 @@ extension AppEnvironment {
                 experienceLevel: experience,
                 goal: goal,
                 equipment: exercise?.equipment ?? [],
-                weightCeilings: weightCeilings
+                weightCeilings: weightCeilings,
+                trustHistoricEffortFeedback: userProfile?.trustHistoricEffortFeedback ?? true
             )
             if let name = map[we.exerciseId]?.name, let next = updated.suggestedNextWeightKg {
                 notes.append("\(name): try \(Int(next))kg next session.")

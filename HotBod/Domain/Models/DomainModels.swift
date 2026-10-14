@@ -31,6 +31,8 @@ struct UserProfile: Identifiable, Codable, Hashable {
     var cardioBlockPlacement: CardioBlockPlacement
     var includeConditioning: Bool
     var includeCoreFinisher: Bool
+    var promptForEffortFeedback: Bool
+    var trustHistoricEffortFeedback: Bool
     var maxAvailableWeightKg: [Equipment: Double]
     var exportWorkoutsToHealthKit: Bool
     var createdAt: Date
@@ -49,6 +51,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
         case proteinGoalGrams, photoTrackingEnabled, includeWarmupSets, includeCooldown
         case preferredExerciseGrouping, preferredExerciseVariability, cardioBlockPlacement
         case includeConditioning, includeCoreFinisher
+        case promptForEffortFeedback, trustHistoricEffortFeedback
         case maxAvailableWeightKg
         case exportWorkoutsToHealthKit
         case createdAt, updatedAt
@@ -82,6 +85,8 @@ struct UserProfile: Identifiable, Codable, Hashable {
         cardioBlockPlacement: CardioBlockPlacement = .none,
         includeConditioning: Bool = false,
         includeCoreFinisher: Bool = true,
+        promptForEffortFeedback: Bool = true,
+        trustHistoricEffortFeedback: Bool = true,
         maxAvailableWeightKg: [Equipment: Double] = [:],
         exportWorkoutsToHealthKit: Bool = false,
         createdAt: Date,
@@ -114,6 +119,8 @@ struct UserProfile: Identifiable, Codable, Hashable {
         self.cardioBlockPlacement = cardioBlockPlacement
         self.includeConditioning = includeConditioning
         self.includeCoreFinisher = includeCoreFinisher
+        self.promptForEffortFeedback = promptForEffortFeedback
+        self.trustHistoricEffortFeedback = trustHistoricEffortFeedback
         self.maxAvailableWeightKg = maxAvailableWeightKg
         self.exportWorkoutsToHealthKit = exportWorkoutsToHealthKit
         self.createdAt = createdAt
@@ -166,6 +173,11 @@ struct UserProfile: Identifiable, Codable, Hashable {
         ) ?? .none
         includeConditioning = try container.decodeIfPresent(Bool.self, forKey: .includeConditioning) ?? false
         includeCoreFinisher = try container.decodeIfPresent(Bool.self, forKey: .includeCoreFinisher) ?? true
+        promptForEffortFeedback = try container.decodeIfPresent(Bool.self, forKey: .promptForEffortFeedback) ?? true
+        trustHistoricEffortFeedback = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .trustHistoricEffortFeedback
+        ) ?? true
         maxAvailableWeightKg = try container.decodeIfPresent([Equipment: Double].self, forKey: .maxAvailableWeightKg) ?? [:]
         exportWorkoutsToHealthKit = try container.decodeIfPresent(Bool.self, forKey: .exportWorkoutsToHealthKit) ?? false
         createdAt = try container.decode(Date.self, forKey: .createdAt)
@@ -202,6 +214,8 @@ struct UserProfile: Identifiable, Codable, Hashable {
         try container.encode(cardioBlockPlacement, forKey: .cardioBlockPlacement)
         try container.encode(includeConditioning, forKey: .includeConditioning)
         try container.encode(includeCoreFinisher, forKey: .includeCoreFinisher)
+        try container.encode(promptForEffortFeedback, forKey: .promptForEffortFeedback)
+        try container.encode(trustHistoricEffortFeedback, forKey: .trustHistoricEffortFeedback)
         try container.encode(maxAvailableWeightKg, forKey: .maxAvailableWeightKg)
         try container.encode(exportWorkoutsToHealthKit, forKey: .exportWorkoutsToHealthKit)
         try container.encode(createdAt, forKey: .createdAt)
@@ -230,6 +244,8 @@ struct UserProfile: Identifiable, Codable, Hashable {
             preferredExerciseGrouping: .none,
             preferredExerciseVariability: .balanced,
             cardioBlockPlacement: .none,
+            promptForEffortFeedback: true,
+            trustHistoricEffortFeedback: true,
             maxAvailableWeightKg: [:],
             exportWorkoutsToHealthKit: false,
             createdAt: Date(),
@@ -266,6 +282,8 @@ struct UserProfile: Identifiable, Codable, Hashable {
             cardioBlockPlacement: cardioBlockPlacement,
             includeConditioning: includeConditioning,
             includeCoreFinisher: includeCoreFinisher,
+            promptForEffortFeedback: promptForEffortFeedback,
+            trustHistoricEffortFeedback: trustHistoricEffortFeedback,
             maxAvailableWeightKg: maxAvailableWeightKg,
             exportWorkoutsToHealthKit: exportWorkoutsToHealthKit,
             createdAt: createdAt,

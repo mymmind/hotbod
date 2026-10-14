@@ -300,6 +300,7 @@ extension WorkoutSessionView {
             && !planned.isCooldown
             && usesRepMetric(for: meta)
             && loggedRPE == nil
+            && environment.userProfile?.promptForEffortFeedback != false
         let completed = CompletedSet(
             setIndex: setIndex,
             weightKg: weight,
@@ -311,6 +312,7 @@ extension WorkoutSessionView {
             isCooldown: planned.isCooldown
         )
         session.exercises[idx].completedSets.append(completed)
+        EffortFeedbackMapping.markSkipped(&session.exercises[idx].completedSets[setIndex])
         pendingRpeBySetId.removeValue(forKey: planned.id)
         focusedSetIndex = nil
         stickySetIndex = nil
@@ -413,9 +415,10 @@ extension WorkoutSessionView {
            let setIndex = rirPromptSetIndex,
            session.exercises.indices.contains(exerciseIdx),
            let completedIdx = session.exercises[exerciseIdx].completedSets.firstIndex(where: { $0.setIndex == setIndex }) {
-            session.exercises[exerciseIdx].completedSets[completedIdx].rir = rir
-            session.exercises[exerciseIdx].completedSets[completedIdx].rpe = EffortFeedbackMapping.rpe(fromRIR: rir)
-            session.exercises[exerciseIdx].completedSets[completedIdx].isFailure = rir == 0
+            EffortFeedbackMapping.markExplicit(
+                &session.exercises[exerciseIdx].completedSets[completedIdx],
+                rir: rir
+            )
             environment.scheduleWorkoutSessionSave(session)
         }
         finishRIRPromptFlow()
