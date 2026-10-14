@@ -52,6 +52,20 @@ enum EffortFeedbackMapping {
         set.isFailure = rir == 0
     }
 
+    static func applyCommitEffort(_ set: inout CompletedSet, loggedRPE: Double?) {
+        if let loggedRPE {
+            set.rpe = loggedRPE
+            set.effortFeedbackStatus = .explicit
+        } else {
+            markSkipped(&set)
+        }
+    }
+
+    static func recordEditedRPE(_ set: inout CompletedSet, rpe: Double) {
+        set.rpe = rpe
+        set.effortFeedbackStatus = .explicit
+    }
+
     static func isWorkingSet(_ set: CompletedSet) -> Bool {
         !set.isWarmup && !set.isCooldown
             && (set.reps > 0 || (set.durationSeconds ?? 0) > 0 || (set.distanceMeters ?? 0) > 0)

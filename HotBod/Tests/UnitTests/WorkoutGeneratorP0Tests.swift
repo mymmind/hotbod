@@ -305,4 +305,21 @@ final class WorkoutGeneratorP0Tests: XCTestCase {
         draft.promptForEffortFeedback = false
         XCTAssertFalse(SettingsDraftEditing.shouldRefreshWorkout(draft: draft, comparedTo: original))
     }
+
+    func testRegression_inlineRPEStaysExplicit() {
+        var withRPE = CompletedSet(setIndex: 0, weightKg: 65, reps: 10, rpe: 8)
+        EffortFeedbackMapping.applyCommitEffort(&withRPE, loggedRPE: 8)
+        XCTAssertEqual(withRPE.rpe, 8)
+        XCTAssertEqual(withRPE.effortFeedbackStatus, .explicit)
+
+        var withoutRPE = CompletedSet(setIndex: 0, weightKg: 65, reps: 10)
+        EffortFeedbackMapping.applyCommitEffort(&withoutRPE, loggedRPE: nil)
+        XCTAssertEqual(withoutRPE.effortFeedbackStatus, .skipped)
+        XCTAssertNil(withoutRPE.rpe)
+
+        var skipped = CompletedSet(setIndex: 0, weightKg: 65, reps: 10, effortFeedbackStatus: .skipped)
+        EffortFeedbackMapping.recordEditedRPE(&skipped, rpe: 9)
+        XCTAssertEqual(skipped.effortFeedbackStatus, .explicit)
+        XCTAssertEqual(skipped.rpe, 9)
+    }
 }

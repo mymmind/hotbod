@@ -452,7 +452,10 @@ extension WorkoutSessionView {
             session.exercises[exerciseIdx].completedSets[completedIdx].reps = reps
         }
         if let rpe {
-            session.exercises[exerciseIdx].completedSets[completedIdx].rpe = rpe
+            EffortFeedbackMapping.recordEditedRPE(
+                &session.exercises[exerciseIdx].completedSets[completedIdx],
+                rpe: rpe
+            )
         }
         if let rir {
             session.exercises[exerciseIdx].completedSets[completedIdx].rir = rir

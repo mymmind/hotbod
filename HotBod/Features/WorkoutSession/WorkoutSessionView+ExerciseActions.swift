@@ -312,7 +312,10 @@ extension WorkoutSessionView {
             isCooldown: planned.isCooldown
         )
         session.exercises[idx].completedSets.append(completed)
-        EffortFeedbackMapping.markSkipped(&session.exercises[idx].completedSets[setIndex])
+        EffortFeedbackMapping.applyCommitEffort(
+            &session.exercises[idx].completedSets[setIndex],
+            loggedRPE: loggedRPE
+        )
         pendingRpeBySetId.removeValue(forKey: planned.id)
         focusedSetIndex = nil
         stickySetIndex = nil
