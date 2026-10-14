@@ -279,7 +279,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                     exerciseMap: exerciseMap,
                     targetDurationMinutes: input.targetDurationMinutes,
                     coreFinisherExerciseId: coreId,
-                    conditioningExerciseId: conditioningId
+                    conditioningExerciseId: conditioningId,
+                    minimumExerciseCount: GenerationConstants.Session.minStandardExercises
                 )
             )
             planned = budgeted.planned
@@ -310,7 +311,8 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                     exerciseMap: exerciseMap,
                     targetDurationMinutes: input.targetDurationMinutes,
                     coreFinisherExerciseId: nil,
-                    conditioningExerciseId: nil
+                    conditioningExerciseId: nil,
+                    minimumExerciseCount: GenerationConstants.RecoverySession.minExercises
                 )
             )
             planned = budgeted.planned

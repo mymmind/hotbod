@@ -364,7 +364,8 @@ final class WorkoutGeneratorP0Tests: XCTestCase {
                 exerciseMap: map,
                 targetDurationMinutes: 45,
                 coreFinisherExerciseId: core.id,
-                conditioningExerciseId: nil
+                conditioningExerciseId: nil,
+                minimumExerciseCount: 0
             )
         )
         XCTAssertFalse(result.planned.contains(where: { $0.exerciseId == core.id }))
@@ -440,6 +441,37 @@ final class WorkoutGeneratorP0Tests: XCTestCase {
             ),
             "Estimated 52 min. Priority work exceeds the 45 min target."
         )
+    }
+
+    func testRegression_durationBudgetKeepsMinimumExercises() {
+        let compounds = ["squat", "bench", "row"].map {
+            makeTestExercise(id: $0, primaryMuscles: [.quads], pattern: .squat, mechanics: .compound, equipment: [.barbell])
+        }
+        let curls = ["curl_a", "curl_b"].map {
+            makeTestExercise(id: $0, primaryMuscles: [.biceps], pattern: .isolation, mechanics: .isolation, equipment: [.dumbbell])
+        }
+        let exercises = compounds + curls
+        let map = Dictionary(uniqueKeysWithValues: exercises.map { ($0.id, $0) })
+        let planned = exercises.enumerated().map { index, exercise in
+            PlannedExercise(
+                exerciseId: exercise.id,
+                orderIndex: index,
+                targetSets: (0..<6).map { _ in PlannedSet(targetRepsMin: 8, targetRepsMax: 12) },
+                restSeconds: 180
+            )
+        }
+        let result = SessionDurationBudget.apply(
+            SessionDurationBudget.Input(
+                planned: planned,
+                scores: ["curl_a": 1, "curl_b": 9],
+                targetMuscles: [.biceps, .quads],
+                exerciseMap: map,
+                targetDurationMinutes: 45,
+                coreFinisherExerciseId: nil,
+                conditioningExerciseId: nil
+            )
+        )
+        XCTAssertEqual(result.planned.count, GenerationConstants.Session.minStandardExercises)
     }
 
     func testRegression_durationBudgetGeneratedSessionFitsOrExplains() async throws {

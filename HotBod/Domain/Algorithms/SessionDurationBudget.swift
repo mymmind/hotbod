@@ -9,6 +9,8 @@ enum SessionDurationBudget {
         var targetDurationMinutes: Int
         var coreFinisherExerciseId: String?
         var conditioningExerciseId: String?
+        /// Exercise removals stop at this count. Standard generation uses 4, which is the validator minimum.
+        var minimumExerciseCount: Int = GenerationConstants.Session.minStandardExercises
     }
 
     struct Result {
@@ -34,6 +36,9 @@ enum SessionDurationBudget {
         func reindex() {
             for index in planned.indices { planned[index].orderIndex = index }
         }
+        func canDropExercise() -> Bool {
+            planned.count > input.minimumExerciseCount
+        }
 
         if over() {
             for index in planned.indices {
@@ -42,7 +47,7 @@ enum SessionDurationBudget {
                 if planned[index].targetSets.count != before { removedCooldown = true }
             }
         }
-        if over(), let conditioningId = input.conditioningExerciseId,
+        if over(), canDropExercise(), let conditioningId = input.conditioningExerciseId,
            let index = planned.firstIndex(where: { $0.exerciseId == conditioningId }) {
             planned.remove(at: index)
             removedConditioning = true
@@ -50,7 +55,8 @@ enum SessionDurationBudget {
         }
         if over(), let coreId = input.coreFinisherExerciseId {
             while over(), let index = planned.firstIndex(where: { $0.exerciseId == coreId }) {
-                if planned[index].targetSets.isEmpty {
+                if planned[index].targetSets.count <= 1 {
+                    guard canDropExercise() else { break }
                     planned.remove(at: index)
                     removedCore = true
                     reindex()
@@ -58,10 +64,6 @@ enum SessionDurationBudget {
                 }
                 planned[index].targetSets.removeLast()
                 removedCore = true
-                if planned[index].targetSets.isEmpty {
-                    planned.remove(at: index)
-                    reindex()
-                }
             }
         }
         if over(), let keeper = planned.firstIndex(where: { $0.targetSets.contains(where: \.isWarmup) }) {
@@ -71,7 +73,7 @@ enum SessionDurationBudget {
                 if planned[index].targetSets.count != before { removedExtraWarmups = true }
             }
         }
-        while over() {
+        while over(), canDropExercise() {
             guard let drop = WorkoutGenerationAlgorithms.indexOfLowestScoredIsolationToDrop(
                 planned: planned,
                 scores: input.scores,
