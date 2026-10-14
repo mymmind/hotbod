@@ -474,6 +474,56 @@ final class WorkoutGeneratorP0Tests: XCTestCase {
         }
     }
 
+    func testRegression_reapplyEffortTrustDoesNotRaiseRepFloor() {
+        func makeStats(
+            status: EffortFeedbackStatus,
+            suggested: Double,
+            maxEffortAt: Date? = nil
+        ) -> UserExerciseStats {
+            var stats = UserExerciseStats(
+                exerciseId: "bench_press",
+                lastWeightKg: 100,
+                lastReps: 9,
+                suggestedNextWeightKg: suggested,
+                preferredRepRangeMin: 8,
+                preferredRepRangeMax: 12,
+                lastMaxEffortAt: maxEffortAt,
+                sessionsSinceMaxEffort: 0
+            )
+            stats.goalAtLastUpdate = .buildMuscle
+            stats.recentSets = [
+                CompletedSet(setIndex: 0, weightKg: 100, reps: 9, rir: 0, effortFeedbackStatus: status)
+            ]
+            return stats
+        }
+
+        // 1. Flipping twice with unknown effort must not raise the rep floor or change load again.
+        var flipped = makeStats(status: .unknown, suggested: 100)
+        ProgressiveOverload.reapplyEffortTrust(stats: &flipped, trustHistoric: false)
+        let afterFirst = flipped.suggestedNextWeightKg
+        ProgressiveOverload.reapplyEffortTrust(stats: &flipped, trustHistoric: false)
+        XCTAssertEqual(flipped.preferredRepRangeMin, 8)
+        XCTAssertEqual(flipped.preferredRepRangeMax, 12)
+        XCTAssertEqual(flipped.suggestedNextWeightKg, afterFirst)
+        XCTAssertFalse(flipped.preferVariation)
+
+        // 2. A fresh max-effort recalibration is not overwritten.
+        var calibrated = makeStats(
+            status: .unknown,
+            suggested: 110,
+            maxEffortAt: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+        ProgressiveOverload.reapplyEffortTrust(stats: &calibrated, trustHistoric: false)
+        XCTAssertEqual(calibrated.suggestedNextWeightKg, 110)
+        XCTAssertEqual(calibrated.preferredRepRangeMin, 8)
+
+        // 3. Explicit sets do not change meaning when the trust flag flips.
+        var explicit = makeStats(status: .explicit, suggested: 105)
+        ProgressiveOverload.reapplyEffortTrust(stats: &explicit, trustHistoric: false)
+        XCTAssertEqual(explicit.suggestedNextWeightKg, 105)
+        XCTAssertEqual(explicit.preferredRepRangeMin, 8)
+    }
+
     private func minutes(in rationale: String) -> Int? {
         guard let range = rationale.range(of: #"Estimated (\d+) min"#, options: .regularExpression) else { return nil }
         let text = rationale[range]

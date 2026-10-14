@@ -527,10 +527,25 @@ enum ProgressiveOverload {
 
     static func reapplyEffortTrust(stats: inout UserExerciseStats, trustHistoric: Bool) {
         guard let lastWeight = stats.lastWeightKg, let lastReps = stats.lastReps else { return }
+        let workingSets = stats.recentSets.filter(EffortFeedbackMapping.isWorkingSet)
+        // Explicit and skipped sets keep their meaning when the trust flag flips.
+        guard workingSets.contains(where: { $0.effortFeedbackStatus == .unknown }) else { return }
+        // Do not overwrite a max-effort recalibration.
+        if stats.lastMaxEffortAt != nil, stats.sessionsSinceMaxEffort == 0 { return }
+
+        let repMin = stats.preferredRepRangeMin
+        let repMax = stats.preferredRepRangeMax
+        let preferVariation = stats.preferVariation
+        defer {
+            // Replay may change the suggested load only, never the rep range or variation flag.
+            stats.preferredRepRangeMin = repMin
+            stats.preferredRepRangeMax = repMax
+            stats.preferVariation = preferVariation
+        }
         applyProgressionPolicy(
             to: &stats,
             lastWeight: lastWeight,
-            workingSets: stats.recentSets.filter(EffortFeedbackMapping.isWorkingSet),
+            workingSets: workingSets,
             hitTopOfRepRange: lastReps >= stats.preferredRepRangeMax,
             missedMinimumReps: lastReps < stats.preferredRepRangeMin,
             goal: stats.goalAtLastUpdate ?? .buildMuscle,

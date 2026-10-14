@@ -283,12 +283,24 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                 )
             )
             planned = budgeted.planned
+            // Keep the cardio block and core finisher out of the lift grouping pass.
+            let excludedIds = Set([conditioningId, coreId].compactMap { $0 })
+            var excluded: [(index: Int, exercise: PlannedExercise)] = []
+            for (index, exercise) in planned.enumerated() where excludedIds.contains(exercise.exerciseId) {
+                excluded.append((index, exercise))
+            }
+            for entry in excluded.reversed() { planned.remove(at: entry.index) }
             for index in planned.indices { planned[index].groupId = nil }
             ExerciseGroupPlanner.applyGrouping(
                 to: &planned,
                 preference: input.userProfile.preferredExerciseGrouping,
                 exerciseMap: exerciseMap
             )
+            for entry in excluded {
+                var exercise = entry.exercise
+                exercise.groupId = nil
+                planned.insert(exercise, at: min(entry.index, planned.count))
+            }
         } else {
             budgeted = SessionDurationBudget.apply(
                 SessionDurationBudget.Input(

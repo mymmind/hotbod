@@ -314,6 +314,7 @@ struct WorkoutPreviewView: View {
             goal: environment.userProfile?.goal ?? .buildMuscle,
             bodyWeightKg: bodyWeightKg,
             stats: exerciseStatsById[exercise.id],
+            sessionMode: workout.sessionMode,
             weightCeilings: environment.userProfile?.maxAvailableWeightKg ?? [:]
         )
         orderedExercises.append(planned)
