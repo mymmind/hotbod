@@ -341,4 +341,46 @@ final class SupabaseDTOMappingTests: XCTestCase {
         XCTAssertEqual(photo.localImagePath, "/local/front.jpg")
         XCTAssertEqual(photo.poseType, .frontRelaxed)
     }
+
+    func testEffortFieldsRoundTripAndDefault() throws {
+        var profile = UserProfile.empty()
+        profile.promptForEffortFeedback = false
+        profile.trustHistoricEffortFeedback = false
+        let row = ProfileRow(from: profile, userId: profile.id)
+        let restored = row.toUserProfile(fallback: nil)
+        XCTAssertFalse(restored.promptForEffortFeedback)
+        XCTAssertFalse(restored.trustHistoricEffortFeedback)
+
+        // Null cloud values fall back to the local profile, then to true.
+        var nullRow = row
+        nullRow.promptForEffortFeedback = nil
+        nullRow.trustHistoricEffortFeedback = nil
+        XCTAssertTrue(nullRow.toUserProfile(fallback: nil).promptForEffortFeedback)
+        XCTAssertTrue(nullRow.toUserProfile(fallback: nil).trustHistoricEffortFeedback)
+        XCTAssertFalse(nullRow.toUserProfile(fallback: profile).promptForEffortFeedback)
+        XCTAssertFalse(nullRow.toUserProfile(fallback: profile).trustHistoricEffortFeedback)
+
+        let set = CompletedSet(
+            setIndex: 1, weightKg: 40, reps: 8, effortFeedbackStatus: .skipped
+        )
+        let setRow = CompletedSetRow(set: set, workoutExerciseId: UUID())
+        let data = try JSONEncoder().encode(setRow)
+        let decoded = try JSONDecoder().decode(CompletedSetRow.self, from: data)
+        XCTAssertEqual(decoded.effortFeedbackStatus, EffortFeedbackStatus.skipped.rawValue)
+
+        // Missing key (pre-migration row) decodes to nil, which pull maps to .unknown.
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        json.removeValue(forKey: "effort_feedback_status")
+        let legacy = try JSONDecoder().decode(
+            CompletedSetRow.self, from: JSONSerialization.data(withJSONObject: json)
+        )
+        XCTAssertNil(legacy.effortFeedbackStatus)
+
+        let session = WorkoutSession(
+            userId: UUID(), title: "Push", estimatedDurationMinutes: 45,
+            exercises: [], status: .inProgress, sessionMode: .recovery
+        )
+        let sessionRow = WorkoutSessionRow(session: session)
+        XCTAssertEqual(sessionRow.sessionMode, SessionMode.recovery.rawValue)
+    }
 }

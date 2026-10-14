@@ -53,7 +53,8 @@ extension SupabaseCloudSyncService {
                         id: $0.id, setIndex: $0.setIndex, weightKg: $0.weightKg, reps: $0.reps,
                         rpe: $0.rpe, rir: $0.rir, durationSeconds: $0.durationSeconds,
                         distanceMeters: $0.distanceMeters, completedAt: $0.completedAt,
-                        isWarmup: $0.isWarmup, isFailure: $0.isFailure, isCooldown: $0.isCooldown
+                        isWarmup: $0.isWarmup, isFailure: $0.isFailure, isCooldown: $0.isCooldown,
+                        effortFeedbackStatus: EffortFeedbackStatus(rawValue: $0.effortFeedbackStatus ?? "") ?? .unknown
                     )
                 }
                 exercises.append(WorkoutExercise(
@@ -71,7 +72,8 @@ extension SupabaseCloudSyncService {
                 estimatedDurationMinutes: row.estimatedDurationMinutes ?? 45,
                 exercises: exercises, notes: row.notes,
                 perceivedDifficulty: row.perceivedDifficulty,
-                status: WorkoutStatus(rawValue: row.status) ?? .completed
+                status: WorkoutStatus(rawValue: row.status) ?? .completed,
+                sessionMode: SessionMode(rawValue: row.sessionMode ?? "") ?? .standard
             )
             try await local.workout.saveSession(session)
         }

@@ -27,6 +27,8 @@ struct ProfileRow: Codable {
     var includeCoreFinisher: Bool?
     var maxAvailableWeightKg: [Equipment: Double]?
     var exportWorkoutsToHealthKit: Bool?
+    var promptForEffortFeedback: Bool?
+    var trustHistoricEffortFeedback: Bool?
     var onboardingComplete: Bool?
     var updatedAt: Date?
 
@@ -52,6 +54,8 @@ struct ProfileRow: Codable {
         case includeCoreFinisher = "include_core_finisher"
         case maxAvailableWeightKg = "max_available_weight_kg"
         case exportWorkoutsToHealthKit = "export_workouts_to_health_kit"
+        case promptForEffortFeedback = "prompt_for_effort_feedback"
+        case trustHistoricEffortFeedback = "trust_historic_effort_feedback"
         case onboardingComplete = "onboarding_complete"
         case updatedAt = "updated_at"
     }
@@ -81,6 +85,8 @@ struct ProfileRow: Codable {
         includeCoreFinisher = profile.includeCoreFinisher
         maxAvailableWeightKg = profile.maxAvailableWeightKg.isEmpty ? nil : profile.maxAvailableWeightKg
         exportWorkoutsToHealthKit = profile.exportWorkoutsToHealthKit
+        promptForEffortFeedback = profile.promptForEffortFeedback
+        trustHistoricEffortFeedback = profile.trustHistoricEffortFeedback
         onboardingComplete = true
         updatedAt = profile.updatedAt
     }
@@ -121,6 +127,8 @@ struct ProfileRow: Codable {
                 ?? fallback?.cardioBlockPlacement ?? .none,
             includeConditioning: includeConditioning ?? fallback?.includeConditioning ?? false,
             includeCoreFinisher: includeCoreFinisher ?? fallback?.includeCoreFinisher ?? true,
+            promptForEffortFeedback: promptForEffortFeedback ?? fallback?.promptForEffortFeedback ?? true,
+            trustHistoricEffortFeedback: trustHistoricEffortFeedback ?? fallback?.trustHistoricEffortFeedback ?? true,
             maxAvailableWeightKg: maxAvailableWeightKg ?? fallback?.maxAvailableWeightKg ?? [:],
             exportWorkoutsToHealthKit: exportWorkoutsToHealthKit ?? fallback?.exportWorkoutsToHealthKit ?? false,
             createdAt: fallback?.createdAt ?? Date(),
@@ -236,6 +244,7 @@ struct WorkoutSessionRow: Codable {
     var perceivedDifficulty: Int?
     var notes: String?
     var status: String
+    var sessionMode: String?
     var updatedAt: Date?
 
     enum CodingKeys: String, CodingKey {
@@ -247,6 +256,7 @@ struct WorkoutSessionRow: Codable {
         case estimatedDurationMinutes = "estimated_duration_minutes"
         case perceivedDifficulty = "perceived_difficulty"
         case notes, status
+        case sessionMode = "session_mode"
         case updatedAt = "updated_at"
     }
 
@@ -260,6 +270,7 @@ struct WorkoutSessionRow: Codable {
         perceivedDifficulty = session.perceivedDifficulty
         notes = session.notes
         status = session.status.rawValue
+        sessionMode = session.sessionMode.rawValue
         updatedAt = Date()
     }
 }
@@ -316,6 +327,7 @@ struct CompletedSetRow: Codable {
     var isWarmup: Bool
     var isFailure: Bool
     var isCooldown: Bool
+    var effortFeedbackStatus: String?
     var completedAt: Date
 
     enum CodingKeys: String, CodingKey {
@@ -330,6 +342,7 @@ struct CompletedSetRow: Codable {
         case isWarmup = "is_warmup"
         case isFailure = "is_failure"
         case isCooldown = "is_cooldown"
+        case effortFeedbackStatus = "effort_feedback_status"
         case completedAt = "completed_at"
     }
 
@@ -346,6 +359,7 @@ struct CompletedSetRow: Codable {
         isWarmup = set.isWarmup
         isFailure = set.isFailure
         isCooldown = set.isCooldown
+        effortFeedbackStatus = set.effortFeedbackStatus.rawValue
         completedAt = set.completedAt
     }
 }
