@@ -373,7 +373,8 @@ enum DeloadDetector {
         stats: UserExerciseStats,
         volumeHistory: [Int],
         consecutiveWeeks: Int = 3,
-        now: Date = Date()
+        now: Date = Date(),
+        trustHistoricEffortFeedback: Bool = true
     ) -> DeloadAnalysis {
         if !stats.isInDeloadSuppressionWindow(at: now) {
             let currentWindowSets = VolumeTracker.rollingSetCount(from: stats.recentSets, endingAt: now)
@@ -431,10 +432,18 @@ enum DeloadDetector {
 
         let loggedRPESets = stats.recentSets.filter {
             EffortFeedbackMapping.isWorkingSet($0)
-                && EffortFeedbackMapping.effectiveRPE(rpe: $0.rpe, rir: $0.rir) != nil
+                && EffortFeedbackMapping.trustedEffectiveRPE(
+                    rpe: $0.rpe,
+                    rir: $0.rir,
+                    status: $0.effortFeedbackStatus,
+                    trustHistoric: trustHistoricEffortFeedback
+                ) != nil
         }
         if loggedRPESets.count >= GenerationConstants.Progression.highRPEDeloadSetCount,
-           let averageRPE = ProgressiveOverload.averageLoggedRPE(from: loggedRPESets),
+           let averageRPE = ProgressiveOverload.averageLoggedRPE(
+               from: loggedRPESets,
+               trustHistoric: trustHistoricEffortFeedback
+           ),
            averageRPE >= GenerationConstants.Progression.veryHardRPEThreshold {
             return DeloadAnalysis(
                 isDeloadRecommended: true,
@@ -453,12 +462,17 @@ enum DeloadDetector {
     }
 
     /// Updates deload state based on volume history
-    static func updateDeloadState(stats: inout UserExerciseStats, now: Date = Date()) {
+    static func updateDeloadState(
+        stats: inout UserExerciseStats,
+        trustHistoricEffortFeedback: Bool = true,
+        now: Date = Date()
+    ) {
         let analysis = analyzeDeloadNeed(
             stats: stats,
             volumeHistory: stats.weeklyVolume,
             consecutiveWeeks: stats.consecutiveHighVolumeWeeks,
-            now: now
+            now: now,
+            trustHistoricEffortFeedback: trustHistoricEffortFeedback
         )
 
         if analysis.suggestsReturningFromBreak {

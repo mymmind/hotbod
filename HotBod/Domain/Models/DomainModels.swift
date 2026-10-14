@@ -1,3 +1,4 @@
+// swiftlint:disable file_length
 import Foundation
 
 struct UserProfile: Identifiable, Codable, Hashable {
@@ -448,6 +449,12 @@ struct PlannedSet: Identifiable, Codable, Hashable {
     }
 }
 
+enum EffortFeedbackStatus: String, Codable, Hashable {
+    case explicit
+    case skipped
+    case unknown
+}
+
 struct CompletedSet: Identifiable, Codable, Hashable {
     let id: UUID
     var setIndex: Int
@@ -461,10 +468,11 @@ struct CompletedSet: Identifiable, Codable, Hashable {
     var isWarmup: Bool
     var isFailure: Bool
     var isCooldown: Bool
+    var effortFeedbackStatus: EffortFeedbackStatus = .unknown
 
     enum CodingKeys: String, CodingKey {
         case id, setIndex, weightKg, reps, rpe, rir, durationSeconds, distanceMeters
-        case completedAt, isWarmup, isFailure, isCooldown
+        case completedAt, isWarmup, isFailure, isCooldown, effortFeedbackStatus
     }
 
     init(
@@ -479,7 +487,8 @@ struct CompletedSet: Identifiable, Codable, Hashable {
         completedAt: Date = Date(),
         isWarmup: Bool = false,
         isFailure: Bool = false,
-        isCooldown: Bool = false
+        isCooldown: Bool = false,
+        effortFeedbackStatus: EffortFeedbackStatus = .unknown
     ) {
         self.id = id
         self.setIndex = setIndex
@@ -493,6 +502,7 @@ struct CompletedSet: Identifiable, Codable, Hashable {
         self.isWarmup = isWarmup
         self.isFailure = isFailure
         self.isCooldown = isCooldown
+        self.effortFeedbackStatus = effortFeedbackStatus
     }
 
     init(from decoder: Decoder) throws {
@@ -509,6 +519,26 @@ struct CompletedSet: Identifiable, Codable, Hashable {
         isWarmup = try container.decodeIfPresent(Bool.self, forKey: .isWarmup) ?? false
         isFailure = try container.decodeIfPresent(Bool.self, forKey: .isFailure) ?? false
         isCooldown = try container.decodeIfPresent(Bool.self, forKey: .isCooldown) ?? false
+        effortFeedbackStatus = try container.decodeIfPresent(
+            EffortFeedbackStatus.self, forKey: .effortFeedbackStatus
+        ) ?? .unknown
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(setIndex, forKey: .setIndex)
+        try container.encodeIfPresent(weightKg, forKey: .weightKg)
+        try container.encode(reps, forKey: .reps)
+        try container.encodeIfPresent(rpe, forKey: .rpe)
+        try container.encodeIfPresent(rir, forKey: .rir)
+        try container.encodeIfPresent(durationSeconds, forKey: .durationSeconds)
+        try container.encodeIfPresent(distanceMeters, forKey: .distanceMeters)
+        try container.encode(completedAt, forKey: .completedAt)
+        try container.encode(isWarmup, forKey: .isWarmup)
+        try container.encode(isFailure, forKey: .isFailure)
+        try container.encode(isCooldown, forKey: .isCooldown)
+        try container.encode(effortFeedbackStatus, forKey: .effortFeedbackStatus)
     }
 }
 

@@ -152,4 +152,82 @@ final class WorkoutGeneratorP0Tests: XCTestCase {
         )
         XCTAssertEqual(manualWeight, expected, accuracy: 0.01)
     }
+
+    func testRegression_skippedEffort() throws {
+        var skipped = CompletedSet(setIndex: 0, weightKg: 65, reps: 10, rpe: 10, rir: 0, isFailure: true)
+        EffortFeedbackMapping.markSkipped(&skipped)
+        XCTAssertEqual(skipped.effortFeedbackStatus, .skipped)
+        XCTAssertNil(skipped.rpe)
+        XCTAssertNil(skipped.rir)
+        XCTAssertFalse(skipped.isFailure)
+
+        var explicit = CompletedSet(setIndex: 0, weightKg: 65, reps: 10)
+        EffortFeedbackMapping.markExplicit(&explicit, rir: 0)
+        XCTAssertEqual(explicit.effortFeedbackStatus, .explicit)
+        XCTAssertEqual(explicit.rir, 0)
+        XCTAssertEqual(explicit.rpe, 10)
+        XCTAssertTrue(explicit.isFailure)
+
+        var easy = explicit
+        EffortFeedbackMapping.markExplicit(&easy, rir: 2)
+        XCTAssertFalse(easy.isFailure)
+
+        let planned = [PlannedSet(targetRepsMin: 8, targetRepsMax: 10)]
+        let skippedSets = [CompletedSet(setIndex: 0, weightKg: 100, reps: 10, effortFeedbackStatus: .skipped)]
+        let silentSets = [CompletedSet(setIndex: 0, weightKg: 100, reps: 10)]
+        let skippedStats = ProgressiveOverload.updateStats(
+            existing: nil, exerciseId: "bench_press", completedSets: skippedSets,
+            plannedSets: planned, trustHistoricEffortFeedback: false
+        )
+        let silentStats = ProgressiveOverload.updateStats(
+            existing: nil, exerciseId: "bench_press", completedSets: silentSets,
+            plannedSets: planned, trustHistoricEffortFeedback: false
+        )
+        XCTAssertEqual(skippedStats.suggestedNextWeightKg, silentStats.suggestedNextWeightKg)
+        XCTAssertEqual(skippedStats.suggestedNextWeightKg, 102.5)
+
+        let hardSets = [
+            CompletedSet(setIndex: 0, weightKg: 100, reps: 10, rpe: 10, rir: 0, effortFeedbackStatus: .explicit)
+        ]
+        let hardStats = ProgressiveOverload.updateStats(
+            existing: nil, exerciseId: "bench_press", completedSets: hardSets,
+            plannedSets: planned, trustHistoricEffortFeedback: false
+        )
+        XCTAssertEqual(try XCTUnwrap(hardStats.suggestedNextWeightKg), 100, accuracy: 0.1)
+
+        var historic = UserExerciseStats(
+            exerciseId: "bench_press", lastWeightKg: 100, lastReps: 10,
+            suggestedNextWeightKg: 100, preferredRepRangeMin: 8, preferredRepRangeMax: 10
+        )
+        historic.recentSets = [
+            CompletedSet(setIndex: 0, weightKg: 100, reps: 10, rir: 0, effortFeedbackStatus: .unknown)
+        ]
+        historic.deloadStartedAt = Date()
+        let trusted = EffortFeedbackMapping.trustedEffectiveRPE(
+            rpe: nil, rir: 0, status: .unknown, trustHistoric: true
+        )
+        let ignored = EffortFeedbackMapping.trustedEffectiveRPE(
+            rpe: nil, rir: 0, status: .unknown, trustHistoric: false
+        )
+        XCTAssertEqual(trusted, 10)
+        XCTAssertNil(ignored)
+
+        var untrusted = historic
+        ProgressiveOverload.reapplyEffortTrust(stats: &untrusted, trustHistoric: false)
+        XCTAssertEqual(untrusted.lastWeightKg, 100)
+        XCTAssertEqual(untrusted.lastReps, 10)
+        XCTAssertNotNil(untrusted.deloadStartedAt)
+        XCTAssertEqual(untrusted.suggestedNextWeightKg, 102.5)
+
+        // Legacy JSON: encode a set, strip effortFeedbackStatus, decode without that key.
+        let encoded = try JSONEncoder().encode(CompletedSet(setIndex: 0, reps: 8))
+        guard var object = try JSONSerialization.jsonObject(with: encoded) as? [String: Any] else {
+            XCTFail("Expected a JSON object for CompletedSet")
+            return
+        }
+        object.removeValue(forKey: "effortFeedbackStatus")
+        let stripped = try JSONSerialization.data(withJSONObject: object)
+        let decoded = try JSONDecoder().decode(CompletedSet.self, from: stripped)
+        XCTAssertEqual(decoded.effortFeedbackStatus, .unknown)
+    }
 }

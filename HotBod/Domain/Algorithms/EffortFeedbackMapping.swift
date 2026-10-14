@@ -21,15 +21,53 @@ enum EffortFeedbackMapping {
         return nil
     }
 
+    static func trustedEffectiveRPE(
+        rpe: Double?,
+        rir: Int?,
+        status: EffortFeedbackStatus,
+        trustHistoric: Bool
+    ) -> Double? {
+        switch status {
+        case .explicit:
+            return effectiveRPE(rpe: rpe, rir: rir)
+        case .skipped:
+            return nil
+        case .unknown:
+            guard trustHistoric else { return nil }
+            return effectiveRPE(rpe: rpe, rir: rir)
+        }
+    }
+
+    static func markSkipped(_ set: inout CompletedSet) {
+        set.effortFeedbackStatus = .skipped
+        set.rir = nil
+        set.rpe = nil
+        set.isFailure = false
+    }
+
+    static func markExplicit(_ set: inout CompletedSet, rir: Int) {
+        set.effortFeedbackStatus = .explicit
+        set.rir = rir
+        set.rpe = rpe(fromRIR: rir)
+        set.isFailure = rir == 0
+    }
+
     static func isWorkingSet(_ set: CompletedSet) -> Bool {
         !set.isWarmup && !set.isCooldown
             && (set.reps > 0 || (set.durationSeconds ?? 0) > 0 || (set.distanceMeters ?? 0) > 0)
     }
 
-    static func averageEffectiveRPE(from sets: [CompletedSet]) -> Double? {
+    static func averageEffectiveRPE(
+        from sets: [CompletedSet],
+        trustHistoric: Bool = true
+    ) -> Double? {
         let working = sets.filter(isWorkingSet)
         guard !working.isEmpty else { return nil }
-        let values = working.compactMap { effectiveRPE(rpe: $0.rpe, rir: $0.rir) }
+        let values = working.compactMap {
+            trustedEffectiveRPE(
+                rpe: $0.rpe, rir: $0.rir, status: $0.effortFeedbackStatus, trustHistoric: trustHistoric
+            )
+        }
         guard !values.isEmpty else { return nil }
         return values.reduce(0, +) / Double(values.count)
     }

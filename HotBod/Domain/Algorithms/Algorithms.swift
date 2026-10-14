@@ -303,8 +303,8 @@ enum VolumeTracker {
 }
 
 enum ProgressiveOverload {
-    static func averageLoggedRPE(from sets: [CompletedSet]) -> Double? {
-        EffortFeedbackMapping.averageEffectiveRPE(from: sets)
+    static func averageLoggedRPE(from sets: [CompletedSet], trustHistoric: Bool = true) -> Double? {
+        EffortFeedbackMapping.averageEffectiveRPE(from: sets, trustHistoric: trustHistoric)
     }
 
     /// Retains sets across the current + previous rolling week (capped) so weekly volume is accurate.
@@ -414,7 +414,8 @@ enum ProgressiveOverload {
         experienceLevel: ExperienceLevel = .intermediate,
         goal: TrainingGoal? = nil,
         equipment: [Equipment] = [],
-        weightCeilings: [Equipment: Double] = [:]
+        weightCeilings: [Equipment: Double] = [:],
+        trustHistoricEffortFeedback: Bool = true
     ) -> UserExerciseStats {
         let working = completedSets.filter {
             !$0.isWarmup && !$0.isCooldown
@@ -483,7 +484,10 @@ enum ProgressiveOverload {
             stats.lastMaxEffortAt = Date()
             stats.sessionsSinceMaxEffort = 0
             VolumeTracker.recordSession(on: &stats)
-            DeloadDetector.updateDeloadState(stats: &stats)
+            DeloadDetector.updateDeloadState(
+                stats: &stats,
+                trustHistoricEffortFeedback: trustHistoricEffortFeedback
+            )
             if let goal {
                 stats.goalAtLastUpdate = goal
             }
@@ -495,7 +499,10 @@ enum ProgressiveOverload {
         }
 
         VolumeTracker.recordSession(on: &stats)
-        DeloadDetector.updateDeloadState(stats: &stats)
+        DeloadDetector.updateDeloadState(
+            stats: &stats,
+            trustHistoricEffortFeedback: trustHistoricEffortFeedback
+        )
 
         if stats.returningFromBreak, existing?.returningFromBreak == true {
             stats.returningFromBreak = false
@@ -510,11 +517,27 @@ enum ProgressiveOverload {
                 missedMinimumReps: missedMin,
                 goal: goal ?? .buildMuscle,
                 equipment: equipment,
-                weightCeilings: weightCeilings
+                weightCeilings: weightCeilings,
+                trustHistoric: trustHistoricEffortFeedback
             )
         }
 
         return stats
+    }
+
+    static func reapplyEffortTrust(stats: inout UserExerciseStats, trustHistoric: Bool) {
+        guard let lastWeight = stats.lastWeightKg, let lastReps = stats.lastReps else { return }
+        applyProgressionPolicy(
+            to: &stats,
+            lastWeight: lastWeight,
+            workingSets: stats.recentSets.filter(EffortFeedbackMapping.isWorkingSet),
+            hitTopOfRepRange: lastReps >= stats.preferredRepRangeMax,
+            missedMinimumReps: lastReps < stats.preferredRepRangeMin,
+            goal: stats.goalAtLastUpdate ?? .buildMuscle,
+            equipment: [],
+            weightCeilings: [:],
+            trustHistoric: trustHistoric
+        )
     }
 
     private static func applyProgressionPolicy(
@@ -525,9 +548,10 @@ enum ProgressiveOverload {
         missedMinimumReps: Bool,
         goal: TrainingGoal,
         equipment: [Equipment],
-        weightCeilings: [Equipment: Double]
+        weightCeilings: [Equipment: Double],
+        trustHistoric: Bool = true
     ) {
-        let avgRPE = averageLoggedRPE(from: workingSets)
+        let avgRPE = averageLoggedRPE(from: workingSets, trustHistoric: trustHistoric)
         let action = ProgressionPolicy.action(
             goal: goal,
             hitTopOfRepRange: hitTopOfRepRange,
