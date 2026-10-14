@@ -683,6 +683,50 @@ final class IntegrationFlowTests: XCTestCase {
     XCTAssertEqual(setRow.reps, 15)
   }
 
+  func testRegression_untrustedHistoricEffort() async throws {
+    let env = makeEnvironment()
+    var profile = UserProfile.empty()
+    profile.trustHistoricEffortFeedback = true
+    profile.reminderTrainingDays = Weekday.allCases
+    try await env.seedOnboardedProfile(profile)
+
+    var stats = UserExerciseStats(
+      exerciseId: "bench_press",
+      lastWeightKg: 100,
+      lastReps: 10,
+      suggestedNextWeightKg: 100,
+      preferredRepRangeMin: 8,
+      preferredRepRangeMax: 10
+    )
+    stats.recentSets = [
+      CompletedSet(setIndex: 0, weightKg: 100, reps: 10, rir: 0, effortFeedbackStatus: .unknown)
+    ]
+    try await env.exerciseStatsRepository.saveStats([stats])
+
+    profile.trustHistoricEffortFeedback = false
+    let saved = await env.updateUserProfile(profile, refreshWorkout: true)
+    XCTAssertTrue(saved)
+
+    let stored = try await env.exerciseStatsRepository.fetchStats()
+    let bench = try XCTUnwrap(stored.first { $0.exerciseId == "bench_press" })
+    XCTAssertEqual(bench.lastWeightKg, 100)
+    XCTAssertEqual(bench.suggestedNextWeightKg, 102.5)
+
+    let planned = SessionLoadPlanner.plannedWeightKg(
+      SessionLoadPlanner.Input(
+        suggestedNextWeightKg: bench.suggestedNextWeightKg,
+        lastWeightKg: bench.lastWeightKg,
+        sessionMode: .standard,
+        isInDeloadWeek: bench.isInDeloadWeek,
+        returningFromBreak: bench.returningFromBreak,
+        equipment: [.barbell],
+        ceilings: [:],
+        fallbackWeightKg: 20
+      )
+    )
+    XCTAssertEqual(planned, 102.5)
+  }
+
   // MARK: - Helpers
 
   private func makeEnvironment() -> AppEnvironment {
