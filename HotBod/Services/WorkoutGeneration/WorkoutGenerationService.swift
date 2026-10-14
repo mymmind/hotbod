@@ -242,20 +242,14 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             )
         }
 
+        let budgeted: SessionDurationBudget.Result
         if sessionMode == .standard {
-            WorkoutGenerationAlgorithms.trimToDuration(
-                planned: &planned,
-                scores: selection.scores,
-                targetMuscles: targetMuscles,
-                exerciseMap: exerciseMap,
-                targetDurationMinutes: input.targetDurationMinutes
-            )
             ExerciseGroupPlanner.applyGrouping(
                 to: &planned,
                 preference: input.userProfile.preferredExerciseGrouping,
                 exerciseMap: exerciseMap
             )
-            SessionStructurePlanner.applyCardioBlock(
+            let conditioningId = SessionStructurePlanner.applyCardioBlock(
                 to: &planned,
                 placement: input.userProfile.cardioBlockPlacement,
                 exercises: allExercises,
@@ -263,8 +257,9 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                 includeConditioning: input.userProfile.includeConditioning
                     || !([TrainingGoal.buildMuscle, .gainStrength].contains(input.goal))
             )
+            var coreId: String?
             if input.userProfile.includeCoreFinisher {
-                CoreFinisherPlanner.appendCoreFinisher(
+                coreId = CoreFinisherPlanner.appendCoreFinisher(
                     to: &planned,
                     exercises: allExercises,
                     availableEquipment: input.availableEquipment,
@@ -276,6 +271,37 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             if input.userProfile.includeCooldown {
                 SessionStructurePlanner.appendCooldownSets(to: &planned, exerciseMap: exerciseMap)
             }
+            budgeted = SessionDurationBudget.apply(
+                SessionDurationBudget.Input(
+                    planned: planned,
+                    scores: selection.scores,
+                    targetMuscles: targetMuscles,
+                    exerciseMap: exerciseMap,
+                    targetDurationMinutes: input.targetDurationMinutes,
+                    coreFinisherExerciseId: coreId,
+                    conditioningExerciseId: conditioningId
+                )
+            )
+            planned = budgeted.planned
+            for index in planned.indices { planned[index].groupId = nil }
+            ExerciseGroupPlanner.applyGrouping(
+                to: &planned,
+                preference: input.userProfile.preferredExerciseGrouping,
+                exerciseMap: exerciseMap
+            )
+        } else {
+            budgeted = SessionDurationBudget.apply(
+                SessionDurationBudget.Input(
+                    planned: planned,
+                    scores: selection.scores,
+                    targetMuscles: targetMuscles,
+                    exerciseMap: exerciseMap,
+                    targetDurationMinutes: input.targetDurationMinutes,
+                    coreFinisherExerciseId: nil,
+                    conditioningExerciseId: nil
+                )
+            )
+            planned = budgeted.planned
         }
 
         let title = sessionMode == .recovery
@@ -287,9 +313,20 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
                 focus: input.splitDayFocus
             )
         let duration = WorkoutGenerationAlgorithms.estimateDurationMinutes(planned: planned)
-        let rationale = sessionMode == .recovery
+        var rationale = sessionMode == .recovery
             ? "Recovery session — reduced volume and intensity based on soreness and fatigue."
             : buildRationale(input: input, muscles: targetMuscles)
+        if let suffix = SessionDurationBudget.rationaleSuffix(
+            removedCooldown: budgeted.removedCooldown,
+            removedConditioning: budgeted.removedConditioning,
+            removedCore: budgeted.removedCore,
+            removedExtraWarmups: budgeted.removedExtraWarmups,
+            removedAccessory: budgeted.removedAccessory,
+            targetMinutes: input.targetDurationMinutes,
+            estimatedMinutes: duration
+        ) {
+            rationale += " \(suffix)"
+        }
         let selectionRationale = WorkoutSelectionRationale.build(
             input: input,
             muscles: targetMuscles,

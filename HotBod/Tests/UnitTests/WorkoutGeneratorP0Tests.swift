@@ -441,4 +441,42 @@ final class WorkoutGeneratorP0Tests: XCTestCase {
             "Estimated 52 min. Priority work exceeds the 45 min target."
         )
     }
+
+    func testRegression_durationBudgetGeneratedSessionFitsOrExplains() async throws {
+        var profile = UserProfile.empty()
+        profile.preferredSessionLengthMinutes = 45
+        profile.includeWarmupSets = true
+        profile.includeCoreFinisher = true
+        profile.includeCooldown = true
+        profile.preferredSplit = .pushPullLegs
+        let input = WorkoutGenerationInput(
+            userProfile: profile,
+            goal: .buildMuscle,
+            experienceLevel: .intermediate,
+            availableEquipment: profile.availableEquipment,
+            targetDurationMinutes: 45,
+            preferredMuscleGroups: [],
+            avoidedMuscleGroups: [],
+            injuries: [],
+            recentWorkouts: [],
+            muscleRecovery: Dictionary(uniqueKeysWithValues: MuscleGroup.allCases.map { ($0, 100.0) }),
+            exerciseStats: [],
+            userPreferences: WorkoutPreferences(),
+            readiness: ReadinessInput(soreness: .none),
+            splitDayFocus: .push
+        )
+        let workout = try await RulesWorkoutGenerationService().generate(input: input)
+        let fits = workout.estimatedDurationMinutes <= 45
+        let explains = workout.rationale.contains("Priority work exceeds the \(45) min target.")
+        XCTAssertTrue(fits || explains)
+        if !fits {
+            XCTAssertEqual(workout.estimatedDurationMinutes, minutes(in: workout.rationale))
+        }
+    }
+
+    private func minutes(in rationale: String) -> Int? {
+        guard let range = rationale.range(of: #"Estimated (\d+) min"#, options: .regularExpression) else { return nil }
+        let text = rationale[range]
+        return Int(text.filter(\.isNumber))
+    }
 }

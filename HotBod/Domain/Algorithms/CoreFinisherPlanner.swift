@@ -38,8 +38,8 @@ enum CoreFinisherPlanner {
         experience: ExperienceLevel,
         splitDayFocus: SplitDayFocus?,
         exerciseStats: [UserExerciseStats]
-    ) {
-        guard !planned.isEmpty else { return }
+    ) -> String? {
+        guard !planned.isEmpty else { return nil }
 
         let existingIds = Set(planned.map(\.exerciseId))
         let candidates = exercises.filter { exercise in
@@ -54,12 +54,13 @@ enum CoreFinisherPlanner {
             splitDayFocus: splitDayFocus,
             experience: experience,
             exerciseStats: exerciseStats
-        ) else { return }
+        ) else { return nil }
 
         planned.append(buildFinisherExercise(selected, orderIndex: planned.count, experience: experience, splitDayFocus: splitDayFocus))
         for index in planned.indices {
             planned[index].orderIndex = index
         }
+        return selected.id
     }
 
     private static func selectFinisher(

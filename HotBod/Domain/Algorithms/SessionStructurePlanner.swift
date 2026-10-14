@@ -44,11 +44,11 @@ enum SessionStructurePlanner {
         exercises: [Exercise],
         availableEquipment: [Equipment],
         includeConditioning: Bool = true
-    ) {
+    ) -> String? {
         guard includeConditioning,
               placement != .none,
               let cardio = selectCardioExercise(from: exercises, availableEquipment: availableEquipment) else {
-            return
+            return nil
         }
 
         let durationSeconds = ExerciseMetadataResolver.defaultDurationSeconds(for: cardio)
@@ -82,6 +82,7 @@ enum SessionStructurePlanner {
         for index in planned.indices {
             planned[index].orderIndex = index
         }
+        return cardio.id
     }
 
     static func selectCardioExercise(
