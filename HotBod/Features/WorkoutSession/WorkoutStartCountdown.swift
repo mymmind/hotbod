@@ -5,15 +5,52 @@ enum WorkoutStartCountdown {
     static let messageHoldDuration: Duration = .milliseconds(1200)
     static let reducedMotionHoldDuration: Duration = .milliseconds(900)
 
-    static func openingLine(for session: WorkoutSession) -> String {
-        guard let first = session.exercises.first else { return "Start when ready." }
-        let working = first.plannedSets.filter { !$0.isWarmup && !$0.isCooldown }
-        let sets = working.isEmpty ? first.plannedSets.count : working.count
-        let name = first.exerciseId.replacingOccurrences(of: "_", with: " ").capitalized
-        if let weight = (working.first ?? first.plannedSets.first)?.targetWeightKg, weight > 0 {
-            return "\(name)\n\(sets) sets · \(Int(weight)) kg"
-        }
-        return "\(name)\n\(sets) sets"
+    /// Nasty rally lines after 3-2-1. Short on purpose — the type is huge.
+    static let rallyMessages: [String] = [
+        "Pick it up, coward.",
+        "Suffer correctly.",
+        "Bleed for the plates.",
+        "No whimpering.",
+        "Hurt pretty.",
+        "Grind the ugly reps.",
+        "Shut up and lift.",
+        "Make it violent.",
+        "Chalk. Spite. Go.",
+        "Heavy or homeless.",
+        "Break something useful.",
+        "Pain is the plan.",
+        "Don't you dare bail.",
+        "Ugly. Loud. Done.",
+        "Spit and lock out.",
+        "Ruin your excuses.",
+        "This weight hates you.",
+        "Get mean.",
+        "Fail loud or don't.",
+        "Sweat like a criminal.",
+        "No soft sets.",
+        "Crush it, idiot.",
+        "Earn the bruise.",
+        "Stop negotiating.",
+        "Violence, then rest.",
+        "Make the floor shake.",
+        "Quit crying. Pull.",
+        "Nasty work starts now.",
+        "Fuck the easy reps.",
+        "Leave a dent.",
+        "Grip it like a grudge.",
+        "All hate. No hop.",
+        "Scream, then stand up.",
+        "The bar doesn't care.",
+        "Get stupid heavy.",
+        "Wreck the set.",
+        "Zero mercy.",
+        "Do it angry.",
+        "Blood in the chalk.",
+        "Now. Harder. Again."
+    ]
+
+    static func randomMessage() -> String {
+        rallyMessages.randomElement() ?? "Get mean."
     }
 }
 
