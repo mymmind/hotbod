@@ -12,6 +12,84 @@ final class ProgressiveOverloadTests: XCTestCase {
         XCTAssertLessThan(next, 100)
     }
 
+    func testRegression_assistedMissAddsAssistance() {
+        let next = ProgressiveOverload.nextWeight(
+            currentWeight: -20,
+            completedAllSetsAtTopRange: false,
+            missedMinimumReps: true
+        )
+        XCTAssertEqual(next, -22.5, accuracy: 0.01)
+    }
+
+    func testRegression_assistedTopOfRangeReducesAssistance() {
+        let next = ProgressiveOverload.nextWeight(
+            currentWeight: -20,
+            completedAllSetsAtTopRange: true,
+            missedMinimumReps: false
+        )
+        XCTAssertEqual(next, -17.5, accuracy: 0.01)
+    }
+
+    func testRegression_assistedDeloadAddsAssistance() {
+        var stats = UserExerciseStats(
+            exerciseId: "assisted_pull_up",
+            lastWeightKg: -20,
+            recentSets: [],
+            preferredRepRangeMin: 6,
+            preferredRepRangeMax: 10
+        )
+        stats.deloadStartedAt = Date()
+        let next = ProgressiveOverload.nextWeight(
+            current: -20,
+            stats: stats,
+            volumeCap: 20,
+            setCountThisWeek: 10,
+            bodyweight: 80
+        )
+        XCTAssertEqual(next, -22.5, accuracy: 0.01)
+    }
+
+    func testRegression_nonPositiveLoadDoesNotReplaceEstimatedMax() {
+        let existing = UserExerciseStats(
+            exerciseId: "assisted_pull_up",
+            estimatedOneRepMax: 40,
+            bestVolumeSet: 480,
+            preferredRepRangeMin: 6,
+            preferredRepRangeMax: 10
+        )
+        let set = CompletedSet(setIndex: 0, weightKg: -20, reps: 8, completedAt: Date())
+        let stats = ProgressiveOverload.updateStats(
+            existing: existing,
+            exerciseId: "assisted_pull_up",
+            completedSets: [set],
+            plannedSets: [PlannedSet(targetRepsMin: 6, targetRepsMax: 10, targetWeightKg: -20)]
+        )
+        XCTAssertEqual(stats.estimatedOneRepMax, 40)
+        XCTAssertEqual(stats.bestVolumeSet, 480)
+        XCTAssertEqual(ProgressiveOverload.estimateOneRepMax(weight: -20, reps: 8), 0)
+    }
+
+    func testRegression_resistanceLevelDoesNotProgressAsKilograms() {
+        let existing = UserExerciseStats(
+            exerciseId: "rower",
+            lastWeightKg: 40,
+            estimatedOneRepMax: 80,
+            preferredRepRangeMin: 1,
+            preferredRepRangeMax: 1
+        )
+        let set = CompletedSet(setIndex: 0, weightKg: 6, reps: 0, durationSeconds: 300, completedAt: Date())
+        let stats = ProgressiveOverload.updateStats(
+            existing: existing,
+            exerciseId: "rower",
+            completedSets: [set],
+            plannedSets: [PlannedSet(targetRepsMin: 1, targetRepsMax: 1, targetDurationSeconds: 300)],
+            countsExternalKilograms: false
+        )
+        XCTAssertEqual(stats.estimatedOneRepMax, 80)
+        XCTAssertEqual(stats.lastWeightKg, 40)
+        XCTAssertNil(stats.suggestedNextWeightKg)
+    }
+
     func testLowLoggedRPEIncreasesWeightMoreAggressively() {
         let baseline = ProgressiveOverload.nextWeight(
             currentWeight: 100,

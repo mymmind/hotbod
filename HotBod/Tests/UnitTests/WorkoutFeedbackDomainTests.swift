@@ -152,6 +152,31 @@ final class ExerciseMetadataResolverTests: XCTestCase {
         XCTAssertEqual(ExerciseMetadataResolver.resolvedPrescriptionType(for: exercise), .time)
     }
 
+    func testRegression_rowerUsesResistanceLevelNotKilograms() {
+        let exercise = makeTestExercise(
+            id: "rower",
+            primaryMuscles: [.back, .quads],
+            pattern: .cardio,
+            equipment: [.cardioMachine]
+        )
+        XCTAssertEqual(ExerciseMetadataResolver.resolvedWeightDisplaySemantics(for: exercise), .resistanceLevel)
+        XCTAssertEqual(exercise.resolvedWeightDisplaySemantics.sessionWeightLabel, "LVL")
+        XCTAssertNil(exercise.plannedExternalLoadKg(40, hasLoggedWeight: false))
+        XCTAssertFalse(ForgeAudioCuePolicy.ducksOtherAudio(for: .setComplete))
+        XCTAssertTrue(ForgeAudioCuePolicy.ducksOtherAudio(for: .restTimerEnd(kind: .setRest)))
+        var duck = ForgeDuckSession()
+        let first = duck.begin()
+        let second = duck.begin()
+        XCTAssertFalse(duck.end(generation: first))
+        XCTAssertTrue(duck.ducksOthers)
+        XCTAssertTrue(duck.end(generation: second))
+        XCTAssertFalse(duck.ducksOthers)
+        XCTAssertFalse(duck.holdsPlaybackSession)
+        XCTAssertEqual(WatchLoadAdjuster.adjustedLoad(current: 5, delta: 1, unit: "lvl"), 6)
+        XCTAssertEqual(WatchLoadAdjuster.adjustedLoad(current: 80, delta: -2.5, unit: "kg"), 77.5)
+        XCTAssertEqual(WatchLoadAdjuster.adjustedLoad(current: -15, delta: -2.5, unit: "kg"), -17.5)
+    }
+
     func testRegression_timedPrescriptionDoesNotFailRepValidation() {
         let plank = makeTestExercise(
             id: "plank",

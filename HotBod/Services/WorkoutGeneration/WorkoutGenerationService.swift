@@ -704,7 +704,7 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
         )
         let canPlanExternalLoad = exercise.resolvedLoadTrackingMode.plansExternalLoad(
             hasLoggedWeight: stats?.planningWeightKg != nil
-        )
+        ) && exercise.resolvedWeightDisplaySemantics.tracksExternalKilograms
         let plannedWeight: Double? = canPlanExternalLoad ? weight : nil
 
         var (intensity, adjustedSetCount) = deloadAdjustment(baseSetCount: setCount, stats: stats)

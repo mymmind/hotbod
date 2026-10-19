@@ -61,10 +61,10 @@ enum SessionExercisePlanner {
                 )
             )
         )
-        let loadMode = exercise.resolvedLoadTrackingMode
-        let plannedWeight: Double? = loadMode.plansExternalLoad(
+        let plannedWeight = exercise.plannedExternalLoadKg(
+            weight,
             hasLoggedWeight: stats?.planningWeightKg != nil
-        ) ? weight : nil
+        )
 
         let sets = (0..<setCount).map { _ in
             plannedSet(

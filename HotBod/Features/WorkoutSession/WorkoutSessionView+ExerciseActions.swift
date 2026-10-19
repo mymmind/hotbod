@@ -82,6 +82,14 @@ extension WorkoutSessionView {
         swapTarget = nil
     }
 
+    private func presentInvalidLoadDraft(plannedKg: Double?) {
+        presentWeightSanity(
+            outcome: .hardBlock(.belowAbsoluteMin),
+            enteredKg: plannedKg ?? 0,
+            commit: .completeSet
+        )
+    }
+
     func presentWeightSanity(
         outcome: LoggedWeightSanity.Outcome,
         enteredKg: Double,
@@ -140,10 +148,18 @@ extension WorkoutSessionView {
         let planned = session.exercises[idx].plannedSets[setIndex]
 
         if showWeightInput {
-            let proposed = Double(weightTexts[planned.id] ?? "") ?? planned.targetWeightKg
-            if let proposed {
-                let outcome = LoggedWeightSanity.evaluate(
-                    proposedKg: proposed,
+            let committed = WorkoutSessionMetricDrafts.committedLoad(
+                draft: weightTexts[planned.id],
+                plannedKg: planned.targetWeightKg
+            )
+            if committed.blocked {
+                presentInvalidLoadDraft(plannedKg: planned.targetWeightKg)
+                return
+            }
+            if let proposed = committed.weight {
+                let outcome = LoggedWeightSanity.evaluateLoggedLoad(
+                    proposed: proposed,
+                    semantics: meta.resolvedWeightDisplaySemantics,
                     lastWeightKg: exerciseStatsById[exercise.exerciseId]?.lastWeightKg,
                     plannedWeightKg: planned.targetWeightKg
                 )
@@ -206,16 +222,29 @@ extension WorkoutSessionView {
         else { return }
 
         let planned = session.exercises[idx].plannedSets[setIndex]
-        let weight: Double? = showWeightInput
-            ? (Double(weightTexts[planned.id] ?? "") ?? planned.targetWeightKg)
-            : nil
+        let weight: Double?
+        if showWeightInput {
+            let committed = WorkoutSessionMetricDrafts.committedLoad(
+                draft: weightTexts[planned.id],
+                plannedKg: planned.targetWeightKg
+            )
+            if committed.blocked {
+                presentInvalidLoadDraft(plannedKg: planned.targetWeightKg)
+                return
+            }
+            weight = committed.weight
+        } else {
+            weight = nil
+        }
         let reps = Int(repsTexts[planned.id] ?? "")
         let durationSeconds = Int(durationTexts[planned.id] ?? "")
         let distanceMeters = Double(distanceTexts[planned.id] ?? "")
 
         if showWeightInput, let weight {
-            let outcome = LoggedWeightSanity.evaluate(
-                proposedKg: weight,
+            let semantics = exerciseMap[exercise.exerciseId]?.resolvedWeightDisplaySemantics ?? .total
+            let outcome = LoggedWeightSanity.evaluateLoggedLoad(
+                proposed: weight,
+                semantics: semantics,
                 lastWeightKg: exerciseStatsById[exercise.exerciseId]?.lastWeightKg,
                 plannedWeightKg: planned.targetWeightKg
             )
@@ -289,9 +318,20 @@ extension WorkoutSessionView {
         let setIndex = session.exercises[idx].completedSets.count
         guard setIndex < session.exercises[idx].plannedSets.count else { return }
         let planned = session.exercises[idx].plannedSets[setIndex]
-        let weight: Double? = showWeightInput
-            ? (Double(weightTexts[planned.id] ?? "") ?? planned.targetWeightKg)
-            : nil
+        let weight: Double?
+        if showWeightInput {
+            let committed = WorkoutSessionMetricDrafts.committedLoad(
+                draft: weightTexts[planned.id],
+                plannedKg: planned.targetWeightKg
+            )
+            if committed.blocked {
+                presentInvalidLoadDraft(plannedKg: planned.targetWeightKg)
+                return
+            }
+            weight = committed.weight
+        } else {
+            weight = nil
+        }
         let repsDraft = repsTexts[planned.id]
         let reps: Int
         if let repsDraft {

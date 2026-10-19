@@ -152,4 +152,59 @@ final class AppGroupSessionStoreTests: XCTestCase {
         XCTAssertEqual(read.title, "Push Day")
         XCTAssertEqual(read.exerciseName, "Bench Press")
     }
+
+    func testRegression_twoWatchTapsBothStayQueued() throws {
+        let temp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("hotbod-watch-queue-\(UUID().uuidString)", isDirectory: true)
+        AppGroupSessionStore.configureForTesting(containerURL: temp)
+        defer { try? FileManager.default.removeItem(at: temp) }
+
+        AppGroupSessionStore.issuePendingCommand(.increaseWeight)
+        AppGroupSessionStore.issuePendingCommand(.decreaseWeight)
+
+        XCTAssertEqual(AppGroupSessionStore.consumeNextCommand()?.action, .increaseWeight)
+        XCTAssertEqual(AppGroupSessionStore.consumeNextCommand()?.action, .decreaseWeight)
+        XCTAssertNil(AppGroupSessionStore.consumeNextCommand())
+    }
+
+    @MainActor
+    func testRegression_restartedWatchCommandIsStillDelivered() throws {
+        let temp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("hotbod-watch-restart-\(UUID().uuidString)", isDirectory: true)
+        AppGroupSessionStore.configureForTesting(containerURL: temp)
+        defer { try? FileManager.default.removeItem(at: temp) }
+
+        let legacy = #"{"sequence":1,"action":"completeSet","issuedAt":0}"#
+        let url = temp.appendingPathComponent("watch_pending_command.json")
+        try Data(legacy.utf8).write(to: url)
+
+        let command = PhoneWatchSessionBridge.consumeWatchCommand()
+        XCTAssertEqual(command?.action, .completeSet)
+        XCTAssertNil(PhoneWatchSessionBridge.consumeWatchCommand())
+    }
+
+    func testRegression_rootDrainLeavesSetCommandsQueued() {
+        let temp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("hotbod-watch-split-\(UUID().uuidString)", isDirectory: true)
+        AppGroupSessionStore.configureForTesting(containerURL: temp)
+        defer { try? FileManager.default.removeItem(at: temp) }
+
+        AppGroupSessionStore.issuePendingCommand(.increaseWeight)
+        AppGroupSessionStore.issuePendingCommand(.endWorkout)
+        AppGroupSessionStore.issuePendingCommand(.decreaseReps)
+
+        let control = AppGroupSessionStore.consumeCommands { action in
+            action == .startWorkout || action == .endWorkout
+        }
+        XCTAssertEqual(control.map(\.action), [.endWorkout])
+        XCTAssertEqual(AppGroupSessionStore.consumeNextCommand()?.action, .increaseWeight)
+        XCTAssertEqual(AppGroupSessionStore.consumeNextCommand()?.action, .decreaseReps)
+    }
+
+    func testRegression_restHapticFiresWhenDisplayedClockHitsZero() {
+        XCTAssertFalse(WatchRestHaptic.shouldFire(lastDisplayedRemaining: 0, displayedRemaining: 0))
+        XCTAssertTrue(WatchRestHaptic.shouldFire(lastDisplayedRemaining: 1, displayedRemaining: 0))
+        XCTAssertFalse(WatchRestHaptic.shouldFire(lastDisplayedRemaining: 8, displayedRemaining: 7))
+        XCTAssertFalse(WatchRestHaptic.shouldFire(lastDisplayedRemaining: 8, displayedRemaining: nil))
+    }
 }

@@ -269,7 +269,8 @@ enum WorkoutValidator {
         let prescription = exercise.resolvedPrescriptionType
         for set in planned.targetSets {
             if let weight = set.targetWeightKg {
-                if weight < 0 || weight > GenerationConstants.Validation.maxPlannedWeightKg {
+                if weight < GenerationConstants.Validation.minLoggedWeightKg
+                    || weight > GenerationConstants.Validation.maxPlannedWeightKg {
                     errors.append("Invalid weight for \(exercise.name).")
                 }
                 if !canPlanExternalLoad && weight > 0 {

@@ -57,13 +57,32 @@ final class LoggedWeightSanityTests: XCTestCase {
         XCTAssertEqual(outcome, .ok)
     }
 
-    func testHardBlockNegative() {
+    func testRegression_assistedPullUpAllowsNegativeWeight() {
         let outcome = LoggedWeightSanity.evaluate(
-            proposedKg: -5,
-            lastWeightKg: 80,
-            plannedWeightKg: 80
+            proposedKg: -20,
+            lastWeightKg: nil,
+            plannedWeightKg: nil
         )
-        XCTAssertEqual(outcome, .hardBlock(.negative))
+        XCTAssertEqual(outcome, .ok)
+    }
+
+    func testHardBlockBelowAbsoluteMin() {
+        let outcome = LoggedWeightSanity.evaluate(
+            proposedKg: -250,
+            lastWeightKg: nil,
+            plannedWeightKg: nil
+        )
+        XCTAssertEqual(outcome, .hardBlock(.belowAbsoluteMin))
+    }
+
+    func testRegression_resistanceLevelSkipsKilogramJumpWarning() {
+        let outcome = LoggedWeightSanity.evaluateLoggedLoad(
+            proposed: 10,
+            semantics: .resistanceLevel,
+            lastWeightKg: 4,
+            plannedWeightKg: 4
+        )
+        XCTAssertEqual(outcome, .ok)
     }
 
     func testHardBlockAboveAbsoluteMax() {

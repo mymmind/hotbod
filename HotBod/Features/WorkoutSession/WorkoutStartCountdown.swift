@@ -5,52 +5,34 @@ enum WorkoutStartCountdown {
     static let messageHoldDuration: Duration = .milliseconds(1200)
     static let reducedMotionHoldDuration: Duration = .milliseconds(900)
 
-    /// Nasty rally lines after 3-2-1. Short on purpose — the type is huge.
-    static let rallyMessages: [String] = [
-        "Pick it up, coward.",
-        "Suffer correctly.",
-        "Bleed for the plates.",
-        "No whimpering.",
-        "Hurt pretty.",
-        "Grind the ugly reps.",
-        "Shut up and lift.",
-        "Make it violent.",
-        "Chalk. Spite. Go.",
-        "Heavy or homeless.",
-        "Break something useful.",
-        "Pain is the plan.",
-        "Don't you dare bail.",
-        "Ugly. Loud. Done.",
-        "Spit and lock out.",
-        "Ruin your excuses.",
-        "This weight hates you.",
-        "Get mean.",
-        "Fail loud or don't.",
-        "Sweat like a criminal.",
-        "No soft sets.",
-        "Crush it, idiot.",
-        "Earn the bruise.",
-        "Stop negotiating.",
-        "Violence, then rest.",
-        "Make the floor shake.",
-        "Quit crying. Pull.",
-        "Nasty work starts now.",
-        "Fuck the easy reps.",
-        "Leave a dent.",
-        "Grip it like a grudge.",
-        "All hate. No hop.",
-        "Scream, then stand up.",
-        "The bar doesn't care.",
-        "Get stupid heavy.",
-        "Wreck the set.",
-        "Zero mercy.",
-        "Do it angry.",
-        "Blood in the chalk.",
-        "Now. Harder. Again."
-    ]
+    /// First-exercise line shown after 3-2-1. Names the work; no slogans.
+    static func openingLine(for session: WorkoutSession, exerciseName: String? = nil) -> String {
+        let exercises = session.exercises.sorted { $0.orderIndex < $1.orderIndex }
+        guard let exercise = exercises.first else { return "Start when ready." }
+        let name = exerciseName ?? humanizedExerciseName(exercise.exerciseId)
+        let working = exercise.plannedSets.filter { !$0.isWarmup && !$0.isCooldown }
+        let sets = working.isEmpty ? exercise.plannedSets : working
+        guard !sets.isEmpty else { return name }
+        let setLabel = sets.count == 1 ? "1 set" : "\(sets.count) sets"
+        guard let weight = sets.first?.targetWeightKg, weight != 0 else {
+            return "\(name)\n\(setLabel)"
+        }
+        let number = weight.rounded() == weight ? String(Int(weight)) : String(format: "%.1f", weight)
+        let unit = openingLoadUnit(weight: weight, exerciseId: exercise.exerciseId)
+        return "\(name)\n\(setLabel) · \(number) \(unit)"
+    }
 
-    static func randomMessage() -> String {
-        rallyMessages.randomElement() ?? "Get mean."
+    private static func openingLoadUnit(weight: Double, exerciseId: String) -> String {
+        if weight < 0 { return "kg assist" }
+        let semantics = ExerciseMetadataResolver.resolvedWeightDisplaySemantics(exerciseId: exerciseId)
+        if semantics == .resistanceLevel { return "lvl" }
+        return semantics.compactLoadUnit.trimmingCharacters(in: .whitespaces)
+    }
+
+    private static func humanizedExerciseName(_ exerciseId: String) -> String {
+        exerciseId
+            .replacingOccurrences(of: "_", with: " ")
+            .localizedCapitalized
     }
 }
 

@@ -334,6 +334,15 @@ enum ProgressiveOverload {
         averageLoggedRPE: Double? = nil,
         equipment: [Equipment] = []
     ) -> Double {
+        if currentWeight < 0 {
+            return nextAssistedWeight(
+                currentWeight: currentWeight,
+                completedAllSetsAtTopRange: completedAllSetsAtTopRange,
+                missedMinimumReps: missedMinimumReps,
+                averageLoggedRPE: averageLoggedRPE,
+                equipment: equipment
+            )
+        }
         let raw: Double
         if completedAllSetsAtTopRange {
             let increment = GenerationConstants.Weight.barbellIncrementKg
@@ -351,6 +360,31 @@ enum ProgressiveOverload {
         return GenerationConstants.Weight.roundToAvailable(raw, equipment: equipment)
     }
 
+    /// Assisted loads are negative. Hitting the top of the range reduces assistance (toward zero).
+    /// Missing reps or a deload adds assistance (more negative). Multiplying a negative load
+    /// by 0.95 would make the next session harder.
+    private static func nextAssistedWeight(
+        currentWeight: Double,
+        completedAllSetsAtTopRange: Bool,
+        missedMinimumReps: Bool,
+        averageLoggedRPE: Double?,
+        equipment: [Equipment]
+    ) -> Double {
+        let step = GenerationConstants.Weight.barbellIncrementKg
+        let raw: Double
+        if completedAllSetsAtTopRange {
+            let applied = step * rpeProgressionMultiplier(averageLoggedRPE: averageLoggedRPE)
+            raw = applied > 0 ? currentWeight + applied : currentWeight
+        } else if missedMinimumReps {
+            let veryHard = (averageLoggedRPE ?? 0) >= GenerationConstants.Progression.veryHardRPEThreshold
+            raw = currentWeight - (veryHard ? step * 2 : step)
+        } else {
+            raw = currentWeight
+        }
+        let rounded = GenerationConstants.Weight.roundToAvailable(raw, equipment: equipment)
+        return max(rounded, GenerationConstants.Validation.minLoggedWeightKg)
+    }
+
     /// Historical volume-trend formula. Workout planning uses SessionLoadPlanner.
     static func nextWeight(
         current: Double,
@@ -361,6 +395,18 @@ enum ProgressiveOverload {
     ) -> Double {
         let averageLoggedRPE = averageLoggedRPE(from: stats.recentSets)
         let rpeMultiplier = rpeProgressionMultiplier(averageLoggedRPE: averageLoggedRPE)
+        if current < 0 {
+            let easeOff = stats.isInDeloadWeek
+                || stats.returningFromBreak
+                || muscleVolumeCompletion >= GenerationConstants.Volume.overloadHoldCompletionFraction
+            return nextAssistedWeight(
+                currentWeight: current,
+                completedAllSetsAtTopRange: !easeOff && stats.volumeTrend != .decreasing,
+                missedMinimumReps: easeOff,
+                averageLoggedRPE: averageLoggedRPE,
+                equipment: equipment
+            )
+        }
         let raw: Double
         // If in deload week, reduce weight by 10%
         if stats.isInDeloadWeek {
@@ -401,8 +447,17 @@ enum ProgressiveOverload {
     }
 
     static func estimateOneRepMax(weight: Double, reps: Int) -> Double {
+        guard weight > 0 else { return 0 }
         guard reps > 0 else { return weight }
         return weight * (1 + Double(reps) / 30.0)
+    }
+
+    static func progressionNote(name: String, nextLoad: Double, unit: String) -> String {
+        let number = nextLoad.rounded() == nextLoad
+            ? String(Int(nextLoad))
+            : String(format: "%.1f", nextLoad)
+        let trimmed = unit.trimmingCharacters(in: .whitespaces)
+        return "\(name): try \(number) \(trimmed) next session."
     }
 
     static func updateStats(
@@ -416,7 +471,8 @@ enum ProgressiveOverload {
         equipment: [Equipment] = [],
         weightCeilings: [Equipment: Double] = [:],
         trustHistoricEffortFeedback: Bool = true,
-        sessionMode: SessionMode = .standard
+        sessionMode: SessionMode = .standard,
+        countsExternalKilograms: Bool = true
     ) -> UserExerciseStats {
         let working = completedSets.filter {
             !$0.isWarmup && !$0.isCooldown
@@ -426,10 +482,16 @@ enum ProgressiveOverload {
         let lastWeight = last?.weightKg
         let lastReps = last?.reps
         let e1rm: Double? = {
-            guard let w = last, let weight = w.weightKg else { return nil }
+            guard countsExternalKilograms else { return existing?.estimatedOneRepMax }
+            guard let w = last, let weight = w.weightKg, weight > 0 else {
+                return existing?.estimatedOneRepMax
+            }
             return estimateOneRepMax(weight: weight, reps: w.reps)
         }()
-        let bestVolume = working.map { ($0.weightKg ?? 0) * Double($0.reps) }.max()
+        let sessionBest = working.map { max(0, $0.weightKg ?? 0) * Double($0.reps) }.max() ?? 0
+        let bestVolume = countsExternalKilograms && sessionBest > 0
+            ? sessionBest
+            : existing?.bestVolumeSet
 
         let workingPlanned = plannedSets.filter { !$0.isWarmup && !$0.isCooldown }
         let hitTop = working.count == workingPlanned.count && zip(working, workingPlanned).allSatisfy { set, planned in
@@ -456,18 +518,18 @@ enum ProgressiveOverload {
         )
 
         if let existing {
-            stats.weeklyVolume = existing.weeklyVolume
-            stats.weeklyMaxSets = existing.weeklyMaxSets
-            stats.volumeTrend = existing.volumeTrend
-            stats.deloadStartedAt = existing.deloadStartedAt
-            stats.returningFromBreak = existing.returningFromBreak
-            stats.consecutiveHighVolumeWeeks = existing.consecutiveHighVolumeWeeks
-            stats.isOrphaned = existing.isOrphaned
-            stats.goalAtLastUpdate = existing.goalAtLastUpdate
-            stats.lastMaxEffortAt = existing.lastMaxEffortAt
-            stats.sessionsSinceMaxEffort = existing.sessionsSinceMaxEffort + 1
+            carryForwardVolumeState(from: existing, to: &stats)
         }
         stats.updatedAt = Date()
+
+        if !countsExternalKilograms {
+            return recordSessionWithoutKilogramProgression(
+                stats: stats,
+                existing: existing,
+                goal: goal,
+                trustHistoricEffortFeedback: trustHistoricEffortFeedback
+            )
+        }
 
         let loadWasReduced = sessionMode == .recovery
             || existing?.isInDeloadWeek == true
@@ -493,14 +555,14 @@ enum ProgressiveOverload {
             maxEffortSet = completed
         }
         if let maxEffortSet,
+           let effortWeight = maxEffortSet.weightKg,
+           effortWeight > 0,
            let recalibrated = MaxEffortPlanner.recalibratedWeight(
                from: maxEffortSet,
                equipment: equipment,
                ceilings: weightCeilings
            ) {
-            if let weight = maxEffortSet.weightKg {
-                stats.estimatedOneRepMax = estimateOneRepMax(weight: weight, reps: maxEffortSet.reps)
-            }
+            stats.estimatedOneRepMax = estimateOneRepMax(weight: effortWeight, reps: maxEffortSet.reps)
             stats.suggestedNextWeightKg = recalibrated
             stats.lastMaxEffortAt = Date()
             stats.sessionsSinceMaxEffort = 0
@@ -544,6 +606,43 @@ enum ProgressiveOverload {
         )
         }
 
+        return stats
+    }
+
+    private static func carryForwardVolumeState(from existing: UserExerciseStats, to stats: inout UserExerciseStats) {
+        stats.weeklyVolume = existing.weeklyVolume
+        stats.weeklyMaxSets = existing.weeklyMaxSets
+        stats.volumeTrend = existing.volumeTrend
+        stats.deloadStartedAt = existing.deloadStartedAt
+        stats.returningFromBreak = existing.returningFromBreak
+        stats.consecutiveHighVolumeWeeks = existing.consecutiveHighVolumeWeeks
+        stats.isOrphaned = existing.isOrphaned
+        stats.goalAtLastUpdate = existing.goalAtLastUpdate
+        stats.lastMaxEffortAt = existing.lastMaxEffortAt
+        stats.sessionsSinceMaxEffort = existing.sessionsSinceMaxEffort + 1
+    }
+
+    /// Resistance levels are not kilograms. Keep the previous e1RM and suggested load.
+    private static func recordSessionWithoutKilogramProgression(
+        stats: UserExerciseStats,
+        existing: UserExerciseStats?,
+        goal: TrainingGoal?,
+        trustHistoricEffortFeedback: Bool
+    ) -> UserExerciseStats {
+        var stats = stats
+        stats.lastWeightKg = existing?.lastWeightKg
+        stats.lastReps = existing?.lastReps
+        stats.bestVolumeSet = existing?.bestVolumeSet
+        stats.suggestedNextWeightKg = existing?.suggestedNextWeightKg
+        stats.estimatedOneRepMax = existing?.estimatedOneRepMax
+        if let goal {
+            stats.goalAtLastUpdate = goal
+        }
+        VolumeTracker.recordSession(on: &stats)
+        DeloadDetector.updateDeloadState(
+            stats: &stats,
+            trustHistoricEffortFeedback: trustHistoricEffortFeedback
+        )
         return stats
     }
 
@@ -776,6 +875,12 @@ enum VolumeCalculator {
     }
 }
 
+enum ExerciseSegmentFill: Equatable {
+    case complete
+    case current
+    case remaining
+}
+
 enum WorkoutAdvanceDecision: Equatable {
     case goToExercise(index: Int)
     case confirmEnd
@@ -805,6 +910,19 @@ enum WorkoutSessionCalculator {
         return Double(currentIndex + 1) / Double(exerciseCount)
     }
 
+    /// Segment color for the session progress bar.
+    /// Completion wins over position, so an exercise finished out of order stays green
+    /// and an earlier exercise that still has sets stays grey.
+    static func exerciseSegmentFill(
+        index: Int,
+        currentIndex: Int,
+        isComplete: Bool
+    ) -> ExerciseSegmentFill {
+        if isComplete { return .complete }
+        if index == currentIndex { return .current }
+        return .remaining
+    }
+
     /// First exercise that still has sets to log; falls back to last non-skipped exercise.
     static func currentExerciseIndex(for session: WorkoutSession) -> Int {
         if let idx = session.exercises.firstIndex(where: needsSetsLogged) {
@@ -816,21 +934,31 @@ enum WorkoutSessionCalculator {
         return max(0, session.exercises.count - 1)
     }
 
-    static func completedVolumeKg(session: WorkoutSession) -> Double {
-        session.exercises.flatMap(\.completedSets).reduce(0) { partial, set in
-            partial + volumeContribution(for: set)
+    static func completedVolumeKg(
+        session: WorkoutSession,
+        exerciseMap: [String: Exercise] = [:]
+    ) -> Double {
+        session.exercises.reduce(0) { partial, exercise in
+            let semantics = exerciseMap[exercise.exerciseId]?.resolvedWeightDisplaySemantics
+                ?? ExerciseMetadataResolver.resolvedWeightDisplaySemantics(exerciseId: exercise.exerciseId)
+            let counts = semantics.countsTowardVolumeKg
+            return partial + exercise.completedSets.reduce(0) { setPartial, set in
+                setPartial + volumeContribution(for: set, externalLoadCounts: counts)
+            }
         }
     }
 
-    static func volumeContribution(for set: CompletedSet) -> Double {
+    static func volumeContribution(for set: CompletedSet, externalLoadCounts: Bool = true) -> Double {
+        let raw = externalLoadCounts ? (set.weightKg ?? 0) : 0
+        let load = max(0, raw)
         if set.reps > 0 {
-            return (set.weightKg ?? 0) * Double(set.reps)
+            return load * Double(set.reps)
         }
         if let seconds = set.durationSeconds, seconds > 0 {
-            return (set.weightKg ?? 0) * Double(seconds) / 60.0
+            return load * Double(seconds) / 60.0
         }
         if let meters = set.distanceMeters, meters > 0 {
-            return (set.weightKg ?? 0) * meters / 1000.0
+            return load * meters / 1000.0
         }
         return 0
     }

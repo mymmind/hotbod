@@ -62,6 +62,30 @@ final class WorkoutGeneratorP0Tests: XCTestCase {
         XCTAssertEqual(SessionLoadPlanner.plannedWeightKg(cold), 20)
     }
 
+    func testRegression_assistedDeloadRecoveryAndReentryAddAssistance() {
+        let assisted = SessionLoadPlanner.Input(
+            suggestedNextWeightKg: -20,
+            lastWeightKg: -20,
+            sessionMode: .standard,
+            isInDeloadWeek: false,
+            returningFromBreak: false,
+            equipment: [.pullUpBar],
+            ceilings: [:],
+            fallbackWeightKg: 0
+        )
+        var deload = assisted
+        deload.isInDeloadWeek = true
+        XCTAssertLessThan(SessionLoadPlanner.plannedWeightKg(deload), -20)
+
+        var recovery = assisted
+        recovery.sessionMode = .recovery
+        XCTAssertLessThan(SessionLoadPlanner.plannedWeightKg(recovery), -20)
+
+        var reentry = assisted
+        reentry.returningFromBreak = true
+        XCTAssertLessThan(SessionLoadPlanner.plannedWeightKg(reentry), -20)
+    }
+
     func testRegression_doubleProgressionGeneratedWorkoutMatchesPlanner() async throws {
         let catalog = try await LocalExerciseRepository().fetchAll()
         let stats = catalog.map { exercise in

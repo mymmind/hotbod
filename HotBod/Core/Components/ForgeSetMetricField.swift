@@ -7,6 +7,7 @@ struct ForgeSetMetricField: View {
     var isActive: Bool
     var keyboardType: UIKeyboardType = .decimalPad
     var selectAllOnFocus: Bool = false
+    var allowsNegative: Bool = false
     var onFocusChange: ((Bool) -> Void)? = nil
 
     @FocusState private var isFocused: Bool
@@ -17,6 +18,7 @@ struct ForgeSetMetricField: View {
                 SelectAllMetricTextField(
                     text: $text,
                     keyboardType: keyboardType,
+                    allowsNegative: allowsNegative,
                     onFocusChange: onFocusChange
                 )
             } else {
@@ -48,6 +50,7 @@ struct ForgeSetMetricField: View {
 private struct SelectAllMetricTextField: UIViewRepresentable {
     @Binding var text: String
     let keyboardType: UIKeyboardType
+    var allowsNegative: Bool = false
     var onFocusChange: ((Bool) -> Void)?
 
     func makeUIView(context: Context) -> UITextField {
@@ -63,6 +66,9 @@ private struct SelectAllMetricTextField: UIViewRepresentable {
             action: #selector(Coordinator.editingChanged(_:)),
             for: .editingChanged
         )
+        if allowsNegative {
+            field.inputAccessoryView = context.coordinator.makeAccessory(for: field)
+        }
         return field
     }
 
@@ -70,7 +76,11 @@ private struct SelectAllMetricTextField: UIViewRepresentable {
         // Keep the coordinator's binding current — makeCoordinator runs once.
         context.coordinator.binding = $text
         context.coordinator.onFocusChange = onFocusChange
+        context.coordinator.allowsNegative = allowsNegative
         uiView.keyboardType = keyboardType
+        if allowsNegative, uiView.inputAccessoryView == nil {
+            uiView.inputAccessoryView = context.coordinator.makeAccessory(for: uiView)
+        }
 
         // While this field is first responder, UIKit owns the text. Pushing the
         // binding back in mid-keystroke (or during select-all) causes lost edits
@@ -84,17 +94,59 @@ private struct SelectAllMetricTextField: UIViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(binding: $text, onFocusChange: onFocusChange)
+        Coordinator(binding: $text, allowsNegative: allowsNegative, onFocusChange: onFocusChange)
     }
 
     final class Coordinator: NSObject, UITextFieldDelegate {
         var binding: Binding<String>
+        var allowsNegative: Bool
         var onFocusChange: ((Bool) -> Void)?
         var isProgrammaticUpdate = false
+        private weak var field: UITextField?
 
-        init(binding: Binding<String>, onFocusChange: ((Bool) -> Void)?) {
+        init(binding: Binding<String>, allowsNegative: Bool, onFocusChange: ((Bool) -> Void)?) {
             self.binding = binding
+            self.allowsNegative = allowsNegative
             self.onFocusChange = onFocusChange
+        }
+
+        func makeAccessory(for field: UITextField) -> UIToolbar {
+            self.field = field
+            let bar = UIToolbar()
+            let sign = UIBarButtonItem(
+                title: "−",
+                style: .plain,
+                target: self,
+                action: #selector(toggleSign)
+            )
+            sign.accessibilityLabel = "Toggle negative weight"
+            let flex = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+            let done = UIBarButtonItem(
+                barButtonSystemItem: .done,
+                target: self,
+                action: #selector(dismissKeyboard)
+            )
+            bar.items = [sign, flex, done]
+            bar.sizeToFit()
+            return bar
+        }
+
+        @objc func toggleSign() {
+            guard allowsNegative, let field else { return }
+            var value = field.text ?? ""
+            if value.hasPrefix("-") {
+                value.removeFirst()
+            } else {
+                value = "-" + value
+            }
+            isProgrammaticUpdate = true
+            field.text = value
+            isProgrammaticUpdate = false
+            binding.wrappedValue = value
+        }
+
+        @objc func dismissKeyboard() {
+            field?.resignFirstResponder()
         }
 
         func textFieldDidBeginEditing(_ textField: UITextField) {

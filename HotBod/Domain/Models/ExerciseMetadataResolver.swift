@@ -36,9 +36,24 @@ enum ExerciseMetadataResolver {
         "farmers_carry"
     ]
 
+    private static let resistanceLevelExerciseIds: Set<String> = [
+        "rower"
+    ]
+
+    /// Semantics known from the exercise id alone, before the catalog row is loaded.
+    static func resolvedWeightDisplaySemantics(exerciseId: String) -> WeightDisplaySemantics {
+        if resistanceLevelExerciseIds.contains(exerciseId) { return .resistanceLevel }
+        if totalWeightExerciseIds.contains(exerciseId) { return .total }
+        if perHandExerciseIds.contains(exerciseId) { return .perHand }
+        return .total
+    }
+
     static func resolvedWeightDisplaySemantics(for exercise: Exercise) -> WeightDisplaySemantics {
         if let explicit = exercise.weightDisplaySemantics {
             return explicit
+        }
+        if resistanceLevelExerciseIds.contains(exercise.id) {
+            return .resistanceLevel
         }
         if totalWeightExerciseIds.contains(exercise.id) {
             return .total

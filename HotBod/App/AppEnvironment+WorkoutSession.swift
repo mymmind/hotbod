@@ -80,6 +80,27 @@ extension AppEnvironment {
         return session
     }
 
+    func startTodayWorkoutFromWatch(router: AppRouter) async {
+        guard !isStartingWorkoutSession else { return }
+        guard let workout = todayWorkout, !isTodayWorkoutCompleted else { return }
+        let isResume = await fetchActiveWorkoutSession() != nil
+        _ = await WorkoutStartFlow.begin(
+            from: workout,
+            isResume: isResume,
+            environment: self,
+            router: router
+        )
+    }
+
+    func endActiveWorkoutFromWatch() async {
+        guard let session = await fetchActiveWorkoutSession() else {
+            PhoneWatchSessionBridge.publishIdle()
+            return
+        }
+        _ = await completeWorkoutSession(session)
+        PhoneWatchSessionBridge.publishIdle()
+    }
+
     func commitWorkoutSessionStartIfNeeded(_ session: WorkoutSession) async -> WorkoutSession {
         guard session.startedAt == nil else { return session }
         var updated = session
@@ -211,10 +232,19 @@ extension AppEnvironment {
                 equipment: exercise?.equipment ?? [],
                 weightCeilings: weightCeilings,
                 trustHistoricEffortFeedback: userProfile?.trustHistoricEffortFeedback ?? true,
-                sessionMode: session.sessionMode
+                sessionMode: session.sessionMode,
+                countsExternalKilograms: exercise?.resolvedWeightDisplaySemantics.tracksExternalKilograms ?? true
             )
-            if let name = map[we.exerciseId]?.name, let next = updated.suggestedNextWeightKg {
-                notes.append("\(name): try \(Int(next))kg next session.")
+            if let exercise,
+               exercise.resolvedWeightDisplaySemantics.tracksExternalKilograms,
+               let next = updated.suggestedNextWeightKg {
+                notes.append(
+                    ProgressiveOverload.progressionNote(
+                        name: exercise.name,
+                        nextLoad: next,
+                        unit: exercise.resolvedWeightDisplaySemantics.compactLoadUnit
+                    )
+                )
             }
             if let statIndex = stats.firstIndex(where: { $0.exerciseId == we.exerciseId }) {
                 stats[statIndex] = updated
@@ -246,6 +276,7 @@ extension AppEnvironment {
         }
         programState = state
         try? await programStateRepository.saveState(state)
+        await rescheduleWorkoutReminders()
 
         await cloudSyncIfSignedIn {
             try await cloudSyncService.pushSession(session)

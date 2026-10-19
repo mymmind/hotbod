@@ -60,8 +60,13 @@ enum WorkoutShareRenderer {
     @MainActor
     static func image(for card: WorkoutShareCard) -> UIImage? {
 #if canImport(UIKit)
-        let renderer = ImageRenderer(content: card)
+        let content = card
+            .frame(width: 360, alignment: .leading)
+            .background(ForgeColors.surface)
+        let renderer = ImageRenderer(content: content)
+        renderer.proposedSize = ProposedViewSize(width: 360, height: nil)
         renderer.scale = UIScreen.main.scale
+        renderer.isOpaque = true
         return renderer.uiImage
 #else
         return nil

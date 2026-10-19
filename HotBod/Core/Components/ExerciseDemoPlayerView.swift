@@ -1,4 +1,6 @@
+import AVFoundation
 import AVKit
+import Observation
 import SwiftUI
 
 struct ExerciseDemoPlayerView: View {
@@ -115,31 +117,110 @@ private struct LoopingVideoPlayer: View {
     }
 
     var body: some View {
-        VideoPlayer(player: model.player)
-            .onAppear { model.play() }
-            .onDisappear { model.pause() }
+        ZStack {
+            VideoPlayer(player: model.player)
+            if model.failed {
+                Text("Demo unavailable")
+                    .font(ForgeTypography.caption)
+                    .foregroundStyle(ForgeColors.muted)
+            }
+        }
+        .onAppear { model.play() }
+        .onDisappear { model.pause() }
     }
 }
 
 @MainActor
+@Observable
 private final class LoopingPlayerModel {
-    let player: AVQueuePlayer
-    private var looper: AVPlayerLooper?
+    let player: AVPlayer
+    private(set) var failed = false
+    private var wantsPlayback = false
+    private nonisolated(unsafe) var endObserver: NSObjectProtocol?
+    private nonisolated(unsafe) var interruptionObserver: NSObjectProtocol?
+    private nonisolated(unsafe) var duckObserver: NSObjectProtocol?
+    private nonisolated(unsafe) var statusObserver: NSKeyValueObservation?
 
     init(url: URL) {
         let item = AVPlayerItem(url: url)
-        let queue = AVQueuePlayer()
-        looper = AVPlayerLooper(player: queue, templateItem: item)
-        player = queue
+        let player = AVPlayer(playerItem: item)
         player.isMuted = true
+        player.actionAtItemEnd = .none
+        self.player = player
+
+        endObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: item,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self, self.wantsPlayback else { return }
+                self.player.seek(to: .zero)
+                self.player.play()
+            }
+        }
+        interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance(),
+            queue: .main
+        ) { [weak self] notification in
+            let rawType = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
+            let type = rawType.flatMap(AVAudioSession.InterruptionType.init(rawValue:))
+            Task { @MainActor in
+                guard type == .ended else { return }
+                self?.resumeIfNeeded()
+            }
+        }
+        duckObserver = NotificationCenter.default.addObserver(
+            forName: .forgeAudioDuckReleased,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.resumeIfNeeded()
+            }
+        }
+        statusObserver = item.observe(\.status, options: [.initial, .new]) { [weak self] item, _ in
+            if item.status == .failed {
+                Task { @MainActor in
+                    self?.failed = true
+                }
+                return
+            }
+            guard item.status == .readyToPlay else { return }
+            Task { @MainActor in
+                self?.failed = false
+                self?.resumeIfNeeded()
+            }
+        }
     }
 
     func play() {
+        wantsPlayback = true
         player.play()
     }
 
     func pause() {
+        wantsPlayback = false
         player.pause()
+    }
+
+    private func resumeIfNeeded() {
+        guard wantsPlayback, !failed else { return }
+        player.play()
+    }
+
+    nonisolated deinit {
+        if let endObserver {
+            NotificationCenter.default.removeObserver(endObserver)
+        }
+        if let interruptionObserver {
+            NotificationCenter.default.removeObserver(interruptionObserver)
+        }
+        if let duckObserver {
+            NotificationCenter.default.removeObserver(duckObserver)
+        }
+        statusObserver?.invalidate()
     }
 }
 

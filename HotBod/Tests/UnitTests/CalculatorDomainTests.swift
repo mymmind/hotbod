@@ -232,4 +232,36 @@ final class WorkoutSessionCalculatorTests: XCTestCase {
             .goToExercise(index: 0)
         )
     }
+
+    func testRegression_outOfOrderExerciseSegments() {
+        XCTAssertEqual(
+            WorkoutSessionCalculator.exerciseSegmentFill(index: 2, currentIndex: 0, isComplete: true),
+            .complete
+        )
+        XCTAssertEqual(
+            WorkoutSessionCalculator.exerciseSegmentFill(index: 0, currentIndex: 2, isComplete: false),
+            .remaining
+        )
+        XCTAssertEqual(
+            WorkoutSessionCalculator.exerciseSegmentFill(index: 2, currentIndex: 2, isComplete: false),
+            .current
+        )
+        XCTAssertEqual(
+            WorkoutSessionCalculator.exerciseSegmentFill(index: 1, currentIndex: 1, isComplete: true),
+            .complete
+        )
+    }
+
+    func testRegression_resistanceLevelAndAssistanceExcludedFromVolume() {
+        let assisted = CompletedSet(setIndex: 0, weightKg: -20, reps: 8)
+        XCTAssertEqual(WorkoutSessionCalculator.volumeContribution(for: assisted), 0, accuracy: 0.01)
+
+        let level = CompletedSet(setIndex: 0, weightKg: 6, reps: 0, durationSeconds: 300)
+        XCTAssertEqual(
+            WorkoutSessionCalculator.volumeContribution(for: level, externalLoadCounts: false),
+            0,
+            accuracy: 0.01
+        )
+        XCTAssertEqual(WorkoutSessionCalculator.volumeContribution(for: level), 30, accuracy: 0.01)
+    }
 }

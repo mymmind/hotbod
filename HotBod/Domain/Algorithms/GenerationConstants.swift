@@ -306,6 +306,9 @@ enum GenerationConstants {
         static let minRepCount = 1
         static let maxRepCount = 30
         static let maxPlannedWeightKg = 400.0
+        /// Assisted movements such as supported pull-ups log the assistance as a negative load.
+        static let minLoggedWeightKg = -200.0
+        static let maxResistanceLevel = 30.0
         static let minRestSeconds = 15
         static let maxRestSeconds = 600
         static let minSetsPerExercise = 1

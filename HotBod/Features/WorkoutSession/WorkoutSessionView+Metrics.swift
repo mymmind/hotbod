@@ -13,10 +13,14 @@ struct ExerciseCompleteSummary {
     ) -> ExerciseCompleteSummary {
         let working = completedSets.filter { !$0.isWarmup && !$0.isCooldown }
         let volume = working.reduce(0.0) { partial, set in
-            partial + WorkoutSessionCalculator.volumeContribution(for: set)
+            partial + WorkoutSessionCalculator.volumeContribution(
+                for: set,
+                externalLoadCounts: weightSemantics.countsTowardVolumeKg
+            )
         }
+        let counts = weightSemantics.countsTowardVolumeKg
         let best = working.max { lhs, rhs in
-            setScore(lhs) < setScore(rhs)
+            setScore(lhs, externalLoadCounts: counts) < setScore(rhs, externalLoadCounts: counts)
         }
         return ExerciseCompleteSummary(
             setsCompleted: working.count,
@@ -26,8 +30,8 @@ struct ExerciseCompleteSummary {
         )
     }
 
-    private static func setScore(_ set: CompletedSet) -> Double {
-        WorkoutSessionCalculator.volumeContribution(for: set)
+    private static func setScore(_ set: CompletedSet, externalLoadCounts: Bool) -> Double {
+        WorkoutSessionCalculator.volumeContribution(for: set, externalLoadCounts: externalLoadCounts)
     }
 
     private static func bestSetDescription(
@@ -91,12 +95,17 @@ extension WorkoutSessionView {
         let weightSemantics = meta.resolvedWeightDisplaySemantics
 
         if prescription == .time, let seconds = planned.targetDurationSeconds {
+            if weightSemantics == .resistanceLevel {
+                let level = planned.targetWeightKg.map { " · \(Int($0.rounded())) lvl" } ?? ""
+                return "\(seconds)s\(level)"
+            }
             let weightPart = weightSuffix(
                 planned: planned,
                 showWeightInput: showWeightInput,
                 semantics: weightSemantics
             )
-            return "\(seconds)s hold\(weightPart)"
+            let hold = meta.movementPattern == .cardio ? "" : " hold"
+            return "\(seconds)s\(hold)\(weightPart)"
         }
         if prescription == .distance || prescription == .distanceOrTime,
            let meters = planned.targetDistanceMeters {

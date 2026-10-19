@@ -2,7 +2,7 @@ import Foundation
 
 enum LoggedWeightSanity {
     enum HardBlockReason: Equatable {
-        case negative
+        case belowAbsoluteMin
         case aboveAbsoluteMax
     }
 
@@ -17,8 +17,8 @@ enum LoggedWeightSanity {
         lastWeightKg: Double?,
         plannedWeightKg: Double?
     ) -> Outcome {
-        if proposedKg < 0 {
-            return .hardBlock(.negative)
+        if proposedKg < GenerationConstants.Validation.minLoggedWeightKg {
+            return .hardBlock(.belowAbsoluteMin)
         }
         if proposedKg > GenerationConstants.Validation.maxPlannedWeightKg {
             return .hardBlock(.aboveAbsoluteMax)
@@ -38,5 +38,32 @@ enum LoggedWeightSanity {
             return .softWarning(baselineKg: baseline)
         }
         return .ok
+    }
+
+    /// Resistance settings are a machine level, not kilograms, so the jump warning does not apply.
+    static func evaluateResistanceLevel(_ level: Double) -> Outcome {
+        if level < 0 {
+            return .hardBlock(.belowAbsoluteMin)
+        }
+        if level > GenerationConstants.Validation.maxResistanceLevel {
+            return .hardBlock(.aboveAbsoluteMax)
+        }
+        return .ok
+    }
+
+    static func evaluateLoggedLoad(
+        proposed: Double,
+        semantics: WeightDisplaySemantics,
+        lastWeightKg: Double?,
+        plannedWeightKg: Double?
+    ) -> Outcome {
+        if semantics == .resistanceLevel {
+            return evaluateResistanceLevel(proposed)
+        }
+        return evaluate(
+            proposedKg: proposed,
+            lastWeightKg: lastWeightKg,
+            plannedWeightKg: plannedWeightKg
+        )
     }
 }

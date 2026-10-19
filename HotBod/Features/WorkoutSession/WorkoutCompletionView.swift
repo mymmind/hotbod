@@ -8,7 +8,7 @@ struct WorkoutCompletionView: View {
     var exerciseMap: [String: Exercise] = [:]
     let onDone: () -> Void
 
-    @State private var shareImage: UIImage?
+    @State private var shareItem: WorkoutShareActivityItem?
     @State private var showShareSheet = false
     @State private var showAddPhoto = false
     @State private var selectedPose: BodyPhotoPoseType = .frontRelaxed
@@ -17,7 +17,7 @@ struct WorkoutCompletionView: View {
     @State private var photoImportSucceeded = false
 
     private var volume: Double {
-        WorkoutSessionCalculator.completedVolumeKg(session: session)
+        WorkoutSessionCalculator.completedVolumeKg(session: session, exerciseMap: exerciseMap)
     }
 
     private var duration: Int {
@@ -36,8 +36,13 @@ struct WorkoutCompletionView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: ForgeSpacing.s5) {
+                Text(L10n.Workout.completeTitle)
+                    .font(ForgeTypography.heroMetric)
+                    .foregroundStyle(ForgeColors.accentGreen)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
                 ForgeHeroCard(
-                    eyebrow: L10n.Workout.completeTitle,
+                    eyebrow: "",
                     title: session.title,
                     badge: workoutStreak > 0 ? "\(workoutStreak)-day streak" : nil,
                     completed: true,
@@ -125,9 +130,12 @@ struct WorkoutCompletionView: View {
         .background(ForgeColors.background)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("session.workoutComplete")
-        .sheet(isPresented: $showShareSheet) {
-            if let shareImage {
-                ShareSheet(items: [shareImage])
+        .sheet(isPresented: $showShareSheet, onDismiss: {
+            shareItem?.cleanup()
+            shareItem = nil
+        }) {
+            if let shareItem {
+                ShareSheet(items: [shareItem])
             }
         }
         .bodyPhotoAddPhoto(
@@ -156,8 +164,9 @@ struct WorkoutCompletionView: View {
             workoutStreak: workoutStreak,
             muscleSummary: muscleSummary.isEmpty ? nil : muscleSummary
         )
-        shareImage = WorkoutShareRenderer.image(for: card)
-        showShareSheet = shareImage != nil
+        guard let image = WorkoutShareRenderer.image(for: card) else { return }
+        shareItem = WorkoutShareActivityItem(image: image, title: session.title)
+        showShareSheet = shareItem != nil
     }
 
     private func importProgressPhoto(_ data: Data) async {

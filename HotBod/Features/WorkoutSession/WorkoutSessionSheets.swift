@@ -103,8 +103,22 @@ struct ActiveWorkoutPreviewView: View {
     }
 
     private func rowStatus(for exercise: WorkoutExercise, at index: Int) -> ActiveWorkoutRowStatus {
+        ActiveWorkoutPreviewStatus.rowStatus(
+            exercise: exercise,
+            index: index,
+            currentExerciseIndex: currentExerciseIndex
+        )
+    }
+}
+
+enum ActiveWorkoutPreviewStatus {
+    static func rowStatus(
+        exercise: WorkoutExercise,
+        index: Int,
+        currentExerciseIndex: Int
+    ) -> ActiveWorkoutRowStatus {
         if exercise.wasSkipped { return .skipped }
-        if index < currentExerciseIndex { return .completed }
+        if WorkoutSessionCalculator.isExerciseComplete(exercise) { return .completed }
         if index == currentExerciseIndex { return .current }
         return .upcoming
     }

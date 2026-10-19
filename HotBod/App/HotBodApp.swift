@@ -16,6 +16,9 @@ struct HotBodApp: App {
                 .onAppear {
                     appDelegate.router = router
                     appDelegate.flushPendingNavigation()
+                    if !UITestConfiguration.isUITesting {
+                        PhoneWatchConnectivity.activate()
+                    }
                 }
                 .onChange(of: scenePhase) { _, phase in
                     switch phase {
@@ -70,6 +73,7 @@ struct HotBodApp: App {
 struct RootView: View {
     @Environment(AppEnvironment.self) private var environment
     @Environment(AppRouter.self) private var router
+    @State private var countdownLine = "Start when ready."
 
     var body: some View {
         Group {
@@ -111,9 +115,16 @@ struct RootView: View {
         .tint(ForgeColors.accent)
         .preferredColorScheme(.dark)
         .overlay {
-            if router.workoutStartCountdownSession != nil {
-                WorkoutStartCountdownView {
+            if let session = router.workoutStartCountdownSession {
+                WorkoutStartCountdownView(openingLine: countdownLine) {
                     Task { await WorkoutStartFlow.finishCountdown(environment: environment, router: router) }
+                }
+                .task(id: session.id) {
+                    countdownLine = WorkoutStartCountdown.openingLine(for: session)
+                    let exercises = await environment.fetchAllExercises()
+                    let firstId = session.exercises.min { $0.orderIndex < $1.orderIndex }?.exerciseId
+                    let name = exercises.first { $0.id == firstId }?.name
+                    countdownLine = WorkoutStartCountdown.openingLine(for: session, exerciseName: name)
                 }
                 .transition(.opacity)
                 .zIndex(1)
@@ -123,5 +134,37 @@ struct RootView: View {
             UITestConfiguration.isUITesting ? nil : ForgeMotion.standard,
             value: router.workoutStartCountdownSession?.id
         )
+        .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
+            guard !UITestConfiguration.isUITesting else { return }
+            guard !router.suppressesWatchCommands else { return }
+            drainWatchControlCommands()
+            guard !environment.hasActiveWorkoutSession else { return }
+            if let workout = environment.todayWorkout, !environment.isTodayWorkoutCompleted {
+                PhoneWatchSessionBridge.publishReady(title: workout.title)
+            } else {
+                PhoneWatchSessionBridge.publishIdle()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .hotbodWatchCommandsPending)) { _ in
+            guard !UITestConfiguration.isUITesting else { return }
+            guard !router.suppressesWatchCommands else { return }
+            drainWatchControlCommands()
+        }
+    }
+
+    private func drainWatchControlCommands() {
+        let commands = AppGroupSessionStore.consumeCommands { action in
+            action == .startWorkout || action == .endWorkout
+        }
+        for command in commands {
+            switch command.action {
+            case .startWorkout:
+                Task { await environment.startTodayWorkoutFromWatch(router: router) }
+            case .endWorkout:
+                Task { await environment.endActiveWorkoutFromWatch() }
+            default:
+                break
+            }
+        }
     }
 }

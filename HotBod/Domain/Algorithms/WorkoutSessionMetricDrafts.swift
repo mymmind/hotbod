@@ -3,6 +3,17 @@ import Foundation
 /// Persists in-progress set metric drafts onto incomplete planned sets.
 /// Drafts live in the session UI as string maps; this flushes parseable values
 /// into `WorkoutSession` so pause/resume and process death keep the user's edits.
+enum LoggedLoadDraft: Equatable {
+    case usePlanned
+    case invalid
+    case value(Double)
+}
+
+struct CommittedLoggedLoad: Equatable {
+    var weight: Double?
+    var blocked: Bool
+}
+
 enum WorkoutSessionMetricDrafts {
     /// Returns a copy of `session` with incomplete planned sets updated from draft texts.
     /// - Only touches sets that are not yet completed (`setIndex >= completedSets.count`).
@@ -69,6 +80,26 @@ enum WorkoutSessionMetricDrafts {
         }
         if let text = distanceTexts[plannedId], let meters = Double(text) {
             exercise.plannedSets[setIndex].targetDistanceMeters = meters
+        }
+    }
+
+    /// A non-empty draft that is not a number (`"-"`, `"."`) must not fall back to the planned load.
+    static func loggedLoadDraft(_ text: String?) -> LoggedLoadDraft {
+        guard let text else { return .usePlanned }
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return .usePlanned }
+        if let value = Double(trimmed) { return .value(value) }
+        return .invalid
+    }
+
+    static func committedLoad(draft: String?, plannedKg: Double?) -> CommittedLoggedLoad {
+        switch loggedLoadDraft(draft) {
+        case .usePlanned:
+            return CommittedLoggedLoad(weight: plannedKg, blocked: false)
+        case .invalid:
+            return CommittedLoggedLoad(weight: nil, blocked: true)
+        case .value(let value):
+            return CommittedLoggedLoad(weight: value, blocked: false)
         }
     }
 

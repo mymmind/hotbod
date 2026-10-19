@@ -93,6 +93,55 @@ final class WorkoutSessionMetricDraftsTests: XCTestCase {
         XCTAssertEqual(WorkoutSessionMetricDrafts.formatWeightKg(60), "60")
     }
 
+    func testRegression_minusSignDraftDoesNotLogPlannedLoad() {
+        XCTAssertEqual(WorkoutSessionMetricDrafts.loggedLoadDraft("-"), .invalid)
+        XCTAssertEqual(WorkoutSessionMetricDrafts.loggedLoadDraft("-."), .invalid)
+        XCTAssertEqual(WorkoutSessionMetricDrafts.loggedLoadDraft(nil), .usePlanned)
+        XCTAssertEqual(WorkoutSessionMetricDrafts.loggedLoadDraft("-20"), .value(-20))
+        let committed = WorkoutSessionMetricDrafts.committedLoad(draft: "-", plannedKg: 20)
+        XCTAssertTrue(committed.blocked)
+        XCTAssertNil(committed.weight)
+    }
+
+    func testRegression_countdownNamesTheFirstExercise() {
+        let session = makeSession(
+            plannedSets: [PlannedSet(targetRepsMin: 5, targetRepsMax: 8, targetWeightKg: 80)],
+            completedCount: 0
+        )
+        XCTAssertEqual(
+            WorkoutStartCountdown.openingLine(for: session),
+            "Bench Press\n1 set · 80 kg"
+        )
+        XCTAssertFalse(WorkoutStartCountdown.openingLine(for: session).localizedCaseInsensitiveContains("fuck"))
+    }
+
+    func testRegression_previewRowStatusUsesCompletionNotIndex() {
+        let planned = PlannedSet(targetRepsMin: 8, targetRepsMax: 10, targetWeightKg: 60)
+        let done = WorkoutExercise(
+            exerciseId: "bench_press",
+            orderIndex: 2,
+            plannedSets: [planned],
+            completedSets: [CompletedSet(setIndex: 0, weightKg: 60, reps: 8)]
+        )
+        let pending = WorkoutExercise(
+            exerciseId: "squat",
+            orderIndex: 0,
+            plannedSets: [planned]
+        )
+        XCTAssertEqual(
+            ActiveWorkoutPreviewStatus.rowStatus(exercise: done, index: 2, currentExerciseIndex: 0),
+            .completed
+        )
+        XCTAssertEqual(
+            ActiveWorkoutPreviewStatus.rowStatus(exercise: pending, index: 0, currentExerciseIndex: 2),
+            .upcoming
+        )
+        XCTAssertEqual(
+            ActiveWorkoutPreviewStatus.rowStatus(exercise: pending, index: 2, currentExerciseIndex: 2),
+            .current
+        )
+    }
+
     func testRegression_durationAndDistanceDraftsIgnoreBlankDraft() {
         XCTAssertEqual(
             WorkoutSessionMetricDrafts.displayedDurationText(

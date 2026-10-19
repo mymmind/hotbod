@@ -179,11 +179,14 @@ enum WeightDisplaySemantics: String, Codable, CaseIterable, Hashable {
     case total
     /// Weight per dumbbell / kettlebell / hand (displayed as per arm).
     case perHand
+    /// Machine resistance setting (rowing erg damper/level), not a kilogram load.
+    case resistanceLevel
 
     var sessionWeightLabel: String {
         switch self {
         case .total: "KG"
         case .perHand: "KG / ARM"
+        case .resistanceLevel: "LVL"
         }
     }
 
@@ -192,6 +195,7 @@ enum WeightDisplaySemantics: String, Codable, CaseIterable, Hashable {
         switch self {
         case .total: "kg"
         case .perHand: "kg per arm"
+        case .resistanceLevel: " lvl"
         }
     }
 
@@ -199,7 +203,28 @@ enum WeightDisplaySemantics: String, Codable, CaseIterable, Hashable {
         switch self {
         case .total: "kg"
         case .perHand: "kg per arm"
+        case .resistanceLevel: "level"
         }
+    }
+
+    /// Kilogram loads count toward session volume. Resistance settings do not.
+    var countsTowardVolumeKg: Bool {
+        self != .resistanceLevel
+    }
+
+    /// Assisted movements (supported pull-ups, dips) log a negative kilogram load.
+    var allowsNegativeLoad: Bool {
+        self != .resistanceLevel
+    }
+
+    /// Step used by the watch +/- controls.
+    var loadStep: Double {
+        self == .resistanceLevel ? 1 : 2.5
+    }
+
+    /// When false, workout generation leaves the load field empty instead of inventing a kilogram target.
+    var tracksExternalKilograms: Bool {
+        self != .resistanceLevel
     }
 }
 

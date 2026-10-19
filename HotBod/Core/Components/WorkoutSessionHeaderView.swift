@@ -20,6 +20,7 @@ struct WorkoutSessionHeaderView: View {
     let muscleLine: String
     let currentExerciseIndex: Int
     let furthestExerciseIndex: Int
+    var completedExerciseIndexes: Set<Int> = []
     let exerciseCount: Int
     let completedSets: Int
     let totalSets: Int
@@ -170,6 +171,7 @@ struct WorkoutSessionHeaderView: View {
         .background { heroBackground }
         .animation(ForgeMotion.exercise, value: currentExerciseIndex)
         .animation(ForgeMotion.quick, value: currentExerciseCompletedSets)
+        .animation(ForgeMotion.quick, value: completedExerciseIndexes)
     }
 
     private var exercisePositionRow: some View {
@@ -255,9 +257,15 @@ struct WorkoutSessionHeaderView: View {
     }
 
     private func segmentColor(for index: Int) -> Color {
-        if index < currentExerciseIndex { return ForgeColors.accentGreen }
-        if index == currentExerciseIndex { return ForgeColors.accent }
-        return ForgeColors.border
+        switch WorkoutSessionCalculator.exerciseSegmentFill(
+            index: index,
+            currentIndex: currentExerciseIndex,
+            isComplete: completedExerciseIndexes.contains(index)
+        ) {
+        case .complete: ForgeColors.accentGreen
+        case .current: ForgeColors.accent
+        case .remaining: ForgeColors.border
+        }
     }
 
     private func sessionMetrics(calories: Int) -> some View {

@@ -104,4 +104,11 @@ final class AppRouter {
         workoutStartCountdownSession = nil
         replace(with: .workoutSession(session))
     }
+
+    /// The workout screen consumes watch commands itself. The root observer stays quiet then.
+    var suppressesWatchCommands: Bool {
+        if workoutStartCountdownSession != nil { return true }
+        if case .workoutSession = route { return true }
+        return false
+    }
 }

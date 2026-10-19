@@ -122,9 +122,10 @@ enum ExerciseSwapReplanner {
                 )
             )
         )
-        let canPlanExternalLoad = substitute.resolvedLoadTrackingMode.plansExternalLoad(
+        let canPlanExternalLoad = substitute.plannedExternalLoadKg(
+            plannedWeight,
             hasLoggedWeight: stats?.planningWeightKg != nil
-        )
+        ) != nil
 
         return existing.map { set in
             let targets = prescriptionTargets(

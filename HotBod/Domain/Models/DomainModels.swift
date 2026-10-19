@@ -374,6 +374,14 @@ struct Exercise: Identifiable, Codable, Hashable {
     var resolvedPrescriptionType: PrescriptionType {
         ExerciseMetadataResolver.resolvedPrescriptionType(for: self)
     }
+
+    /// Kilogram target to store on a planned set. Resistance-level machines stay unset
+    /// so a generated kilogram guess is not shown as a damper setting.
+    func plannedExternalLoadKg(_ candidate: Double?, hasLoggedWeight: Bool) -> Double? {
+        guard resolvedWeightDisplaySemantics.tracksExternalKilograms else { return nil }
+        guard resolvedLoadTrackingMode.plansExternalLoad(hasLoggedWeight: hasLoggedWeight) else { return nil }
+        return candidate
+    }
 }
 
 /// Explicit mappings for exercises where the seed's `equipment` tags are not enough for correct UX.

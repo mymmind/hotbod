@@ -109,6 +109,12 @@ struct WorkoutSessionView: View {
         return session.exercises[currentExerciseIndex]
     }
 
+    private var completedExerciseIndexes: Set<Int> {
+        Set(session.exercises.enumerated().compactMap { index, exercise in
+            WorkoutSessionCalculator.isExerciseComplete(exercise) ? index : nil
+        })
+    }
+
     private var completedSetsCount: Int {
         session.exercises.reduce(0) { $0 + $1.completedSets.count }
     }
@@ -185,16 +191,20 @@ struct WorkoutSessionView: View {
         .animation(UITestConfiguration.isUITesting ? nil : ForgeMotion.standard, value: showCompletion)
         .animation(UITestConfiguration.isUITesting ? nil : ForgeMotion.standard, value: showExerciseComplete)
         .animation(UITestConfiguration.isUITesting ? nil : ForgeMotion.exercise, value: currentExerciseIndex)
-        .overlay(alignment: .top) {
-            if showCompletion {
-                Text(L10n.Workout.completeTitle)
-                    .font(ForgeTypography.heroMetric)
-                    .foregroundStyle(ForgeColors.accentGreen)
-                    .padding(.top, ForgeSpacing.s6)
-                    .accessibilityIdentifier("session.workoutComplete")
-            }
-        }
         .background(ForgeColors.background)
+        .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
+            handleRestTimerTick()
+            drainWatchCommands(showWeightInput: watchShowsWeightInput)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .hotbodWatchCommandsPending)) { _ in
+            drainWatchCommands(showWeightInput: watchShowsWeightInput)
+        }
+        .onAppear {
+            UIApplication.shared.isIdleTimerDisabled = true
+        }
+        .onDisappear {
+            UIApplication.shared.isIdleTimerDisabled = false
+        }
         .navigationBarHidden(true)
         .toolbar(.hidden, for: .navigationBar)
         .task {
@@ -306,6 +316,7 @@ struct WorkoutSessionView: View {
                             muscleLine: muscleLine(for: meta),
                             currentExerciseIndex: currentExerciseIndex,
                             furthestExerciseIndex: furthestExerciseIndex,
+                            completedExerciseIndexes: completedExerciseIndexes,
                             exerciseCount: session.exercises.count,
                             completedSets: completedSetsCount,
                             totalSets: totalPlannedSets,
@@ -356,10 +367,6 @@ struct WorkoutSessionView: View {
                     .frame(width: 0, height: 0)
                     .accessibilityIdentifier("uitest.session.ready")
             }
-        }
-        .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
-            handleRestTimerTick()
-            processWatchCommand(showWeightInput: showWeightInput(for: exercise, meta: meta))
         }
         .onAppear {
             restoreRestTimerIfNeeded()

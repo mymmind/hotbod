@@ -187,11 +187,13 @@ extension WorkoutSessionView {
                             planned: planned,
                             setIndex: index,
                             completed: completed,
-                            showWeightInput: showWeightInput
+                            showWeightInput: showWeightInput,
+                            semantics: meta.resolvedWeightDisplaySemantics
                         ),
                         width: ForgeSetTableLayout.weightFieldWidth,
                         isActive: isActive,
                         selectAllOnFocus: true,
+                        allowsNegative: meta.resolvedWeightDisplaySemantics.allowsNegativeLoad,
                         onFocusChange: { noteSetFieldFocus(setIndex: index, focused: $0) }
                     )
                 } else if !usesRepMetric(for: meta) {
@@ -319,7 +321,8 @@ extension WorkoutSessionView {
         planned: PlannedSet,
         setIndex: Int,
         completed: CompletedSet?,
-        showWeightInput: Bool
+        showWeightInput: Bool,
+        semantics: WeightDisplaySemantics
     ) -> Binding<String> {
         Binding(
             get: {
@@ -338,8 +341,9 @@ extension WorkoutSessionView {
 
                 let exerciseIdString = session.exercises.first(where: { $0.id == exerciseId })?.exerciseId
                 let last = exerciseIdString.flatMap { exerciseStatsById[$0]?.lastWeightKg }
-                let outcome = LoggedWeightSanity.evaluate(
-                    proposedKg: weight,
+                let outcome = LoggedWeightSanity.evaluateLoggedLoad(
+                    proposed: weight,
+                    semantics: semantics,
                     lastWeightKg: last,
                     plannedWeightKg: planned.targetWeightKg
                 )

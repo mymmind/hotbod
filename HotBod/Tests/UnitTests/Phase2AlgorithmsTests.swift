@@ -520,6 +520,33 @@ final class ExerciseSwapReplannerTests: XCTestCase {
         XCTAssertGreaterThan(replanned[0].targetRepsMin, 0)
         XCTAssertGreaterThanOrEqual(replanned[0].targetRepsMax, replanned[0].targetRepsMin)
     }
+
+    func testRegression_swapOntoRowerDoesNotPlanKilograms() {
+        let rower = makeStubExercise(
+            id: "rower",
+            muscles: [.back, .quads],
+            pattern: .cardio,
+            equipment: [.cardioMachine]
+        )
+        let stats = UserExerciseStats(
+            exerciseId: "rower",
+            lastWeightKg: 40,
+            suggestedNextWeightKg: 42,
+            preferredRepRangeMin: 1,
+            preferredRepRangeMax: 1
+        )
+        let existing = [
+            PlannedSet(targetRepsMin: 8, targetRepsMax: 10, targetWeightKg: 80)
+        ]
+        let replanned = ExerciseSwapReplanner.replannedSets(
+            preservingStructureFrom: existing,
+            for: rower,
+            stats: stats,
+            bodyweightKg: 80,
+            experience: .intermediate
+        )
+        XCTAssertNil(replanned[0].targetWeightKg)
+    }
 }
 
 // MARK: - WorkoutPlanEditor

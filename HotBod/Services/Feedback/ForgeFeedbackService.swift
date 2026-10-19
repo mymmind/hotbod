@@ -107,6 +107,10 @@ final class ForgeFeedbackService {
     }
 
     private func playSound(_ event: ForgeFeedbackEvent) {
+        if ForgeAudioCuePolicy.ducksOtherAudio(for: event) {
+            sounds.playRestCompleteChime()
+            return
+        }
         switch event {
         case .setComplete:
             sounds.playTone(frequency: 880, duration: 0.06, volume: 0.18)
@@ -125,17 +129,6 @@ final class ForgeFeedbackService {
                 duration: 0.05,
                 volume: 0.14 + step * 0.02
             )
-        case let .restTimerEnd(kind):
-            switch kind {
-            case .setRest:
-                sounds.playTone(frequency: 440, duration: 0.14, volume: 0.2)
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(150))
-                    sounds.playTone(frequency: 587, duration: 0.18, volume: 0.18)
-                }
-            case .transition:
-                sounds.playTone(frequency: 784, duration: 0.1, volume: 0.22)
-            }
         case .exerciseComplete:
             sounds.playTone(frequency: 620, duration: 0.07, volume: 0.16)
         case .workoutComplete:

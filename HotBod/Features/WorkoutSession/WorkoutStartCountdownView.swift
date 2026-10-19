@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct WorkoutStartCountdownView: View {
+    let openingLine: String
     let onComplete: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -17,19 +18,17 @@ struct WorkoutStartCountdownView: View {
     @State private var flashOpacity: Double = 0
     @State private var sweepOffset: CGFloat = -1
 
-    private let rallyMessage: String
-
-    init(onComplete: @escaping () -> Void) {
+    init(openingLine: String = "Start when ready.", onComplete: @escaping () -> Void) {
+        self.openingLine = openingLine
         self.onComplete = onComplete
-        rallyMessage = WorkoutStartCountdown.randomMessage()
     }
 
     private enum Phase: Equatable {
         case count(Int)
-        case rally(String)
+        case message(String)
 
-        var isRally: Bool {
-            if case .rally = self { return true }
+        var isMessage: Bool {
+            if case .message = self { return true }
             return false
         }
     }
@@ -46,7 +45,7 @@ struct WorkoutStartCountdownView: View {
                     .font(ForgeTypography.label)
                     .tracking(ForgeTracking.eyebrowWide)
                     .foregroundStyle(ForgeColors.accent)
-                    .opacity(phase.isRally ? 0 : 1)
+                    .opacity(phase.isMessage ? 0 : 1)
 
                 centerContent
                     .frame(minHeight: 200)
@@ -82,7 +81,7 @@ struct WorkoutStartCountdownView: View {
                 .opacity(numberOpacity)
                 .forgeMetricPulse(value: tick)
                 .accessibilityLabel("\(value)")
-        case .rally(let message):
+        case .message(let message):
             Text(message)
                 .font(ForgeTypography.display)
                 .multilineTextAlignment(.center)
@@ -118,12 +117,12 @@ struct WorkoutStartCountdownView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(height: 4)
-        .opacity(phase.isRally ? 1 : 0.65)
+        .opacity(phase.isMessage ? 1 : 0.65)
     }
 
     @MainActor
     private func runReducedMotionSequence() async {
-        phase = .rally(rallyMessage)
+        phase = .message(openingLine)
         messageOpacity = 1
         messageScale = 1
         feedback.play(.success)
@@ -140,7 +139,7 @@ struct WorkoutStartCountdownView: View {
             guard !Task.isCancelled else { return }
         }
 
-        await animateRally()
+        await animateMessage()
         guard !Task.isCancelled else { return }
 
         try? await Task.sleep(for: WorkoutStartCountdown.messageHoldDuration)
@@ -192,8 +191,8 @@ struct WorkoutStartCountdownView: View {
     }
 
     @MainActor
-    private func animateRally() async {
-        phase = .rally(rallyMessage)
+    private func animateMessage() async {
+        phase = .message(openingLine)
         messageScale = 0.88
         messageOpacity = 0
         ringProgress = 0.2

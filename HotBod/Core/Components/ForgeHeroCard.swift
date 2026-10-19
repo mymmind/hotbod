@@ -40,11 +40,13 @@ struct ForgeHeroCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: ForgeSpacing.s4) {
             HStack(alignment: .firstTextBaseline) {
-                Text(eyebrow.uppercased())
-                    .font(ForgeTypography.caption)
-                    .tracking(2)
-                    .foregroundStyle(eyebrowColor)
-                    .opacity(completed ? 0.7 : 1)
+                if !eyebrow.isEmpty {
+                    Text(eyebrow.uppercased())
+                        .font(ForgeTypography.caption)
+                        .tracking(2)
+                        .foregroundStyle(eyebrowColor)
+                        .opacity(completed ? 0.7 : 1)
+                }
                 Spacer()
                 if let badge {
                     Text(badge.uppercased())

@@ -382,6 +382,7 @@ struct WorkoutHistoryDetailView: View {
     @Environment(\.dismiss) private var dismiss
     let session: WorkoutSession
     @State private var exerciseNameById: [String: String] = [:]
+    @State private var exerciseById: [String: Exercise] = [:]
 
     var body: some View {
         ScrollView {
@@ -441,7 +442,7 @@ struct WorkoutHistoryDetailView: View {
                                     .foregroundStyle(ForgeColors.muted)
                             } else {
                                 ForEach(sortedCompletedSets(for: exercise)) { set in
-                                    Text(setLine(for: set))
+                                    Text(setLine(for: set, exerciseId: exercise.exerciseId))
                                         .font(ForgeTypography.caption)
                                         .foregroundStyle(ForgeColors.muted)
                                 }
@@ -497,7 +498,7 @@ struct WorkoutHistoryDetailView: View {
     }
 
     private var totalVolumeKg: Double {
-        WorkoutSessionCalculator.completedVolumeKg(session: session)
+        WorkoutSessionCalculator.completedVolumeKg(session: session, exerciseMap: exerciseById)
     }
 
     private var sortedExercises: [WorkoutExercise] {
@@ -512,25 +513,19 @@ struct WorkoutHistoryDetailView: View {
         exerciseNameById[id] ?? id.replacingOccurrences(of: "_", with: " ").capitalized
     }
 
-    private func setLine(for set: CompletedSet) -> String {
+    private func setLine(for set: CompletedSet, exerciseId: String) -> String {
         var line = "Set \(set.setIndex + 1):"
         if set.reps > 0 {
-            let weightText: String
-            if let weight = set.weightKg {
-                weightText = "\(Int(weight.rounded()))kg"
-            } else {
-                weightText = "Bodyweight"
-            }
-            line += " \(weightText) x \(set.reps)"
+            line += " \(loadText(for: set, exerciseId: exerciseId) ?? "Bodyweight") x \(set.reps)"
         } else if let seconds = set.durationSeconds, seconds > 0 {
             line += " \(seconds)s"
-            if let weight = set.weightKg {
-                line += " @ \(Int(weight.rounded()))kg"
+            if let load = loadText(for: set, exerciseId: exerciseId) {
+                line += " @ \(load)"
             }
         } else if let meters = set.distanceMeters, meters > 0 {
             line += " \(Int(meters.rounded()))m"
-            if let weight = set.weightKg {
-                line += " @ \(Int(weight.rounded()))kg"
+            if let load = loadText(for: set, exerciseId: exerciseId) {
+                line += " @ \(load)"
             }
         } else {
             line += " logged"
@@ -543,9 +538,21 @@ struct WorkoutHistoryDetailView: View {
         return line
     }
 
+    private func loadText(for set: CompletedSet, exerciseId: String) -> String? {
+        guard let weight = set.weightKg else { return nil }
+        let semantics = exerciseById[exerciseId]?.resolvedWeightDisplaySemantics
+            ?? ExerciseMetadataResolver.resolvedWeightDisplaySemantics(exerciseId: exerciseId)
+        if semantics == .resistanceLevel {
+            return "\(Int(weight.rounded())) lvl"
+        }
+        let number = weight.rounded() == weight ? String(Int(weight)) : String(format: "%.1f", weight)
+        return "\(number) kg"
+    }
+
     private func loadExerciseNames() async {
         let exercises = await environment.fetchAllExercises()
         exerciseNameById = Dictionary(uniqueKeysWithValues: exercises.map { ($0.id, $0.name) })
+        exerciseById = Dictionary(uniqueKeysWithValues: exercises.map { ($0.id, $0) })
     }
 
     private var sessionDateLine: String {
