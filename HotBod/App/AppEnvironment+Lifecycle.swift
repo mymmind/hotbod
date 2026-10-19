@@ -50,6 +50,7 @@ extension AppEnvironment {
         await persistRegenerationWeekRefreshIfNeeded()
         await applyRecoveryDecay()
         await revalidateTodayPlanForCurrentDay()
+        await rescheduleWorkoutReminders()
         calendarDayRevision &+= 1
     }
 }

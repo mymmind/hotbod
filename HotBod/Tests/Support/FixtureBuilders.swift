@@ -269,6 +269,18 @@ enum FixtureBuilders {
   }
 }
 
+final class RecordingWorkoutReminderScheduler: WorkoutReminderScheduling, @unchecked Sendable {
+  var alreadyTrainedFlags: [Bool] = []
+
+  func requestAuthorizationIfNeeded() async -> Bool { true }
+
+  func reschedule(profile: UserProfile, focusHint: String?, alreadyTrainedToday: Bool) async {
+    alreadyTrainedFlags.append(alreadyTrainedToday)
+  }
+
+  func cancelAll() async {}
+}
+
 final class RecordingPhysiqueReassessReminderScheduler: PhysiqueReassessReminderScheduling, @unchecked Sendable {
   var rescheduleCalls: [(enabled: Bool, createdAt: Date?)] = []
   var cancelCount = 0
@@ -297,7 +309,8 @@ extension AppEnvironment {
     physiqueIllustrationService: (any PhysiqueIllustrationService)? = nil,
     physiqueIllustrationStore: LocalPhysiqueIllustrationStore? = nil,
     physiqueAssessmentService: HybridPhysiqueAssessmentService? = nil,
-    physiqueReassessReminderScheduler: (any PhysiqueReassessReminderScheduling)? = nil
+    physiqueReassessReminderScheduler: (any PhysiqueReassessReminderScheduling)? = nil,
+    workoutReminderScheduler: (any WorkoutReminderScheduling)? = nil
   ) -> AppEnvironment {
     let analyzer = MockBodyPhotoAnalyzer()
     return AppEnvironment(
@@ -334,7 +347,7 @@ extension AppEnvironment {
       cloudSyncService: cloudSyncService ?? NoOpCloudSyncService(),
       feedbackService: ForgeFeedbackService(),
       subscriptionService: ForgeSubscriptionService(grantProForTesting: true),
-      workoutReminderScheduler: NoOpWorkoutReminderScheduler(),
+      workoutReminderScheduler: workoutReminderScheduler ?? NoOpWorkoutReminderScheduler(),
       physiqueReassessReminderScheduler: physiqueReassessReminderScheduler
         ?? NoOpPhysiqueReassessReminderScheduler()
     )

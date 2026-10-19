@@ -23,34 +23,35 @@ final class LocalWorkoutReminderScheduler: WorkoutReminderScheduling, @unchecked
         }
     }
 
-    func reschedule(profile: UserProfile, focusHint: String?) async {
+    func reschedule(profile: UserProfile, focusHint: String?, alreadyTrainedToday: Bool) async {
         await cancelAll()
+        if alreadyTrainedToday {
+            await removeDeliveredWorkoutReminders()
+        }
         guard profile.workoutRemindersEnabled else { return }
         let authorized = await requestAuthorizationIfNeeded()
         guard authorized else { return }
 
-        let slots = WorkoutReminderPlanner.slots(
+        let occurrences = WorkoutReminderPlanner.occurrences(
             days: profile.reminderTrainingDays,
             timeOfDay: profile.timeOfDayPreference,
-            enabled: true
+            enabled: true,
+            alreadyTrainedToday: alreadyTrainedToday,
+            now: Date(),
+            calendar: .current
         )
         let contentTitle = WorkoutReminderPlanner.title(for: focusHint)
         let contentBody = WorkoutReminderPlanner.body()
 
-        for slot in slots {
+        for occurrence in occurrences {
             let content = UNMutableNotificationContent()
             content.title = contentTitle
             content.body = contentBody
             content.sound = .default
 
-            var date = DateComponents()
-            date.weekday = slot.weekday.rawValue
-            date.hour = slot.hour
-            date.minute = slot.minute
-
-            let trigger = UNCalendarNotificationTrigger(dateMatching: date, repeats: true)
+            guard let trigger = notificationTrigger(for: occurrence) else { continue }
             let request = UNNotificationRequest(
-                identifier: slot.identifier,
+                identifier: occurrence.slot.identifier,
                 content: content,
                 trigger: trigger
             )
@@ -62,5 +63,25 @@ final class LocalWorkoutReminderScheduler: WorkoutReminderScheduling, @unchecked
         let pending = await center.pendingNotificationRequests()
         let ids = pending.map(\.identifier).filter { $0.hasPrefix("hotbod.workout.") }
         center.removePendingNotificationRequests(withIdentifiers: ids)
+    }
+
+    private func removeDeliveredWorkoutReminders() async {
+        let delivered = await center.deliveredNotifications()
+        let ids = delivered.map(\.request.identifier).filter { $0.hasPrefix("hotbod.workout.") }
+        center.removeDeliveredNotifications(withIdentifiers: ids)
+    }
+
+    private func notificationTrigger(for occurrence: WorkoutReminderOccurrence) -> UNCalendarNotificationTrigger? {
+        if occurrence.repeatsWeekly {
+            var date = DateComponents()
+            date.weekday = occurrence.slot.weekday.rawValue
+            date.hour = occurrence.slot.hour
+            date.minute = occurrence.slot.minute
+            return UNCalendarNotificationTrigger(dateMatching: date, repeats: true)
+        }
+        guard let fireOn = occurrence.fireOn else { return nil }
+        var date = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: fireOn)
+        date.second = 0
+        return UNCalendarNotificationTrigger(dateMatching: date, repeats: false)
     }
 }

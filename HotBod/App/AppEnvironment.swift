@@ -391,7 +391,11 @@ final class AppEnvironment {
             return
         }
         let focusHint = currentSplitFocus?.displayName
-        await workoutReminderScheduler.reschedule(profile: profile, focusHint: focusHint)
+        await workoutReminderScheduler.reschedule(
+            profile: profile,
+            focusHint: focusHint,
+            alreadyTrainedToday: isTodayWorkoutCompleted
+        )
     }
 
     func reschedulePhysiqueReassessReminder() async {
