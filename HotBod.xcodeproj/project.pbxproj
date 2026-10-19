@@ -2024,7 +2024,7 @@
 				INFOPLIST_FILE = HotBodWatch/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = HotBod;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.hotbod.app;
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 10.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hotbod.app.watchkitapp;
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -2101,7 +2101,7 @@
 				INFOPLIST_FILE = HotBodWatch/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = HotBod;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.hotbod.app;
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 10.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hotbod.app.watchkitapp;
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -2167,7 +2167,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 10.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hotbod.app;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -2277,7 +2277,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 10.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hotbod.app;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
