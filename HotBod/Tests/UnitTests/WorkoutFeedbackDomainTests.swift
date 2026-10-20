@@ -1,3 +1,4 @@
+import AVFoundation
 import XCTest
 @testable import HotBod
 
@@ -679,5 +680,88 @@ final class LocalExerciseRepositoryDedupTests: XCTestCase {
             XCTAssertEqual(catalog.filter { $0.id == "custom_test" }.count, 1)
             XCTAssertEqual(fetched?.name, "Version Two")
         }
+    }
+}
+
+final class ForgeSoundEngineCrashRegressionTests: XCTestCase {
+    func testRegression_playerNodePlayIsRefusedWhenEngineWouldAbort() {
+        XCTAssertFalse(
+            ForgePlaybackGate.canStartPlayer(engineIsRunning: false, sampleRate: 44_100, channelCount: 1)
+        )
+        XCTAssertFalse(
+            ForgePlaybackGate.canStartPlayer(engineIsRunning: true, sampleRate: 0, channelCount: 2)
+        )
+        XCTAssertFalse(
+            ForgePlaybackGate.canStartPlayer(engineIsRunning: true, sampleRate: 44_100, channelCount: 0)
+        )
+        XCTAssertTrue(
+            ForgePlaybackGate.canStartPlayer(engineIsRunning: true, sampleRate: 44_100, channelCount: 1)
+        )
+        XCTAssertFalse(
+            ForgePlaybackGate.canStartPlayer(engineIsRunning: true, sampleRate: .infinity, channelCount: 1)
+        )
+        XCTAssertFalse(ForgePlaybackGate.canStopPlayer(engineIsRunning: false))
+        XCTAssertTrue(ForgePlaybackGate.canStopPlayer(engineIsRunning: true))
+    }
+
+    func testRegression_matchingAudioCategoryIsLeftActive() {
+        XCTAssertFalse(
+            ForgeAudioSessionPolicy.needsCategoryChange(
+                wantsDuck: false,
+                category: .ambient,
+                options: [.mixWithOthers]
+            )
+        )
+        XCTAssertTrue(
+            ForgeAudioSessionPolicy.needsCategoryChange(
+                wantsDuck: true,
+                category: .ambient,
+                options: [.mixWithOthers]
+            )
+        )
+        XCTAssertFalse(
+            ForgeAudioSessionPolicy.needsCategoryChange(
+                wantsDuck: true,
+                category: .playback,
+                options: [.duckOthers]
+            )
+        )
+        XCTAssertTrue(
+            ForgeAudioSessionPolicy.needsCategoryChange(
+                wantsDuck: false,
+                category: .playback,
+                options: [.duckOthers]
+            )
+        )
+    }
+
+    func testRegression_toneBufferMatchesConnectionFormat() {
+        let format = ForgeToneSynthesizer.playbackFormat
+        XCTAssertGreaterThan(format.sampleRate, 0)
+        XCTAssertGreaterThan(format.channelCount, 0)
+
+        let buffer = ForgeToneSynthesizer.makeBuffer(
+            frequency: 587,
+            duration: 0.22,
+            volume: 0.9,
+            format: format
+        )
+        XCTAssertEqual(buffer?.format.sampleRate, format.sampleRate)
+        XCTAssertEqual(buffer?.format.channelCount, format.channelCount)
+        XCTAssertEqual(buffer?.frameLength, AVAudioFrameCount(format.sampleRate * 0.22))
+        XCTAssertNil(
+            ForgeToneSynthesizer.makeBuffer(frequency: 0, duration: 0.16, volume: 0.9, format: format)
+        )
+        XCTAssertNil(
+            ForgeToneSynthesizer.makeBuffer(frequency: 440, duration: 100_000, volume: 0.2, format: format)
+        )
+    }
+
+    @MainActor
+    func testRegression_restCompleteChimeDoesNotAbort() async {
+        let sounds = ForgeSoundEngine()
+        sounds.playRestCompleteChime()
+        sounds.playTone(frequency: 880, duration: 0.05, volume: 0.1)
+        try? await Task.sleep(for: .milliseconds(700))
     }
 }

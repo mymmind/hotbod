@@ -37,101 +37,283 @@ struct ForgeDuckSession: Equatable {
     }
 }
 
-@MainActor
-final class ForgeSoundEngine {
-    private var engine: AVAudioEngine?
-    private var playerNode: AVAudioPlayerNode?
-    private var duckSession = ForgeDuckSession()
-    private var chimeTask: Task<Void, Never>?
+/// `AVAudioPlayerNode.play()` and `stop()` raise ObjC exceptions — and abort the process —
+/// unless the engine is running. `play()` also requires a real sample rate and channel count.
+enum ForgePlaybackGate {
+    static func canStartPlayer(engineIsRunning: Bool, sampleRate: Double, channelCount: Int) -> Bool {
+        engineIsRunning && sampleRate.isFinite && sampleRate > 0 && channelCount > 0
+    }
 
-    func playTone(frequency: Double, duration: TimeInterval, volume: Float = 0.25) {
-        guard duration > 0, frequency > 0 else { return }
-        ensureReady()
-        guard let engine, let playerNode else { return }
-        if !engine.isRunning {
-            try? engine.start()
+    static func canStopPlayer(engineIsRunning: Bool) -> Bool {
+        engineIsRunning
+    }
+}
+
+enum ForgeAudioSessionPolicy {
+    /// Deactivating a session that already has the right category interrupts other audio and
+    /// posts a configuration change that stops the engine we just started.
+    static func needsCategoryChange(
+        wantsDuck: Bool,
+        category: AVAudioSession.Category,
+        options: AVAudioSession.CategoryOptions
+    ) -> Bool {
+        if wantsDuck {
+            return category != .playback || !options.contains(.duckOthers)
         }
+        return category != .ambient || !options.contains(.mixWithOthers)
+    }
+}
 
-        let sampleRate = engine.outputNode.outputFormat(forBus: 0).sampleRate
-        guard sampleRate > 0 else { return }
-        let frameCount = AVAudioFrameCount(sampleRate * duration)
-        guard let buffer = AVAudioPCMBuffer(
-            pcmFormat: engine.mainMixerNode.outputFormat(forBus: 0),
-            frameCapacity: frameCount
-        ) else { return }
+enum ForgeToneSynthesizer {
+    /// Requested connection format. The engine may negotiate a different rate;
+    /// buffers are rendered in the player's format after start, never the output-node format.
+    static let playbackFormat: AVAudioFormat = {
+        guard let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1) else {
+            preconditionFailure("44.1 kHz mono is a valid PCM format")
+        }
+        return format
+    }()
+
+    static func makeBuffer(
+        frequency: Double,
+        duration: TimeInterval,
+        volume: Float,
+        format: AVAudioFormat
+    ) -> AVAudioPCMBuffer? {
+        guard duration > 0, frequency > 0 else { return nil }
+        guard format.commonFormat == .pcmFormatFloat32 else { return nil }
+        guard ForgePlaybackGate.canStartPlayer(
+            engineIsRunning: true,
+            sampleRate: format.sampleRate,
+            channelCount: Int(format.channelCount)
+        ) else { return nil }
+
+        let frames = format.sampleRate * duration
+        guard frames.isFinite, frames > 0, frames <= Double(AVAudioFrameCount.max) else { return nil }
+        let frameCount = AVAudioFrameCount(frames)
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount),
+              buffer.floatChannelData != nil else { return nil }
 
         buffer.frameLength = frameCount
-        guard let channels = buffer.floatChannelData else { return }
-        let channelCount = Int(buffer.format.channelCount)
-        let totalFrames = Int(frameCount)
+        fill(buffer, frequency: frequency, duration: duration, volume: volume)
+        return buffer
+    }
 
-        for frame in 0..<totalFrames {
+    private static func fill(
+        _ buffer: AVAudioPCMBuffer,
+        frequency: Double,
+        duration: TimeInterval,
+        volume: Float
+    ) {
+        guard let channels = buffer.floatChannelData else { return }
+        let frameCount = Int(buffer.frameLength)
+        let channelCount = Int(buffer.format.channelCount)
+        let sampleRate = buffer.format.sampleRate
+        for frame in 0..<frameCount {
             let time = Double(frame) / sampleRate
-            let envelope = min(1, time / 0.01) * min(1, (duration - time) / 0.04)
-            let sample = Float(sin(2 * .pi * frequency * time) * envelope) * volume
+            let attack = min(1, time / 0.01)
+            let release = min(1, (duration - time) / 0.04)
+            let sample = Float(sin(2 * .pi * frequency * time) * attack * release) * volume
             for channel in 0..<channelCount {
                 channels[channel][frame] = sample
             }
         }
+    }
+}
 
-        playerNode.scheduleBuffer(buffer, at: nil, options: .interrupts) { }
-        playerNode.play()
+@MainActor
+final class ForgeSoundEngine {
+    private var duckSession = ForgeDuckSession()
+    private var chimeTask: Task<Void, Never>?
+    private var graphDucksOthers = false
+    private nonisolated(unsafe) var engine: AVAudioEngine?
+    private nonisolated(unsafe) var playerNode: AVAudioPlayerNode?
+    private nonisolated(unsafe) var audioObservers: [any NSObjectProtocol] = []
+
+    init() {
+        audioObservers = [
+            NotificationCenter.default.addObserver(
+                forName: AVAudioSession.mediaServicesWereResetNotification,
+                object: AVAudioSession.sharedInstance(),
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.dropGraphAfterMediaReset()
+                }
+            }
+        ]
+    }
+
+    func playTone(frequency: Double, duration: TimeInterval, volume: Float = 0.25) {
+        _ = playCue(frequency: frequency, duration: duration, volume: volume)
     }
 
     /// Two-note rest-complete chime played while other audio is ducked, then released.
     func playRestCompleteChime() {
         chimeTask?.cancel()
         let generation = duckSession.begin()
-        rebuild()
-        playTone(frequency: 440, duration: 0.16, volume: 0.9)
+        guard playCue(frequency: 440, duration: 0.16, volume: 0.9) else {
+            releaseDuck(generation: generation)
+            return
+        }
         chimeTask = Task { @MainActor in
+            defer { self.releaseDuck(generation: generation) }
             try? await Task.sleep(for: .milliseconds(180))
             guard !Task.isCancelled else { return }
-            self.playTone(frequency: 587, duration: 0.22, volume: 0.9)
+            guard self.playCue(frequency: 587, duration: 0.22, volume: 0.9) else { return }
             try? await Task.sleep(for: .milliseconds(400))
-            guard !Task.isCancelled else { return }
-            self.releaseDuck(generation: generation)
         }
     }
 
-    private func ensureReady() {
-        if engine == nil {
-            rebuild()
+    nonisolated deinit {
+        for observer in audioObservers {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        if let engine, ForgePlaybackGate.canStopPlayer(engineIsRunning: engine.isRunning) {
+            engine.stop()
+        }
+    }
+
+    @discardableResult
+    private func playCue(frequency: Double, duration: TimeInterval, volume: Float) -> Bool {
+        guard duration > 0, frequency > 0 else { return false }
+        guard let player = preparedPlayer(), let engine else { return false }
+        let format = player.outputFormat(forBus: 0)
+        guard player.engine === engine,
+              ForgePlaybackGate.canStartPlayer(
+                engineIsRunning: engine.isRunning,
+                sampleRate: format.sampleRate,
+                channelCount: Int(format.channelCount)
+              ),
+              let buffer = ForgeToneSynthesizer.makeBuffer(
+                frequency: frequency,
+                duration: duration,
+                volume: volume,
+                format: format
+              ) else {
+            dropGraph()
+            releaseSessionIfNotDucking()
+            return false
+        }
+
+        player.scheduleBuffer(buffer, at: nil, options: .interrupts, completionHandler: nil)
+        guard engine.isRunning else { return false }
+        player.play()
+        return true
+    }
+
+    private func preparedPlayer() -> AVAudioPlayerNode? {
+        if graphDucksOthers == duckSession.ducksOthers, let engine, let playerNode {
+            if playerFormatIsPlayable(playerNode, engine: engine) {
+                return playerNode
+            }
+            if restart(engine), playerFormatIsPlayable(playerNode, engine: engine) {
+                return playerNode
+            }
+        }
+        guard rebuild() else { return nil }
+        return playerNode
+    }
+
+    private func restart(_ engine: AVAudioEngine) -> Bool {
+        if engine.isRunning { return true }
+        do {
+            try engine.start()
+        } catch {
+            return false
+        }
+        return engine.isRunning
+    }
+
+    private func playerFormatIsPlayable(_ player: AVAudioPlayerNode, engine: AVAudioEngine) -> Bool {
+        let format = player.outputFormat(forBus: 0)
+        return ForgePlaybackGate.canStartPlayer(
+            engineIsRunning: engine.isRunning,
+            sampleRate: format.sampleRate,
+            channelCount: Int(format.channelCount)
+        )
+    }
+
+    private func rebuild() -> Bool {
+        dropGraph()
+        guard activateSession() else { return false }
+
+        let audioEngine = AVAudioEngine()
+        let player = AVAudioPlayerNode()
+        let format = ForgeToneSynthesizer.playbackFormat
+        audioEngine.attach(player)
+        audioEngine.connect(player, to: audioEngine.mainMixerNode, format: format)
+        do {
+            try audioEngine.start()
+        } catch {
+            releaseSessionIfNotDucking()
+            return false
+        }
+
+        guard playerFormatIsPlayable(player, engine: audioEngine) else {
+            if ForgePlaybackGate.canStopPlayer(engineIsRunning: audioEngine.isRunning) {
+                audioEngine.stop()
+            }
+            releaseSessionIfNotDucking()
+            return false
+        }
+
+        engine = audioEngine
+        playerNode = player
+        graphDucksOthers = duckSession.ducksOthers
+        return true
+    }
+
+    private func activateSession() -> Bool {
+        let session = AVAudioSession.sharedInstance()
+        do {
+            if ForgeAudioSessionPolicy.needsCategoryChange(
+                wantsDuck: duckSession.ducksOthers,
+                category: session.category,
+                options: session.categoryOptions
+            ) {
+                // Category changes while the session is active fail, and the following play() aborts.
+                try? session.setActive(false)
+                if duckSession.ducksOthers {
+                    try session.setCategory(.playback, mode: .default, options: [.duckOthers])
+                } else {
+                    try session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
+                }
+            }
+            try session.setActive(true)
+            return true
+        } catch {
+            return false
         }
     }
 
     private func releaseDuck(generation: Int) {
         guard duckSession.end(generation: generation) else { return }
-        engine?.stop()
-        playerNode?.stop()
-        engine = nil
-        playerNode = nil
+        dropGraph()
         let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
         try? session.setActive(false, options: [.notifyOthersOnDeactivation])
+        try? session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
         NotificationCenter.default.post(name: .forgeAudioDuckReleased, object: nil)
     }
 
-    private func rebuild() {
-        engine?.stop()
-        playerNode?.stop()
+    private func releaseSessionIfNotDucking() {
+        guard !duckSession.holdsPlaybackSession else { return }
+        try? AVAudioSession.sharedInstance().setActive(false)
+    }
+
+    private func dropGraph() {
+        if let engine, ForgePlaybackGate.canStopPlayer(engineIsRunning: engine.isRunning) {
+            engine.stop()
+        }
         engine = nil
         playerNode = nil
+        graphDucksOthers = false
+    }
 
-        let session = AVAudioSession.sharedInstance()
-        if duckSession.ducksOthers {
-            try? session.setCategory(.playback, mode: .default, options: [.duckOthers])
-        } else {
-            try? session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
-        }
-        try? session.setActive(true)
-
-        let audioEngine = AVAudioEngine()
-        let player = AVAudioPlayerNode()
-        audioEngine.attach(player)
-        audioEngine.connect(player, to: audioEngine.mainMixerNode, format: nil)
-        try? audioEngine.start()
-        engine = audioEngine
-        playerNode = player
+    /// Media Services reset invalidates the engine. Messaging it can throw; drop the references.
+    private func dropGraphAfterMediaReset() {
+        engine = nil
+        playerNode = nil
+        graphDucksOthers = false
     }
 }
