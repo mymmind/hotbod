@@ -106,10 +106,16 @@ protocol BodyPhotoAnalyzer: Sendable {
     func analyze(photo: BodyProgressPhoto, previous: BodyProgressPhoto?) async throws -> BodyPhotoAnalysis
 }
 
+struct HealthBodyMassSample: Sendable, Equatable {
+    var kilograms: Double
+    var measuredAt: Date
+}
+
 protocol HealthKitReadinessService: Sendable {
     var isAvailable: Bool { get }
     func requestAuthorizationIfNeeded() async
     func fetchReadinessSnapshot() async -> HealthReadinessSnapshot
+    func fetchLatestBodyMass() async -> HealthBodyMassSample?
 }
 
 protocol WorkoutGenerationService: Sendable {

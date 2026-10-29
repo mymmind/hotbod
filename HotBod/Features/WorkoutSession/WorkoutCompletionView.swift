@@ -166,7 +166,7 @@ struct WorkoutCompletionView: View {
         )
         guard let image = WorkoutShareRenderer.image(for: card) else { return }
         shareItem = WorkoutShareActivityItem(image: image, title: session.title)
-        showShareSheet = shareItem != nil
+        showShareSheet = true
     }
 
     private func importProgressPhoto(_ data: Data) async {

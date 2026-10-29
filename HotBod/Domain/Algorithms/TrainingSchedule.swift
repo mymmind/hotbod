@@ -154,6 +154,10 @@ enum TrainingSchedule {
         }
     }
 
+    static func indexInSequence(for split: TrainingSplit, focus: SplitDayFocus) -> Int? {
+        splitSequence(for: split).firstIndex(of: focus)
+    }
+
     static func currentSplitFocus(state: TrainingProgramState, split: TrainingSplit) -> SplitDayFocus? {
         guard split != .adaptive else { return nil }
         let sequence = splitSequence(for: split)

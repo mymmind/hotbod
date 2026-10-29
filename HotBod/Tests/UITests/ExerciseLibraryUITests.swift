@@ -1,5 +1,7 @@
 import XCTest
 
+// YouTube demos render in WKWebView and need a network connection.
+// UI tests launch with -UITesting, which skips demo loading, so this file does not assert on the embed player.
 final class ExerciseLibraryUITests: BaseUITestCase {
   override func setUpWithError() throws {
     launchTab = "train"

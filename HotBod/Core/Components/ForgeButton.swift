@@ -79,13 +79,15 @@ struct ForgeButton: View {
 
     private var foregroundColor: Color {
         switch style {
-        case .primary, .accent: ForgeColors.textOnInverse
+        case .accent: ForgeColors.textOnInverse
+        case .primary: ForgeColors.backgroundPrimary
         case .inverse, .secondary: ForgeColors.textPrimary
         }
     }
 
     private var loadingTint: Color {
         switch style {
+        case .primary: ForgeColors.backgroundPrimary
         case .inverse, .secondary: ForgeColors.textPrimary
         default: ForgeColors.textOnInverse
         }

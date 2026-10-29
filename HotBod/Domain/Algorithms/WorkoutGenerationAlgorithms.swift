@@ -393,9 +393,29 @@ enum WorkoutGenerationAlgorithms {
             }
             return partial + betweenSets
         }
-        let transitionSeconds = max(0, planned.count - 1) * GenerationConstants.Session.transitionSecondsPerExercise
+        let transitionSeconds = max(0, billedExerciseCount(planned) - 1)
+            * GenerationConstants.Session.transitionSecondsPerExercise
         let totalSeconds = workSeconds + restSeconds + transitionSeconds
         return Int(ceil(Double(totalSeconds) / 60.0))
+    }
+
+    /// A run of warm-up-only exercises (the stretch block) counts as one transition, not one per hold.
+    private static func billedExerciseCount(_ planned: [PlannedExercise]) -> Int {
+        var count = 0
+        var inWarmupBlock = false
+        for exercise in planned {
+            let warmupOnly = !exercise.targetSets.isEmpty && exercise.targetSets.allSatisfy(\.isWarmup)
+            if warmupOnly {
+                if !inWarmupBlock {
+                    count += 1
+                    inWarmupBlock = true
+                }
+            } else {
+                count += 1
+                inWarmupBlock = false
+            }
+        }
+        return count
     }
 
     static func trimToDuration(

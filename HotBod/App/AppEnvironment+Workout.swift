@@ -259,6 +259,62 @@ extension AppEnvironment {
         return true
     }
 
+    /// Saves duration, split, today's focus, and the warm-up stretch preference, then rebuilds today's plan.
+    @discardableResult
+    func applyTodaySessionChoices(
+        durationMinutes: Int,
+        split: TrainingSplit,
+        focus: SplitDayFocus?,
+        includeWarmupStretches: Bool
+    ) async -> Bool {
+        guard var profile = userProfile else { return false }
+        guard reserveWorkoutGeneration() else { return false }
+        defer { releaseWorkoutGenerationReservation() }
+
+        profile.preferredSessionLengthMinutes = durationMinutes
+        profile.preferredSplit = split
+        profile.includeWarmupStretches = includeWarmupStretches
+
+        var state = programState
+        if let focus, let index = TrainingSchedule.indexInSequence(for: split, focus: focus) {
+            state.splitDayIndex = index
+        } else if split != .adaptive {
+            state.splitDayIndex = 0
+        }
+
+        let splitFocus = TrainingSchedule.resolveGenerationFocus(
+            state: state,
+            split: profile.preferredSplit,
+            recoveryStates: recoveryStates
+        )
+        var options = WorkoutGenerationOptions()
+        options.targetDurationMinutes = durationMinutes
+
+        guard let workout = await generateWorkout(
+            profile: profile,
+            splitDayFocus: splitFocus,
+            options: options
+        ) else {
+            return false
+        }
+
+        let saved = await updateUserProfile(profile, refreshWorkout: false)
+        guard saved else { return false }
+        await cancelActiveWorkoutIfNeeded()
+
+        programState = state
+        try? await programStateRepository.saveState(state)
+        await cloudSyncIfSignedIn {
+            try await cloudSyncService.pushProgramState(state)
+        }
+        todayWorkout = workout
+        try? await workoutRepository.saveTodayWorkout(workout)
+        await cloudSyncIfSignedIn {
+            try await cloudSyncService.pushTodayWorkout(workout)
+        }
+        return await clearTodayCompletionMarkers()
+    }
+
     func persistRegeneratedWorkout(
         profile: UserProfile,
         splitDayFocus: SplitDayFocus?,

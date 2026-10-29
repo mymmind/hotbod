@@ -20,6 +20,30 @@ final class IntegrationFlowTests: XCTestCase {
     XCTAssertTrue(env.lastValidation?.isValid ?? false)
   }
 
+  func testApplyTodaySessionChoicesUpdatesDurationSplitAndStretches() async throws {
+    let env = makeEnvironment()
+    var profile = UserProfile.empty()
+    profile.reminderTrainingDays = Weekday.allCases
+    profile.preferredSplit = .fullBody
+    profile.preferredSessionLengthMinutes = 45
+    try await env.seedOnboardedProfile(profile)
+    await env.bootstrap()
+
+    let applied = await env.applyTodaySessionChoices(
+      durationMinutes: 30,
+      split: .pushPullLegs,
+      focus: .pull,
+      includeWarmupStretches: true
+    )
+
+    XCTAssertTrue(applied)
+    XCTAssertEqual(env.userProfile?.preferredSessionLengthMinutes, 30)
+    XCTAssertEqual(env.userProfile?.preferredSplit, .pushPullLegs)
+    XCTAssertEqual(env.userProfile?.includeWarmupStretches, true)
+    XCTAssertEqual(env.programState.splitDayIndex, 1)
+    XCTAssertTrue(env.todayWorkout?.exercises.contains { $0.exerciseId == "hip_opener_stretch" } == true)
+  }
+
   func testColdStartWithoutOnboardingSkipsWorkoutGeneration() async throws {
     let env = makeEnvironment()
 

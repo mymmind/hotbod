@@ -60,6 +60,7 @@ enum PhoneWatchSessionBridge {
     static func publish(
         session: WorkoutSession?,
         exerciseIndex: Int,
+        setIndex: Int? = nil,
         exerciseName: String,
         restSecondsRemaining: Int?,
         isResting: Bool,
@@ -78,10 +79,8 @@ enum PhoneWatchSessionBridge {
 
         guard exerciseIndex < session.exercises.count else { return }
         let exercise = session.exercises[exerciseIndex]
-        let displayIndex = min(
-            exercise.completedSets.count,
-            max(exercise.plannedSets.count - 1, 0)
-        )
+        let displayIndex = setIndex.flatMap { exercise.plannedSets.indices.contains($0) ? $0 : nil }
+            ?? min(exercise.completedSets.count, max(exercise.plannedSets.count - 1, 0))
         let planned = exercise.plannedSets[safe: displayIndex]
 
         let snapshot = WatchSessionSnapshot(

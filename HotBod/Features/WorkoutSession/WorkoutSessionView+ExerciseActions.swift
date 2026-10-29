@@ -139,12 +139,17 @@ extension WorkoutSessionView {
     func completeCurrentSet(
         exercise: WorkoutExercise,
         meta: Exercise,
-        showWeightInput: Bool
+        showWeightInput: Bool,
+        preferredSetIndex: Int? = nil
     ) {
         dismissKeyboard()
         guard let idx = session.exercises.firstIndex(where: { $0.id == exercise.id }) else { return }
-        let setIndex = session.exercises[idx].completedSets.count
-        guard setIndex < session.exercises[idx].plannedSets.count else { return }
+        let setIndex = preferredSetIndex ?? WorkoutSessionCalculator.firstIncompleteSetIndex(
+            plannedCount: session.exercises[idx].plannedSets.count,
+            completedSetIndexes: Set(session.exercises[idx].completedSets.map(\.setIndex))
+        )
+        guard let setIndex, session.exercises[idx].plannedSets.indices.contains(setIndex) else { return }
+        guard !session.exercises[idx].completedSets.contains(where: { $0.setIndex == setIndex }) else { return }
         let planned = session.exercises[idx].plannedSets[setIndex]
 
         if showWeightInput {
@@ -185,7 +190,8 @@ extension WorkoutSessionView {
             exercise: exercise,
             meta: meta,
             showWeightInput: showWeightInput,
-            bypassSanity: false
+            bypassSanity: false,
+            setIndex: setIndex
         )
     }
 
@@ -196,8 +202,13 @@ extension WorkoutSessionView {
         showWeightInput: Bool
     ) {
         switch target {
-        case .completeActive:
-            completeCurrentSet(exercise: exercise, meta: meta, showWeightInput: showWeightInput)
+        case .completeActive(let setIndex):
+            completeCurrentSet(
+                exercise: exercise,
+                meta: meta,
+                showWeightInput: showWeightInput,
+                preferredSetIndex: setIndex
+            )
         case .updateCompleted(let setIndex):
             updateCompletedSetFromDrafts(
                 exercise: exercise,
@@ -310,13 +321,18 @@ extension WorkoutSessionView {
         exercise: WorkoutExercise,
         meta: Exercise,
         showWeightInput: Bool,
-        bypassSanity: Bool
+        bypassSanity: Bool,
+        setIndex explicitSetIndex: Int? = nil
     ) {
         _ = bypassSanity
         dismissKeyboard()
         guard let idx = session.exercises.firstIndex(where: { $0.id == exercise.id }) else { return }
-        let setIndex = session.exercises[idx].completedSets.count
-        guard setIndex < session.exercises[idx].plannedSets.count else { return }
+        let setIndex = explicitSetIndex ?? WorkoutSessionCalculator.firstIncompleteSetIndex(
+            plannedCount: session.exercises[idx].plannedSets.count,
+            completedSetIndexes: Set(session.exercises[idx].completedSets.map(\.setIndex))
+        )
+        guard let setIndex, session.exercises[idx].plannedSets.indices.contains(setIndex) else { return }
+        guard !session.exercises[idx].completedSets.contains(where: { $0.setIndex == setIndex }) else { return }
         let planned = session.exercises[idx].plannedSets[setIndex]
         let weight: Double?
         if showWeightInput {
@@ -370,8 +386,9 @@ extension WorkoutSessionView {
             isCooldown: planned.isCooldown
         )
         session.exercises[idx].completedSets.append(completed)
+        let loggedOffset = session.exercises[idx].completedSets.count - 1
         EffortFeedbackMapping.applyCommitEffort(
-            &session.exercises[idx].completedSets[setIndex],
+            &session.exercises[idx].completedSets[loggedOffset],
             loggedRPE: loggedRPE
         )
         pendingRpeBySetId.removeValue(forKey: planned.id)
@@ -397,19 +414,32 @@ extension WorkoutSessionView {
         flashCompletedSet(planned.id, isPR: isPR)
         feedback.play(isPR ? .personalRecord : .setComplete)
 
-        let allSetsDone = session.exercises[idx].completedSets.count >= session.exercises[idx].plannedSets.count
-        let postAction = PostSetActionPlanner.action(
+        let allSetsDone = WorkoutSessionCalculator.isExerciseComplete(session.exercises[idx])
+        var postAction = PostSetActionPlanner.action(
             allSetsDone: allSetsDone,
             isWarmup: planned.isWarmup,
             isCooldown: planned.isCooldown,
             exerciseRestSeconds: session.exercises[idx].restSeconds
         )
+        if let partner = SetAdvancePlanner.partnerIndex(
+            exercises: session.exercises,
+            exerciseIndex: idx,
+            completedSetIndex: setIndex
+        ) {
+            pendingAdvanceExerciseIndex = partner
+            postAction = .rest(
+                seconds: GenerationConstants.Grouping.transitionRestSeconds,
+                advanceAfter: true
+            )
+        } else {
+            pendingAdvanceExerciseIndex = nil
+        }
 
         if needsRIRPrompt {
             rirPromptExerciseIndex = idx
             rirPromptSetIndex = setIndex
             showRIRPrompt = true
-            if case .rest = postAction {
+            if case .rest(_, let advanceAfter) = postAction, !advanceAfter {
                 executePostSetAction(postAction)
             } else {
                 pendingPostSetAction = postAction
@@ -517,11 +547,22 @@ extension WorkoutSessionView {
         feedback.play(.exerciseSwap)
     }
 
+    func rememberCurrentExercise() {
+        guard session.exercises.indices.contains(currentExerciseIndex) else { return }
+        let id = session.exercises[currentExerciseIndex].id
+        guard session.currentExerciseId != id else { return }
+        session.currentExerciseId = id
+        environment.scheduleWorkoutSessionSave(session)
+    }
+
     func goToExercise(at index: Int) {
         guard session.exercises.indices.contains(index) else { return }
         guard index != currentExerciseIndex else { return }
         dismissKeyboard()
         pendingPostSetAction = nil
+        pendingAdvanceExerciseIndex = nil
+        shouldAdvanceExerciseAfterRest = false
+        session.activeRestAdvancesExercise = false
         focusedSetIndex = nil
         stickySetIndex = nil
         withAnimation(ForgeMotion.exercise) {
@@ -529,6 +570,7 @@ extension WorkoutSessionView {
             furthestExerciseIndex = max(furthestExerciseIndex, index)
             showExerciseComplete = false
         }
+        session.currentExerciseId = session.exercises[index].id
         environment.scheduleWorkoutSessionSave(session)
         syncWatchSnapshot()
     }

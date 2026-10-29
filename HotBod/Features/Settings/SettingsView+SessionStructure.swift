@@ -3,6 +3,8 @@ import SwiftUI
 extension SettingsView {
     var sessionStructureSection: some View {
         SettingsComponents.section(title: "Session structure", subtitle: "Warm-up, cooldown, and cardio") {
+            SettingsComponents.toggleRow(title: "Warm-up stretches", isOn: $draft.includeWarmupStretches)
+            SettingsComponents.divider
             SettingsComponents.toggleRow(title: "Cooldown sets", isOn: $draft.includeCooldown)
             SettingsComponents.divider
             SettingsComponents.toggleRow(title: "Core finisher", isOn: $draft.includeCoreFinisher)
@@ -21,7 +23,12 @@ extension SettingsView {
                     Button(placement.displayName) { draft.cardioBlockPlacement = placement }
                 }
             }
-            Text("Cooldown adds a light mobility set after working sets on each exercise. Cardio blocks bookend the session when equipment allows.")
+            Text(
+                "Warm-up stretches are short mobility holds before the first lift. "
+                    + "Warm-up sets, under Training, ramp the load on each exercise. "
+                    + "Cooldown adds a light set after working sets. "
+                    + "Cardio blocks bookend the session when equipment allows."
+            )
                 .font(ForgeTypography.caption)
                 .foregroundStyle(ForgeColors.muted)
         }

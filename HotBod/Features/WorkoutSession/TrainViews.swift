@@ -237,6 +237,7 @@ struct TrainView: View {
             ForgeSectionHeader(title: "Exercise Library", accent: ForgeColors.accent)
             ForgeButton(
                 title: "Browse Exercises",
+                style: .accent,
                 accessibilityIdentifier: "train.browseExercises"
             ) { showLibrary = true }
         }
@@ -371,7 +372,7 @@ struct TrainView: View {
             return await environment.regenerateTodayWorkout(profile: profile)
         case .switchSplit:
             return await environment.switchTodaySplitFocus()
-        case .readiness:
+        case .readiness, .sessionOptions:
             return false
         }
     }

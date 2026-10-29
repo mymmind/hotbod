@@ -118,6 +118,7 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
     ) -> [Exercise] {
         allExercises.filter { exercise in
             (!exercise.isAvoided || options.includeAvoided) &&
+            exercise.movementPattern != .mobility &&
             EquipmentFilter.isExerciseAvailable(exercise, availableEquipment: input.availableEquipment) &&
             !GenerationConstants.violatesInjuries(exercise, injuries: input.injuries) &&
             (avoidedOverride || !exercise.primaryMuscles.contains(where: { input.avoidedMuscleGroups.contains($0) })) &&
@@ -350,6 +351,12 @@ final class RulesWorkoutGenerationService: WorkoutGenerationService, Sendable {
             )
             planned = budgeted.planned
         }
+
+        SessionStructurePlanner.prependWarmupStretches(
+            to: &planned,
+            exercises: allExercises,
+            enabled: input.userProfile.includeWarmupStretches
+        )
 
         let title = sessionMode == .recovery
             ? "Recovery Session"

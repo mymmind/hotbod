@@ -1,7 +1,7 @@
 import AVFoundation
-import AVKit
 import Observation
 import SwiftUI
+import UIKit
 
 struct ExerciseDemoPlayerView: View {
     let exerciseId: String
@@ -32,9 +32,7 @@ struct ExerciseDemoPlayerView: View {
     private var playerContent: some View {
         ZStack {
             if let playbackURL {
-                LoopingVideoPlayer(url: playbackURL)
-                    .frame(height: playerHeight)
-                    .transition(.opacity)
+                demoPlayback(for: playbackURL)
             }
 
             if isLoading, playbackURL == nil {
@@ -45,11 +43,29 @@ struct ExerciseDemoPlayerView: View {
                     .transition(.opacity)
             }
         }
-        .frame(height: playerHeight)
+        .frame(height: showsFilePlayer ? playerHeight : nil)
         .frame(maxWidth: .infinity)
         .clipped()
         .background(ForgeColors.foreground.opacity(style == .fullBleed ? 0.06 : 0))
         .animation(ForgeMotion.exercise, value: playbackURL)
+    }
+
+    private var showsFilePlayer: Bool {
+        guard let playbackURL else { return true }
+        return YouTubeVideoID(url: playbackURL) == nil
+    }
+
+    @ViewBuilder
+    private func demoPlayback(for url: URL) -> some View {
+        if let videoID = YouTubeVideoID(url: url) {
+            YouTubeEmbedPlayer(videoID: videoID)
+                .aspectRatio(16.0 / 9.0, contentMode: .fit)
+                .accessibilityLabel("Exercise demonstration")
+        } else {
+            LoopingVideoPlayer(url: url)
+                .id(url)
+                .frame(height: playerHeight)
+        }
     }
 
     private func demoPlaceholder(showSpinner: Bool) -> some View {
@@ -61,10 +77,10 @@ struct ExerciseDemoPlayerView: View {
                     if showSpinner {
                         ProgressView()
                     } else {
-                        Image(systemName: "play.circle")
+                        Image(systemName: "figure.strengthtraining.traditional")
                             .font(.system(size: 40))
                     }
-                    Text("Demo video")
+                    Text(showSpinner ? "Demo video" : "No demo clip")
                         .font(ForgeTypography.caption)
                         .foregroundStyle(ForgeColors.muted)
                 }
@@ -118,7 +134,7 @@ private struct LoopingVideoPlayer: View {
 
     var body: some View {
         ZStack {
-            VideoPlayer(player: model.player)
+            DemoPlayerLayer(player: model.player)
             if model.failed {
                 Text("Demo unavailable")
                     .font(ForgeTypography.caption)
@@ -127,6 +143,49 @@ private struct LoopingVideoPlayer: View {
         }
         .onAppear { model.play() }
         .onDisappear { model.pause() }
+    }
+}
+
+/// `VideoPlayer` keeps the transport paused until a tap, so short bundled clips never start.
+/// An `AVPlayerLayer` starts as soon as the layer is in the hierarchy.
+private struct DemoPlayerLayer: UIViewRepresentable {
+    let player: AVPlayer
+
+    func makeUIView(context: Context) -> DemoPlayerHostView {
+        let view = DemoPlayerHostView()
+        view.attach(player)
+        return view
+    }
+
+    func updateUIView(_ uiView: DemoPlayerHostView, context: Context) {
+        uiView.attach(player)
+    }
+}
+
+private final class DemoPlayerHostView: UIView {
+    private let playerLayer = AVPlayerLayer()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .black
+        playerLayer.videoGravity = .resizeAspect
+        layer.addSublayer(playerLayer)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        nil
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        playerLayer.frame = bounds
+    }
+
+    func attach(_ player: AVPlayer) {
+        if playerLayer.player !== player {
+            playerLayer.player = player
+        }
     }
 }
 
@@ -155,8 +214,12 @@ private final class LoopingPlayerModel {
         ) { [weak self] _ in
             Task { @MainActor in
                 guard let self, self.wantsPlayback else { return }
-                self.player.seek(to: .zero)
-                self.player.play()
+                self.player.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
+                    Task { @MainActor in
+                        guard let self, finished, self.wantsPlayback else { return }
+                        self.playMixed()
+                    }
+                }
             }
         }
         interruptionObserver = NotificationCenter.default.addObserver(
@@ -197,7 +260,7 @@ private final class LoopingPlayerModel {
 
     func play() {
         wantsPlayback = true
-        player.play()
+        playMixed()
     }
 
     func pause() {
@@ -207,6 +270,16 @@ private final class LoopingPlayerModel {
 
     private func resumeIfNeeded() {
         guard wantsPlayback, !failed else { return }
+        playMixed()
+    }
+
+    /// Muted clips still activate the shared session. Leave a rest-chime duck alone, and otherwise mix.
+    private func playMixed() {
+        let session = AVAudioSession.sharedInstance()
+        let ducking = session.category == .playback && session.categoryOptions.contains(.duckOthers)
+        if !ducking {
+            try? session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
+        }
         player.play()
     }
 
@@ -255,6 +328,37 @@ struct ExerciseDetailMediaHero: View {
     }
 
     var body: some View {
+        Group {
+            if let videoID = selectedYouTubeID {
+                youtubeHero(videoID)
+            } else {
+                fileHero
+            }
+        }
+        .background(ForgeColors.foreground.opacity(0.08))
+        .task(id: exerciseId) {
+            await loadVideos()
+        }
+    }
+
+    private var selectedYouTubeID: YouTubeVideoID? {
+        guard let video = selectedVideo,
+              let url = ExerciseMediaResolver.resolvePlaybackURL(for: video) else { return nil }
+        return YouTubeVideoID(url: url)
+    }
+
+    private func youtubeHero(_ videoID: YouTubeVideoID) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            backButton
+                .padding(.leading, ForgeSpacing.s4)
+                .padding(.vertical, ForgeSpacing.s3)
+            YouTubeEmbedPlayer(videoID: videoID)
+                .aspectRatio(16.0 / 9.0, contentMode: .fit)
+                .accessibilityLabel("Exercise demonstration")
+        }
+    }
+
+    private var fileHero: some View {
         ZStack(alignment: .topLeading) {
             mediaContent
                 .frame(maxWidth: .infinity)
@@ -271,19 +375,9 @@ struct ExerciseDetailMediaHero: View {
                 .padding(.top, 60)
             }
 
-            Button(action: onBack) {
-                Image(systemName: "chevron.left")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(ForgeColors.backgroundPrimary)
-                    .frame(width: 36, height: 36)
-                    .background(ForgeColors.textPrimary.opacity(0.55))
-                    .clipShape(Circle())
-            }
-            .frame(width: ForgeTarget.min, height: ForgeTarget.min)
-            .contentShape(Rectangle())
-            .padding(.leading, ForgeSpacing.s4)
-            .padding(.top, ForgeSpacing.s3)
-            .accessibilityLabel("Back")
+            backButton
+                .padding(.leading, ForgeSpacing.s4)
+                .padding(.top, ForgeSpacing.s3)
 
             if selectedVideo != nil {
                 Text("1.0×")
@@ -297,16 +391,27 @@ struct ExerciseDetailMediaHero: View {
                     .padding(16)
             }
         }
-        .background(ForgeColors.foreground.opacity(0.08))
-        .task(id: exerciseId) {
-            await loadVideos()
+    }
+
+    private var backButton: some View {
+        Button(action: onBack) {
+            Image(systemName: "chevron.left")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(ForgeColors.backgroundPrimary)
+                .frame(width: 36, height: 36)
+                .background(ForgeColors.textPrimary.opacity(0.55))
+                .clipShape(Circle())
         }
+        .frame(width: ForgeTarget.min, height: ForgeTarget.min)
+        .contentShape(Rectangle())
+        .accessibilityLabel("Back")
     }
 
     @ViewBuilder
     private var mediaContent: some View {
         if let video = selectedVideo,
-           let url = ExerciseMediaResolver.resolvePlaybackURL(for: video) {
+           let url = ExerciseMediaResolver.resolvePlaybackURL(for: video),
+           YouTubeVideoID(url: url) == nil {
             LoopingVideoPlayer(url: url)
                 .id(video.id)
         } else if isLoading {
@@ -345,9 +450,12 @@ struct ExerciseDetailMediaHero: View {
                 if showSpinner {
                     ProgressView()
                 } else {
-                    Image(systemName: "play.circle")
+                    Image(systemName: "figure.strengthtraining.traditional")
                         .font(.system(size: ForgeIcons.play))
                         .foregroundStyle(ForgeColors.textSecondary)
+                    Text("No demo clip")
+                        .font(ForgeTypography.caption)
+                        .foregroundStyle(ForgeColors.muted)
                 }
             }
         }
@@ -365,6 +473,11 @@ struct ExerciseDetailMediaHero: View {
     private func loadVideos() async {
         isLoading = true
         videos = []
+
+        if UITestConfiguration.isUITesting {
+            isLoading = false
+            return
+        }
 
         if isPreview {
             if let fallback = ExerciseMediaResolver.bundledFallback(for: exerciseId) {

@@ -246,8 +246,9 @@ enum WorkoutValidator {
         warnings: inout [String]
     ) {
         let workingSets = planned.targetSets.filter { !$0.isWarmup }
-        if workingSets.count < GenerationConstants.Validation.minSetsPerExercise
-            || workingSets.count > GenerationConstants.Validation.maxSetsPerExercise {
+        let countedSets = exercise.movementPattern == .mobility ? planned.targetSets : workingSets
+        if countedSets.count < GenerationConstants.Validation.minSetsPerExercise
+            || countedSets.count > GenerationConstants.Validation.maxSetsPerExercise {
             errors.append("Invalid set count for \(exercise.name).")
         }
 

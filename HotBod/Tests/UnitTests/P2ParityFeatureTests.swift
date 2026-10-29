@@ -23,6 +23,40 @@ final class SessionStructurePlannerTests: XCTestCase {
         XCTAssertTrue(planned[1].targetSets.last?.isCooldown == true)
     }
 
+    func testPrependWarmupStretchesInsertsMobilityBeforeLifts() {
+        let bench = makeStubExercise(id: "bench_press", muscles: [.chest], pattern: .horizontalPush, equipment: [.barbell])
+        let hip = makeStubExercise(id: "hip_opener_stretch", muscles: [.glutes], pattern: .mobility)
+        let shoulder = makeStubExercise(id: "shoulder_opener_stretch", muscles: [.shoulders], pattern: .mobility)
+        let thoracic = makeStubExercise(id: "thoracic_rotation_stretch", muscles: [.back], pattern: .mobility)
+        var planned = [
+            PlannedExercise(
+                exerciseId: "bench_press",
+                orderIndex: 0,
+                targetSets: [PlannedSet(targetRepsMin: 8, targetRepsMax: 10)]
+            )
+        ]
+        SessionStructurePlanner.prependWarmupStretches(
+            to: &planned,
+            exercises: [bench, hip, shoulder, thoracic],
+            enabled: true
+        )
+        XCTAssertEqual(
+            planned.map(\.exerciseId),
+            ["hip_opener_stretch", "shoulder_opener_stretch", "thoracic_rotation_stretch", "bench_press"]
+        )
+        XCTAssertEqual(planned.map(\.orderIndex), [0, 1, 2, 3])
+        XCTAssertTrue(planned[0].targetSets[0].isWarmup)
+        XCTAssertEqual(planned[0].targetSets[0].targetDurationSeconds, 30)
+
+        var unchanged = planned
+        SessionStructurePlanner.prependWarmupStretches(
+            to: &unchanged,
+            exercises: [bench, hip, shoulder, thoracic],
+            enabled: false
+        )
+        XCTAssertEqual(unchanged.map(\.exerciseId), planned.map(\.exerciseId))
+    }
+
     func testApplyCardioBlockAtEnd() {
         let cardio = makeStubExercise(
             id: "rower",

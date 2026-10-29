@@ -579,7 +579,7 @@ struct WorkoutPreviewExerciseDetailSheet: View {
                 Text("LOAD")
                     .frame(width: 64, alignment: .trailing)
             }
-            Text("REPS")
+            Text(exercise?.resolvedPrescriptionType == .time ? "TIME" : "REPS")
                 .frame(width: 56, alignment: .trailing)
         }
         .font(ForgeTypography.caption)
@@ -651,6 +651,9 @@ struct WorkoutPreviewExerciseDetailSheet: View {
 
 enum WorkoutPreviewSetFormatter {
     static func repsLabel(for set: PlannedSet) -> String {
+        if let seconds = set.targetDurationSeconds, seconds > 0, set.targetRepsMax == 0 {
+            return "\(seconds)s"
+        }
         if set.targetRepsMin == set.targetRepsMax {
             return "\(set.targetRepsMin)"
         }
@@ -674,6 +677,9 @@ enum WorkoutPreviewSetFormatter {
         let semantics = exercise?.resolvedWeightDisplaySemantics ?? .total
         let reps = repsLabel(for: set)
         let load = loadLabel(for: set, loadMode: loadMode, semantics: semantics)
+        if set.targetDurationSeconds ?? 0 > 0, set.targetRepsMax == 0 {
+            return set.isWarmup ? "Warm-up · \(reps)" : reps
+        }
         if loadMode == .none {
             return set.isWarmup ? "Warm-up · \(reps) reps" : "\(reps) reps"
         }

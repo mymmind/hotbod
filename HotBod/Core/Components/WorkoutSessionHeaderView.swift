@@ -21,6 +21,7 @@ struct WorkoutSessionHeaderView: View {
     let currentExerciseIndex: Int
     let furthestExerciseIndex: Int
     var completedExerciseIndexes: Set<Int> = []
+    var setProgress: [ExerciseSetProgress] = []
     let exerciseCount: Int
     let completedSets: Int
     let totalSets: Int
@@ -245,27 +246,50 @@ struct WorkoutSessionHeaderView: View {
     }
 
     private func segmentBar(for index: Int) -> some View {
-        Rectangle()
-            .fill(segmentColor(for: index))
-            .frame(height: isSelectableSegment(index) ? 4 : 2)
-            .frame(maxWidth: .infinity)
-            .animation(ForgeMotion.standard.delay(Double(index) * 0.02), value: currentExerciseIndex)
-    }
-
-    private func isSelectableSegment(_ index: Int) -> Bool {
-        onSelectExercise != nil
-    }
-
-    private func segmentColor(for index: Int) -> Color {
-        switch WorkoutSessionCalculator.exerciseSegmentFill(
-            index: index,
-            currentIndex: currentExerciseIndex,
-            isComplete: completedExerciseIndexes.contains(index)
-        ) {
-        case .complete: ForgeColors.accentGreen
-        case .current: ForgeColors.accent
-        case .remaining: ForgeColors.border
+        let style = segmentStyle(for: index)
+        return ZStack(alignment: .leading) {
+            Rectangle()
+                .fill(ForgeColors.border)
+            Rectangle()
+                .fill(ForgeColors.accentGreen)
+                .scaleEffect(x: max(style.completedFraction, 0.001), anchor: .leading)
+                .opacity(style.completedFraction > 0 ? 1 : 0)
+            if style.showsCurrent, style.completedFraction < 0.999 {
+                Rectangle()
+                    .fill(ForgeColors.accent)
+                    .scaleEffect(x: max(1 - style.completedFraction, 0.001), anchor: .trailing)
+            }
+            if style.showsCurrent, style.completedFraction >= 0.999 {
+                Rectangle()
+                    .fill(ForgeColors.accent)
+                    .frame(width: 8)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
         }
+        .frame(height: 6)
+        .frame(maxWidth: .infinity)
+        .animation(ForgeMotion.quick, value: style.completedFraction)
+        .animation(ForgeMotion.quick, value: style.showsCurrent)
+    }
+
+    private func segmentStyle(for index: Int) -> ExerciseSegmentStyle {
+        let completed: Int
+        let planned: Int
+        if setProgress.indices.contains(index) {
+            completed = setProgress[index].completedSets
+            planned = setProgress[index].plannedSets
+        } else if completedExerciseIndexes.contains(index) {
+            completed = 1
+            planned = 1
+        } else {
+            completed = 0
+            planned = 1
+        }
+        return WorkoutSessionCalculator.exerciseSegmentStyle(
+            completedSets: completed,
+            plannedSets: planned,
+            isCurrent: index == currentExerciseIndex
+        )
     }
 
     private func sessionMetrics(calories: Int) -> some View {

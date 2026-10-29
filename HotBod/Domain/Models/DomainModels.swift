@@ -1,6 +1,11 @@
 // swiftlint:disable file_length
 import Foundation
 
+enum BodyMassSource: String, Codable, Hashable {
+    case health
+    case manual
+}
+
 struct UserProfile: Identifiable, Codable, Hashable {
     let id: UUID
     var name: String?
@@ -25,6 +30,8 @@ struct UserProfile: Identifiable, Codable, Hashable {
     var proteinGoalGrams: Double
     var photoTrackingEnabled: Bool
     var includeWarmupSets: Bool
+    /// Mobility stretches prepended to the session. Distinct from ramping warm-up sets.
+    var includeWarmupStretches: Bool
     var includeCooldown: Bool
     var preferredExerciseGrouping: ExerciseGroupingPreference
     var preferredExerciseVariability: ExerciseVariabilityLevel
@@ -35,6 +42,10 @@ struct UserProfile: Identifiable, Codable, Hashable {
     var trustHistoricEffortFeedback: Bool
     var maxAvailableWeightKg: [Equipment: Double]
     var exportWorkoutsToHealthKit: Bool
+    /// Nil until Apple Health or a manual edit chooses the source of `weightKg`.
+    var bodyMassSource: BodyMassSource?
+    /// When the user last typed a weight. Health samples at or before this time stay ignored.
+    var bodyMassLockedAt: Date?
     var createdAt: Date
     var updatedAt: Date
 
@@ -48,12 +59,13 @@ struct UserProfile: Identifiable, Codable, Hashable {
         case reminderTrainingDays, preferredTrainingDays
         case timeOfDayPreference, workoutRemindersEnabled
         case preferredMuscleGroups, avoidedMuscleGroups
-        case proteinGoalGrams, photoTrackingEnabled, includeWarmupSets, includeCooldown
+        case proteinGoalGrams, photoTrackingEnabled, includeWarmupSets, includeWarmupStretches, includeCooldown
         case preferredExerciseGrouping, preferredExerciseVariability, cardioBlockPlacement
         case includeConditioning, includeCoreFinisher
         case promptForEffortFeedback, trustHistoricEffortFeedback
         case maxAvailableWeightKg
         case exportWorkoutsToHealthKit
+        case bodyMassSource, bodyMassLockedAt
         case createdAt, updatedAt
     }
 
@@ -79,6 +91,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
         proteinGoalGrams: Double,
         photoTrackingEnabled: Bool,
         includeWarmupSets: Bool = true,
+        includeWarmupStretches: Bool = false,
         includeCooldown: Bool = false,
         preferredExerciseGrouping: ExerciseGroupingPreference = .none,
         preferredExerciseVariability: ExerciseVariabilityLevel = .balanced,
@@ -89,6 +102,8 @@ struct UserProfile: Identifiable, Codable, Hashable {
         trustHistoricEffortFeedback: Bool = true,
         maxAvailableWeightKg: [Equipment: Double] = [:],
         exportWorkoutsToHealthKit: Bool = false,
+        bodyMassSource: BodyMassSource? = nil,
+        bodyMassLockedAt: Date? = nil,
         createdAt: Date,
         updatedAt: Date
     ) {
@@ -113,6 +128,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
         self.proteinGoalGrams = proteinGoalGrams
         self.photoTrackingEnabled = photoTrackingEnabled
         self.includeWarmupSets = includeWarmupSets
+        self.includeWarmupStretches = includeWarmupStretches
         self.includeCooldown = includeCooldown
         self.preferredExerciseGrouping = preferredExerciseGrouping
         self.preferredExerciseVariability = preferredExerciseVariability
@@ -123,6 +139,8 @@ struct UserProfile: Identifiable, Codable, Hashable {
         self.trustHistoricEffortFeedback = trustHistoricEffortFeedback
         self.maxAvailableWeightKg = maxAvailableWeightKg
         self.exportWorkoutsToHealthKit = exportWorkoutsToHealthKit
+        self.bodyMassSource = bodyMassSource
+        self.bodyMassLockedAt = bodyMassLockedAt
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -158,6 +176,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
         proteinGoalGrams = try container.decode(Double.self, forKey: .proteinGoalGrams)
         photoTrackingEnabled = try container.decode(Bool.self, forKey: .photoTrackingEnabled)
         includeWarmupSets = try container.decodeIfPresent(Bool.self, forKey: .includeWarmupSets) ?? true
+        includeWarmupStretches = try container.decodeIfPresent(Bool.self, forKey: .includeWarmupStretches) ?? false
         includeCooldown = try container.decodeIfPresent(Bool.self, forKey: .includeCooldown) ?? false
         preferredExerciseGrouping = try container.decodeIfPresent(
             ExerciseGroupingPreference.self,
@@ -180,6 +199,8 @@ struct UserProfile: Identifiable, Codable, Hashable {
         ) ?? true
         maxAvailableWeightKg = try container.decodeIfPresent([Equipment: Double].self, forKey: .maxAvailableWeightKg) ?? [:]
         exportWorkoutsToHealthKit = try container.decodeIfPresent(Bool.self, forKey: .exportWorkoutsToHealthKit) ?? false
+        bodyMassSource = try container.decodeIfPresent(BodyMassSource.self, forKey: .bodyMassSource)
+        bodyMassLockedAt = try container.decodeIfPresent(Date.self, forKey: .bodyMassLockedAt)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
     }
@@ -208,6 +229,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
         try container.encode(proteinGoalGrams, forKey: .proteinGoalGrams)
         try container.encode(photoTrackingEnabled, forKey: .photoTrackingEnabled)
         try container.encode(includeWarmupSets, forKey: .includeWarmupSets)
+        try container.encode(includeWarmupStretches, forKey: .includeWarmupStretches)
         try container.encode(includeCooldown, forKey: .includeCooldown)
         try container.encode(preferredExerciseGrouping, forKey: .preferredExerciseGrouping)
         try container.encode(preferredExerciseVariability, forKey: .preferredExerciseVariability)
@@ -218,6 +240,8 @@ struct UserProfile: Identifiable, Codable, Hashable {
         try container.encode(trustHistoricEffortFeedback, forKey: .trustHistoricEffortFeedback)
         try container.encode(maxAvailableWeightKg, forKey: .maxAvailableWeightKg)
         try container.encode(exportWorkoutsToHealthKit, forKey: .exportWorkoutsToHealthKit)
+        try container.encodeIfPresent(bodyMassSource, forKey: .bodyMassSource)
+        try container.encodeIfPresent(bodyMassLockedAt, forKey: .bodyMassLockedAt)
         try container.encode(createdAt, forKey: .createdAt)
         try container.encode(updatedAt, forKey: .updatedAt)
     }
@@ -240,6 +264,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
             proteinGoalGrams: 145,
             photoTrackingEnabled: false,
             includeWarmupSets: true,
+            includeWarmupStretches: false,
             includeCooldown: false,
             preferredExerciseGrouping: .none,
             preferredExerciseVariability: .balanced,
@@ -276,6 +301,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
             proteinGoalGrams: proteinGoalGrams,
             photoTrackingEnabled: photoTrackingEnabled,
             includeWarmupSets: includeWarmupSets,
+            includeWarmupStretches: includeWarmupStretches,
             includeCooldown: includeCooldown,
             preferredExerciseGrouping: preferredExerciseGrouping,
             preferredExerciseVariability: preferredExerciseVariability,
@@ -286,6 +312,8 @@ struct UserProfile: Identifiable, Codable, Hashable {
             trustHistoricEffortFeedback: trustHistoricEffortFeedback,
             maxAvailableWeightKg: maxAvailableWeightKg,
             exportWorkoutsToHealthKit: exportWorkoutsToHealthKit,
+            bodyMassSource: bodyMassSource,
+            bodyMassLockedAt: bodyMassLockedAt,
             createdAt: createdAt,
             updatedAt: Date()
         )
@@ -768,12 +796,15 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
     var activeRestEndAt: Date?
     var activeRestTotalSeconds: Int?
     var activeRestAdvancesExercise: Bool?
+    /// Workout exercise the athlete was on. Resume uses this instead of the first unfinished exercise.
+    var currentExerciseId: UUID?
 
     enum CodingKeys: String, CodingKey {
         case id, userId, title, startedAt, completedAt, estimatedDurationMinutes
         case exercises, notes, perceivedDifficulty, status, splitDayFocus, sessionMode
         case progressionAppliedAt
         case activeRestEndAt, activeRestTotalSeconds, activeRestAdvancesExercise
+        case currentExerciseId
     }
 
     init(
@@ -792,7 +823,8 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
         progressionAppliedAt: Date? = nil,
         activeRestEndAt: Date? = nil,
         activeRestTotalSeconds: Int? = nil,
-        activeRestAdvancesExercise: Bool? = nil
+        activeRestAdvancesExercise: Bool? = nil,
+        currentExerciseId: UUID? = nil
     ) {
         self.id = id
         self.userId = userId
@@ -810,6 +842,7 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
         self.activeRestEndAt = activeRestEndAt
         self.activeRestTotalSeconds = activeRestTotalSeconds
         self.activeRestAdvancesExercise = activeRestAdvancesExercise
+        self.currentExerciseId = currentExerciseId
     }
 
     init(from decoder: Decoder) throws {
@@ -830,6 +863,7 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
         activeRestEndAt = try container.decodeIfPresent(Date.self, forKey: .activeRestEndAt)
         activeRestTotalSeconds = try container.decodeIfPresent(Int.self, forKey: .activeRestTotalSeconds)
         activeRestAdvancesExercise = try container.decodeIfPresent(Bool.self, forKey: .activeRestAdvancesExercise)
+        currentExerciseId = try container.decodeIfPresent(UUID.self, forKey: .currentExerciseId)
     }
 }
 

@@ -77,4 +77,45 @@ final class CompleteSetRouterTests: XCTestCase {
         )
         XCTAssertEqual(target, .completeActive(setIndex: 1))
     }
+
+    func testRegression_supersetAdvancesToPartnerMissingTheSameSet() {
+        let group = UUID()
+        let set = PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
+        let done = CompletedSet(setIndex: 0, weightKg: 40, reps: 8)
+        let exercises = [
+            WorkoutExercise(exerciseId: "a", orderIndex: 0, plannedSets: [set, set], completedSets: [done], groupId: group),
+            WorkoutExercise(exerciseId: "b", orderIndex: 1, plannedSets: [set, set], completedSets: [], groupId: group)
+        ]
+        XCTAssertEqual(SetAdvancePlanner.partnerIndex(exercises: exercises, exerciseIndex: 0, completedSetIndex: 0), 1)
+    }
+
+    func testRegression_supersetStartsNextRoundOnEarlierPartner() {
+        let group = UUID()
+        let set = PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
+        let done = CompletedSet(setIndex: 0, weightKg: 40, reps: 8)
+        let exercises = [
+            WorkoutExercise(exerciseId: "a", orderIndex: 0, plannedSets: [set, set], completedSets: [done], groupId: group),
+            WorkoutExercise(exerciseId: "b", orderIndex: 1, plannedSets: [set, set], completedSets: [done], groupId: group)
+        ]
+        XCTAssertEqual(SetAdvancePlanner.partnerIndex(exercises: exercises, exerciseIndex: 1, completedSetIndex: 0), 0)
+    }
+
+    func testRegression_nextRoundSkipsSelfWhenCurrentIsFirstMember() {
+        let group = UUID()
+        let set = PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
+        let done = CompletedSet(setIndex: 0, weightKg: 40, reps: 8)
+        let exercises = [
+            WorkoutExercise(exerciseId: "a", orderIndex: 0, plannedSets: [set, set], completedSets: [done], groupId: group),
+            WorkoutExercise(exerciseId: "b", orderIndex: 1, plannedSets: [set, set], completedSets: [done], groupId: group)
+        ]
+        XCTAssertEqual(SetAdvancePlanner.partnerIndex(exercises: exercises, exerciseIndex: 0, completedSetIndex: 0), 1)
+    }
+
+    func testPartnerIndexNilWithoutGroup() {
+        let set = PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
+        let exercises = [
+            WorkoutExercise(exerciseId: "a", orderIndex: 0, plannedSets: [set], completedSets: [])
+        ]
+        XCTAssertNil(SetAdvancePlanner.partnerIndex(exercises: exercises, exerciseIndex: 0, completedSetIndex: 0))
+    }
 }

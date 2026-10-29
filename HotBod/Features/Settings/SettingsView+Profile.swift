@@ -4,6 +4,9 @@ extension SettingsView {
     var bodySection: some View {
         SettingsComponents.section(title: "Body", subtitle: "Stats for programming") {
             ForgeTextField(label: "Weight (kg)", text: $weightText, keyboardType: .decimalPad)
+            Text("When Apple Health is connected, body weight follows the latest sample until you edit it here.")
+                .font(ForgeTypography.caption)
+                .foregroundStyle(ForgeColors.muted)
             ForgeTextField(label: "Height (cm)", text: $heightText, keyboardType: .numberPad)
             ForgeTextField(label: "Age", text: $ageText, keyboardType: .numberPad)
         }
@@ -155,6 +158,8 @@ extension SettingsView {
             return
         }
 
+        let weightChanged = weightText != SettingsDraftEditing.formatted(draft.weightKg)
+            && SettingsDraftEditing.parsedWeightKilograms(weightText) != nil
         SettingsDraftEditing.applyTextFields(
             draft: &draft,
             weightText: weightText,
@@ -163,6 +168,10 @@ extension SettingsView {
             proteinText: proteinText,
             limitationNotes: limitationNotes
         )
+        if weightChanged {
+            draft.bodyMassSource = .manual
+            draft.bodyMassLockedAt = Date()
+        }
         SettingsDraftEditing.reconcileSchedule(&draft)
         guard SettingsDraftEditing.hasValidSchedule(draft) else {
             saveError = "Select at least two training days."

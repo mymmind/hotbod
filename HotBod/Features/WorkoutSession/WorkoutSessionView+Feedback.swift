@@ -21,7 +21,11 @@ extension WorkoutSessionView {
         }
         clearRestTimerState()
         environment.scheduleWorkoutSessionSave(session)
-        if shouldAdvanceExerciseAfterRest {
+        if let target = pendingAdvanceExerciseIndex {
+            pendingAdvanceExerciseIndex = nil
+            shouldAdvanceExerciseAfterRest = false
+            goToExercise(at: target)
+        } else if shouldAdvanceExerciseAfterRest {
             shouldAdvanceExerciseAfterRest = false
             presentExerciseCompleteOrAdvance(playFeedback: endKind != .transitionRest)
         }
@@ -83,9 +87,36 @@ extension WorkoutSessionView {
         syncWatchSnapshot()
     }
 
+    func restorePendingGroupAdvance() {
+        guard pendingAdvanceExerciseIndex == nil, shouldAdvanceExerciseAfterRest else { return }
+        let anchor = newestGroupedCompletionIndex() ?? currentExerciseIndex
+        guard session.exercises.indices.contains(anchor) else { return }
+        let exercise = session.exercises[anchor]
+        guard let last = exercise.completedSets.map(\.setIndex).max() else { return }
+        pendingAdvanceExerciseIndex = SetAdvancePlanner.partnerIndex(
+            exercises: session.exercises,
+            exerciseIndex: anchor,
+            completedSetIndex: last
+        )
+    }
+
+    /// The grouped exercise that owns the latest logged set. A fresh view opens on the first
+    /// incomplete member, which is often the partner the rest was heading toward.
+    private func newestGroupedCompletionIndex() -> Int? {
+        var best: (index: Int, date: Date)?
+        for (index, exercise) in session.exercises.enumerated() {
+            guard exercise.groupId != nil else { continue }
+            guard let date = exercise.completedSets.map(\.completedAt).max() else { continue }
+            if let best, date <= best.date { continue }
+            best = (index, date)
+        }
+        return best?.index
+    }
+
     func restoreRestTimerIfNeeded() {
         guard let end = session.activeRestEndAt else { return }
         shouldAdvanceExerciseAfterRest = session.activeRestAdvancesExercise ?? false
+        restorePendingGroupAdvance()
         if end > Date() {
             restEndDate = end
             restTotalSeconds = session.activeRestTotalSeconds ?? max(1, Int(ceil(end.timeIntervalSince(Date()))))
@@ -107,7 +138,14 @@ extension WorkoutSessionView {
             feedback.play(.restTimerEnd(kind: RestTimerFeedbackPlanner.endKind(for: expiredKind)))
             clearRestTimerState()
             environment.scheduleWorkoutSessionSave(session)
-            if shouldAdvanceExerciseAfterRest {
+            if pendingAdvanceExerciseIndex == nil {
+                restorePendingGroupAdvance()
+            }
+            if let target = pendingAdvanceExerciseIndex {
+                pendingAdvanceExerciseIndex = nil
+                shouldAdvanceExerciseAfterRest = false
+                goToExercise(at: target)
+            } else if shouldAdvanceExerciseAfterRest {
                 shouldAdvanceExerciseAfterRest = false
                 presentExerciseCompleteOrAdvance(playFeedback: expiredKind != .transitionRest)
             }
@@ -177,6 +215,7 @@ extension WorkoutSessionView {
         PhoneWatchSessionBridge.publish(
             session: session,
             exerciseIndex: currentExerciseIndex,
+            setIndex: watchSetIndex(for: exercise) ?? max(exercise.plannedSets.count - 1, 0),
             exerciseName: meta.name,
             restSecondsRemaining: isResting ? restSecondsRemaining : nil,
             isResting: isResting,
@@ -247,8 +286,10 @@ extension WorkoutSessionView {
     }
 
     private func watchSetIndex(for exercise: WorkoutExercise) -> Int? {
-        guard !exercise.plannedSets.isEmpty else { return nil }
-        return min(exercise.completedSets.count, exercise.plannedSets.count - 1)
+        WorkoutSessionCalculator.firstIncompleteSetIndex(
+            plannedCount: exercise.plannedSets.count,
+            completedSetIndexes: Set(exercise.completedSets.map(\.setIndex))
+        )
     }
 
     private func watchDraft(for exercise: WorkoutExercise, meta: Exercise) -> WatchSetDraft {
@@ -267,8 +308,11 @@ extension WorkoutSessionView {
             planned: planned,
             completed: completed
         )
-        let nextIndex = index + 1
-        let next = exercise.plannedSets.indices.contains(nextIndex) ? exercise.plannedSets[nextIndex] : nil
+        let nextIndex = WorkoutSessionCalculator.firstIncompleteSetIndex(
+            plannedCount: exercise.plannedSets.count,
+            completedSetIndexes: Set(exercise.completedSets.map(\.setIndex)).union([index])
+        )
+        let next = nextIndex.flatMap { exercise.plannedSets.indices.contains($0) ? exercise.plannedSets[$0] : nil }
         return WatchSetDraft(
             weight: weight,
             secondary: secondary.value,

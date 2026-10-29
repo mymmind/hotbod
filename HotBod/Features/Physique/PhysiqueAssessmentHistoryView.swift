@@ -57,7 +57,7 @@ struct PhysiqueAssessmentHistoryView: View {
             if isCurrent {
                 Text("Current")
                     .font(ForgeTypography.caption.weight(.semibold))
-                    .foregroundStyle(ForgeColors.textOnInverse)
+                    .foregroundStyle(ForgeColors.backgroundPrimary)
                     .padding(.horizontal, ForgeSpacing.s2)
                     .padding(.vertical, ForgeSpacing.s1)
                     .background(ForgeColors.surfaceInverse)

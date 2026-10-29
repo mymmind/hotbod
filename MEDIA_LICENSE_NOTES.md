@@ -6,12 +6,13 @@ All media must have a documented license source.
 
 ## MVP
 
-- Exercise demo videos: bundled placeholder MP4s for bench press, squat, and deadlift (`HotBod/Resources/DemoVideos/`, license: original placeholder content). Architecture supports remote licensed provider integration.
+- Exercise demo videos: matched exercises play in YouTube's official embed player (`HotBod/Resources/YouTubeExerciseVideos.json`). The file stays on YouTube; HotBod does not download or rehost it. Unmatched exercises keep the bundled placeholder MP4 when one exists (`HotBod/Resources/DemoVideos/`).
 - Candidate providers: MuscleWiki API (verify terms before production), wger (open-source), original produced content.
 - Body progress photos: stored locally only in MVP.
 
 ## Rules
 
 - Do not scrape competitor exercise videos or images.
+- YouTube demos play only in YouTube's embed player. HotBod does not download the file. The uploader controls whether embedding is allowed.
 - All bundled or remote media must have documented commercial-use rights.
 - Placeholder thumbnails use SF Symbols only in MVP.

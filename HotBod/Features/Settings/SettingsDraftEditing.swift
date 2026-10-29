@@ -1,6 +1,13 @@
 import Foundation
 
 enum SettingsDraftEditing {
+    static func parsedWeightKilograms(_ text: String) -> Double? {
+        let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: ",", with: ".")
+        guard !normalized.isEmpty else { return nil }
+        return Double(normalized)
+    }
+
     static func formatted(_ value: Double?) -> String {
         guard let value else { return "" }
         return String(format: "%.0f", value)
@@ -14,7 +21,9 @@ enum SettingsDraftEditing {
         proteinText: String,
         limitationNotes: String
     ) {
-        draft.weightKg = Double(weightText)
+        if weightText != formatted(draft.weightKg), let weight = parsedWeightKilograms(weightText) {
+            draft.weightKg = weight
+        }
         draft.heightCm = Double(heightText)
         draft.age = Int(ageText)
         if let grams = Double(proteinText) {
@@ -38,6 +47,7 @@ enum SettingsDraftEditing {
             || draft.preferredMuscleGroups != original.preferredMuscleGroups
             || draft.avoidedMuscleGroups != original.avoidedMuscleGroups
             || draft.includeWarmupSets != original.includeWarmupSets
+            || draft.includeWarmupStretches != original.includeWarmupStretches
             || draft.includeCooldown != original.includeCooldown
             || draft.preferredExerciseGrouping != original.preferredExerciseGrouping
             || draft.preferredExerciseVariability != original.preferredExerciseVariability

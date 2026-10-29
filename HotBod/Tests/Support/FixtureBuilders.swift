@@ -365,8 +365,10 @@ extension AppEnvironment {
 
 struct MockHealthKitReadinessService: HealthKitReadinessService {
   var isAvailable: Bool { false }
+  var bodyMass: HealthBodyMassSample?
   func requestAuthorizationIfNeeded() async {}
   func fetchReadinessSnapshot() async -> HealthReadinessSnapshot { .empty }
+  func fetchLatestBodyMass() async -> HealthBodyMassSample? { bodyMass }
 }
 
 final class MockHealthKitWorkoutExportService: HealthKitWorkoutExportService, @unchecked Sendable {

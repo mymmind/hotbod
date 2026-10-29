@@ -340,7 +340,7 @@ enum DemoAngle: String, Codable, CaseIterable {
 }
 
 enum MediaLicense: String, Codable {
-    case placeholder, muscleWiki, wger, original, bundled
+    case placeholder, muscleWiki, wger, original, bundled, youtube
 }
 
 enum WorkoutStatus: String, Codable {

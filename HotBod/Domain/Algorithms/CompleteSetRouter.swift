@@ -56,3 +56,39 @@ enum CompleteSetRouter {
         }
     }
 }
+
+/// After a set is logged, where the session should go next.
+/// Straight sets stay put until the exercise is finished.
+/// A group moves to the next member that still owes this round, then the next round.
+enum SetAdvancePlanner {
+    static func partnerIndex(
+        exercises: [WorkoutExercise],
+        exerciseIndex: Int,
+        completedSetIndex: Int
+    ) -> Int? {
+        guard exercises.indices.contains(exerciseIndex) else { return nil }
+        let current = exercises[exerciseIndex]
+        guard let groupId = current.groupId else { return nil }
+        let members = exercises.indices.filter {
+            exercises[$0].groupId == groupId && !exercises[$0].wasSkipped
+        }
+        guard members.count >= 2 else { return nil }
+
+        func missing(_ member: Int, setIndex: Int) -> Bool {
+            exercises[member].plannedSets.indices.contains(setIndex)
+                && !exercises[member].completedSets.contains { $0.setIndex == setIndex }
+        }
+
+        let later = members.filter { $0 > exerciseIndex }
+        let earlier = members.filter { $0 < exerciseIndex }
+        if let next = (later + earlier).first(where: { missing($0, setIndex: completedSetIndex) }) {
+            return next
+        }
+
+        let nextRound = completedSetIndex + 1
+        if let next = (later + earlier).first(where: { missing($0, setIndex: nextRound) }) {
+            return next
+        }
+        return nil
+    }
+}

@@ -3037,5 +3037,68 @@
     "substitutions": [],
     "demoVideos": [],
     "mechanics": "isolation"
+  },
+  {
+    "id": "hip_opener_stretch",
+    "name": "Hip Opener Stretch",
+    "primaryMuscles": ["glutes", "quads"],
+    "secondaryMuscles": [],
+    "equipment": ["bodyweight"],
+    "loadTrackingMode": "none",
+    "movementPattern": "mobility",
+    "difficulty": "beginner",
+    "instructions": [
+      "Step one foot forward into a long stance.",
+      "Drop the back knee and shift the hips forward until the front hip opens.",
+      "Hold a steady position and breathe.",
+      "Switch sides for the remaining time."
+    ],
+    "formCues": ["Tall chest.", "Gentle range.", "Breathe through the hold."],
+    "commonMistakes": ["Bouncing into the stretch.", "Collapsing the lower back."],
+    "substitutions": ["thoracic_rotation_stretch"],
+    "demoVideos": [],
+    "mechanics": "isolation"
+  },
+  {
+    "id": "shoulder_opener_stretch",
+    "name": "Shoulder Opener Stretch",
+    "primaryMuscles": ["shoulders"],
+    "secondaryMuscles": ["chest"],
+    "equipment": ["bodyweight"],
+    "loadTrackingMode": "none",
+    "movementPattern": "mobility",
+    "difficulty": "beginner",
+    "instructions": [
+      "Clasp the hands behind the back or hold a strap.",
+      "Lift the chest and draw the shoulders back and down.",
+      "Hold without shrugging.",
+      "Ease out of the position."
+    ],
+    "formCues": ["Ribs down.", "Shoulders away from the ears."],
+    "commonMistakes": ["Forcing the hands together.", "Arching the lower back."],
+    "substitutions": ["thoracic_rotation_stretch"],
+    "demoVideos": [],
+    "mechanics": "isolation"
+  },
+  {
+    "id": "thoracic_rotation_stretch",
+    "name": "Thoracic Rotation Stretch",
+    "primaryMuscles": ["back"],
+    "secondaryMuscles": ["shoulders"],
+    "equipment": ["bodyweight"],
+    "loadTrackingMode": "none",
+    "movementPattern": "mobility",
+    "difficulty": "beginner",
+    "instructions": [
+      "Sit or kneel tall with one hand behind the head.",
+      "Rotate the upper back toward the raised elbow.",
+      "Hold the end range, then return through the center.",
+      "Repeat on the other side."
+    ],
+    "formCues": ["Rotate the ribs, not just the neck.", "Stay tall."],
+    "commonMistakes": ["Twisting from the lower back.", "Rushing the turn."],
+    "substitutions": ["shoulder_opener_stretch"],
+    "demoVideos": [],
+    "mechanics": "isolation"
   }
 ]

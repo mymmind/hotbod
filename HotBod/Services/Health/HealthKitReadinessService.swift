@@ -1,6 +1,24 @@
 import Foundation
 import HealthKit
 
+enum BodyMassSyncPolicy {
+    /// Manual weight sticks until a newer Health sample arrives.
+    /// A missing source takes the Health sample. An existing Health weight is left alone when it is already close.
+    static func shouldApply(profile: UserProfile, sample: HealthBodyMassSample) -> Bool {
+        guard (30...250).contains(sample.kilograms) else { return false }
+        if profile.bodyMassSource == .manual {
+            let lockedAt = profile.bodyMassLockedAt ?? profile.updatedAt
+            if sample.measuredAt <= lockedAt { return false }
+        }
+        if profile.bodyMassSource == .health,
+           let current = profile.weightKg,
+           abs(current - sample.kilograms) < 0.2 {
+            return false
+        }
+        return true
+    }
+}
+
 struct NoOpHealthKitReadinessService: HealthKitReadinessService, Sendable {
     var isAvailable: Bool { false }
 
@@ -8,6 +26,10 @@ struct NoOpHealthKitReadinessService: HealthKitReadinessService, Sendable {
 
     func fetchReadinessSnapshot() async -> HealthReadinessSnapshot {
         .empty
+    }
+
+    func fetchLatestBodyMass() async -> HealthBodyMassSample? {
+        nil
     }
 }
 
@@ -27,6 +49,9 @@ actor HealthKitReadinessServiceImpl: HealthKitReadinessService {
         }
         if let sleep = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) {
             readTypes.insert(sleep)
+        }
+        if let bodyMass = HKObjectType.quantityType(forIdentifier: .bodyMass) {
+            readTypes.insert(bodyMass)
         }
         guard !readTypes.isEmpty else { return }
         do {
@@ -57,6 +82,37 @@ actor HealthKitReadinessServiceImpl: HealthKitReadinessService {
             recoveryHint: hint,
             sleepScore: sleepScore
         )
+    }
+
+    func fetchLatestBodyMass() async -> HealthBodyMassSample? {
+        guard isAvailable else { return nil }
+        guard let type = HKQuantityType.quantityType(forIdentifier: .bodyMass) else { return nil }
+        let start = Calendar.current.date(byAdding: .year, value: -2, to: Date()) ?? .distantPast
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: Date())
+        let sort = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
+
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: type,
+                predicate: predicate,
+                limit: 8,
+                sortDescriptors: [sort]
+            ) { _, samples, _ in
+                let match = (samples as? [HKQuantitySample])?.first { sample in
+                    let kilograms = sample.quantity.doubleValue(for: HKUnit.gramUnit(with: .kilo))
+                    return (30...250).contains(kilograms)
+                }
+                guard let match else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                let kilograms = match.quantity.doubleValue(for: HKUnit.gramUnit(with: .kilo))
+                continuation.resume(
+                    returning: HealthBodyMassSample(kilograms: kilograms, measuredAt: match.endDate)
+                )
+            }
+            store.execute(query)
+        }
     }
 
     private func fetchRestingHeartRate() async -> Double? {

@@ -70,6 +70,8 @@ struct WorkoutSessionView: View {
     @State var focusedSetIndex: Int?
     /// Last set the user edited; survives keyboard dismiss so Update/Complete stays correct.
     @State var stickySetIndex: Int?
+    /// Group partner to open when the transition rest ends.
+    @State var pendingAdvanceExerciseIndex: Int?
 
     private var showWeightSoftWarning: Binding<Bool> {
         Binding(
@@ -116,7 +118,16 @@ struct WorkoutSessionView: View {
     }
 
     private var completedSetsCount: Int {
-        session.exercises.reduce(0) { $0 + $1.completedSets.count }
+        session.exercises.reduce(0) { $0 + WorkoutSessionCalculator.loggedSetCount($1) }
+    }
+
+    private var exerciseSetProgress: [ExerciseSetProgress] {
+        session.exercises.map { exercise in
+            ExerciseSetProgress(
+                completedSets: WorkoutSessionCalculator.loggedSetCount(exercise),
+                plannedSets: exercise.plannedSets.count
+            )
+        }
     }
 
     private var totalPlannedSets: Int {
@@ -201,6 +212,7 @@ struct WorkoutSessionView: View {
         }
         .onAppear {
             UIApplication.shared.isIdleTimerDisabled = true
+            rememberCurrentExercise()
         }
         .onDisappear {
             UIApplication.shared.isIdleTimerDisabled = false
@@ -317,10 +329,11 @@ struct WorkoutSessionView: View {
                             currentExerciseIndex: currentExerciseIndex,
                             furthestExerciseIndex: furthestExerciseIndex,
                             completedExerciseIndexes: completedExerciseIndexes,
+                            setProgress: exerciseSetProgress,
                             exerciseCount: session.exercises.count,
                             completedSets: completedSetsCount,
                             totalSets: totalPlannedSets,
-                            currentExerciseCompletedSets: exercise.completedSets.count,
+                            currentExerciseCompletedSets: WorkoutSessionCalculator.loggedSetCount(exercise),
                             currentExerciseTotalSets: exercise.plannedSets.count,
                             startedAt: session.startedAt,
                             bodyWeightKg: bodyWeightKg

@@ -26,6 +26,52 @@ final class BodyPhotoVisionMetricsTests: XCTestCase {
         XCTAssertEqual(HealthKitReadinessServiceImpl.sleepScore(hours: 8), 0.95)
     }
 
+    func testRegression_bodyMassManualLockUntilNewerSample() {
+        var profile = UserProfile.empty()
+        profile.weightKg = 82
+        profile.bodyMassSource = .manual
+        profile.updatedAt = Date(timeIntervalSince1970: 2_000)
+        let older = HealthBodyMassSample(kilograms: 80, measuredAt: Date(timeIntervalSince1970: 1_000))
+        XCTAssertFalse(BodyMassSyncPolicy.shouldApply(profile: profile, sample: older))
+
+        let newer = HealthBodyMassSample(kilograms: 80, measuredAt: Date(timeIntervalSince1970: 3_000))
+        XCTAssertTrue(BodyMassSyncPolicy.shouldApply(profile: profile, sample: newer))
+
+        profile.bodyMassSource = nil
+        XCTAssertTrue(BodyMassSyncPolicy.shouldApply(profile: profile, sample: older))
+
+        profile.bodyMassSource = .health
+        profile.weightKg = 80
+        XCTAssertFalse(BodyMassSyncPolicy.shouldApply(profile: profile, sample: older))
+
+        profile.weightKg = older.kilograms + 0.1
+        XCTAssertFalse(BodyMassSyncPolicy.shouldApply(profile: profile, sample: older))
+        profile.weightKg = older.kilograms + 0.25
+        XCTAssertTrue(BodyMassSyncPolicy.shouldApply(profile: profile, sample: older))
+
+        XCTAssertFalse(BodyMassSyncPolicy.shouldApply(
+            profile: profile,
+            sample: HealthBodyMassSample(kilograms: 29.9, measuredAt: newer.measuredAt)
+        ))
+        XCTAssertFalse(BodyMassSyncPolicy.shouldApply(
+            profile: profile,
+            sample: HealthBodyMassSample(kilograms: 250.1, measuredAt: newer.measuredAt)
+        ))
+
+        profile.bodyMassSource = .manual
+        profile.bodyMassLockedAt = Date(timeIntervalSince1970: 1_000)
+        profile.updatedAt = Date(timeIntervalSince1970: 5_000)
+        let afterLock = HealthBodyMassSample(kilograms: 81, measuredAt: Date(timeIntervalSince1970: 2_000))
+        XCTAssertTrue(BodyMassSyncPolicy.shouldApply(profile: profile, sample: afterLock))
+    }
+
+    func testBundledBenchDemoResolvesFromAppBundle() {
+        let video = ExerciseMediaResolver.bundledFallback(for: "bench_press")
+        let url = video.flatMap { ExerciseMediaResolver.resolvePlaybackURL(for: $0) }
+        XCTAssertNotNil(url)
+        XCTAssertEqual(url?.pathExtension, "mp4")
+    }
+
     func testRecoveryHintShortSleep() {
         let hint = HealthKitReadinessServiceImpl.recoveryHint(restingHeartRate: 58, sleepHours: 5)
         XCTAssertTrue(hint?.contains("Sleep") == true)

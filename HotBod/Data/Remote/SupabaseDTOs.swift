@@ -118,6 +118,7 @@ struct ProfileRow: Codable {
             proteinGoalGrams: proteinGoalGrams ?? fallback?.proteinGoalGrams ?? 145,
             photoTrackingEnabled: photoTrackingEnabled ?? fallback?.photoTrackingEnabled ?? false,
             includeWarmupSets: includeWarmupSets ?? fallback?.includeWarmupSets ?? true,
+            includeWarmupStretches: fallback?.includeWarmupStretches ?? false,
             includeCooldown: includeCooldown ?? fallback?.includeCooldown ?? false,
             preferredExerciseGrouping: ExerciseGroupingPreference(rawValue: preferredExerciseGrouping ?? "")
                 ?? fallback?.preferredExerciseGrouping ?? .none,
@@ -131,6 +132,8 @@ struct ProfileRow: Codable {
             trustHistoricEffortFeedback: trustHistoricEffortFeedback ?? fallback?.trustHistoricEffortFeedback ?? true,
             maxAvailableWeightKg: maxAvailableWeightKg ?? fallback?.maxAvailableWeightKg ?? [:],
             exportWorkoutsToHealthKit: exportWorkoutsToHealthKit ?? fallback?.exportWorkoutsToHealthKit ?? false,
+            bodyMassSource: fallback?.bodyMassSource,
+            bodyMassLockedAt: fallback?.bodyMassLockedAt,
             createdAt: fallback?.createdAt ?? Date(),
             updatedAt: updatedAt ?? Date()
         )
@@ -683,6 +686,9 @@ enum WorkoutSessionSyncMerge {
         }
         if chosen.sessionMode == .standard, local.sessionMode != .standard {
             chosen.sessionMode = local.sessionMode
+        }
+        if chosen.currentExerciseId == nil {
+            chosen.currentExerciseId = local.currentExerciseId
         }
         return chosen
     }

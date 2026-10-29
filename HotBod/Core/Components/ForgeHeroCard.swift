@@ -17,6 +17,8 @@ struct ForgeHeroCard: View {
     let title: String
     var badge: String? = nil
     var durationMinutes: Int? = nil
+    var sessionEditLabel: String? = nil
+    var onEditSession: (() -> Void)? = nil
     var focusLine: String? = nil
     var exerciseLine: String? = nil
     var safetyNotes: [String] = []
@@ -57,9 +59,20 @@ struct ForgeHeroCard: View {
                         .padding(.vertical, 4)
                         .overlay(Rectangle().stroke(ForgeColors.accentGreen.opacity(0.5), lineWidth: 1))
                 } else if let durationMinutes, !completed {
-                    Text("\(durationMinutes) min")
-                        .font(ForgeTypography.monoMetric)
-                        .foregroundStyle(accent)
+                    if let onEditSession {
+                        Button(action: onEditSession) {
+                            Text(sessionEditLabel ?? "\(durationMinutes) min")
+                                .font(ForgeTypography.monoMetric)
+                                .foregroundStyle(accent)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("today.editSession")
+                        .accessibilityLabel("Change workout duration and type")
+                    } else {
+                        Text("\(durationMinutes) min")
+                            .font(ForgeTypography.monoMetric)
+                            .foregroundStyle(accent)
+                    }
                 }
             }
 

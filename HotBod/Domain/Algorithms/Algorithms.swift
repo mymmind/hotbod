@@ -881,6 +881,17 @@ enum ExerciseSegmentFill: Equatable {
     case remaining
 }
 
+struct ExerciseSegmentStyle: Equatable {
+    var completedFraction: Double
+    /// True for the exercise the athlete is on, including when that segment is already fully green.
+    var showsCurrent: Bool
+}
+
+struct ExerciseSetProgress: Equatable {
+    var completedSets: Int
+    var plannedSets: Int
+}
+
 enum WorkoutAdvanceDecision: Equatable {
     case goToExercise(index: Int)
     case confirmEnd
@@ -910,7 +921,7 @@ enum WorkoutSessionCalculator {
         return Double(currentIndex + 1) / Double(exerciseCount)
     }
 
-    /// Segment color for the session progress bar.
+    /// Segment color for callers that only know done vs not done.
     /// Completion wins over position, so an exercise finished out of order stays green
     /// and an earlier exercise that still has sets stays grey.
     static func exerciseSegmentFill(
@@ -923,8 +934,56 @@ enum WorkoutSessionCalculator {
         return .remaining
     }
 
-    /// First exercise that still has sets to log; falls back to last non-skipped exercise.
+    /// How one exercise segment should paint.
+    /// Green is the share of sets already logged, including partial credit.
+    /// The current exercise keeps a red remainder, or a red cap once it is full,
+    /// so position stays visible after that segment turns green.
+    static func exerciseSegmentStyle(
+        completedSets: Int,
+        plannedSets: Int,
+        isCurrent: Bool
+    ) -> ExerciseSegmentStyle {
+        let planned = max(plannedSets, 0)
+        let completed = min(max(completedSets, 0), planned == 0 ? 0 : planned)
+        let fraction = planned == 0 ? 0 : Double(completed) / Double(planned)
+        return ExerciseSegmentStyle(completedFraction: fraction, showsCurrent: isCurrent)
+    }
+
+    /// Sets whose `setIndex` lands on a planned row. Duplicate indexes count once.
+    static func loggedSetCount(_ exercise: WorkoutExercise) -> Int {
+        let planned = exercise.plannedSets.count
+        guard planned > 0 else { return 0 }
+        let indexes = exercise.completedSets.map(\.setIndex).filter { (0..<planned).contains($0) }
+        return Set(indexes).count
+    }
+
+    /// First planned row that does not yet have a completed set. Skips holes instead of `completedSets.count`.
+    static func firstIncompleteSetIndex(plannedCount: Int, completedSetIndexes: Set<Int>) -> Int? {
+        guard plannedCount > 0 else { return nil }
+        return (0..<plannedCount).first { !completedSetIndexes.contains($0) }
+    }
+
+    /// Next exercise that still needs sets, searching forward and then wrapping.
+    /// Nil when every exercise is logged or skipped.
+    static func nextIncompleteExerciseIndex(after index: Int, in exercises: [WorkoutExercise]) -> Int? {
+        guard !exercises.isEmpty else { return nil }
+        if !exercises.indices.contains(index) {
+            return exercises.firstIndex(where: needsSetsLogged)
+        }
+        for offset in 1...exercises.count {
+            let candidate = (index + offset) % exercises.count
+            if needsSetsLogged(exercises[candidate]) { return candidate }
+        }
+        return nil
+    }
+
+    /// Saved exercise when it is still in the session; otherwise the first exercise that still has sets to log.
     static func currentExerciseIndex(for session: WorkoutSession) -> Int {
+        if let id = session.currentExerciseId,
+           let idx = session.exercises.firstIndex(where: { $0.id == id }),
+           !session.exercises[idx].wasSkipped {
+            return idx
+        }
         if let idx = session.exercises.firstIndex(where: needsSetsLogged) {
             return idx
         }
@@ -964,7 +1023,7 @@ enum WorkoutSessionCalculator {
     }
 
     static func completedSetCount(session: WorkoutSession) -> Int {
-        session.exercises.flatMap(\.completedSets).count
+        session.exercises.reduce(0) { $0 + loggedSetCount($1) }
     }
 
     static func trainedMuscleGroups(session: WorkoutSession, exerciseMap: [String: Exercise]) -> [MuscleGroup] {
@@ -989,7 +1048,7 @@ enum WorkoutSessionCalculator {
 
     /// Non-skipped exercise that still has planned sets to log.
     static func needsSetsLogged(_ exercise: WorkoutExercise) -> Bool {
-        !exercise.wasSkipped && exercise.completedSets.count < exercise.plannedSets.count
+        !exercise.wasSkipped && loggedSetCount(exercise) < exercise.plannedSets.count
     }
 
     static func isExerciseComplete(_ exercise: WorkoutExercise) -> Bool {
@@ -1012,14 +1071,10 @@ enum WorkoutSessionCalculator {
         session: WorkoutSession,
         currentExerciseIndex: Int
     ) -> WorkoutAdvanceDecision {
-        if isSessionFullyLogged(session) {
+        guard let next = nextIncompleteExerciseIndex(after: currentExerciseIndex, in: session.exercises) else {
             return .confirmEnd
         }
-        let nextIndex = currentExerciseIndex + 1
-        if session.exercises.indices.contains(nextIndex) {
-            return .goToExercise(index: nextIndex)
-        }
-        return .confirmEnd
+        return .goToExercise(index: next)
     }
 
     static func endConfirmationCopy(incompleteExerciseCount: Int) -> WorkoutEndConfirmationCopy {

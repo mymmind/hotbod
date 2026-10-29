@@ -3,7 +3,10 @@ import SwiftUI
 
 extension WorkoutSessionView {
     func setTable(exercise: WorkoutExercise, meta: Exercise) -> some View {
-        let activeSetIndex = exercise.completedSets.count
+        let activeSetIndex = WorkoutSessionCalculator.firstIncompleteSetIndex(
+            plannedCount: exercise.plannedSets.count,
+            completedSetIndexes: Set(exercise.completedSets.map(\.setIndex))
+        ) ?? exercise.plannedSets.count
         let warmupsAtStart = exercise.plannedSets.prefix(while: \.isWarmup).count
         let loadMode = meta.resolvedLoadTrackingMode
         let hasExternalLoadInHistory = exercise.completedSets.contains { $0.weightKg != nil }

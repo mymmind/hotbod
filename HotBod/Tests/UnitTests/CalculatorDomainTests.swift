@@ -64,6 +64,46 @@ final class WorkoutSessionCalculatorTests: XCTestCase {
         XCTAssertEqual(WorkoutSessionCalculator.currentExerciseIndex(for: midSession), 0)
     }
 
+    func testRegression_resumeUsesSavedExerciseWhenEarlierWorkRemains() {
+        let set = PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
+        let first = WorkoutExercise(exerciseId: "a", orderIndex: 0, plannedSets: [set])
+        let second = WorkoutExercise(exerciseId: "b", orderIndex: 1, plannedSets: [set])
+        let session = WorkoutSession(
+            userId: UUID(),
+            title: "Test",
+            estimatedDurationMinutes: 45,
+            exercises: [first, second],
+            status: .inProgress,
+            currentExerciseId: second.id
+        )
+        XCTAssertEqual(WorkoutSessionCalculator.currentExerciseIndex(for: session), 1)
+    }
+
+    func testRegression_completedSetCountIgnoresDuplicateIndexes() {
+        let exercise = WorkoutExercise(
+            exerciseId: "bench_press",
+            orderIndex: 0,
+            plannedSets: [
+                PlannedSet(targetRepsMin: 8, targetRepsMax: 10),
+                PlannedSet(targetRepsMin: 8, targetRepsMax: 10),
+                PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
+            ],
+            completedSets: [
+                CompletedSet(setIndex: 0, weightKg: 60, reps: 8),
+                CompletedSet(setIndex: 0, weightKg: 60, reps: 8),
+                CompletedSet(setIndex: 2, weightKg: 60, reps: 8)
+            ]
+        )
+        let session = WorkoutSession(
+            userId: UUID(),
+            title: "Test",
+            estimatedDurationMinutes: 45,
+            exercises: [exercise],
+            status: .inProgress
+        )
+        XCTAssertEqual(WorkoutSessionCalculator.completedSetCount(session: session), 2)
+    }
+
     func testIsSessionFullyLoggedOutOfOrder() {
         let set = PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
         let done = CompletedSet(setIndex: 0, weightKg: 50, reps: 8)
@@ -119,7 +159,7 @@ final class WorkoutSessionCalculatorTests: XCTestCase {
             status: .inProgress
         )
         let decision = WorkoutSessionCalculator.advanceDecision(session: session, currentExerciseIndex: 1)
-        XCTAssertEqual(decision, .confirmEnd)
+        XCTAssertEqual(decision, .goToExercise(index: 0))
         XCTAssertFalse(WorkoutSessionCalculator.isSessionFullyLogged(session))
         XCTAssertEqual(WorkoutSessionCalculator.firstIncompleteExerciseIndex(in: session), 0)
     }
@@ -211,7 +251,7 @@ final class WorkoutSessionCalculatorTests: XCTestCase {
         XCTAssertNil(WorkoutSessionCalculator.firstIncompleteExerciseIndex(in: session))
     }
 
-    func testAdvanceDecisionOutOfBoundsIndexConfirmsEndWhenWorkRemains() {
+    func testAdvanceDecisionOutOfBoundsIndexGoesToRemainingWork() {
         let set = PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
         let exercises = [
             WorkoutExercise(exerciseId: "a", orderIndex: 0, plannedSets: [set], completedSets: [])
@@ -225,7 +265,7 @@ final class WorkoutSessionCalculatorTests: XCTestCase {
         )
         XCTAssertEqual(
             WorkoutSessionCalculator.advanceDecision(session: session, currentExerciseIndex: 99),
-            .confirmEnd
+            .goToExercise(index: 0)
         )
         XCTAssertEqual(
             WorkoutSessionCalculator.advanceDecision(session: session, currentExerciseIndex: -1),
@@ -249,6 +289,68 @@ final class WorkoutSessionCalculatorTests: XCTestCase {
         XCTAssertEqual(
             WorkoutSessionCalculator.exerciseSegmentFill(index: 1, currentIndex: 1, isComplete: true),
             .complete
+        )
+    }
+
+    func testRegression_partialCurrentSegmentKeepsGreenAndRed() {
+        let partial = WorkoutSessionCalculator.exerciseSegmentStyle(
+            completedSets: 1,
+            plannedSets: 4,
+            isCurrent: true
+        )
+        XCTAssertEqual(partial.completedFraction, 0.25, accuracy: 0.001)
+        XCTAssertTrue(partial.showsCurrent)
+
+        let fullCurrent = WorkoutSessionCalculator.exerciseSegmentStyle(
+            completedSets: 4,
+            plannedSets: 4,
+            isCurrent: true
+        )
+        XCTAssertEqual(fullCurrent.completedFraction, 1, accuracy: 0.001)
+        XCTAssertTrue(fullCurrent.showsCurrent)
+
+        let fullElsewhere = WorkoutSessionCalculator.exerciseSegmentStyle(
+            completedSets: 4,
+            plannedSets: 4,
+            isCurrent: false
+        )
+        XCTAssertFalse(fullElsewhere.showsCurrent)
+    }
+
+    func testRegression_gapInSetIndexesUsesFirstHole() {
+        let indexes: Set<Int> = [0, 2]
+        XCTAssertEqual(
+            WorkoutSessionCalculator.firstIncompleteSetIndex(plannedCount: 3, completedSetIndexes: indexes),
+            1
+        )
+        let exercise = WorkoutExercise(
+            exerciseId: "bench_press",
+            orderIndex: 0,
+            plannedSets: [
+                PlannedSet(targetRepsMin: 8, targetRepsMax: 10),
+                PlannedSet(targetRepsMin: 8, targetRepsMax: 10),
+                PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
+            ],
+            completedSets: [
+                CompletedSet(setIndex: 0, weightKg: 60, reps: 8),
+                CompletedSet(setIndex: 2, weightKg: 60, reps: 8)
+            ]
+        )
+        XCTAssertFalse(WorkoutSessionCalculator.isExerciseComplete(exercise))
+        XCTAssertEqual(WorkoutSessionCalculator.loggedSetCount(exercise), 2)
+    }
+
+    func testRegression_advanceSkipsCompletedMiddleExercise() {
+        let set = PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
+        let done = CompletedSet(setIndex: 0, weightKg: 50, reps: 8)
+        let exercises = [
+            WorkoutExercise(exerciseId: "a", orderIndex: 0, plannedSets: [set], completedSets: [done]),
+            WorkoutExercise(exerciseId: "b", orderIndex: 1, plannedSets: [set], completedSets: [done]),
+            WorkoutExercise(exerciseId: "c", orderIndex: 2, plannedSets: [set], completedSets: [])
+        ]
+        XCTAssertEqual(
+            WorkoutSessionCalculator.nextIncompleteExerciseIndex(after: 0, in: exercises),
+            2
         )
     }
 

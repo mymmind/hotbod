@@ -17,6 +17,11 @@ struct TodayView: View {
     @State private var contentAppeared = false
     @State private var showRecoveryDetails = false
     @State private var showGenerationFailureAlert = false
+    @State private var showSessionOptions = false
+    @State private var pendingSessionDuration = 45
+    @State private var pendingSessionSplit: TrainingSplit = .upperLower
+    @State private var pendingSessionFocus: SplitDayFocus?
+    @State private var pendingWarmupStretches = false
 
     private var todayContentMode: String {
         if environment.isRestDay { return "rest" }
@@ -58,6 +63,21 @@ struct TodayView: View {
                     averageReadiness: averageReadiness,
                     states: environment.recoveryStates
                 )
+            }
+            .sheet(isPresented: $showSessionOptions) {
+                if let profile = environment.userProfile {
+                    TodaySessionOptionsSheet(
+                        profile: profile,
+                        currentFocus: environment.currentSplitFocus
+                    ) { duration, split, focus, stretches in
+                        pendingSessionDuration = duration
+                        pendingSessionSplit = split
+                        pendingSessionFocus = focus
+                        pendingWarmupStretches = stretches
+                        showSessionOptions = false
+                        performAnimatedWorkoutRefresh(.sessionOptions)
+                    }
+                }
             }
             .onChange(of: environment.calendarDayRevision) { _, _ in
                 Task { await refreshDayScopedContent() }
@@ -247,6 +267,11 @@ struct TodayView: View {
         ForgeHeroCard(
             eyebrow: "Rest Day",
             title: "Recovery",
+            durationMinutes: environment.todayWorkout?.estimatedDurationMinutes,
+            sessionEditLabel: environment.todayWorkout.map { sessionEditLabel(for: $0) },
+            onEditSession: environment.todayWorkout != nil && activeSession == nil
+                ? { showSessionOptions = true }
+                : nil,
             footerLine: restDayFooterLine,
             ambientGlow: true,
             accent: ForgeColors.accentGreen,
@@ -314,12 +339,25 @@ struct TodayView: View {
         }
     }
 
+    private func canEditSession(completed: Bool) -> Bool {
+        !completed && activeSession == nil
+    }
+
+    private func sessionEditLabel(for workout: GeneratedWorkout) -> String {
+        let focus = environment.currentSplitFocus?.displayName
+            ?? environment.userProfile?.preferredSplit.displayName
+            ?? "Session"
+        return "\(workout.estimatedDurationMinutes) min · \(focus)"
+    }
+
     private func workoutHero(_ workout: GeneratedWorkout, completed: Bool, session: WorkoutSession?) -> some View {
         ForgeHeroCard(
             eyebrow: completed ? "Session" : (environment.currentSplitFocus?.displayName ?? "Today"),
             title: workout.title,
             badge: completed ? "Completed" : nil,
             durationMinutes: completed ? nil : workout.estimatedDurationMinutes,
+            sessionEditLabel: sessionEditLabel(for: workout),
+            onEditSession: canEditSession(completed: completed) ? { showSessionOptions = true } : nil,
             focusLine: workout.focus.map(\.displayName).joined(separator: " · "),
             exerciseLine: completed ? exerciseNameLine(for: workout) : nil,
             safetyNotes: completed ? [] : workout.safetyNotes,
@@ -524,6 +562,13 @@ struct TodayView: View {
         case .readiness:
             guard let profile = environment.userProfile else { return false }
             return await environment.refreshTodayWorkoutForReadinessChange(profile: profile)
+        case .sessionOptions:
+            return await environment.applyTodaySessionChoices(
+                durationMinutes: pendingSessionDuration,
+                split: pendingSessionSplit,
+                focus: pendingSessionFocus,
+                includeWarmupStretches: pendingWarmupStretches
+            )
         }
     }
 
@@ -826,6 +871,125 @@ struct TodayView: View {
             activeSession = nil
         } else {
             activeSession = await environment.fetchActiveWorkoutSession()
+        }
+    }
+}
+
+private struct TodaySessionOptionsSheet: View {
+    let profile: UserProfile
+    let currentFocus: SplitDayFocus?
+    let onApply: (Int, TrainingSplit, SplitDayFocus?, Bool) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var duration: Int
+    @State private var split: TrainingSplit
+    @State private var focus: SplitDayFocus?
+    @State private var stretches: Bool
+
+    private let durationOptions = [20, 30, 45, 60, 75, 90]
+
+    init(
+        profile: UserProfile,
+        currentFocus: SplitDayFocus?,
+        onApply: @escaping (Int, TrainingSplit, SplitDayFocus?, Bool) -> Void
+    ) {
+        self.profile = profile
+        self.currentFocus = currentFocus
+        self.onApply = onApply
+        let sequence = TrainingSchedule.splitSequence(for: profile.preferredSplit)
+        let resolvedFocus = sequence.contains(currentFocus ?? .fullBody) ? currentFocus : sequence.first
+        _duration = State(initialValue: profile.preferredSessionLengthMinutes)
+        _split = State(initialValue: profile.preferredSplit)
+        _focus = State(initialValue: resolvedFocus)
+        _stretches = State(initialValue: profile.includeWarmupStretches)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: ForgeSpacing.s5) {
+                    optionGroup(title: "Duration") {
+                        chipWrap {
+                            ForEach(durationChoices, id: \.self) { minutes in
+                                SelectableChip(title: "\(minutes) min", isSelected: duration == minutes) {
+                                    duration = minutes
+                                }
+                            }
+                        }
+                    }
+
+                    optionGroup(title: "Split") {
+                        chipWrap {
+                            ForEach(TrainingSplit.selectableSplits) { option in
+                                SelectableChip(title: option.displayName, isSelected: split == option) {
+                                    split = option
+                                    let sequence = TrainingSchedule.splitSequence(for: option)
+                                    if let focus, sequence.contains(focus) {
+                                        self.focus = focus
+                                    } else {
+                                        self.focus = sequence.first
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if focusChoices.count > 1 {
+                        optionGroup(title: "Today") {
+                            chipWrap {
+                                ForEach(focusChoices, id: \.self) { option in
+                                    SelectableChip(title: option.displayName, isSelected: focus == option) {
+                                        focus = option
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    SettingsComponents.toggleRow(title: "Warm-up stretches", isOn: $stretches)
+                    Text("Short mobility holds before the first lift. Separate from the ramping warm-up sets on each exercise.")
+                        .font(ForgeTypography.caption)
+                        .foregroundStyle(ForgeColors.muted)
+
+                    ForgeButton(title: "Apply", style: .accent, accessibilityIdentifier: "today.applySessionOptions") {
+                        onApply(duration, split, focus, stretches)
+                    }
+                }
+                .padding(ForgeSpacing.s4)
+            }
+            .background(ForgeColors.background)
+            .navigationTitle("Session")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    private var durationChoices: [Int] {
+        durationOptions.contains(duration) ? durationOptions : [duration] + durationOptions
+    }
+
+    private var focusChoices: [SplitDayFocus] {
+        TrainingSchedule.splitSequence(for: split)
+    }
+
+    private func optionGroup(title: String, @ViewBuilder content: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: ForgeSpacing.s3) {
+            Text(title.uppercased())
+                .font(ForgeTypography.caption)
+                .tracking(2)
+                .foregroundStyle(ForgeColors.muted)
+            content()
+        }
+    }
+
+    private func chipWrap(@ViewBuilder content: () -> some View) -> some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 108), spacing: 8)], spacing: 8) {
+            content()
         }
     }
 }

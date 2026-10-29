@@ -425,6 +425,9 @@ actor LocalExerciseMediaProvider: ExerciseMediaProvider {
     }
 
     func demoVideos(for exerciseId: String) async throws -> [ExerciseDemoVideo] {
+        if let youtube = YouTubeExerciseCatalog.video(for: exerciseId) {
+            return [youtube]
+        }
         if let exercise = try await exerciseRepository.fetch(id: exerciseId), !exercise.demoVideos.isEmpty {
             return exercise.demoVideos
         }

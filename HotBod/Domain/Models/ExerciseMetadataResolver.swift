@@ -80,7 +80,9 @@ enum ExerciseMetadataResolver {
         if distanceOrTimeExerciseIds.contains(exercise.id) {
             return .distanceOrTime
         }
-        if timeExerciseIds.contains(exercise.id) || exercise.movementPattern == .cardio {
+        if timeExerciseIds.contains(exercise.id)
+            || exercise.movementPattern == .cardio
+            || exercise.movementPattern == .mobility {
             return .time
         }
         if distanceExerciseIds.contains(exercise.id) {

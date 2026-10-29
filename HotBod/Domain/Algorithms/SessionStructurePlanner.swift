@@ -28,6 +28,50 @@ enum CooldownSetPlanner {
 }
 
 enum SessionStructurePlanner {
+    static let warmupStretchExerciseIds = [
+        "hip_opener_stretch",
+        "shoulder_opener_stretch",
+        "thoracic_rotation_stretch"
+    ]
+
+    /// Inserts catalog mobility stretches at the front of the plan, after duration budgeting.
+    static func prependWarmupStretches(
+        to planned: inout [PlannedExercise],
+        exercises: [Exercise],
+        enabled: Bool
+    ) {
+        guard enabled else { return }
+        let byId = Dictionary(uniqueKeysWithValues: exercises.map { ($0.id, $0) })
+        let existing = Set(planned.map(\.exerciseId))
+        var inserts: [PlannedExercise] = []
+        for id in warmupStretchExerciseIds where !existing.contains(id) {
+            guard let exercise = byId[id], exercise.movementPattern == .mobility else { continue }
+            let seconds = ExerciseMetadataResolver.defaultDurationSeconds(for: exercise)
+            inserts.append(
+                PlannedExercise(
+                    exerciseId: id,
+                    orderIndex: inserts.count,
+                    targetSets: [
+                        PlannedSet(
+                            targetRepsMin: 0,
+                            targetRepsMax: 0,
+                            targetDurationSeconds: max(seconds, 1),
+                            isWarmup: true
+                        )
+                    ],
+                    restSeconds: GenerationConstants.Grouping.transitionRestSeconds,
+                    intensity: .light,
+                    reason: "Warm-up stretch before loaded work."
+                )
+            )
+        }
+        guard !inserts.isEmpty else { return }
+        planned.insert(contentsOf: inserts, at: 0)
+        for index in planned.indices {
+            planned[index].orderIndex = index
+        }
+    }
+
     static func appendCooldownSets(to planned: inout [PlannedExercise], exerciseMap: [String: Exercise]) {
         guard !planned.isEmpty else { return }
         let cooldown = CooldownSetPlanner.cooldownSets()

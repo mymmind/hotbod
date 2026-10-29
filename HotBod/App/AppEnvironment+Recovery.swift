@@ -26,6 +26,18 @@ extension AppEnvironment {
     func refreshHealthReadiness() async {
         await healthKitReadinessService.requestAuthorizationIfNeeded()
         healthReadiness = await healthKitReadinessService.fetchReadinessSnapshot()
+        await applyHealthBodyMassIfNeeded()
+    }
+
+    private func applyHealthBodyMassIfNeeded() async {
+        guard userProfile != nil else { return }
+        guard let sample = await healthKitReadinessService.fetchLatestBodyMass() else { return }
+        guard var profile = userProfile else { return }
+        guard BodyMassSyncPolicy.shouldApply(profile: profile, sample: sample) else { return }
+        profile.weightKg = sample.kilograms
+        profile.bodyMassSource = .health
+        profile.bodyMassLockedAt = nil
+        _ = await updateUserProfile(profile, refreshWorkout: false)
     }
 
     func setSoreness(_ level: SorenessLevel) {

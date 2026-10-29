@@ -4,6 +4,7 @@ enum WorkoutHeroRefreshKind {
     case regenerate
     case switchSplit
     case readiness
+    case sessionOptions
 }
 
 struct ForgeHeroRegeneratingOverlay: View {
@@ -75,7 +76,7 @@ enum WorkoutHeroRefreshRunner {
     private static func feedbackKind(for kind: WorkoutHeroRefreshKind) -> ForgeFeedbackEvent {
         switch kind {
         case .regenerate: .workoutRegenerate
-        case .switchSplit, .readiness: .success
+        case .switchSplit, .readiness, .sessionOptions: .success
         }
     }
 }
