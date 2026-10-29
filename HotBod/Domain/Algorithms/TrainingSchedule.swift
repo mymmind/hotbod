@@ -172,16 +172,43 @@ enum TrainingSchedule {
         return max(1, Int((cycles * Double(hits)).rounded()))
     }
 
-    /// Adaptive focus: bias toward the fresher of upper vs lower musculature from recovery state.
+    /// Adaptive focus: bias toward the fresher of upper vs lower musculature.
+    /// Preparedness clamps at 100 within about a day, so a tie trains the region whose
+    /// median muscle has gone longer without a stimulus. Never-trained muscles count as
+    /// the oldest date, and one skipped muscle cannot pin the region.
     static func adaptiveFocus(recoveryStates: [MuscleRecoveryState]) -> SplitDayFocus {
-        let upper: Set<MuscleGroup> = [.chest, .back, .shoulders, .biceps, .triceps]
-        let lower: Set<MuscleGroup> = [.quads, .hamstrings, .glutes, .calves]
-        func average(for muscles: Set<MuscleGroup>) -> Double {
-            let values = recoveryStates.filter { muscles.contains($0.muscleGroup) }.map(\.recoveryPercentage)
-            guard !values.isEmpty else { return 0.5 }
-            return values.reduce(0, +) / Double(values.count)
-        }
-        return average(for: upper) >= average(for: lower) ? .upper : .lower
+        let upper = Set(muscles(for: .upper))
+        let lower = Set(muscles(for: .lower))
+        let upperAverage = averageRecovery(for: upper, in: recoveryStates)
+        let lowerAverage = averageRecovery(for: lower, in: recoveryStates)
+        if upperAverage > lowerAverage { return .upper }
+        if lowerAverage > upperAverage { return .lower }
+        let upperTrained = medianLastTrained(for: upper, in: recoveryStates)
+        let lowerTrained = medianLastTrained(for: lower, in: recoveryStates)
+        if upperTrained == lowerTrained { return .upper }
+        return upperTrained < lowerTrained ? .upper : .lower
+    }
+
+    private static func averageRecovery(
+        for muscles: Set<MuscleGroup>,
+        in states: [MuscleRecoveryState]
+    ) -> Double {
+        let values = states.filter { muscles.contains($0.muscleGroup) }.map(\.recoveryPercentage)
+        guard !values.isEmpty else { return 0.5 }
+        return values.reduce(0, +) / Double(values.count)
+    }
+
+    /// Lower median last-trained date. `.distantPast` means most of the region is untrained.
+    private static func medianLastTrained(
+        for muscles: Set<MuscleGroup>,
+        in states: [MuscleRecoveryState]
+    ) -> Date {
+        let dates = states
+            .filter { muscles.contains($0.muscleGroup) }
+            .map { $0.lastTrainedAt ?? .distantPast }
+        guard !dates.isEmpty else { return .distantPast }
+        let sorted = dates.sorted()
+        return sorted[(sorted.count - 1) / 2]
     }
 
     /// Resolves the session focus for generation. Fixed splits use rotation; adaptive uses recovery.

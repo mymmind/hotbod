@@ -123,6 +123,41 @@ final class AdaptiveSplitFocusTests: XCTestCase {
         )
         XCTAssertEqual(focus, .lower)
     }
+
+    func testRegression_tiedRecoveryPrefersNeglectedLowerBody() {
+        let recentUpper = Date(timeIntervalSince1970: 1_700_000_000)
+        let incidentalQuads = recentUpper.addingTimeInterval(-5 * 24 * 3600)
+        var states = RecoveryCalculator.defaultStates()
+        let upper: Set<MuscleGroup> = [.chest, .back, .shoulders, .biceps, .triceps]
+        for index in states.indices {
+            states[index].recoveryPercentage = 100
+            if upper.contains(states[index].muscleGroup) {
+                states[index].lastTrainedAt = recentUpper
+            } else if states[index].muscleGroup == .quads {
+                states[index].lastTrainedAt = incidentalQuads
+            }
+        }
+
+        XCTAssertEqual(TrainingSchedule.adaptiveFocus(recoveryStates: states), .lower)
+    }
+
+    func testTiedRecoveryReturnsToUpperAfterLowerSessionEvenIfCalvesWereSkipped() {
+        let upperTrained = Date(timeIntervalSince1970: 1_700_000_000)
+        let lowerTrained = upperTrained.addingTimeInterval(4 * 24 * 3600)
+        var states = RecoveryCalculator.defaultStates()
+        let upper: Set<MuscleGroup> = [.chest, .back, .shoulders, .biceps, .triceps]
+        let trainedLower: Set<MuscleGroup> = [.quads, .hamstrings, .glutes]
+        for index in states.indices {
+            states[index].recoveryPercentage = 100
+            if upper.contains(states[index].muscleGroup) {
+                states[index].lastTrainedAt = upperTrained
+            } else if trainedLower.contains(states[index].muscleGroup) {
+                states[index].lastTrainedAt = lowerTrained
+            }
+        }
+
+        XCTAssertEqual(TrainingSchedule.adaptiveFocus(recoveryStates: states), .upper)
+    }
 }
 
 final class UserProfileReminderDaysCodingTests: XCTestCase {
