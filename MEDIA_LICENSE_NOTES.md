@@ -16,3 +16,4 @@ All media must have a documented license source.
 - YouTube demos play only in YouTube's embed player. HotBod does not download the file. The uploader controls whether embedding is allowed.
 - All bundled or remote media must have documented commercial-use rights.
 - Placeholder thumbnails use SF Symbols only in MVP.
+- `HotBod/Resources/LaughingCat.gif` is original art made for the one-shot TestFlight greeting. HotBod owns it.

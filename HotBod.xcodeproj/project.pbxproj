@@ -330,6 +330,11 @@
 		F2276DE9B9240C5DA991E13C /* SessionDurationBudget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D6204F2FDC6E3BCA8FD61EC /* SessionDurationBudget.swift */; };
 		F28F65E6F3FAC9DFCDAE90D4 /* CoachSafetyPropertyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 347255710E36AD87F59F7E67 /* CoachSafetyPropertyTests.swift */; };
 		F3ED84E0965DAF164F66617F /* WorkoutStartCountdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD61BFA8A6A8D4233D37191 /* WorkoutStartCountdown.swift */; };
+		B1A0C0DE0001A11CE0000002 /* HardcoreHelloGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A0C0DE0001A11CE0000001 /* HardcoreHelloGate.swift */; };
+		B1A0C0DE0001A11CE0000004 /* HardcoreHelloView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A0C0DE0001A11CE0000003 /* HardcoreHelloView.swift */; };
+		B1A0C0DE0001A11CE0000006 /* LoopingGIFView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A0C0DE0001A11CE0000005 /* LoopingGIFView.swift */; };
+		B1A0C0DE0001A11CE0000008 /* HardcoreHelloGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A0C0DE0001A11CE0000007 /* HardcoreHelloGateTests.swift */; };
+		B1A0C0DE0001A11CE000000A /* LaughingCat.gif in Resources */ = {isa = PBXBuildFile; fileRef = B1A0C0DE0001A11CE0000009 /* LaughingCat.gif */; };
 		F400186AFF545E5920EE805A /* PhysiqueArchetypeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF084D9F72EAB6E308214FA9 /* PhysiqueArchetypeTests.swift */; };
 		F40587C969179BF7439650E9 /* HotBodAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED4794EB8C87A814FD5B4B7A /* HotBodAppDelegate.swift */; };
 		F429619D5D0382CEA0572A03 /* PostSetActionPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6751FFF4C16DEB7BCAA3714 /* PostSetActionPlannerTests.swift */; };
@@ -399,6 +404,11 @@
 		0A61500446F5813949D0CEF2 /* PhysiqueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueView.swift; sourceTree = "<group>"; };
 		0A8FEDCEA0F1A883B4A18E12 /* PhysiqueAssessmentHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueAssessmentHistoryView.swift; sourceTree = "<group>"; };
 		0AD61BFA8A6A8D4233D37191 /* WorkoutStartCountdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutStartCountdown.swift; sourceTree = "<group>"; };
+		B1A0C0DE0001A11CE0000001 /* HardcoreHelloGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardcoreHelloGate.swift; sourceTree = "<group>"; };
+		B1A0C0DE0001A11CE0000003 /* HardcoreHelloView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardcoreHelloView.swift; sourceTree = "<group>"; };
+		B1A0C0DE0001A11CE0000005 /* LoopingGIFView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoopingGIFView.swift; sourceTree = "<group>"; };
+		B1A0C0DE0001A11CE0000007 /* HardcoreHelloGateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardcoreHelloGateTests.swift; sourceTree = "<group>"; };
+		B1A0C0DE0001A11CE0000009 /* LaughingCat.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = LaughingCat.gif; sourceTree = "<group>"; };
 		0D6204F2FDC6E3BCA8FD61EC /* SessionDurationBudget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDurationBudget.swift; sourceTree = "<group>"; };
 		0E0F5C77050501D0C2C545A5 /* MaxEffortPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaxEffortPlanner.swift; sourceTree = "<group>"; };
 		0F975C2BC1E3FF1291E88CA7 /* ForgeSpacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgeSpacing.swift; sourceTree = "<group>"; };
@@ -971,6 +981,7 @@
 		64E702001D60BBDA05F8463D /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				B1A0C0DE0001A11CE000000B /* HardcoreHello */,
 				9664DCB6B689ED80EE4CF380 /* ExerciseLibrary */,
 				1BF27E557B095A79DBDDE0EB /* Onboarding */,
 				14DA3309B4618521A0D4ABC1 /* Physique */,
@@ -1076,6 +1087,16 @@
 				799A72BE9ACE996037B05827 /* WorkoutStartCountdownView.swift */,
 			);
 			path = WorkoutSession;
+			sourceTree = "<group>";
+		};
+		B1A0C0DE0001A11CE000000B /* HardcoreHello */ = {
+			isa = PBXGroup;
+			children = (
+				B1A0C0DE0001A11CE0000001 /* HardcoreHelloGate.swift */,
+				B1A0C0DE0001A11CE0000003 /* HardcoreHelloView.swift */,
+				B1A0C0DE0001A11CE0000005 /* LoopingGIFView.swift */,
+			);
+			path = HardcoreHello;
 			sourceTree = "<group>";
 		};
 		9664DCB6B689ED80EE4CF380 /* ExerciseLibrary */ = {
@@ -1245,6 +1266,7 @@
 				AEF6E8C1BB94D6D35D3E5F1D /* ExerciseVarietyScoringTests.swift */,
 				A0A4B3817B9ADD791B519812 /* ForceRecoverySessionGenerationTests.swift */,
 				DB49B76F182221AA46E83A92 /* HardeningDomainTests.swift */,
+				B1A0C0DE0001A11CE0000007 /* HardcoreHelloGateTests.swift */,
 				8E35A972A34C727F630E0EF2 /* LaunchRouteResolverTests.swift */,
 				A257082329840730B4414CEB /* LoggedWeightSanityTests.swift */,
 				6BD0CE9FDCE8FC0E3DEC031C /* MuscleVolumePlannerTests.swift */,
@@ -1410,6 +1432,7 @@
 				DA5B2619AAAFF79753671A60 /* ExerciseContent.json */,
 				81A0A2B8568E4EAD3B300D45 /* ExercisePrescriptionOverrides.json */,
 				20B5378CE5FD9CD9351FB447 /* ExerciseSeed.json */,
+				B1A0C0DE0001A11CE0000009 /* LaughingCat.gif */,
 				EC9728E9F9D1DEC712F87566 /* FoodAPIConfig.plist */,
 				24A499AB2352093585C84FA9 /* GeminiConfig.plist */,
 				43682DD9B6A2659B92C376C0 /* Localizable.xcstrings */,
@@ -1635,6 +1658,7 @@
 				8F908BF20B04F693035B1443 /* Assets.xcassets in Resources */,
 				1F23621735EC277037CC350F /* ExerciseContent.json in Resources */,
 				8F609C5F383A877BED765D3A /* ExercisePrescriptionOverrides.json in Resources */,
+				B1A0C0DE0001A11CE000000A /* LaughingCat.gif in Resources */,
 				D729182CE6B0F8873D2546AA /* ExerciseSeed.json in Resources */,
 				50E4994DD55E5321C5FFA062 /* FoodAPIConfig.plist in Resources */,
 				D082BA3152CB3C4042E9488C /* GeminiConfig.plist in Resources */,
@@ -1712,6 +1736,7 @@
 				A2498415A229419675F798A1 /* InMemoryRepositories.swift in Sources */,
 				AC9526E98C09F3E55985FCB9 /* InjurySafetyPropertyTests.swift in Sources */,
 				DB5C06E613D10767AB720112 /* IntegrationFlowTests.swift in Sources */,
+				B1A0C0DE0001A11CE0000008 /* HardcoreHelloGateTests.swift in Sources */,
 				4CF1A72EAABCEFFEA485434C /* LaunchRouteResolverTests.swift in Sources */,
 				030100A42324E07EEAA89F72 /* LoggedWeightSanityTests.swift in Sources */,
 				696855B29BA29A224D4A25A6 /* MockWorkoutGenerationService.swift in Sources */,
@@ -1872,6 +1897,9 @@
 				7A0EF4046D9C89C7D1480851 /* LocalRepositories.swift in Sources */,
 				E34164AC2986013F07291CF7 /* LocalWorkoutReminderScheduler.swift in Sources */,
 				2A15FF52C88A0869E8E6BAE2 /* LoggedWeightSanity.swift in Sources */,
+				B1A0C0DE0001A11CE0000002 /* HardcoreHelloGate.swift in Sources */,
+				B1A0C0DE0001A11CE0000004 /* HardcoreHelloView.swift in Sources */,
+				B1A0C0DE0001A11CE0000006 /* LoopingGIFView.swift in Sources */,
 				8CBCAD121460E4A386C5EF82 /* MainTabView.swift in Sources */,
 				9936C84982F29B0D6D44D90D /* MaxEffortPlanner.swift in Sources */,
 				182D1C541F83D805E258E2DD /* MetricCard.swift in Sources */,

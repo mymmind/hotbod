@@ -3,6 +3,7 @@ import SwiftUI
 struct MainTabView: View {
     @Environment(AppEnvironment.self) private var environment
     @Environment(AppRouter.self) private var router
+    @State private var showsHardcoreHello = false
 
     var body: some View {
         @Bindable var router = router
@@ -37,5 +38,32 @@ struct MainTabView: View {
                 router.selectedTab = tab
             }
         }
+        .task { evaluateHardcoreHello() }
+        .overlay {
+            if showsHardcoreHello {
+                HardcoreHelloView {
+                    HardcoreHelloStore().markSeen()
+                    withAnimation(helloAnimation) {
+                        showsHardcoreHello = false
+                    }
+                }
+                .transition(UITestConfiguration.isUITesting ? .identity : ForgeMotion.rise)
+                .zIndex(3)
+            }
+        }
+        .animation(helloAnimation, value: showsHardcoreHello)
+    }
+
+    private var helloAnimation: Animation? {
+        UITestConfiguration.isUITesting ? nil : ForgeMotion.standard
+    }
+
+    private func evaluateHardcoreHello() {
+        let store = HardcoreHelloStore()
+        showsHardcoreHello = HardcoreHelloGate.shouldPresent(
+            isTestFlight: HardcoreHelloGate.isCurrentInstallTestFlight,
+            isUITesting: UITestConfiguration.isUITesting,
+            seenCampaignID: store.seenCampaignID
+        )
     }
 }
