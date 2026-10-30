@@ -20,12 +20,11 @@ struct HardcoreHelloView: View {
 
     private var card: some View {
         VStack(alignment: .leading, spacing: ForgeSpacing.s5) {
-            Text("HELLO")
-                .font(ForgeTypography.label)
-                .tracking(ForgeTracking.eyebrowWide)
-                .foregroundStyle(ForgeColors.accent)
-            names
-            Text("You three are the whole user list. This shows once.")
+            Text("Yo Matt, Phil and Lok!")
+                .font(ForgeTypography.hero)
+                .foregroundStyle(ForgeColors.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Quit twiddling your nuts and get to work.")
                 .font(ForgeTypography.body)
                 .foregroundStyle(ForgeColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -41,18 +40,6 @@ struct HardcoreHelloView: View {
         .frame(maxWidth: 420, alignment: .leading)
         .background(ForgeColors.surface)
         .overlay(Rectangle().stroke(ForgeColors.textPrimary, lineWidth: ForgeBorder.emphasis))
-    }
-
-    private var names: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("Matt.")
-            Text("Phil.")
-            Text("Lok.")
-        }
-        .font(ForgeTypography.hero)
-        .foregroundStyle(ForgeColors.textPrimary)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Matt, Phil, and Lok")
     }
 
     @ViewBuilder
