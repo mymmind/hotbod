@@ -90,7 +90,8 @@
         "chest_supported_row",
         "pendlay_row",
         "cable_row",
-        "inverted_row"
+        "inverted_row",
+        "kettlebell_row"
       ]
     },
     {
@@ -135,7 +136,8 @@
         "front_squat",
         "leg_press",
         "goblet_squat",
-        "box_squat"
+        "box_squat",
+        "kettlebell_thruster"
       ]
     },
     {
@@ -150,7 +152,8 @@
       "exerciseIds": [
         "walking_lunge",
         "bulgarian_split_squat",
-        "step_up"
+        "step_up",
+        "kettlebell_goblet_lunge"
       ]
     },
     {
@@ -170,7 +173,12 @@
         "sumo_deadlift",
         "good_morning",
         "kettlebell_swing",
-        "single_leg_rdl"
+        "single_leg_rdl",
+        "kettlebell_clean",
+        "kettlebell_snatch",
+        "kettlebell_deadlift",
+        "kettlebell_windmill",
+        "kettlebell_sumo_deadlift_high_pull"
       ]
     },
     {
@@ -235,7 +243,8 @@
         "overhead_press",
         "arnold_press",
         "seated_dumbbell_press",
-        "push_press"
+        "push_press",
+        "kettlebell_press"
       ]
     },
     {
@@ -431,6 +440,31 @@
         "battle_ropes",
         "rower",
         "assault_bike"
+      ]
+    },
+    {
+      "id": "kettlebell_getup_complex",
+      "name": "Kettlebell Get-Up Complex",
+      "primaryMuscles": [
+        "abs",
+        "shoulders"
+      ],
+      "movementPattern": "antiRotation",
+      "description": "Full get-up patterns that train stacked shoulder stability and segmented standing.",
+      "exerciseIds": [
+        "turkish_get_up"
+      ]
+    },
+    {
+      "id": "kettlebell_halo_mobility",
+      "name": "Kettlebell Halo Mobility",
+      "primaryMuscles": [
+        "shoulders"
+      ],
+      "movementPattern": "mobility",
+      "description": "Light circling patterns for shoulder mobility and upper-back control.",
+      "exerciseIds": [
+        "kettlebell_halo"
       ]
     }
   ],
@@ -2781,6 +2815,273 @@
         "Shrugging into the ears.",
         "Kipping.",
         "Holding the breath."
+      ]
+    },
+    "kettlebell_clean": {
+      "description": "A ballistic hinge that parks the kettlebell in the rack for presses, thrusters, and get-ups.",
+      "aliases": [
+        "KB Clean",
+        "One-Arm Kettlebell Clean"
+      ],
+      "substitutionGroupId": "hip_hinge_pattern",
+      "instructions": [
+        "Stand with the kettlebell between your feet and hinge to grip the handle.",
+        "Hike the bell back, then drive the hips forward and pull the elbow high.",
+        "Rotate the hand under the bell so it lands softly in the rack position.",
+        "Pause briefly in the rack, then reverse the path to the hike position."
+      ],
+      "formCues": [
+        "Keep the bell close as it rises.",
+        "Catch soft in the rack \u2014 don't bang the forearm.",
+        "Hips drive; arms guide."
+      ],
+      "commonMistakes": [
+        "Curling the bell with the biceps.",
+        "Letting the bell crash onto the forearm.",
+        "Standing too tall before the rack catch."
+      ]
+    },
+    "kettlebell_press": {
+      "description": "A strict overhead press from the rack that builds shoulder strength and trunk stability.",
+      "aliases": [
+        "KB Press",
+        "Kettlebell Military Press",
+        "One-Arm Kettlebell Press"
+      ],
+      "substitutionGroupId": "shoulder_vertical_push",
+      "instructions": [
+        "Start in the rack with the kettlebell resting on the forearm and against the torso.",
+        "Brace, then press the bell overhead until the arm is locked and biceps near the ear.",
+        "Keep ribs down and glutes lightly engaged.",
+        "Lower under control back to the rack."
+      ],
+      "formCues": [
+        "Pack the shoulder at lockout.",
+        "Don't lean away from the bell.",
+        "Wrist stacked over the elbow."
+      ],
+      "commonMistakes": [
+        "Pressing with a soft elbow lockout.",
+        "Flaring the ribs and arching the low back.",
+        "Letting the wrist bend back."
+      ]
+    },
+    "kettlebell_row": {
+      "description": "A hinged single-arm row that builds mid-back strength with a compact kettlebell load.",
+      "aliases": [
+        "KB Row",
+        "One-Arm Kettlebell Row"
+      ],
+      "substitutionGroupId": "back_horizontal_pull",
+      "instructions": [
+        "Hinge at the hips with a soft knee bend and a long spine, kettlebell hanging under the shoulder.",
+        "Row the bell toward the hip by driving the elbow back.",
+        "Squeeze the shoulder blade without shrugging.",
+        "Lower under control until the arm is long."
+      ],
+      "formCues": [
+        "Pull to the hip, not the armpit.",
+        "Keep the torso still.",
+        "Lead with the elbow."
+      ],
+      "commonMistakes": [
+        "Rounding the upper back.",
+        "Using momentum to yank the bell.",
+        "Shrugging the shoulder to the ear."
+      ]
+    },
+    "kettlebell_snatch": {
+      "description": "A powerful hinge-to-overhead pull that develops hip drive and shoulder packing under speed.",
+      "aliases": [
+        "KB Snatch",
+        "One-Arm Kettlebell Snatch"
+      ],
+      "substitutionGroupId": "hip_hinge_pattern",
+      "instructions": [
+        "Hike the kettlebell back between the legs with a strong hinge.",
+        "Drive the hips hard and guide the bell upward in a close path.",
+        "Punch through at the top so the bell flips softly onto a locked arm overhead.",
+        "Pause briefly, then reverse into the next hike."
+      ],
+      "formCues": [
+        "Hips finish before the arm presses.",
+        "Keep the bell close \u2014 zip the jacket.",
+        "Soft catch overhead, not a crash."
+      ],
+      "commonMistakes": [
+        "Casting the bell away from the body.",
+        "Bending the elbow early and muscling the finish.",
+        "Losing the hinge and squatting the pull."
+      ]
+    },
+    "turkish_get_up": {
+      "description": "A slow, segmented stand from the floor that trains shoulder stability and total-body control.",
+      "aliases": [
+        "TGU",
+        "KB Turkish Get-Up",
+        "Get-Up"
+      ],
+      "substitutionGroupId": "kettlebell_getup_complex",
+      "instructions": [
+        "Lie on your back with the kettlebell pressed above one shoulder, eyes on the bell.",
+        "Roll to the elbow, then the hand, sweep the leg through to a half-kneeling position.",
+        "Stand tall while keeping the arm locked and the ribs stacked.",
+        "Reverse each step with control until you return to the floor."
+      ],
+      "formCues": [
+        "Eyes on the bell the whole time.",
+        "Move segment by segment \u2014 no rushing.",
+        "Keep the wrist stacked over the shoulder."
+      ],
+      "commonMistakes": [
+        "Looking away from the bell.",
+        "Collapsing the supporting shoulder.",
+        "Skipping stages and standing up in one rush."
+      ]
+    },
+    "kettlebell_halo": {
+      "description": "A light mobility circle around the head for shoulders and upper back.",
+      "aliases": [
+        "KB Halo",
+        "Halo"
+      ],
+      "substitutionGroupId": "kettlebell_halo_mobility",
+      "instructions": [
+        "Hold the kettlebell by the horns at chest height.",
+        "Circle the bell slowly around the head, keeping the path close.",
+        "Complete smooth circles in one direction, then reverse.",
+        "Keep the ribs down and the neck long."
+      ],
+      "formCues": [
+        "Small orbit \u2014 don't swing wide.",
+        "Move the bell; keep the head still.",
+        "Breathe steadily through each circle."
+      ],
+      "commonMistakes": [
+        "Using a bell that is too heavy.",
+        "Shrugging or craning the neck.",
+        "Letting the low back arch as the bell passes behind."
+      ]
+    },
+    "kettlebell_windmill": {
+      "description": "An overhead hinge that loads the hamstrings and oblique chain while the top arm stays locked.",
+      "aliases": [
+        "KB Windmill",
+        "Windmill"
+      ],
+      "substitutionGroupId": "hip_hinge_pattern",
+      "instructions": [
+        "Press or clean a kettlebell overhead and turn the feet about 45 degrees away from the bell.",
+        "Hinge at the hips and slide the free hand down the lead leg while keeping the top arm vertical.",
+        "Keep eyes on the overhead bell and ribs stacked under the shoulder.",
+        "Drive the hips forward to return to standing."
+      ],
+      "formCues": [
+        "Push the hip under the bell as you hinge.",
+        "Top arm stays locked and vertical.",
+        "Soft knee on the lead leg is fine."
+      ],
+      "commonMistakes": [
+        "Rounding the spine instead of hinging.",
+        "Letting the overhead arm drift forward.",
+        "Looking away from the bell."
+      ]
+    },
+    "kettlebell_thruster": {
+      "description": "A squat that blends into an overhead press for dense conditioning and full-body power.",
+      "aliases": [
+        "KB Thruster",
+        "Kettlebell Squat Press"
+      ],
+      "substitutionGroupId": "quad_squat_pattern",
+      "instructions": [
+        "Hold one or two kettlebells in the rack position.",
+        "Squat until the thighs are at least parallel while keeping the torso braced.",
+        "Drive up hard and use that momentum to press the bells overhead.",
+        "Lower back to the rack and settle into the next squat."
+      ],
+      "formCues": [
+        "One fluid motion from squat into press.",
+        "Heels stay planted in the squat.",
+        "Finish with arms locked overhead."
+      ],
+      "commonMistakes": [
+        "Pausing too long between squat and press.",
+        "Pressing before the hips finish driving.",
+        "Collapsing the chest in the bottom of the squat."
+      ]
+    },
+    "kettlebell_goblet_lunge": {
+      "description": "A front-loaded lunge that trains single-leg strength while the kettlebell keeps the torso upright.",
+      "aliases": [
+        "KB Goblet Lunge",
+        "Goblet Reverse Lunge"
+      ],
+      "substitutionGroupId": "single_leg_quad_glute",
+      "instructions": [
+        "Hold a kettlebell at the chest in the goblet position.",
+        "Step forward into a lunge until the back knee is close to the floor.",
+        "Keep the front knee tracking over the mid-foot and the torso upright.",
+        "Drive through the front foot to stand, then alternate legs."
+      ],
+      "formCues": [
+        "Bell stays glued to the chest.",
+        "Long step, not a stutter step.",
+        "Front heel stays down."
+      ],
+      "commonMistakes": [
+        "Letting the front knee cave inward.",
+        "Leaning the torso over the front thigh.",
+        "Clipping steps that never reach depth."
+      ]
+    },
+    "kettlebell_deadlift": {
+      "description": "A foundational two-hand hinge that teaches hip drive with a kettlebell between the feet.",
+      "aliases": [
+        "KB Deadlift",
+        "Two-Hand Kettlebell Deadlift"
+      ],
+      "substitutionGroupId": "hip_hinge_pattern",
+      "instructions": [
+        "Stand with the kettlebell between the feet and hinge to grip the handle with both hands.",
+        "Brace, pack the shoulders, and keep a long spine.",
+        "Drive the floor away and stand tall without leaning back.",
+        "Hinge again to return the bell with control."
+      ],
+      "formCues": [
+        "Push the hips back first.",
+        "Keep the bell close to the legs.",
+        "Stand by finishing the hips, not the low back."
+      ],
+      "commonMistakes": [
+        "Rounding the lower back.",
+        "Squatting the lift instead of hinging.",
+        "Jerking the bell off the floor."
+      ]
+    },
+    "kettlebell_sumo_deadlift_high_pull": {
+      "description": "A wide-stance hinge that finishes with a high pull for posterior-chain power and upper-back drive.",
+      "aliases": [
+        "KB SDHP",
+        "Sumo DL High Pull",
+        "Kettlebell High Pull"
+      ],
+      "substitutionGroupId": "hip_hinge_pattern",
+      "instructions": [
+        "Take a wide sumo stance with the kettlebell between the feet and toes turned out.",
+        "Hinge and grip the handle with both hands, chest up.",
+        "Drive through the floor, then pull the elbows high so the bell rises toward the chin.",
+        "Lower under control and reset the hinge."
+      ],
+      "formCues": [
+        "Hips and legs finish before the high pull.",
+        "Elbows lead the pull \u2014 stay above the wrists.",
+        "Keep the bell close to the body."
+      ],
+      "commonMistakes": [
+        "Pulling with the arms before the hips extend.",
+        "Casting the bell forward.",
+        "Losing the wide stance and collapsing the knees."
       ]
     }
   }

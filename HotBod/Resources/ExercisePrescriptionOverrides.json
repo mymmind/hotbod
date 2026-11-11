@@ -1,3 +1,18 @@
 {
-  "exercises": {}
+  "exercises": {
+    "turkish_get_up": {
+      "sets": 3,
+      "repRangeMin": 1,
+      "repRangeMax": 3,
+      "restSeconds": 90,
+      "rpeTarget": 7
+    },
+    "kettlebell_halo": {
+      "sets": 2,
+      "repRangeMin": 10,
+      "repRangeMax": 14,
+      "restSeconds": 45,
+      "rpeTarget": 6
+    }
+  }
 }

@@ -1561,90 +1561,197 @@
   {
     "id": "crunch",
     "name": "Crunch",
-    "primaryMuscles": ["abs"],
+    "primaryMuscles": [
+      "abs"
+    ],
     "secondaryMuscles": [],
-    "equipment": ["bodyweight"],
+    "equipment": [
+      "bodyweight"
+    ],
     "movementPattern": "isolation",
     "difficulty": "beginner",
-    "instructions": ["Lie on your back with knees bent.", "Crunch ribs toward pelvis.", "Lower with control."],
-    "formCues": ["Exhale on the crunch.", "Keep low back lightly pressed down."],
-    "commonMistakes": ["Yanking the neck.", "Using hip flexors only."],
-    "substitutions": ["cable_crunch", "reverse_crunch"],
+    "instructions": [
+      "Lie on your back with knees bent.",
+      "Crunch ribs toward pelvis.",
+      "Lower with control."
+    ],
+    "formCues": [
+      "Exhale on the crunch.",
+      "Keep low back lightly pressed down."
+    ],
+    "commonMistakes": [
+      "Yanking the neck.",
+      "Using hip flexors only."
+    ],
+    "substitutions": [
+      "cable_crunch",
+      "reverse_crunch"
+    ],
     "demoVideos": [],
     "mechanics": "isolation"
   },
   {
     "id": "reverse_crunch",
     "name": "Reverse Crunch",
-    "primaryMuscles": ["abs"],
+    "primaryMuscles": [
+      "abs"
+    ],
     "secondaryMuscles": [],
-    "equipment": ["bodyweight"],
+    "equipment": [
+      "bodyweight"
+    ],
     "movementPattern": "isolation",
     "difficulty": "beginner",
-    "instructions": ["Lie on your back with hips flexed.", "Curl pelvis toward ribs.", "Lower without swinging."],
-    "formCues": ["Move the pelvis, not the legs alone.", "Control the eccentric."],
-    "commonMistakes": ["Using momentum.", "Arching the low back."],
-    "substitutions": ["crunch", "lying_leg_raise"],
+    "instructions": [
+      "Lie on your back with hips flexed.",
+      "Curl pelvis toward ribs.",
+      "Lower without swinging."
+    ],
+    "formCues": [
+      "Move the pelvis, not the legs alone.",
+      "Control the eccentric."
+    ],
+    "commonMistakes": [
+      "Using momentum.",
+      "Arching the low back."
+    ],
+    "substitutions": [
+      "crunch",
+      "lying_leg_raise"
+    ],
     "demoVideos": [],
     "mechanics": "isolation"
   },
   {
     "id": "lying_leg_raise",
     "name": "Lying Leg Raise",
-    "primaryMuscles": ["abs"],
+    "primaryMuscles": [
+      "abs"
+    ],
     "secondaryMuscles": [],
-    "equipment": ["bodyweight"],
+    "equipment": [
+      "bodyweight"
+    ],
     "movementPattern": "isolation",
     "difficulty": "intermediate",
-    "instructions": ["Lie flat with legs extended.", "Raise legs by flexing the trunk.", "Lower under control without arching."],
-    "formCues": ["Posterior pelvic tilt before lifting.", "Press low back down."],
-    "commonMistakes": ["Swinging legs.", "Arching lumbar spine."],
-    "substitutions": ["hanging_knee_raise", "reverse_crunch"],
+    "instructions": [
+      "Lie flat with legs extended.",
+      "Raise legs by flexing the trunk.",
+      "Lower under control without arching."
+    ],
+    "formCues": [
+      "Posterior pelvic tilt before lifting.",
+      "Press low back down."
+    ],
+    "commonMistakes": [
+      "Swinging legs.",
+      "Arching lumbar spine."
+    ],
+    "substitutions": [
+      "hanging_knee_raise",
+      "reverse_crunch"
+    ],
     "demoVideos": [],
     "mechanics": "isolation"
   },
   {
     "id": "hanging_knee_raise",
     "name": "Hanging Knee Raise",
-    "primaryMuscles": ["abs"],
+    "primaryMuscles": [
+      "abs"
+    ],
     "secondaryMuscles": [],
-    "equipment": ["pullUpBar"],
+    "equipment": [
+      "pullUpBar"
+    ],
     "movementPattern": "isolation",
     "difficulty": "beginner",
-    "instructions": ["Hang from a pull-up bar.", "Raise knees toward chest without swinging.", "Lower to a still hang."],
-    "formCues": ["Brace before lifting.", "Minimize kip."],
-    "commonMistakes": ["Swinging.", "Shrugging into the ears."],
-    "substitutions": ["hanging_leg_raise", "lying_leg_raise"],
+    "instructions": [
+      "Hang from a pull-up bar.",
+      "Raise knees toward chest without swinging.",
+      "Lower to a still hang."
+    ],
+    "formCues": [
+      "Brace before lifting.",
+      "Minimize kip."
+    ],
+    "commonMistakes": [
+      "Swinging.",
+      "Shrugging into the ears."
+    ],
+    "substitutions": [
+      "hanging_leg_raise",
+      "lying_leg_raise"
+    ],
     "demoVideos": [],
     "mechanics": "isolation"
   },
   {
     "id": "bicycle_crunch",
     "name": "Bicycle Crunch",
-    "primaryMuscles": ["abs", "obliques"],
+    "primaryMuscles": [
+      "abs",
+      "obliques"
+    ],
     "secondaryMuscles": [],
-    "equipment": ["bodyweight"],
+    "equipment": [
+      "bodyweight"
+    ],
     "movementPattern": "rotation",
     "difficulty": "beginner",
-    "instructions": ["Lie on your back with hands lightly behind head.", "Alternate elbow-to-opposite-knee while extending the other leg.", "Keep the motion controlled."],
-    "formCues": ["Rotate through the trunk.", "Do not pull the neck."],
-    "commonMistakes": ["Racing the tempo.", "Elbow yanking."],
-    "substitutions": ["russian_twist", "side_plank"],
+    "instructions": [
+      "Lie on your back with hands lightly behind head.",
+      "Alternate elbow-to-opposite-knee while extending the other leg.",
+      "Keep the motion controlled."
+    ],
+    "formCues": [
+      "Rotate through the trunk.",
+      "Do not pull the neck."
+    ],
+    "commonMistakes": [
+      "Racing the tempo.",
+      "Elbow yanking."
+    ],
+    "substitutions": [
+      "russian_twist",
+      "side_plank"
+    ],
     "demoVideos": [],
     "mechanics": "isolation"
   },
   {
     "id": "back_extension",
     "name": "Back Extension",
-    "primaryMuscles": ["lowerBack"],
-    "secondaryMuscles": ["glutes", "hamstrings"],
-    "equipment": ["bodyweight", "machine"],
+    "primaryMuscles": [
+      "lowerBack"
+    ],
+    "secondaryMuscles": [
+      "glutes",
+      "hamstrings"
+    ],
+    "equipment": [
+      "bodyweight",
+      "machine"
+    ],
     "movementPattern": "hinge",
     "difficulty": "beginner",
-    "instructions": ["Set up on a back-extension bench or floor cobra position as available.", "Extend the torso by squeezing glutes and low back.", "Stop at a neutral long spine — do not hyperextend."],
-    "formCues": ["Lead with glutes.", "Brace abs lightly.", "Neutral neck."],
-    "commonMistakes": ["Overarching lumbar spine.", "Using momentum."],
-    "substitutions": ["bird_dog"],
+    "instructions": [
+      "Set up on a back-extension bench or floor cobra position as available.",
+      "Extend the torso by squeezing glutes and low back.",
+      "Stop at a neutral long spine \u2014 do not hyperextend."
+    ],
+    "formCues": [
+      "Lead with glutes.",
+      "Brace abs lightly.",
+      "Neutral neck."
+    ],
+    "commonMistakes": [
+      "Overarching lumbar spine.",
+      "Using momentum."
+    ],
+    "substitutions": [
+      "bird_dog"
+    ],
     "demoVideos": [],
     "mechanics": "isolation"
   },
@@ -3081,9 +3188,14 @@
   {
     "id": "hip_opener_stretch",
     "name": "Hip Opener Stretch",
-    "primaryMuscles": ["glutes", "quads"],
+    "primaryMuscles": [
+      "glutes",
+      "quads"
+    ],
     "secondaryMuscles": [],
-    "equipment": ["bodyweight"],
+    "equipment": [
+      "bodyweight"
+    ],
     "loadTrackingMode": "none",
     "movementPattern": "mobility",
     "difficulty": "beginner",
@@ -3093,18 +3205,33 @@
       "Hold a steady position and breathe.",
       "Switch sides for the remaining time."
     ],
-    "formCues": ["Tall chest.", "Gentle range.", "Breathe through the hold."],
-    "commonMistakes": ["Bouncing into the stretch.", "Collapsing the lower back."],
-    "substitutions": ["thoracic_rotation_stretch"],
+    "formCues": [
+      "Tall chest.",
+      "Gentle range.",
+      "Breathe through the hold."
+    ],
+    "commonMistakes": [
+      "Bouncing into the stretch.",
+      "Collapsing the lower back."
+    ],
+    "substitutions": [
+      "thoracic_rotation_stretch"
+    ],
     "demoVideos": [],
     "mechanics": "isolation"
   },
   {
     "id": "shoulder_opener_stretch",
     "name": "Shoulder Opener Stretch",
-    "primaryMuscles": ["shoulders"],
-    "secondaryMuscles": ["chest"],
-    "equipment": ["bodyweight"],
+    "primaryMuscles": [
+      "shoulders"
+    ],
+    "secondaryMuscles": [
+      "chest"
+    ],
+    "equipment": [
+      "bodyweight"
+    ],
     "loadTrackingMode": "none",
     "movementPattern": "mobility",
     "difficulty": "beginner",
@@ -3114,18 +3241,32 @@
       "Hold without shrugging.",
       "Ease out of the position."
     ],
-    "formCues": ["Ribs down.", "Shoulders away from the ears."],
-    "commonMistakes": ["Forcing the hands together.", "Arching the lower back."],
-    "substitutions": ["thoracic_rotation_stretch"],
+    "formCues": [
+      "Ribs down.",
+      "Shoulders away from the ears."
+    ],
+    "commonMistakes": [
+      "Forcing the hands together.",
+      "Arching the lower back."
+    ],
+    "substitutions": [
+      "thoracic_rotation_stretch"
+    ],
     "demoVideos": [],
     "mechanics": "isolation"
   },
   {
     "id": "thoracic_rotation_stretch",
     "name": "Thoracic Rotation Stretch",
-    "primaryMuscles": ["back"],
-    "secondaryMuscles": ["shoulders"],
-    "equipment": ["bodyweight"],
+    "primaryMuscles": [
+      "back"
+    ],
+    "secondaryMuscles": [
+      "shoulders"
+    ],
+    "equipment": [
+      "bodyweight"
+    ],
     "loadTrackingMode": "none",
     "movementPattern": "mobility",
     "difficulty": "beginner",
@@ -3135,10 +3276,429 @@
       "Hold the end range, then return through the center.",
       "Repeat on the other side."
     ],
-    "formCues": ["Rotate the ribs, not just the neck.", "Stay tall."],
-    "commonMistakes": ["Twisting from the lower back.", "Rushing the turn."],
-    "substitutions": ["shoulder_opener_stretch"],
+    "formCues": [
+      "Rotate the ribs, not just the neck.",
+      "Stay tall."
+    ],
+    "commonMistakes": [
+      "Twisting from the lower back.",
+      "Rushing the turn."
+    ],
+    "substitutions": [
+      "shoulder_opener_stretch"
+    ],
     "demoVideos": [],
     "mechanics": "isolation"
+  },
+  {
+    "id": "kettlebell_clean",
+    "name": "Kettlebell Clean",
+    "primaryMuscles": [
+      "glutes",
+      "hamstrings"
+    ],
+    "secondaryMuscles": [
+      "traps",
+      "forearms",
+      "abs"
+    ],
+    "equipment": [
+      "kettlebell"
+    ],
+    "movementPattern": "hinge",
+    "difficulty": "intermediate",
+    "mechanics": "compound",
+    "forceType": "pull",
+    "instructions": [
+      "Stand with the kettlebell between your feet and hinge to grip the handle.",
+      "Hike the bell back, then drive the hips forward and pull the elbow high.",
+      "Rotate the hand under the bell so it lands softly in the rack position.",
+      "Pause briefly in the rack, then reverse the path to the hike position."
+    ],
+    "formCues": [
+      "Keep the bell close as it rises.",
+      "Catch soft in the rack \u2014 don't bang the forearm.",
+      "Hips drive; arms guide."
+    ],
+    "commonMistakes": [
+      "Curling the bell with the biceps.",
+      "Letting the bell crash onto the forearm.",
+      "Standing too tall before the rack catch."
+    ],
+    "substitutions": [],
+    "demoVideos": []
+  },
+  {
+    "id": "kettlebell_press",
+    "name": "Kettlebell Press",
+    "primaryMuscles": [
+      "shoulders"
+    ],
+    "secondaryMuscles": [
+      "triceps",
+      "abs"
+    ],
+    "equipment": [
+      "kettlebell"
+    ],
+    "movementPattern": "verticalPush",
+    "difficulty": "intermediate",
+    "mechanics": "compound",
+    "forceType": "push",
+    "instructions": [
+      "Start in the rack with the kettlebell resting on the forearm and against the torso.",
+      "Brace, then press the bell overhead until the arm is locked and biceps near the ear.",
+      "Keep ribs down and glutes lightly engaged.",
+      "Lower under control back to the rack."
+    ],
+    "formCues": [
+      "Pack the shoulder at lockout.",
+      "Don't lean away from the bell.",
+      "Wrist stacked over the elbow."
+    ],
+    "commonMistakes": [
+      "Pressing with a soft elbow lockout.",
+      "Flaring the ribs and arching the low back.",
+      "Letting the wrist bend back."
+    ],
+    "substitutions": [],
+    "demoVideos": []
+  },
+  {
+    "id": "kettlebell_row",
+    "name": "Kettlebell Row",
+    "primaryMuscles": [
+      "back"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "shoulders"
+    ],
+    "equipment": [
+      "kettlebell"
+    ],
+    "movementPattern": "horizontalPull",
+    "difficulty": "beginner",
+    "mechanics": "compound",
+    "forceType": "pull",
+    "instructions": [
+      "Hinge at the hips with a soft knee bend and a long spine, kettlebell hanging under the shoulder.",
+      "Row the bell toward the hip by driving the elbow back.",
+      "Squeeze the shoulder blade without shrugging.",
+      "Lower under control until the arm is long."
+    ],
+    "formCues": [
+      "Pull to the hip, not the armpit.",
+      "Keep the torso still.",
+      "Lead with the elbow."
+    ],
+    "commonMistakes": [
+      "Rounding the upper back.",
+      "Using momentum to yank the bell.",
+      "Shrugging the shoulder to the ear."
+    ],
+    "substitutions": [],
+    "demoVideos": []
+  },
+  {
+    "id": "kettlebell_snatch",
+    "name": "Kettlebell Snatch",
+    "primaryMuscles": [
+      "glutes",
+      "hamstrings"
+    ],
+    "secondaryMuscles": [
+      "shoulders",
+      "traps",
+      "abs"
+    ],
+    "equipment": [
+      "kettlebell"
+    ],
+    "movementPattern": "hinge",
+    "difficulty": "advanced",
+    "mechanics": "compound",
+    "forceType": "pull",
+    "instructions": [
+      "Hike the kettlebell back between the legs with a strong hinge.",
+      "Drive the hips hard and guide the bell upward in a close path.",
+      "Punch through at the top so the bell flips softly onto a locked arm overhead.",
+      "Pause briefly, then reverse into the next hike."
+    ],
+    "formCues": [
+      "Hips finish before the arm presses.",
+      "Keep the bell close \u2014 zip the jacket.",
+      "Soft catch overhead, not a crash."
+    ],
+    "commonMistakes": [
+      "Casting the bell away from the body.",
+      "Bending the elbow early and muscling the finish.",
+      "Losing the hinge and squatting the pull."
+    ],
+    "substitutions": [],
+    "demoVideos": []
+  },
+  {
+    "id": "turkish_get_up",
+    "name": "Turkish Get-Up",
+    "primaryMuscles": [
+      "abs",
+      "shoulders"
+    ],
+    "secondaryMuscles": [
+      "glutes",
+      "hamstrings",
+      "triceps"
+    ],
+    "equipment": [
+      "kettlebell"
+    ],
+    "movementPattern": "antiRotation",
+    "difficulty": "advanced",
+    "mechanics": "compound",
+    "forceType": "push",
+    "instructions": [
+      "Lie on your back with the kettlebell pressed above one shoulder, eyes on the bell.",
+      "Roll to the elbow, then the hand, sweep the leg through to a half-kneeling position.",
+      "Stand tall while keeping the arm locked and the ribs stacked.",
+      "Reverse each step with control until you return to the floor."
+    ],
+    "formCues": [
+      "Eyes on the bell the whole time.",
+      "Move segment by segment \u2014 no rushing.",
+      "Keep the wrist stacked over the shoulder."
+    ],
+    "commonMistakes": [
+      "Looking away from the bell.",
+      "Collapsing the supporting shoulder.",
+      "Skipping stages and standing up in one rush."
+    ],
+    "substitutions": [],
+    "demoVideos": []
+  },
+  {
+    "id": "kettlebell_halo",
+    "name": "Kettlebell Halo",
+    "primaryMuscles": [
+      "shoulders"
+    ],
+    "secondaryMuscles": [
+      "abs",
+      "traps"
+    ],
+    "equipment": [
+      "kettlebell"
+    ],
+    "movementPattern": "mobility",
+    "difficulty": "beginner",
+    "mechanics": "isolation",
+    "forceType": "push",
+    "instructions": [
+      "Hold the kettlebell by the horns at chest height.",
+      "Circle the bell slowly around the head, keeping the path close.",
+      "Complete smooth circles in one direction, then reverse.",
+      "Keep the ribs down and the neck long."
+    ],
+    "formCues": [
+      "Small orbit \u2014 don't swing wide.",
+      "Move the bell; keep the head still.",
+      "Breathe steadily through each circle."
+    ],
+    "commonMistakes": [
+      "Using a bell that is too heavy.",
+      "Shrugging or craning the neck.",
+      "Letting the low back arch as the bell passes behind."
+    ],
+    "substitutions": [],
+    "demoVideos": []
+  },
+  {
+    "id": "kettlebell_windmill",
+    "name": "Kettlebell Windmill",
+    "primaryMuscles": [
+      "hamstrings",
+      "abs"
+    ],
+    "secondaryMuscles": [
+      "shoulders",
+      "glutes",
+      "lowerBack"
+    ],
+    "equipment": [
+      "kettlebell"
+    ],
+    "movementPattern": "hinge",
+    "difficulty": "intermediate",
+    "mechanics": "compound",
+    "forceType": "pull",
+    "instructions": [
+      "Press or clean a kettlebell overhead and turn the feet about 45 degrees away from the bell.",
+      "Hinge at the hips and slide the free hand down the lead leg while keeping the top arm vertical.",
+      "Keep eyes on the overhead bell and ribs stacked under the shoulder.",
+      "Drive the hips forward to return to standing."
+    ],
+    "formCues": [
+      "Push the hip under the bell as you hinge.",
+      "Top arm stays locked and vertical.",
+      "Soft knee on the lead leg is fine."
+    ],
+    "commonMistakes": [
+      "Rounding the spine instead of hinging.",
+      "Letting the overhead arm drift forward.",
+      "Looking away from the bell."
+    ],
+    "substitutions": [],
+    "demoVideos": []
+  },
+  {
+    "id": "kettlebell_thruster",
+    "name": "Kettlebell Thruster",
+    "primaryMuscles": [
+      "quads",
+      "shoulders"
+    ],
+    "secondaryMuscles": [
+      "glutes",
+      "triceps",
+      "abs"
+    ],
+    "equipment": [
+      "kettlebell"
+    ],
+    "movementPattern": "squat",
+    "difficulty": "intermediate",
+    "mechanics": "compound",
+    "forceType": "push",
+    "instructions": [
+      "Hold one or two kettlebells in the rack position.",
+      "Squat until the thighs are at least parallel while keeping the torso braced.",
+      "Drive up hard and use that momentum to press the bells overhead.",
+      "Lower back to the rack and settle into the next squat."
+    ],
+    "formCues": [
+      "One fluid motion from squat into press.",
+      "Heels stay planted in the squat.",
+      "Finish with arms locked overhead."
+    ],
+    "commonMistakes": [
+      "Pausing too long between squat and press.",
+      "Pressing before the hips finish driving.",
+      "Collapsing the chest in the bottom of the squat."
+    ],
+    "substitutions": [],
+    "demoVideos": []
+  },
+  {
+    "id": "kettlebell_goblet_lunge",
+    "name": "Goblet Lunge",
+    "primaryMuscles": [
+      "quads",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "abs",
+      "hamstrings"
+    ],
+    "equipment": [
+      "kettlebell"
+    ],
+    "movementPattern": "lunge",
+    "difficulty": "beginner",
+    "mechanics": "compound",
+    "forceType": "push",
+    "instructions": [
+      "Hold a kettlebell at the chest in the goblet position.",
+      "Step forward into a lunge until the back knee is close to the floor.",
+      "Keep the front knee tracking over the mid-foot and the torso upright.",
+      "Drive through the front foot to stand, then alternate legs."
+    ],
+    "formCues": [
+      "Bell stays glued to the chest.",
+      "Long step, not a stutter step.",
+      "Front heel stays down."
+    ],
+    "commonMistakes": [
+      "Letting the front knee cave inward.",
+      "Leaning the torso over the front thigh.",
+      "Clipping steps that never reach depth."
+    ],
+    "substitutions": [],
+    "demoVideos": []
+  },
+  {
+    "id": "kettlebell_deadlift",
+    "name": "Kettlebell Deadlift",
+    "primaryMuscles": [
+      "hamstrings",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "lowerBack",
+      "traps",
+      "abs"
+    ],
+    "equipment": [
+      "kettlebell"
+    ],
+    "movementPattern": "hinge",
+    "difficulty": "beginner",
+    "mechanics": "compound",
+    "forceType": "pull",
+    "instructions": [
+      "Stand with the kettlebell between the feet and hinge to grip the handle with both hands.",
+      "Brace, pack the shoulders, and keep a long spine.",
+      "Drive the floor away and stand tall without leaning back.",
+      "Hinge again to return the bell with control."
+    ],
+    "formCues": [
+      "Push the hips back first.",
+      "Keep the bell close to the legs.",
+      "Stand by finishing the hips, not the low back."
+    ],
+    "commonMistakes": [
+      "Rounding the lower back.",
+      "Squatting the lift instead of hinging.",
+      "Jerking the bell off the floor."
+    ],
+    "substitutions": [],
+    "demoVideos": []
+  },
+  {
+    "id": "kettlebell_sumo_deadlift_high_pull",
+    "name": "Sumo Deadlift High Pull",
+    "primaryMuscles": [
+      "glutes",
+      "hamstrings"
+    ],
+    "secondaryMuscles": [
+      "traps",
+      "shoulders",
+      "abs"
+    ],
+    "equipment": [
+      "kettlebell"
+    ],
+    "movementPattern": "hinge",
+    "difficulty": "intermediate",
+    "mechanics": "compound",
+    "forceType": "pull",
+    "instructions": [
+      "Take a wide sumo stance with the kettlebell between the feet and toes turned out.",
+      "Hinge and grip the handle with both hands, chest up.",
+      "Drive through the floor, then pull the elbows high so the bell rises toward the chin.",
+      "Lower under control and reset the hinge."
+    ],
+    "formCues": [
+      "Hips and legs finish before the high pull.",
+      "Elbows lead the pull \u2014 stay above the wrists.",
+      "Keep the bell close to the body."
+    ],
+    "commonMistakes": [
+      "Pulling with the arms before the hips extend.",
+      "Casting the bell forward.",
+      "Losing the wide stance and collapsing the knees."
+    ],
+    "substitutions": [],
+    "demoVideos": []
   }
 ]

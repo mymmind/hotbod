@@ -18,7 +18,7 @@ goblet_squat https://youtu.be/VIDEO_ID
 | --- | --- | --- |
 | `dead_hang` | Dead Hang | pullUpBar |
 
-## Covered (96)
+## Covered (107)
 
-96 of 97 seed exercises already have a YouTube entry.
+107 of 108 seed exercises already have a YouTube entry.
 Do not re-find those unless replacing a bad link.
