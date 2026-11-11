@@ -42,6 +42,8 @@ struct UserProfile: Identifiable, Codable, Hashable {
     var trustHistoricEffortFeedback: Bool
     var maxAvailableWeightKg: [Equipment: Double]
     var exportWorkoutsToHealthKit: Bool
+    /// Discrete prefs for the Today kettlebell circuit CTA.
+    var kettlebellCircuitScheme: KettlebellCircuitScheme
     /// Nil until Apple Health or a manual edit chooses the source of `weightKg`.
     var bodyMassSource: BodyMassSource?
     /// When the user last typed a weight. Health samples at or before this time stay ignored.
@@ -65,6 +67,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
         case promptForEffortFeedback, trustHistoricEffortFeedback
         case maxAvailableWeightKg
         case exportWorkoutsToHealthKit
+        case kettlebellCircuitScheme
         case bodyMassSource, bodyMassLockedAt
         case createdAt, updatedAt
     }
@@ -102,6 +105,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
         trustHistoricEffortFeedback: Bool = true,
         maxAvailableWeightKg: [Equipment: Double] = [:],
         exportWorkoutsToHealthKit: Bool = false,
+        kettlebellCircuitScheme: KettlebellCircuitScheme = .default,
         bodyMassSource: BodyMassSource? = nil,
         bodyMassLockedAt: Date? = nil,
         createdAt: Date,
@@ -139,6 +143,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
         self.trustHistoricEffortFeedback = trustHistoricEffortFeedback
         self.maxAvailableWeightKg = maxAvailableWeightKg
         self.exportWorkoutsToHealthKit = exportWorkoutsToHealthKit
+        self.kettlebellCircuitScheme = kettlebellCircuitScheme
         self.bodyMassSource = bodyMassSource
         self.bodyMassLockedAt = bodyMassLockedAt
         self.createdAt = createdAt
@@ -199,6 +204,9 @@ struct UserProfile: Identifiable, Codable, Hashable {
         ) ?? true
         maxAvailableWeightKg = try container.decodeIfPresent([Equipment: Double].self, forKey: .maxAvailableWeightKg) ?? [:]
         exportWorkoutsToHealthKit = try container.decodeIfPresent(Bool.self, forKey: .exportWorkoutsToHealthKit) ?? false
+        kettlebellCircuitScheme = (
+            try container.decodeIfPresent(KettlebellCircuitScheme.self, forKey: .kettlebellCircuitScheme) ?? .default
+        ).clamped
         bodyMassSource = try container.decodeIfPresent(BodyMassSource.self, forKey: .bodyMassSource)
         bodyMassLockedAt = try container.decodeIfPresent(Date.self, forKey: .bodyMassLockedAt)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
@@ -240,6 +248,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
         try container.encode(trustHistoricEffortFeedback, forKey: .trustHistoricEffortFeedback)
         try container.encode(maxAvailableWeightKg, forKey: .maxAvailableWeightKg)
         try container.encode(exportWorkoutsToHealthKit, forKey: .exportWorkoutsToHealthKit)
+        try container.encode(kettlebellCircuitScheme.clamped, forKey: .kettlebellCircuitScheme)
         try container.encodeIfPresent(bodyMassSource, forKey: .bodyMassSource)
         try container.encodeIfPresent(bodyMassLockedAt, forKey: .bodyMassLockedAt)
         try container.encode(createdAt, forKey: .createdAt)
@@ -312,6 +321,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
             trustHistoricEffortFeedback: trustHistoricEffortFeedback,
             maxAvailableWeightKg: maxAvailableWeightKg,
             exportWorkoutsToHealthKit: exportWorkoutsToHealthKit,
+            kettlebellCircuitScheme: kettlebellCircuitScheme,
             bodyMassSource: bodyMassSource,
             bodyMassLockedAt: bodyMassLockedAt,
             createdAt: createdAt,
@@ -792,6 +802,8 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
     var status: WorkoutStatus
     var splitDayFocus: SplitDayFocus?
     var sessionMode: SessionMode = .standard
+    /// Snapshot of circuit prefs at start. Nil for gym sessions; drives live rest.
+    var kettlebellCircuitScheme: KettlebellCircuitScheme?
     /// Set after fatigue, stats, and program advance have been applied for this session.
     var progressionAppliedAt: Date?
     var activeRestEndAt: Date?
@@ -809,6 +821,7 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
     enum CodingKeys: String, CodingKey {
         case id, userId, title, startedAt, completedAt, estimatedDurationMinutes
         case exercises, notes, perceivedDifficulty, status, splitDayFocus, sessionMode
+        case kettlebellCircuitScheme
         case progressionAppliedAt
         case activeRestEndAt, activeRestTotalSeconds, activeRestAdvancesExercise
         case currentExerciseId
@@ -829,6 +842,7 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
         status: WorkoutStatus = .planned,
         splitDayFocus: SplitDayFocus? = nil,
         sessionMode: SessionMode = .standard,
+        kettlebellCircuitScheme: KettlebellCircuitScheme? = nil,
         progressionAppliedAt: Date? = nil,
         activeRestEndAt: Date? = nil,
         activeRestTotalSeconds: Int? = nil,
@@ -852,6 +866,7 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
         self.status = status
         self.splitDayFocus = splitDayFocus
         self.sessionMode = sessionMode
+        self.kettlebellCircuitScheme = kettlebellCircuitScheme
         self.progressionAppliedAt = progressionAppliedAt
         self.activeRestEndAt = activeRestEndAt
         self.activeRestTotalSeconds = activeRestTotalSeconds
@@ -878,6 +893,11 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
         status = try container.decode(WorkoutStatus.self, forKey: .status)
         splitDayFocus = try container.decodeIfPresent(SplitDayFocus.self, forKey: .splitDayFocus)
         sessionMode = try container.decodeIfPresent(SessionMode.self, forKey: .sessionMode) ?? .standard
+        if let rawScheme = try container.decodeIfPresent(KettlebellCircuitScheme.self, forKey: .kettlebellCircuitScheme) {
+            kettlebellCircuitScheme = rawScheme.clamped
+        } else {
+            kettlebellCircuitScheme = nil
+        }
         progressionAppliedAt = try container.decodeIfPresent(Date.self, forKey: .progressionAppliedAt)
         activeRestEndAt = try container.decodeIfPresent(Date.self, forKey: .activeRestEndAt)
         activeRestTotalSeconds = try container.decodeIfPresent(Int.self, forKey: .activeRestTotalSeconds)
