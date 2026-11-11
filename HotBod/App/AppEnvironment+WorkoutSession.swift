@@ -49,8 +49,13 @@ extension AppEnvironment {
         isStartingWorkoutSession = true
         defer { isStartingWorkoutSession = false }
 
-        let splitFocus = workout.splitDayFocus
-            ?? TrainingSchedule.currentSplitFocus(state: programState, split: profile.preferredSplit)
+        let splitFocus: SplitDayFocus?
+        if workout.sessionMode == .kettlebellCircuit {
+            splitFocus = nil
+        } else {
+            splitFocus = workout.splitDayFocus
+                ?? TrainingSchedule.currentSplitFocus(state: programState, split: profile.preferredSplit)
+        }
 
         let exercises = workout.exercises.map { planned in
             WorkoutExercise(
@@ -262,6 +267,22 @@ extension AppEnvironment {
 
         var state = programState
         state.activeSessionId = nil
+
+        if session.sessionMode == .kettlebellCircuit {
+            // Home circuits log history/fatigue but do not burn the gym training day.
+            programState = state
+            try? await programStateRepository.saveState(state)
+            await cloudSyncIfSignedIn {
+                try await cloudSyncService.pushSession(session)
+                try await cloudSyncService.pushRecoveryStates(recoveryStates)
+                if let stats = try? await exerciseStatsRepository.fetchStats() {
+                    try await cloudSyncService.pushExerciseStats(stats)
+                }
+                try await cloudSyncService.pushProgramState(programState)
+            }
+            return
+        }
+
         state.todayCompletedSessionId = session.id
         state.todayCompletedOn = TrainingSchedule.startOfDay(Date())
 

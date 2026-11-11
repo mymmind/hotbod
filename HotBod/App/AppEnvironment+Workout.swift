@@ -533,6 +533,35 @@ extension AppEnvironment {
         }
     }
 
+    /// Builds a kettlebell circuit without replacing a standard gym `todayWorkout`.
+    func generateKettlebellCircuit(profile: UserProfile) async -> GeneratedWorkout? {
+        let exercises = (try? await exerciseRepository.fetchAll()) ?? []
+        let stats = (try? await exerciseStatsRepository.fetchStats()) ?? []
+        let recent = stats
+            .sorted { ($0.updatedAt ?? .distantPast) > ($1.updatedAt ?? .distantPast) }
+            .prefix(12)
+            .map(\.exerciseId)
+        return KettlebellCircuitPlanner.plan(
+            exercises: exercises,
+            availableEquipment: profile.availableEquipment,
+            injuries: profile.limitations,
+            experience: profile.experienceLevel,
+            recentExerciseIds: Array(recent)
+        )
+    }
+
+    /// Starts (or resumes) a kettlebell circuit session. Leaves the gym today plan intact.
+    @discardableResult
+    func startKettlebellCircuit(profile: UserProfile) async -> WorkoutSession? {
+        if let existing = await fetchActiveWorkoutSession() {
+            return existing
+        }
+        guard let workout = await generateKettlebellCircuit(profile: profile) else {
+            return nil
+        }
+        return await resumeOrStartWorkout(from: workout)
+    }
+
     func cancelActiveWorkoutIfNeeded() async {
         guard let session = await fetchActiveWorkoutSession() else { return }
         await cancelWorkoutSession(session)

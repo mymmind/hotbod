@@ -66,6 +66,7 @@
 		2A44EF1AC1C9C041408A37F3 /* AIWorkoutServiceSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD26C76BFD5E2B63E752CE4E /* AIWorkoutServiceSelection.swift */; };
 		2B264303392003EEBC97E5D6 /* PhysiqueDirectionCopyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1320D789E416DF3DF2C8C2D0 /* PhysiqueDirectionCopyTests.swift */; };
 		2D516B0464E3A3563AA0A219 /* TodayDisclosureSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FA55B6B38AC3ED700C7CA9A /* TodayDisclosureSection.swift */; };
+		30CE82535EC6586C53604E30 /* KettlebellCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F82005C14130ADF5715E5C18 /* KettlebellCatalogTests.swift */; };
 		30FA363B285E434F39562CBF /* RecoveryDecayPropertyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C05C3AA92467FCA523F5996 /* RecoveryDecayPropertyTests.swift */; };
 		348D4026517532BA5F89F1BB /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 929D6D56E837ED49269B20C5 /* Supabase */; };
 		357B84CD7CA0F7F285B2C7B2 /* bench_press_demo.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 26C5642564D8D549A54BC378 /* bench_press_demo.mp4 */; };
@@ -204,6 +205,7 @@
 		95B74BD748C2E06AB68AB544 /* AppIcon86x86@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = A214B3FE59FCED14C4774EDB /* AppIcon86x86@2x.png */; };
 		964948E371F00B12F547554D /* TodayExerciseStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DE7D2584271DD71B020FEE4 /* TodayExerciseStrip.swift */; };
 		97374AAD504BB2119A594B2A /* CalendarHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F9B311B4E51AFB38F70B6E3 /* CalendarHelpers.swift */; };
+		975ACB7D295AC890ABC9FEBA /* KettlebellCircuitPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87B433603F9C3AB86092D77 /* KettlebellCircuitPlanner.swift */; };
 		977EA027229138BB95B93746 /* LocalPhysiqueAssessmentRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3123E4C6C38C218B596B1D6 /* LocalPhysiqueAssessmentRepository.swift */; };
 		97CED345CFDF283A5B8CE533 /* HotBodWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C914C0480F6E145E28505D16 /* HotBodWatchApp.swift */; };
 		983A0BF47F2F956109BD7177 /* TrainingDataExportIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D98306D8113F2B0865D9BD5 /* TrainingDataExportIntegrationTests.swift */; };
@@ -214,6 +216,7 @@
 		9B1C127DB386378827AA87E1 /* PhysiqueSplitSuggestionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A457A5F5AEDE818FB94DE74F /* PhysiqueSplitSuggestionTests.swift */; };
 		9BA169066DDD9F9EBD058B2C /* TrainingStreakCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C29B3EFF704BB8A2CB931B3 /* TrainingStreakCalculator.swift */; };
 		9C734A99C2ECEF5FF4FE581F /* PhysiqueAnglesUpsellUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B208FCB9300EA0A1A43D079D /* PhysiqueAnglesUpsellUITests.swift */; };
+		9DFD1F07F8C4C36D19EB7073 /* KettlebellCircuitSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58139143EF59E682FE1EE3B5 /* KettlebellCircuitSessionTests.swift */; };
 		A0335041FA3090CEA2ACA624 /* PhysiqueSplitSuggestionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F38C9FD6DD6DDAE277081F43 /* PhysiqueSplitSuggestionUITests.swift */; };
 		A09CA8A1FFE150B5A38E8753 /* ExerciseDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3964EE52538DC02B5ED8348 /* ExerciseDomainTests.swift */; };
 		A2498415A229419675F798A1 /* InMemoryRepositories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07B76DEFAB84870490AE3810 /* InMemoryRepositories.swift */; };
@@ -332,6 +335,7 @@
 		EAEFFC13BA6F111DDE6C7C37 /* SupabaseCloudSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B3D96FCCC673D93F7ED4BD /* SupabaseCloudSyncService.swift */; };
 		EB950175AF3A10109945E6F4 /* PhysiqueFocusCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E51E7FCB0DC15FAF53476EAE /* PhysiqueFocusCopy.swift */; };
 		ED119AAAC17876BAC81409A5 /* WorkoutSessionView+Metrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5449F4FA939BD86993B44D9D /* WorkoutSessionView+Metrics.swift */; };
+		EFB044928454E4F2C394534E /* KettlebellCircuitPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0415C88F77B52C1166388519 /* KettlebellCircuitPlannerTests.swift */; };
 		EFCE68D7C0C1C62BD183DFD2 /* CoachOfflineWorkoutProposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6DF563EE21C6C7534E57280 /* CoachOfflineWorkoutProposer.swift */; };
 		EFFD79017527006DED70CEDB /* SettingsView+Training.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA66D99CC20282BFD8855463 /* SettingsView+Training.swift */; };
 		F042CB7CC0A48FE4C5CC3C10 /* PhysiqueDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD01D4C38E0E9636ECD81278 /* PhysiqueDomainTests.swift */; };
@@ -399,6 +403,7 @@
 /* Begin PBXFileReference section */
 		003177D369F352DDA5C5CC85 /* TodayMetricTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayMetricTile.swift; sourceTree = "<group>"; };
 		0297C29F7822EFFADBD72FC3 /* ForgeFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgeFeedback.swift; sourceTree = "<group>"; };
+		0415C88F77B52C1166388519 /* KettlebellCircuitPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KettlebellCircuitPlannerTests.swift; sourceTree = "<group>"; };
 		04CE2EF7888A57AD1AAAAB58 /* WorkoutSessionHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSessionHeaderView.swift; sourceTree = "<group>"; };
 		05C49A11BB5A459EF448E314 /* WorkoutSessionView+Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkoutSessionView+Feedback.swift"; sourceTree = "<group>"; };
 		06689A85A864AD034D408DF3 /* SupabaseConfig.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = SupabaseConfig.plist; sourceTree = "<group>"; };
@@ -511,6 +516,7 @@
 		56338BC0B09B653D9BF218CA /* ForgeSubscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgeSubscriptionService.swift; sourceTree = "<group>"; };
 		569E64F2A09045B746E664CA /* ProteinDomainTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProteinDomainTests.swift; sourceTree = "<group>"; };
 		570A353760744D5E246AF7EE /* PhysiqueAssessment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueAssessment.swift; sourceTree = "<group>"; };
+		58139143EF59E682FE1EE3B5 /* KettlebellCircuitSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KettlebellCircuitSessionTests.swift; sourceTree = "<group>"; };
 		5A0B81BF2A1210A831762B4E /* RestTimerFeedbackPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerFeedbackPlanner.swift; sourceTree = "<group>"; };
 		5A7F9E98C123C86E1DF23815 /* LocalPhysiqueReassessReminderScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalPhysiqueReassessReminderScheduler.swift; sourceTree = "<group>"; };
 		5A8092CFD6F21710C2A49FC7 /* SettingsErrorMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsErrorMessages.swift; sourceTree = "<group>"; };
@@ -627,6 +633,7 @@
 		A74731983023A100F7D45CBA /* PhysiqueNotificationRouting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueNotificationRouting.swift; sourceTree = "<group>"; };
 		A781D9E564697E7C093A6EB4 /* CoachAIResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachAIResult.swift; sourceTree = "<group>"; };
 		A7D2FB17189E5DA7EA8C0437 /* AppEnvironment+BodyProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppEnvironment+BodyProgress.swift"; sourceTree = "<group>"; };
+		A87B433603F9C3AB86092D77 /* KettlebellCircuitPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KettlebellCircuitPlanner.swift; sourceTree = "<group>"; };
 		A8955B803364399F32CF211D /* RemotePhysiqueIllustrationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemotePhysiqueIllustrationService.swift; sourceTree = "<group>"; };
 		A95EAFF408BB9C2820C4B7E8 /* SupabaseAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseAuthService.swift; sourceTree = "<group>"; };
 		A9D8E61AAB7516CADC81C0CD /* GeminiAIWorkoutService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiAIWorkoutService.swift; sourceTree = "<group>"; };
@@ -737,6 +744,7 @@
 		F6751FFF4C16DEB7BCAA3714 /* PostSetActionPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostSetActionPlannerTests.swift; sourceTree = "<group>"; };
 		F7354E2278AC6E7C0132E520 /* ExerciseCompleteInterstitial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseCompleteInterstitial.swift; sourceTree = "<group>"; };
 		F7CEE326A90CE11B17DA5DA2 /* AIWorkoutServiceSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIWorkoutServiceSelectionTests.swift; sourceTree = "<group>"; };
+		F82005C14130ADF5715E5C18 /* KettlebellCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KettlebellCatalogTests.swift; sourceTree = "<group>"; };
 		F8B3D96FCCC673D93F7ED4BD /* SupabaseCloudSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseCloudSyncService.swift; sourceTree = "<group>"; };
 		F9C3D7B226622D232B63C481 /* SettingsView+Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsView+Profile.swift"; sourceTree = "<group>"; };
 		FC20C4EA8938CD98F3920D3C /* PhysiqueSplitSuggestionPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueSplitSuggestionPreferences.swift; sourceTree = "<group>"; };
@@ -1143,6 +1151,7 @@
 				E77A576365AE0B19E4C80E65 /* ExerciseGroupPlanner.swift */,
 				3A62DD43877B01569476B0E2 /* GenerationConstants.swift */,
 				9E8B386A608DF82CE4A8C631 /* HoldCountdown.swift */,
+				A87B433603F9C3AB86092D77 /* KettlebellCircuitPlanner.swift */,
 				BE74B04B97A4A4E866564C15 /* LoggedWeightSanity.swift */,
 				0E0F5C77050501D0C2C545A5 /* MaxEffortPlanner.swift */,
 				A685FD73AD99DD342DE86B77 /* MuscleVolumePlanner.swift */,
@@ -1284,6 +1293,9 @@
 				5E7B2DDDE7DD8F4343F9429C /* HardcoreHelloGateTests.swift */,
 				DB49B76F182221AA46E83A92 /* HardeningDomainTests.swift */,
 				CBB46D615BEE8C389ED02D0B /* HoldCountdownTests.swift */,
+				F82005C14130ADF5715E5C18 /* KettlebellCatalogTests.swift */,
+				0415C88F77B52C1166388519 /* KettlebellCircuitPlannerTests.swift */,
+				58139143EF59E682FE1EE3B5 /* KettlebellCircuitSessionTests.swift */,
 				8E35A972A34C727F630E0EF2 /* LaunchRouteResolverTests.swift */,
 				A257082329840730B4414CEB /* LoggedWeightSanityTests.swift */,
 				6BD0CE9FDCE8FC0E3DEC031C /* MuscleVolumePlannerTests.swift */,
@@ -1756,6 +1768,9 @@
 				A2498415A229419675F798A1 /* InMemoryRepositories.swift in Sources */,
 				AC9526E98C09F3E55985FCB9 /* InjurySafetyPropertyTests.swift in Sources */,
 				DB5C06E613D10767AB720112 /* IntegrationFlowTests.swift in Sources */,
+				30CE82535EC6586C53604E30 /* KettlebellCatalogTests.swift in Sources */,
+				EFB044928454E4F2C394534E /* KettlebellCircuitPlannerTests.swift in Sources */,
+				9DFD1F07F8C4C36D19EB7073 /* KettlebellCircuitSessionTests.swift in Sources */,
 				4CF1A72EAABCEFFEA485434C /* LaunchRouteResolverTests.swift in Sources */,
 				030100A42324E07EEAA89F72 /* LoggedWeightSanityTests.swift in Sources */,
 				696855B29BA29A224D4A25A6 /* MockWorkoutGenerationService.swift in Sources */,
@@ -1911,6 +1926,7 @@
 				498B24950F4A7FFB999E27AC /* HotBodApp.swift in Sources */,
 				F40587C969179BF7439650E9 /* HotBodAppDelegate.swift in Sources */,
 				B94368E6F7DF40C6C6D614D2 /* HybridPhysiqueAssessmentService.swift in Sources */,
+				975ACB7D295AC890ABC9FEBA /* KettlebellCircuitPlanner.swift in Sources */,
 				74D9E4649F4754D4FE71902A /* L10n.swift in Sources */,
 				783563910C782F2E7BFD70F6 /* LaunchRouteResolver.swift in Sources */,
 				4E5BE885C31376F3B9770A5C /* LocalExerciseRepository.swift in Sources */,
