@@ -463,7 +463,8 @@ extension WorkoutSessionView {
                     exerciseIndex: idx,
                     completedSetIndex: setIndex,
                     partnerIndex: partner,
-                    sessionMode: session.sessionMode
+                    sessionMode: session.sessionMode,
+                    kettlebellScheme: session.kettlebellCircuitScheme
                 ),
                 advanceAfter: true
             )

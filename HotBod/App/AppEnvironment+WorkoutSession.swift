@@ -66,6 +66,10 @@ extension AppEnvironment {
                 groupId: planned.groupId
             )
         }
+        let circuitScheme: KettlebellCircuitScheme? =
+            workout.sessionMode == .kettlebellCircuit
+            ? profile.kettlebellCircuitScheme.clamped
+            : nil
         let session = WorkoutSession(
             userId: profile.id,
             title: workout.title,
@@ -74,7 +78,8 @@ extension AppEnvironment {
             exercises: exercises,
             status: .inProgress,
             splitDayFocus: splitFocus,
-            sessionMode: workout.sessionMode
+            sessionMode: workout.sessionMode,
+            kettlebellCircuitScheme: circuitScheme
         )
         do {
             try await workoutRepository.saveSession(session)

@@ -147,9 +147,64 @@ final class CompleteSetRouterTests: XCTestCase {
             exerciseIndex: 0,
             completedSetIndex: 0,
             partnerIndex: partner,
-            sessionMode: .kettlebellCircuit
+            sessionMode: .kettlebellCircuit,
+            kettlebellScheme: .default
         )
         XCTAssertEqual(seconds, GenerationConstants.KettlebellCircuit.transitionRestSeconds)
+    }
+
+    func testRegression_kettlebellCircuitHonorsCustomSchemeRests() throws {
+        let group = UUID()
+        let set = PlannedSet(targetRepsMin: 4, targetRepsMax: 4)
+        let done = CompletedSet(setIndex: 0, weightKg: 16, reps: 4)
+        let exercises = [
+            WorkoutExercise(
+                exerciseId: "a",
+                orderIndex: 0,
+                plannedSets: Array(repeating: set, count: 6),
+                completedSets: [done],
+                groupId: group
+            ),
+            WorkoutExercise(
+                exerciseId: "b",
+                orderIndex: 1,
+                plannedSets: Array(repeating: set, count: 6),
+                completedSets: [done],
+                groupId: group
+            )
+        ]
+        let scheme = KettlebellCircuitScheme(
+            exerciseCount: 3,
+            reps: 4,
+            rounds: 6,
+            transitionRestSeconds: 20,
+            roundRestSeconds: 90
+        )
+        let sameRoundPartner = try XCTUnwrap(
+            SetAdvancePlanner.partnerIndex(exercises: exercises, exerciseIndex: 0, completedSetIndex: 0)
+        )
+        // Partner still missing set 0? Wait — both have done set 0, so this advances to next round.
+        let nextRoundSeconds = SetAdvancePlanner.restSeconds(
+            exercises: exercises,
+            exerciseIndex: 1,
+            completedSetIndex: 0,
+            partnerIndex: 0,
+            sessionMode: .kettlebellCircuit,
+            kettlebellScheme: scheme
+        )
+        XCTAssertEqual(nextRoundSeconds, 90)
+
+        var midRound = exercises
+        midRound[1].completedSets = []
+        let transitionSeconds = SetAdvancePlanner.restSeconds(
+            exercises: midRound,
+            exerciseIndex: 0,
+            completedSetIndex: 0,
+            partnerIndex: sameRoundPartner,
+            sessionMode: .kettlebellCircuit,
+            kettlebellScheme: scheme
+        )
+        XCTAssertEqual(transitionSeconds, 20)
     }
 
     func testRegression_kettlebellCircuitNextRoundUsesRoundRest() throws {
