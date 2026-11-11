@@ -91,4 +91,35 @@ enum SetAdvancePlanner {
         }
         return nil
     }
+
+    /// Rest before advancing to `partnerIndex` after logging `completedSetIndex`.
+    /// Same-round partners use the short transition. Starting the next round uses
+    /// kettlebell circuit round rest when `sessionMode` is `.kettlebellCircuit`.
+    static func restSeconds(
+        exercises: [WorkoutExercise],
+        exerciseIndex: Int,
+        completedSetIndex: Int,
+        partnerIndex: Int,
+        sessionMode: SessionMode
+    ) -> Int {
+        guard exercises.indices.contains(exerciseIndex),
+              exercises.indices.contains(partnerIndex) else {
+            return GenerationConstants.Grouping.transitionRestSeconds
+        }
+
+        func missing(_ member: Int, setIndex: Int) -> Bool {
+            exercises[member].plannedSets.indices.contains(setIndex)
+                && !exercises[member].completedSets.contains { $0.setIndex == setIndex }
+        }
+
+        if missing(partnerIndex, setIndex: completedSetIndex) {
+            return GenerationConstants.Grouping.transitionRestSeconds
+        }
+
+        if sessionMode == .kettlebellCircuit, missing(partnerIndex, setIndex: completedSetIndex + 1) {
+            return GenerationConstants.KettlebellCircuit.roundRestSeconds
+        }
+
+        return GenerationConstants.Grouping.transitionRestSeconds
+    }
 }

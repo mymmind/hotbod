@@ -118,4 +118,92 @@ final class CompleteSetRouterTests: XCTestCase {
         ]
         XCTAssertNil(SetAdvancePlanner.partnerIndex(exercises: exercises, exerciseIndex: 0, completedSetIndex: 0))
     }
+
+    func testRegression_kettlebellCircuitSameRoundUsesTransitionRest() throws {
+        let group = UUID()
+        let set = PlannedSet(targetRepsMin: 5, targetRepsMax: 5)
+        let done = CompletedSet(setIndex: 0, weightKg: 16, reps: 5)
+        let exercises = [
+            WorkoutExercise(
+                exerciseId: "a",
+                orderIndex: 0,
+                plannedSets: Array(repeating: set, count: 5),
+                completedSets: [done],
+                groupId: group
+            ),
+            WorkoutExercise(
+                exerciseId: "b",
+                orderIndex: 1,
+                plannedSets: Array(repeating: set, count: 5),
+                completedSets: [],
+                groupId: group
+            )
+        ]
+        let partner = try XCTUnwrap(
+            SetAdvancePlanner.partnerIndex(exercises: exercises, exerciseIndex: 0, completedSetIndex: 0)
+        )
+        let seconds = SetAdvancePlanner.restSeconds(
+            exercises: exercises,
+            exerciseIndex: 0,
+            completedSetIndex: 0,
+            partnerIndex: partner,
+            sessionMode: .kettlebellCircuit
+        )
+        XCTAssertEqual(seconds, GenerationConstants.KettlebellCircuit.transitionRestSeconds)
+    }
+
+    func testRegression_kettlebellCircuitNextRoundUsesRoundRest() throws {
+        let group = UUID()
+        let set = PlannedSet(targetRepsMin: 5, targetRepsMax: 5)
+        let done = CompletedSet(setIndex: 0, weightKg: 16, reps: 5)
+        let exercises = [
+            WorkoutExercise(
+                exerciseId: "a",
+                orderIndex: 0,
+                plannedSets: Array(repeating: set, count: 5),
+                completedSets: [done],
+                groupId: group
+            ),
+            WorkoutExercise(
+                exerciseId: "b",
+                orderIndex: 1,
+                plannedSets: Array(repeating: set, count: 5),
+                completedSets: [done],
+                groupId: group
+            )
+        ]
+        let partner = try XCTUnwrap(
+            SetAdvancePlanner.partnerIndex(exercises: exercises, exerciseIndex: 1, completedSetIndex: 0)
+        )
+        XCTAssertEqual(partner, 0)
+        let seconds = SetAdvancePlanner.restSeconds(
+            exercises: exercises,
+            exerciseIndex: 1,
+            completedSetIndex: 0,
+            partnerIndex: partner,
+            sessionMode: .kettlebellCircuit
+        )
+        XCTAssertEqual(seconds, GenerationConstants.KettlebellCircuit.roundRestSeconds)
+    }
+
+    func testRegression_standardSupersetNextRoundStaysTransitionRest() throws {
+        let group = UUID()
+        let set = PlannedSet(targetRepsMin: 8, targetRepsMax: 10)
+        let done = CompletedSet(setIndex: 0, weightKg: 40, reps: 8)
+        let exercises = [
+            WorkoutExercise(exerciseId: "a", orderIndex: 0, plannedSets: [set, set], completedSets: [done], groupId: group),
+            WorkoutExercise(exerciseId: "b", orderIndex: 1, plannedSets: [set, set], completedSets: [done], groupId: group)
+        ]
+        let partner = try XCTUnwrap(
+            SetAdvancePlanner.partnerIndex(exercises: exercises, exerciseIndex: 1, completedSetIndex: 0)
+        )
+        let seconds = SetAdvancePlanner.restSeconds(
+            exercises: exercises,
+            exerciseIndex: 1,
+            completedSetIndex: 0,
+            partnerIndex: partner,
+            sessionMode: .standard
+        )
+        XCTAssertEqual(seconds, GenerationConstants.Grouping.transitionRestSeconds)
+    }
 }

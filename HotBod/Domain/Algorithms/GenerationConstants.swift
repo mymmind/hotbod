@@ -189,6 +189,17 @@ enum GenerationConstants {
         static let defaultGroupRestSeconds = 90
     }
 
+    enum KettlebellCircuit {
+        static let exerciseCount = 5
+        static let reps = 5
+        static let rounds = 5
+        static let transitionRestSeconds = 15
+        static let roundRestSeconds = 60
+        static let rpeTarget = 7.0
+        /// Rough seconds of work per logged set for duration estimates.
+        static let workSecondsPerSet = 20
+    }
+
     enum Session {
         static let minStandardExercises = 4
         static let maxExercisesCap = 8

@@ -458,7 +458,13 @@ extension WorkoutSessionView {
         ) {
             pendingAdvanceExerciseIndex = partner
             postAction = .rest(
-                seconds: GenerationConstants.Grouping.transitionRestSeconds,
+                seconds: SetAdvancePlanner.restSeconds(
+                    exercises: session.exercises,
+                    exerciseIndex: idx,
+                    completedSetIndex: setIndex,
+                    partnerIndex: partner,
+                    sessionMode: session.sessionMode
+                ),
                 advanceAfter: true
             )
         } else {

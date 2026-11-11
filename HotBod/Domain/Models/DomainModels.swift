@@ -645,7 +645,7 @@ enum IntensityTarget: String, Codable {
 }
 
 enum SessionMode: String, Codable, Hashable {
-    case standard, recovery
+    case standard, recovery, kettlebellCircuit
 }
 
 struct GeneratedWorkout: Identifiable, Codable, Hashable {
