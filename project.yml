@@ -58,8 +58,8 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         CODE_SIGN_ENTITLEMENTS: HotBod/HotBod.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        CURRENT_PROJECT_VERSION: 1
-        MARKETING_VERSION: 10.0.1
+        CURRENT_PROJECT_VERSION: 2
+        MARKETING_VERSION: 10.0.2
     dependencies:
       - package: Supabase
         product: Supabase
@@ -121,8 +121,8 @@ targets:
         CODE_SIGN_ENTITLEMENTS: HotBodWatch/HotBodWatch.entitlements
         SKIP_INSTALL: YES
         SWIFT_VERSION: "6.0"
-        MARKETING_VERSION: 10.0.1
-        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 10.0.2
+        CURRENT_PROJECT_VERSION: 2
   HotBodTests:
     type: bundle.unit-test
     platform: iOS
