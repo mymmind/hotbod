@@ -98,7 +98,7 @@ extension SettingsView {
                 )
             )
             SettingsComponents.divider
-            SettingsComponents.valueRow(label: "Version", value: "10.0.1")
+            SettingsComponents.valueRow(label: "Version", value: AppConfig.marketingVersion)
             SettingsComponents.divider
             SettingsComponents.valueRow(label: "Name", value: AppConfig.appName)
             SettingsComponents.divider
