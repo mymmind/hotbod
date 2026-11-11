@@ -546,7 +546,8 @@ extension AppEnvironment {
             availableEquipment: profile.availableEquipment,
             injuries: profile.limitations,
             experience: profile.experienceLevel,
-            recentExerciseIds: Array(recent)
+            recentExerciseIds: Array(recent),
+            scheme: profile.kettlebellCircuitScheme.clamped
         )
     }
 

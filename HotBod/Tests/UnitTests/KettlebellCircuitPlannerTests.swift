@@ -81,4 +81,38 @@ final class KettlebellCircuitPlannerTests: XCTestCase {
         )
         XCTAssertNil(workout)
     }
+
+    func testHonorsCustomSchemeCountsAndRests() throws {
+        let catalog = ExerciseCatalogLoader.loadExercises()
+        let scheme = KettlebellCircuitScheme(
+            exerciseCount: 3,
+            reps: 4,
+            rounds: 6,
+            transitionRestSeconds: 20,
+            roundRestSeconds: 90
+        )
+        let workout = try XCTUnwrap(
+            KettlebellCircuitPlanner.plan(
+                exercises: catalog,
+                availableEquipment: [.kettlebell, .bodyweight],
+                injuries: [],
+                experience: .intermediate,
+                recentExerciseIds: [],
+                scheme: scheme
+            )
+        )
+
+        XCTAssertEqual(workout.exercises.count, 3)
+        for planned in workout.exercises {
+            XCTAssertEqual(planned.targetSets.count, 6)
+            XCTAssertEqual(planned.restSeconds, 90)
+            for set in planned.targetSets {
+                XCTAssertEqual(set.targetRepsMin, 4)
+                XCTAssertEqual(set.targetRepsMax, 4)
+            }
+        }
+        XCTAssertTrue(workout.rationale.contains("3"))
+        XCTAssertTrue(workout.selectionRationale.contains { $0.contains("6 rounds") && $0.contains("4 reps") })
+        XCTAssertTrue(workout.selectionRationale.contains { $0.contains("20s") && $0.contains("90s") })
+    }
 }

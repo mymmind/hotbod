@@ -38,8 +38,10 @@ enum KettlebellCircuitPlanner {
         injuries: [BodyLimitation],
         experience: ExperienceLevel,
         recentExerciseIds: [String],
+        scheme: KettlebellCircuitScheme = .default,
         now: Date = Date()
     ) -> GeneratedWorkout? {
+        let scheme = scheme.clamped
         let pool = eligiblePool(
             exercises: exercises,
             availableEquipment: availableEquipment,
@@ -52,7 +54,7 @@ enum KettlebellCircuitPlanner {
         var used = Set<String>()
 
         for slot in Slot.allCases {
-            guard selected.count < GenerationConstants.KettlebellCircuit.exerciseCount else { break }
+            guard selected.count < scheme.exerciseCount else { break }
             if let pick = bestCandidate(
                 from: pool.filter { slot.matches($0) && !used.contains($0.id) },
                 experience: experience,
@@ -67,36 +69,42 @@ enum KettlebellCircuitPlanner {
             from: pool.filter { !used.contains($0.id) },
             experience: experience,
             recent: recent,
-            limit: GenerationConstants.KettlebellCircuit.exerciseCount - selected.count
+            limit: scheme.exerciseCount - selected.count
         )
         selected.append(contentsOf: fillers)
 
         guard selected.count >= 2 else { return nil }
-        if selected.count > GenerationConstants.KettlebellCircuit.exerciseCount {
-            selected = Array(selected.prefix(GenerationConstants.KettlebellCircuit.exerciseCount))
+        if selected.count > scheme.exerciseCount {
+            selected = Array(selected.prefix(scheme.exerciseCount))
         }
 
         let groupId = UUID()
         let planned = selected.enumerated().map { index, exercise in
-            makePlannedExercise(exercise, orderIndex: index, groupId: groupId)
+            makePlannedExercise(exercise, orderIndex: index, groupId: groupId, scheme: scheme)
         }
 
-        let duration = estimatedDurationMinutes(exerciseCount: planned.count)
+        let duration = estimatedDurationMinutes(exerciseCount: planned.count, scheme: scheme)
         let names = selected.map(\.name)
+        let moveWord = planned.count == 1 ? "move" : "moves"
+        let rationale =
+            "\(planned.count) kettlebell \(moveWord), \(scheme.reps) reps, \(scheme.rounds) rounds. "
+            + "Short transitions in-round; \(scheme.roundRestSeconds) seconds between rounds."
+        let focus = Array(Set(selected.flatMap(\.primaryMuscles)))
+            .sorted { $0.rawValue < $1.rawValue }
         return GeneratedWorkout(
             id: UUID(),
             title: "Kettlebell Circuit",
             estimatedDurationMinutes: duration,
-            focus: Array(Set(selected.flatMap(\.primaryMuscles))).sorted { $0.rawValue < $1.rawValue },
+            focus: focus,
             exercises: planned,
-            rationale: "Five kettlebell moves, five reps, five rounds. Short transitions in-round; 60 seconds between rounds.",
+            rationale: rationale,
             selectionRationale: [
                 "Circuit · \(names.joined(separator: " + "))",
-                "5 rounds × 5 reps",
-                "15s between moves · 60s between rounds"
+                "\(scheme.rounds) rounds × \(scheme.reps) reps",
+                "\(scheme.transitionRestSeconds)s between moves · \(scheme.roundRestSeconds)s between rounds"
             ],
             safetyNotes: [
-                "Use a weight you can keep crisp for all five rounds.",
+                "Use a weight you can keep crisp for all \(scheme.rounds) rounds.",
                 "Stop a rep early if the hinge or overhead position breaks down."
             ],
             generatedBy: .rulesEngine,
@@ -161,14 +169,13 @@ enum KettlebellCircuitPlanner {
     private static func makePlannedExercise(
         _ exercise: Exercise,
         orderIndex: Int,
-        groupId: UUID
+        groupId: UUID,
+        scheme: KettlebellCircuitScheme
     ) -> PlannedExercise {
-        let reps = GenerationConstants.KettlebellCircuit.reps
-        let rounds = GenerationConstants.KettlebellCircuit.rounds
-        let sets = (0..<rounds).map { _ in
+        let sets = (0..<scheme.rounds).map { _ in
             PlannedSet(
-                targetRepsMin: reps,
-                targetRepsMax: reps,
+                targetRepsMin: scheme.reps,
+                targetRepsMax: scheme.reps,
                 rpeTarget: GenerationConstants.KettlebellCircuit.rpeTarget
             )
         }
@@ -176,18 +183,21 @@ enum KettlebellCircuitPlanner {
             exerciseId: exercise.id,
             orderIndex: orderIndex,
             targetSets: sets,
-            restSeconds: GenerationConstants.KettlebellCircuit.roundRestSeconds,
+            restSeconds: scheme.roundRestSeconds,
             intensity: .moderate,
             reason: "Kettlebell circuit slot",
             groupId: groupId
         )
     }
 
-    static func estimatedDurationMinutes(exerciseCount: Int) -> Int {
-        let c = GenerationConstants.KettlebellCircuit.self
-        let work = exerciseCount * c.rounds * c.workSecondsPerSet
-        let transitions = max(exerciseCount - 1, 0) * c.transitionRestSeconds * c.rounds
-        let roundsRest = max(c.rounds - 1, 0) * c.roundRestSeconds
+    static func estimatedDurationMinutes(
+        exerciseCount: Int,
+        scheme: KettlebellCircuitScheme = .default
+    ) -> Int {
+        let scheme = scheme.clamped
+        let work = exerciseCount * scheme.rounds * GenerationConstants.KettlebellCircuit.workSecondsPerSet
+        let transitions = max(exerciseCount - 1, 0) * scheme.transitionRestSeconds * scheme.rounds
+        let roundsRest = max(scheme.rounds - 1, 0) * scheme.roundRestSeconds
         let totalSeconds = work + transitions + roundsRest
         return max(Int(ceil(Double(totalSeconds) / 60.0)), 1)
     }
