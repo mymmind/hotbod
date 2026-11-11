@@ -6,7 +6,7 @@ All media must have a documented license source.
 
 ## MVP
 
-- Exercise demo videos: matched exercises play in YouTube's official embed player (`HotBod/Resources/YouTubeExerciseVideos.json`). The file stays on YouTube; HotBod does not download or rehost it. Unmatched exercises keep the bundled placeholder MP4 when one exists (`HotBod/Resources/DemoVideos/`).
+- Exercise demo videos: matched exercises play in YouTube's official embed player (`HotBod/Resources/YouTubeExerciseVideos.json`). The file stays on YouTube; HotBod does not download or rehost it. Unmatched exercises keep the bundled placeholder MP4 when one exists (`HotBod/Resources/DemoVideos/`). Contributors can fill gaps from `docs/exercise-video-handoff.md` by sending `exercise_id` + public embeddable YouTube URLs; merge with `Scripts/merge_youtube_exercise_videos.py`.
 - Candidate providers: MuscleWiki API (verify terms before production), wger (open-source), original produced content.
 - Body progress photos: stored locally only in MVP.
 
