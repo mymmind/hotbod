@@ -17,6 +17,8 @@ struct TodayView: View {
     @State private var contentAppeared = false
     @State private var showRecoveryDetails = false
     @State private var showGenerationFailureAlert = false
+    @State private var showKettlebellCircuitFailure = false
+    @State private var isStartingKettlebellCircuit = false
     @State private var showSessionOptions = false
     @State private var pendingSessionDuration = 45
     @State private var pendingSessionSplit: TrainingSplit = .upperLower
@@ -145,6 +147,14 @@ struct TodayView: View {
             } message: { failure in
                 Text(failure.userMessage)
             }
+            .alert(
+                "Can't Build Circuit",
+                isPresented: $showKettlebellCircuitFailure
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Need more kettlebell exercises in the catalog for your equipment.")
+            }
             .sheet(isPresented: $showSummary) {
                 if let session = completedSession {
                     NavigationStack {
@@ -196,6 +206,7 @@ struct TodayView: View {
                         Task { await environment.regenerateTodayWorkout(profile: profile) }
                     }
                 }
+                kettlebellCircuitCTA
                 physiqueFocusSection
             }
             .padding()
@@ -234,8 +245,11 @@ struct TodayView: View {
                 secondary()
                     .forgeStaggeredAppear(index: 4, isVisible: contentAppeared)
 
-                progressFooter
+                kettlebellCircuitCTA
                     .forgeStaggeredAppear(index: 5, isVisible: contentAppeared)
+
+                progressFooter
+                    .forgeStaggeredAppear(index: 6, isVisible: contentAppeared)
             }
             .padding(.horizontal, ForgeSpacing.s5)
             .padding(.top, ForgeSpacing.s5)
@@ -831,6 +845,48 @@ struct TodayView: View {
             guard let session = await WorkoutStartFlow.begin(
                 from: workout,
                 isResume: activeSession != nil,
+                environment: environment,
+                router: router
+            ) else { return }
+            activeSession = session
+        }
+    }
+
+    /// Home 5×5×5 session; leaves the gym `todayWorkout` plan untouched.
+    @ViewBuilder
+    private var kettlebellCircuitCTA: some View {
+        if let profile = environment.userProfile,
+           profile.availableEquipment.contains(.kettlebell),
+           activeSession == nil {
+            ForgeButton(
+                title: "Kettlebell Circuit",
+                style: .secondary,
+                isLoading: isStartingKettlebellCircuit,
+                isEnabled: !isRegenerating && !environment.isWorkoutGenerationInFlight,
+                accessibilityIdentifier: "today.kettlebellCircuit"
+            ) {
+                startKettlebellCircuitSession()
+            }
+        }
+    }
+
+    private func startKettlebellCircuitSession() {
+        guard let profile = environment.userProfile else { return }
+        guard activeSession == nil else { return }
+        guard !isRegenerating, !environment.isWorkoutGenerationInFlight else { return }
+        guard !isStartingKettlebellCircuit else { return }
+
+        Task { @MainActor in
+            isStartingKettlebellCircuit = true
+            defer { isStartingKettlebellCircuit = false }
+
+            guard let workout = await environment.generateKettlebellCircuit(profile: profile) else {
+                showKettlebellCircuitFailure = true
+                return
+            }
+            guard let session = await WorkoutStartFlow.begin(
+                from: workout,
+                isResume: false,
                 environment: environment,
                 router: router
             ) else { return }

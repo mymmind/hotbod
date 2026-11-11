@@ -9,6 +9,7 @@ struct TodayPage {
   var previewButton: XCUIElement { app.buttons["today.preview"] }
   var switchFocusButton: XCUIElement { app.buttons["today.switchFocus"] }
   var generateButton: XCUIElement { app.buttons["today.generate"] }
+  var kettlebellCircuitButton: XCUIElement { app.buttons["today.kettlebellCircuit"] }
   var settingsButton: XCUIElement { app.buttons["today.settings"] }
   var physiqueFocusButton: XCUIElement { app.buttons["Physique focus"] }
 

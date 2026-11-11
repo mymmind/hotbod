@@ -1,5 +1,9 @@
 import XCTest
 
+// UI test exemption (plan 2026-11-11 kettlebell circuit Task 4): `today.kettlebellCircuit`
+// visibility depends on profile equipment seeded with `.kettlebell`. Default UITesting
+// profiles may omit bells; unit/session tests cover generate/start. Add a dedicated
+// UI launch flag when equipment fixtures land.
 final class TodayWorkoutUITests: BaseUITestCase {
   private var today: TodayPage { TodayPage(app: app) }
 
