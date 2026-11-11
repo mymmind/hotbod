@@ -132,6 +132,7 @@ struct ProfileRow: Codable {
             trustHistoricEffortFeedback: trustHistoricEffortFeedback ?? fallback?.trustHistoricEffortFeedback ?? true,
             maxAvailableWeightKg: maxAvailableWeightKg ?? fallback?.maxAvailableWeightKg ?? [:],
             exportWorkoutsToHealthKit: exportWorkoutsToHealthKit ?? fallback?.exportWorkoutsToHealthKit ?? false,
+            kettlebellCircuitScheme: fallback?.kettlebellCircuitScheme ?? .default,
             bodyMassSource: fallback?.bodyMassSource,
             bodyMassLockedAt: fallback?.bodyMassLockedAt,
             createdAt: fallback?.createdAt ?? Date(),
