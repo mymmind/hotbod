@@ -23,6 +23,7 @@ enum ExerciseMetadataResolver {
     private static let timeExerciseIds: Set<String> = [
         "plank",
         "side_plank",
+        "dead_hang",
         "rower",
         "battle_ropes",
         "mountain_climber"

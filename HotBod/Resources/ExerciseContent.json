@@ -61,6 +61,20 @@
       ]
     },
     {
+      "id": "grip_hang",
+      "name": "Grip Hang",
+      "primaryMuscles": [
+        "back",
+        "forearms",
+        "abs"
+      ],
+      "movementPattern": "isolation",
+      "description": "Passive and active hangs for grip, shoulder packing, and core tension.",
+      "exerciseIds": [
+        "dead_hang"
+      ]
+    },
+    {
       "id": "back_horizontal_pull",
       "name": "Back Horizontal Row",
       "primaryMuscles": [
@@ -1635,7 +1649,7 @@
       ],
       "formCues": [
         "Rotate through the trunk.",
-        "Keep elbows wide — do not yank the head.",
+        "Keep elbows wide \u2014 do not yank the head.",
         "Extend the leg only as far as you can control."
       ],
       "commonMistakes": [
@@ -1661,7 +1675,7 @@
       "formCues": [
         "Lead with the glutes.",
         "Keep the abs lightly braced.",
-        "Stop at neutral — do not overarch."
+        "Stop at neutral \u2014 do not overarch."
       ],
       "commonMistakes": [
         "Hyperextending the lumbar spine.",
@@ -2743,6 +2757,30 @@
         "Letting elbows flare or drift.",
         "Turning the movement into a press.",
         "Rushing the stretched position."
+      ]
+    },
+    "dead_hang": {
+      "description": "A static hang from a pull-up bar that builds grip, shoulder packing, and core tension.",
+      "aliases": [
+        "Bar Hang",
+        "Deadhang"
+      ],
+      "substitutionGroupId": "grip_hang",
+      "instructions": [
+        "Hang from a pull-up bar with a shoulder-width overhand grip.",
+        "Keep arms long, ribs down, and shoulders active rather than shrugged into the ears.",
+        "Hold still while breathing steadily.",
+        "Stop when grip fails or form breaks."
+      ],
+      "formCues": [
+        "Shoulders active, not shrugged.",
+        "Ribs down.",
+        "Steady breath."
+      ],
+      "commonMistakes": [
+        "Shrugging into the ears.",
+        "Kipping.",
+        "Holding the breath."
       ]
     }
   }

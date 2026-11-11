@@ -153,10 +153,16 @@ extension WorkoutSessionView {
         let planned = session.exercises[idx].plannedSets[setIndex]
 
         if showWeightInput {
-            let committed = WorkoutSessionMetricDrafts.committedLoad(
-                draft: weightTexts[planned.id],
-                plannedKg: planned.targetWeightKg
-            )
+            let usesTimedAddedLoad = TimedSetLogging.showsAlwaysVisibleWeightField(for: meta)
+            let committed = usesTimedAddedLoad
+                ? TimedSetLogging.committedAddedLoad(
+                    draft: weightTexts[planned.id],
+                    plannedKg: planned.targetWeightKg
+                )
+                : WorkoutSessionMetricDrafts.committedLoad(
+                    draft: weightTexts[planned.id],
+                    plannedKg: planned.targetWeightKg
+                )
             if committed.blocked {
                 presentInvalidLoadDraft(plannedKg: planned.targetWeightKg)
                 return
@@ -203,6 +209,12 @@ extension WorkoutSessionView {
     ) {
         switch target {
         case .completeActive(let setIndex):
+            if let hold = activeHoldCountdown,
+               hold.workoutExerciseId == exercise.id,
+               hold.setIndex == setIndex {
+                stopHoldTimer()
+                return
+            }
             completeCurrentSet(
                 exercise: exercise,
                 meta: meta,
@@ -233,12 +245,19 @@ extension WorkoutSessionView {
         else { return }
 
         let planned = session.exercises[idx].plannedSets[setIndex]
+        let meta = exerciseMap[exercise.exerciseId]
+        let usesTimedAddedLoad = meta.map { TimedSetLogging.showsAlwaysVisibleWeightField(for: $0) } ?? false
         let weight: Double?
         if showWeightInput {
-            let committed = WorkoutSessionMetricDrafts.committedLoad(
-                draft: weightTexts[planned.id],
-                plannedKg: planned.targetWeightKg
-            )
+            let committed = usesTimedAddedLoad
+                ? TimedSetLogging.committedAddedLoad(
+                    draft: weightTexts[planned.id],
+                    plannedKg: planned.targetWeightKg
+                )
+                : WorkoutSessionMetricDrafts.committedLoad(
+                    draft: weightTexts[planned.id],
+                    plannedKg: planned.targetWeightKg
+                )
             if committed.blocked {
                 presentInvalidLoadDraft(plannedKg: planned.targetWeightKg)
                 return
@@ -252,7 +271,7 @@ extension WorkoutSessionView {
         let distanceMeters = Double(distanceTexts[planned.id] ?? "")
 
         if showWeightInput, let weight {
-            let semantics = exerciseMap[exercise.exerciseId]?.resolvedWeightDisplaySemantics ?? .total
+            let semantics = meta?.resolvedWeightDisplaySemantics ?? .total
             let outcome = LoggedWeightSanity.evaluateLoggedLoad(
                 proposed: weight,
                 semantics: semantics,
@@ -276,6 +295,11 @@ extension WorkoutSessionView {
             }
         }
 
+        if showWeightInput, usesTimedAddedLoad, weight == nil {
+            if let completedIdx = session.exercises[idx].completedSets.firstIndex(where: { $0.setIndex == setIndex }) {
+                session.exercises[idx].completedSets[completedIdx].weightKg = nil
+            }
+        }
         updateCompletedSet(
             exerciseId: exercise.id,
             setIndex: setIndex,
@@ -334,12 +358,18 @@ extension WorkoutSessionView {
         guard let setIndex, session.exercises[idx].plannedSets.indices.contains(setIndex) else { return }
         guard !session.exercises[idx].completedSets.contains(where: { $0.setIndex == setIndex }) else { return }
         let planned = session.exercises[idx].plannedSets[setIndex]
+        let usesTimedAddedLoad = TimedSetLogging.showsAlwaysVisibleWeightField(for: meta)
         let weight: Double?
         if showWeightInput {
-            let committed = WorkoutSessionMetricDrafts.committedLoad(
-                draft: weightTexts[planned.id],
-                plannedKg: planned.targetWeightKg
-            )
+            let committed = usesTimedAddedLoad
+                ? TimedSetLogging.committedAddedLoad(
+                    draft: weightTexts[planned.id],
+                    plannedKg: planned.targetWeightKg
+                )
+                : WorkoutSessionMetricDrafts.committedLoad(
+                    draft: weightTexts[planned.id],
+                    plannedKg: planned.targetWeightKg
+                )
             if committed.blocked {
                 presentInvalidLoadDraft(plannedKg: planned.targetWeightKg)
                 return
@@ -451,6 +481,9 @@ extension WorkoutSessionView {
     }
 
     func showWeightInput(for exercise: WorkoutExercise, meta: Exercise) -> Bool {
+        if TimedSetLogging.showsAlwaysVisibleWeightField(for: meta) {
+            return true
+        }
         let loadMode = meta.resolvedLoadTrackingMode
         let hasExternalLoadInHistory = exercise.completedSets.contains { $0.weightKg != nil }
             || exercise.plannedSets.contains(where: { $0.targetWeightKg != nil })

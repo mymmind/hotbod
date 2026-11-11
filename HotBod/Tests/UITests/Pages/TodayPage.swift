@@ -79,6 +79,18 @@ struct WorkoutSessionPage {
     app.buttons["session.rest.skip"]
   }
 
+  var holdBar: XCUIElement {
+    app.descendants(matching: .any)["hold.bar"]
+  }
+
+  var holdStartButton: XCUIElement {
+    app.buttons["hold.start"]
+  }
+
+  var holdStopButton: XCUIElement {
+    app.buttons["hold.stop"]
+  }
+
   var rirSkipButton: XCUIElement {
     let byId = app.buttons["workout.rir.skip"]
     if byId.exists { return byId }

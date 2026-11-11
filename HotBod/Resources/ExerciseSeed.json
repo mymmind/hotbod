@@ -1488,6 +1488,46 @@
     "mechanics": "isolation"
   },
   {
+    "id": "dead_hang",
+    "name": "Dead Hang",
+    "primaryMuscles": [
+      "back",
+      "forearms",
+      "abs"
+    ],
+    "secondaryMuscles": [
+      "traps"
+    ],
+    "equipment": [
+      "pullUpBar"
+    ],
+    "loadTrackingMode": "optional",
+    "prescriptionType": "time",
+    "defaultDurationSeconds": 30,
+    "forceType": "staticHold",
+    "movementPattern": "isolation",
+    "difficulty": "beginner",
+    "instructions": [
+      "Hang from a pull-up bar with a shoulder-width overhand grip.",
+      "Keep arms long, ribs down, and shoulders active.",
+      "Hold still while breathing steadily.",
+      "Stop when grip fails or shoulders shrug into the ears."
+    ],
+    "formCues": [
+      "Shoulders active, not shrugged.",
+      "Ribs down.",
+      "Steady breath."
+    ],
+    "commonMistakes": [
+      "Shrugging into the ears.",
+      "Kipping.",
+      "Holding the breath."
+    ],
+    "substitutions": [],
+    "demoVideos": [],
+    "mechanics": "isolation"
+  },
+  {
     "id": "cable_crunch",
     "name": "Cable Crunch",
     "primaryMuscles": [

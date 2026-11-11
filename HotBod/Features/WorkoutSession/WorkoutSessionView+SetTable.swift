@@ -9,19 +9,11 @@ extension WorkoutSessionView {
         ) ?? exercise.plannedSets.count
         let warmupsAtStart = exercise.plannedSets.prefix(while: \.isWarmup).count
         let loadMode = meta.resolvedLoadTrackingMode
+        let alwaysVisibleWeight = TimedSetLogging.showsAlwaysVisibleWeightField(for: meta)
         let hasExternalLoadInHistory = exercise.completedSets.contains { $0.weightKg != nil }
             || exercise.plannedSets.contains(where: { $0.targetWeightKg != nil })
         let optionalEnabled = optionalLoadEnabledByExerciseId[exercise.id] ?? hasExternalLoadInHistory
-
-        let showWeightInput: Bool
-        switch loadMode {
-        case .none:
-            showWeightInput = false
-        case .optional:
-            showWeightInput = optionalEnabled
-        case .supported, .required:
-            showWeightInput = true
-        }
+        let showWeightInput = showWeightInput(for: exercise, meta: meta)
 
         return VStack(alignment: .leading, spacing: ForgeSpacing.s3) {
             Text("SETS")
@@ -41,7 +33,7 @@ extension WorkoutSessionView {
                     .foregroundStyle(ForgeColors.accentGreen)
             }
 
-            if loadMode == .optional {
+            if loadMode == .optional, !alwaysVisibleWeight {
                 let enabledBinding = Binding<Bool>(
                     get: { optionalLoadEnabledByExerciseId[exercise.id] ?? hasExternalLoadInHistory },
                     set: { newValue in
@@ -191,7 +183,8 @@ extension WorkoutSessionView {
                             setIndex: index,
                             completed: completed,
                             showWeightInput: showWeightInput,
-                            semantics: meta.resolvedWeightDisplaySemantics
+                            semantics: meta.resolvedWeightDisplaySemantics,
+                            usesTimedAddedLoad: TimedSetLogging.showsAlwaysVisibleWeightField(for: meta)
                         ),
                         width: ForgeSetTableLayout.weightFieldWidth,
                         isActive: isActive,
@@ -212,20 +205,23 @@ extension WorkoutSessionView {
                 }
 
                 if usesDurationMetric(for: meta) {
+                    let holdLocksDuration = activeHoldCountdown?.plannedSetId == planned.id
                     ForgeSetMetricField(
                         label: "Seconds",
                         text: bindingDuration(
                             exerciseId: exerciseId,
                             planned: planned,
                             setIndex: index,
-                            completed: completed
+                            completed: completed,
+                            lockedToTarget: holdLocksDuration
                         ),
                         width: ForgeSetTableLayout.metricFieldWidth,
-                        isActive: isActive,
+                        isActive: isActive && !holdLocksDuration,
                         keyboardType: .numberPad,
                         selectAllOnFocus: true,
                         onFocusChange: { noteSetFieldFocus(setIndex: index, focused: $0) }
                     )
+                    .disabled(holdLocksDuration)
                 }
 
                 if usesDistanceMetric(for: meta) {
@@ -325,11 +321,20 @@ extension WorkoutSessionView {
         setIndex: Int,
         completed: CompletedSet?,
         showWeightInput: Bool,
-        semantics: WeightDisplaySemantics
+        semantics: WeightDisplaySemantics,
+        usesTimedAddedLoad: Bool = false
     ) -> Binding<String> {
         Binding(
             get: {
-                WorkoutSessionMetricDrafts.displayedWeightText(
+                if usesTimedAddedLoad {
+                    return TimedSetLogging.displayedAddedLoadText(
+                        draft: weightTexts[planned.id],
+                        completedKg: completed?.weightKg,
+                        plannedKg: planned.targetWeightKg,
+                        isCompleted: completed != nil
+                    )
+                }
+                return WorkoutSessionMetricDrafts.displayedWeightText(
                     draft: weightTexts[planned.id],
                     completedKg: completed?.weightKg,
                     plannedKg: planned.targetWeightKg
@@ -340,7 +345,19 @@ extension WorkoutSessionView {
                 updated[planned.id] = newValue
                 weightTexts = updated
                 guard completed != nil, showWeightInput else { return }
-                guard let weight = Double(newValue) else { return }
+                let committed = usesTimedAddedLoad
+                    ? TimedSetLogging.committedAddedLoad(draft: newValue, plannedKg: planned.targetWeightKg)
+                    : WorkoutSessionMetricDrafts.committedLoad(draft: newValue, plannedKg: planned.targetWeightKg)
+                if committed.blocked { return }
+                guard let weight = committed.weight else {
+                    if let exerciseIdx = session.exercises.firstIndex(where: { $0.id == exerciseId }),
+                       let completedIdx = session.exercises[exerciseIdx].completedSets
+                        .firstIndex(where: { $0.setIndex == setIndex }) {
+                        session.exercises[exerciseIdx].completedSets[completedIdx].weightKg = nil
+                        environment.scheduleWorkoutSessionSave(session)
+                    }
+                    return
+                }
 
                 let exerciseIdString = session.exercises.first(where: { $0.id == exerciseId })?.exerciseId
                 let last = exerciseIdString.flatMap { exerciseStatsById[$0]?.lastWeightKg }
@@ -372,17 +389,22 @@ extension WorkoutSessionView {
         exerciseId: UUID,
         planned: PlannedSet,
         setIndex: Int,
-        completed: CompletedSet?
+        completed: CompletedSet?,
+        lockedToTarget: Bool = false
     ) -> Binding<String> {
         Binding(
             get: {
-                WorkoutSessionMetricDrafts.displayedDurationText(
+                if lockedToTarget, let hold = activeHoldCountdown, hold.plannedSetId == planned.id {
+                    return String(hold.targetSeconds)
+                }
+                return WorkoutSessionMetricDrafts.displayedDurationText(
                     draft: durationTexts[planned.id],
                     completedSeconds: completed?.durationSeconds,
                     plannedSeconds: planned.targetDurationSeconds
                 )
             },
             set: { newValue in
+                if lockedToTarget { return }
                 var updated = durationTexts
                 updated[planned.id] = newValue
                 durationTexts = updated

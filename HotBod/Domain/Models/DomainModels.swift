@@ -425,6 +425,7 @@ enum ExerciseLoadTrackingOverrides {
         "push_up": .supported,
         "russian_twist": .supported,
         "side_plank": .optional,
+        "dead_hang": .optional,
         "sled_push": .required,
 
         "chin_up": .supported,
@@ -798,6 +799,12 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
     var activeRestAdvancesExercise: Bool?
     /// Workout exercise the athlete was on. Resume uses this instead of the first unfinished exercise.
     var currentExerciseId: UUID?
+    /// Wall-clock hold countdown for a timed set. Mutual exclusion with active rest.
+    var activeHoldEndsAt: Date?
+    var activeHoldTargetSeconds: Int?
+    var activeHoldPlannedSetId: UUID?
+    var activeHoldExerciseId: UUID?
+    var activeHoldSetIndex: Int?
 
     enum CodingKeys: String, CodingKey {
         case id, userId, title, startedAt, completedAt, estimatedDurationMinutes
@@ -805,6 +812,8 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
         case progressionAppliedAt
         case activeRestEndAt, activeRestTotalSeconds, activeRestAdvancesExercise
         case currentExerciseId
+        case activeHoldEndsAt, activeHoldTargetSeconds, activeHoldPlannedSetId
+        case activeHoldExerciseId, activeHoldSetIndex
     }
 
     init(
@@ -824,7 +833,12 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
         activeRestEndAt: Date? = nil,
         activeRestTotalSeconds: Int? = nil,
         activeRestAdvancesExercise: Bool? = nil,
-        currentExerciseId: UUID? = nil
+        currentExerciseId: UUID? = nil,
+        activeHoldEndsAt: Date? = nil,
+        activeHoldTargetSeconds: Int? = nil,
+        activeHoldPlannedSetId: UUID? = nil,
+        activeHoldExerciseId: UUID? = nil,
+        activeHoldSetIndex: Int? = nil
     ) {
         self.id = id
         self.userId = userId
@@ -843,6 +857,11 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
         self.activeRestTotalSeconds = activeRestTotalSeconds
         self.activeRestAdvancesExercise = activeRestAdvancesExercise
         self.currentExerciseId = currentExerciseId
+        self.activeHoldEndsAt = activeHoldEndsAt
+        self.activeHoldTargetSeconds = activeHoldTargetSeconds
+        self.activeHoldPlannedSetId = activeHoldPlannedSetId
+        self.activeHoldExerciseId = activeHoldExerciseId
+        self.activeHoldSetIndex = activeHoldSetIndex
     }
 
     init(from decoder: Decoder) throws {
@@ -864,6 +883,11 @@ struct WorkoutSession: Identifiable, Codable, Hashable {
         activeRestTotalSeconds = try container.decodeIfPresent(Int.self, forKey: .activeRestTotalSeconds)
         activeRestAdvancesExercise = try container.decodeIfPresent(Bool.self, forKey: .activeRestAdvancesExercise)
         currentExerciseId = try container.decodeIfPresent(UUID.self, forKey: .currentExerciseId)
+        activeHoldEndsAt = try container.decodeIfPresent(Date.self, forKey: .activeHoldEndsAt)
+        activeHoldTargetSeconds = try container.decodeIfPresent(Int.self, forKey: .activeHoldTargetSeconds)
+        activeHoldPlannedSetId = try container.decodeIfPresent(UUID.self, forKey: .activeHoldPlannedSetId)
+        activeHoldExerciseId = try container.decodeIfPresent(UUID.self, forKey: .activeHoldExerciseId)
+        activeHoldSetIndex = try container.decodeIfPresent(Int.self, forKey: .activeHoldSetIndex)
     }
 }
 

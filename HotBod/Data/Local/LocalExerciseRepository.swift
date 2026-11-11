@@ -347,6 +347,10 @@ private struct ExerciseSeedDTO: Decodable {
     let secondaryMuscles: [MuscleGroup]
     let equipment: [Equipment]
     let loadTrackingMode: LoadTrackingMode?
+    let prescriptionType: PrescriptionType?
+    let defaultDurationSeconds: Int?
+    let defaultDistanceMeters: Double?
+    let forceType: ForceType?
     let movementPattern: MovementPattern
     let difficulty: ExerciseDifficulty
     let mechanics: MechanicsType?
@@ -366,7 +370,7 @@ private struct ExerciseSeedDTO: Decodable {
             equipment: equipment,
             movementPattern: movementPattern,
             difficulty: difficulty,
-            forceType: nil,
+            forceType: forceType,
             mechanics: mechanics ?? movementPattern.inferredMechanics,
             instructions: instructions,
             formCues: formCues,
@@ -376,6 +380,9 @@ private struct ExerciseSeedDTO: Decodable {
             progressions: [],
             regressions: [],
             loadTrackingMode: loadTrackingMode,
+            prescriptionType: prescriptionType,
+            defaultDurationSeconds: defaultDurationSeconds,
+            defaultDistanceMeters: defaultDistanceMeters,
             demoVideos: demoVideos,
             imageUrl: nil,
             tags: []
