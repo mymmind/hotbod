@@ -88,6 +88,7 @@ struct SettingsView: View {
 
                     trainingSection
                     sessionStructureSection
+                    kettlebellCircuitSection
                     equipmentLimitsSection
                     musclePreferencesSection
                     scheduleSection

@@ -1,5 +1,9 @@
 import XCTest
 
+// UI test exemption (plan 2026-11-11 kettlebell circuit settings Task 4): the
+// Kettlebell circuit section is gated on equipment including `.kettlebell`.
+// Default UITesting profiles may omit bells; unit tests cover scheme prefs and
+// shouldRefreshWorkout exclusion. Add a dedicated launch fixture when needed.
 final class SettingsUITests: BaseUITestCase {
   override func setUpWithError() throws {
     openSettingsOnLaunch = !name.contains("testSettingsOpensFromToday")

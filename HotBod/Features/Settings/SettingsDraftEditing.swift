@@ -32,6 +32,8 @@ enum SettingsDraftEditing {
         draft.limitationNotes = limitationNotes.isEmpty ? nil : limitationNotes
     }
 
+    /// Gym today-plan refresh triggers. Intentionally omits `kettlebellCircuitScheme`
+    /// so home-circuit prefs do not regenerate the standard training day.
     static func shouldRefreshWorkout(draft: UserProfile, comparedTo original: UserProfile) -> Bool {
         draft.goal != original.goal
             || draft.experienceLevel != original.experienceLevel
