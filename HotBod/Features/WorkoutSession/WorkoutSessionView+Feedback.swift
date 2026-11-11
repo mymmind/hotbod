@@ -54,6 +54,7 @@ extension WorkoutSessionView {
     }
 
     func startRestTimer(seconds: Int) {
+        clearHoldTimerState()
         let total = max(seconds, 1)
         restTotalSeconds = total
         restTimerKind = RestTimerFeedbackPlanner.timerKind(

@@ -122,6 +122,10 @@ enum UITestConfiguration {
         isUITesting && ProcessInfo.processInfo.arguments.contains("-SeedPhysiqueSplitSuggestion")
     }
 
+    static var shouldSeedTimedHold: Bool {
+        isUITesting && ProcessInfo.processInfo.arguments.contains("-SeedTimedHold")
+    }
+
     static func applyLaunchConfiguration() {
         if shouldResetState {
             PersistenceHelper.clearAllPersistedData()
@@ -169,7 +173,10 @@ enum UITestConfiguration {
         if shouldStartWorkout {
             environment.cancelWorkoutGenerationIfNeeded()
             await environment.cancelActiveWorkoutIfNeeded()
-            await environment.seedUITestTodayWorkoutIfNeeded(force: true)
+            await environment.seedUITestTodayWorkoutIfNeeded(
+                force: true,
+                seedTimedHold: shouldSeedTimedHold
+            )
             if let workout = environment.todayWorkout,
                let session = await environment.resumeOrStartWorkout(from: workout) {
                 router.replace(with: .workoutSession(session))

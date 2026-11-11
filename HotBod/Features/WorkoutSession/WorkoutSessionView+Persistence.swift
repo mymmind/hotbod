@@ -31,6 +31,7 @@ extension WorkoutSessionView {
         session.status = .completed
         session.completedAt = Date()
         clearPersistedRestState()
+        clearHoldTimerState()
         pendingPostSetAction = nil
         PhoneWatchSessionBridge.publishIdle()
         Task { await persistWorkoutCompletion() }

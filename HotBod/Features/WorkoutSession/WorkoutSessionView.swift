@@ -33,6 +33,7 @@ struct WorkoutSessionView: View {
     @State var optionalLoadEnabledByExerciseId: [UUID: Bool] = [:]
     @State var restEndDate: Date?
     @State var isResting = false
+    @State var isHoldRunning = false
     @State var showCompletion = false
     @State var exerciseMap: [String: Exercise] = [:]
     @State var swapTarget: SessionSwapTarget?
@@ -104,6 +105,8 @@ struct WorkoutSessionView: View {
         _isResting = State(initialValue: resting)
         _restTotalSeconds = State(initialValue: session.activeRestTotalSeconds ?? 0)
         _shouldAdvanceExerciseAfterRest = State(initialValue: session.activeRestAdvancesExercise ?? false)
+        let holdPending = session.activeHoldEndsAt.map { $0 > Date() } ?? false
+        _isHoldRunning = State(initialValue: holdPending)
     }
 
     var currentExercise: WorkoutExercise? {
@@ -205,6 +208,7 @@ struct WorkoutSessionView: View {
         .background(ForgeColors.background)
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             handleRestTimerTick()
+            handleHoldTimerTick()
             drainWatchCommands(showWeightInput: watchShowsWeightInput)
         }
         .onReceive(NotificationCenter.default.publisher(for: .hotbodWatchCommandsPending)) { _ in
@@ -358,8 +362,6 @@ struct WorkoutSessionView: View {
             .contentShape(Rectangle())
             .onTapGesture { dismissKeyboard() }
 
-            sessionActionBar(exercise: exercise, meta: meta)
-
             if isResting {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     ForgeRestTimerBar(
@@ -370,10 +372,15 @@ struct WorkoutSessionView: View {
                     )
                 }
                 .transition(ForgeMotion.slideUp)
+            } else {
+                holdTimerBar(exercise: exercise, meta: meta)
             }
+
+            sessionActionBar(exercise: exercise, meta: meta)
         }
         .animation(UITestConfiguration.isUITesting ? nil : ForgeMotion.exercise, value: currentExerciseIndex)
         .animation(UITestConfiguration.isUITesting ? nil : ForgeMotion.standard, value: isResting)
+        .animation(UITestConfiguration.isUITesting ? nil : ForgeMotion.standard, value: isHoldRunning)
         .background {
             if UITestConfiguration.isUITesting, sessionResourcesLoaded {
                 Color.clear
@@ -383,12 +390,14 @@ struct WorkoutSessionView: View {
         }
         .onAppear {
             restoreRestTimerIfNeeded()
+            restoreHoldTimerIfNeeded()
             syncWatchSnapshot()
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active:
                 restoreRestTimerIfNeeded()
+                restoreHoldTimerIfNeeded()
             case .background:
                 persistMetricDrafts()
                 Task { await environment.flushPendingWorkoutSessionSave() }

@@ -13,6 +13,7 @@ class BaseUITestCase: XCTestCase {
   var seedPhysiqueCadenceDue = false
   var seedPhysiqueFrontOnly = false
   var seedPhysiqueSplitSuggestion = false
+  var seedTimedHold = false
 
   private let tabOrder = ["today", "train", "protein", "progress", "physique"]
 
@@ -22,6 +23,9 @@ class BaseUITestCase: XCTestCase {
     app.launchArguments = ["-UITesting", "-ResetState", "-MockAI", "-MockFoodSearch"]
     if skipOnboarding {
       app.launchArguments.append("-SkipOnboarding")
+    }
+    if seedTimedHold {
+      app.launchArguments.append("-SeedTimedHold")
     }
     if openSettingsOnLaunch {
       app.launchArguments.append("-OpenSettings")

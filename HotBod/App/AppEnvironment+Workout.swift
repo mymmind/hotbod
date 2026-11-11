@@ -28,15 +28,35 @@ extension AppEnvironment {
         isWorkoutGenerationActive = false
     }
 
-    func seedUITestTodayWorkoutIfNeeded(force: Bool = false) async {
+    func seedUITestTodayWorkoutIfNeeded(force: Bool = false, seedTimedHold: Bool = false) async {
         guard UITestConfiguration.isUITesting else { return }
         guard force || todayWorkout == nil else { return }
-        let workout = GeneratedWorkout(
-            id: UUID(),
-            title: "UI Test Workout",
-            estimatedDurationMinutes: 45,
-            focus: [.chest],
-            exercises: [
+        let exercises: [PlannedExercise]
+        if seedTimedHold {
+            exercises = [
+                PlannedExercise(
+                    exerciseId: "plank",
+                    orderIndex: 0,
+                    targetSets: [
+                        PlannedSet(
+                            targetRepsMin: 0,
+                            targetRepsMax: 0,
+                            targetDurationSeconds: 30
+                        )
+                    ],
+                    restSeconds: 60
+                ),
+                PlannedExercise(
+                    exerciseId: "bench_press",
+                    orderIndex: 1,
+                    targetSets: [
+                        PlannedSet(targetRepsMin: 8, targetRepsMax: 10, targetWeightKg: 60)
+                    ],
+                    restSeconds: 90
+                )
+            ]
+        } else {
+            exercises = [
                 PlannedExercise(
                     exerciseId: "bench_press",
                     orderIndex: 0,
@@ -58,7 +78,14 @@ extension AppEnvironment {
                     targetSets: [PlannedSet(targetRepsMin: 10, targetRepsMax: 12, targetWeightKg: 15)],
                     restSeconds: 60
                 )
-            ],
+            ]
+        }
+        let workout = GeneratedWorkout(
+            id: UUID(),
+            title: seedTimedHold ? "UI Test Timed Hold" : "UI Test Workout",
+            estimatedDurationMinutes: 45,
+            focus: seedTimedHold ? [.abs] : [.chest],
+            exercises: exercises,
             rationale: "UI test seed",
             safetyNotes: [],
             generatedBy: .rulesEngine,
